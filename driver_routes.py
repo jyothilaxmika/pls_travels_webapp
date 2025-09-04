@@ -32,7 +32,7 @@ def get_driver_profile():
 
 def get_last_duty_values(driver_id, vehicle_id=None):
     """Get odometer values from the last completed duty"""
-    query = Duty.query.filter_by(driver_id=driver.id, status='completed')
+    query = Duty.query.filter_by(driver_id=driver_id, status='completed')
     if vehicle_id:
         query = query.filter_by(vehicle_id=vehicle_id)
 
@@ -111,8 +111,10 @@ def profile():
             driver = Driver()
             driver.user_id = current_user.id
             driver.full_name = request.form.get('full_name') or ''
-            driver.phone = request.form.get('phone') or ''
-            driver.address = request.form.get('address')
+            # Phone is stored in User model
+            if request.form.get('phone'):
+                current_user.phone = request.form.get('phone')
+            driver.current_address = request.form.get('address')
             branch_id_str = request.form.get('branch_id')
             driver.branch_id = int(branch_id_str) if branch_id_str and branch_id_str.isdigit() else None
             driver.aadhar_number = request.form.get('aadhar_number')
@@ -128,14 +130,14 @@ def profile():
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
-                    driver.aadhar_photo = filename
+                    driver.aadhar_document = filename
 
             if 'license_photo' in request.files:
                 file = request.files['license_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
-                    driver.license_photo = filename
+                    driver.license_document = filename
 
             if 'profile_photo' in request.files:
                 file = request.files['profile_photo']
@@ -157,8 +159,10 @@ def profile():
     # Update existing profile
     if request.method == 'POST':
         driver.full_name = request.form.get('full_name', driver.full_name)
-        driver.phone = request.form.get('phone', driver.phone)
-        driver.address = request.form.get('address', driver.address)
+        # Phone is stored in User model
+        if request.form.get('phone'):
+            current_user.phone = request.form.get('phone')
+        driver.current_address = request.form.get('address', driver.current_address)
         driver.bank_name = request.form.get('bank_name', driver.bank_name)
         driver.account_number = request.form.get('account_number', driver.account_number)
         driver.ifsc_code = request.form.get('ifsc_code', driver.ifsc_code)
@@ -171,14 +175,14 @@ def profile():
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
-                    driver.aadhar_photo = filename
+                    driver.aadhar_document = filename
 
             if 'license_photo' in request.files:
                 file = request.files['license_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
-                    driver.license_photo = filename
+                    driver.license_document = filename
 
             if 'profile_photo' in request.files:
                 file = request.files['profile_photo']
