@@ -100,14 +100,23 @@
         <div class="card-body">
             {% if todays_duty %}
             <div class="alert alert-success">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-play-circle fa-2x me-3"></i>
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        {% if todays_duty.start_photo %}
+                        <img src="/uploads/{{ todays_duty.start_photo }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;" alt="Start Duty Photo">
+                        {% else %}
+                        <i class="fas fa-play-circle fa-3x text-success"></i>
+                        {% endif %}
+                    </div>
+                    <div class="col">
                         <strong>Duty Active</strong><br>
                         <small>Vehicle: {{ todays_duty.vehicle.registration_number }}</small><br>
                         <small>Started: {{ todays_duty.start_time.strftime('%H:%M') if todays_duty.start_time else 'N/A' }}</small>
+                        {% if todays_duty.start_odometer %}
+                        <br><small>Odometer: {{ todays_duty.start_odometer }} km</small>
+                        {% endif %}
                     </div>
-                    <div>
+                    <div class="col-auto">
                         <a href="{{ url_for('driver.duty') }}" class="btn btn-warning btn-sm">
                             <i class="fas fa-stop-circle me-1"></i>End Duty
                         </a>
@@ -164,8 +173,17 @@
             <div class="list-group list-group-flush">
                 {% for duty in recent_duties %}
                 <div class="list-group-item px-0">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            {% if duty.start_photo %}
+                            <img src="/uploads/{{ duty.start_photo }}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;" alt="Start Photo" data-bs-toggle="modal" data-bs-target="#photoModal{{ duty.id }}" style="cursor: pointer;">
+                            {% else %}
+                            <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-camera text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col">
                             <div class="d-flex justify-content-between">
                                 <strong>{{ duty.vehicle.registration_number }}</strong>
                                 <span class="badge bg-success">₹{{ "{:,.0f}".format(duty.driver_earnings) }}</span>
@@ -177,10 +195,55 @@
                             <small class="text-muted">
                                 Revenue: ₹{{ "{:,.0f}".format(duty.revenue) }} | 
                                 Trips: {{ duty.trip_count }}
+                                {% if duty.start_odometer and duty.end_odometer %}
+                                | Distance: {{ duty.end_odometer - duty.start_odometer }} km
+                                {% endif %}
                             </small>
+                        </div>
+                        <div class="col-auto">
+                            {% if duty.end_photo %}
+                            <img src="/uploads/{{ duty.end_photo }}" class="rounded" style="width: 50px; height: 50px; object-fit: cover;" alt="End Photo" data-bs-toggle="modal" data-bs-target="#endPhotoModal{{ duty.id }}" style="cursor: pointer;">
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+                
+                <!-- Photo Modals -->
+                {% if duty.start_photo %}
+                <div class="modal fade" id="photoModal{{ duty.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Start Duty Photo</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="/uploads/{{ duty.start_photo }}" class="img-fluid rounded mb-2" alt="Start Duty Photo">
+                                <p class="text-muted mb-1">{{ duty.vehicle.registration_number }}</p>
+                                <small class="text-muted">{{ duty.start_time.strftime('%B %d, %Y at %H:%M') if duty.start_time else 'N/A' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if duty.end_photo %}
+                <div class="modal fade" id="endPhotoModal{{ duty.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">End Duty Photo</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="/uploads/{{ duty.end_photo }}" class="img-fluid rounded mb-2" alt="End Duty Photo">
+                                <p class="text-muted mb-1">{{ duty.vehicle.registration_number }}</p>
+                                <small class="text-muted">{{ duty.end_time.strftime('%B %d, %Y at %H:%M') if duty.end_time else 'N/A' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 {% endfor %}
             </div>
             {% else %}
