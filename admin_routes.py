@@ -6,8 +6,8 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, db)
-from forms import DriverForm, VehicleForm, DutySchemeForm
+                   Penalty, Asset, AuditLog, VehicleAssignment, db)
+from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm
 from utils import allowed_file, calculate_earnings
 from auth import log_audit
 
@@ -140,6 +140,113 @@ def view_driver(driver_id):
                          recent_duties=recent_duties,
                          penalties=penalties,
                          assets=assets)
+
+@admin_bp.route('/assignments')
+@login_required
+@admin_required
+def assignments():
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status', '')
+    branch_filter = request.args.get('branch', '', type=int)
+    
+    query = VehicleAssignment.query.join(Driver).join(Vehicle)
+    
+    if status_filter:
+        query = query.filter(VehicleAssignment.status == status_filter)
+    
+    if branch_filter:
+        query = query.filter(Driver.branch_id == branch_filter)
+    
+    assignments = query.order_by(desc(VehicleAssignment.start_date)).paginate(page=page, per_page=20, error_out=False)
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    return render_template('admin/assignments.html',
+                         assignments=assignments,
+                         branches=branches,
+                         status_filter=status_filter,
+                         branch_filter=branch_filter)
+
+@admin_bp.route('/assignments/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_assignment():
+    form = VehicleAssignmentForm()
+    
+    # Populate form choices
+    form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name})") for d in Driver.query.filter_by(status='active').all()]
+    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.vehicle_type}") for v in Vehicle.query.filter_by(status='active', is_available=True).all()]
+    
+    if form.validate_on_submit():
+        # Check for conflicting assignments
+        existing_assignment = VehicleAssignment.query.filter(
+            VehicleAssignment.driver_id == form.driver_id.data,
+            VehicleAssignment.start_date <= form.start_date.data,
+            VehicleAssignment.status.in_(['scheduled', 'active']),
+            VehicleAssignment.end_date.is_(None) | (VehicleAssignment.end_date >= form.start_date.data)
+        ).first()
+        
+        vehicle_assignment = VehicleAssignment.query.filter(
+            VehicleAssignment.vehicle_id == form.vehicle_id.data,
+            VehicleAssignment.start_date <= form.start_date.data,
+            VehicleAssignment.status.in_(['scheduled', 'active']),
+            VehicleAssignment.end_date.is_(None) | (VehicleAssignment.end_date >= form.start_date.data)
+        ).first()
+        
+        if existing_assignment:
+            flash('Driver already has an assignment for this period.', 'error')
+        elif vehicle_assignment:
+            flash('Vehicle is already assigned for this period.', 'error')
+        else:
+            assignment = VehicleAssignment()
+            assignment.driver_id = form.driver_id.data
+            assignment.vehicle_id = form.vehicle_id.data
+            assignment.start_date = form.start_date.data
+            assignment.end_date = form.end_date.data
+            assignment.shift_type = form.shift_type.data
+            assignment.assignment_notes = form.assignment_notes.data
+            assignment.assigned_by = current_user.id
+            
+            db.session.add(assignment)
+            
+            # Update driver's current vehicle if assignment is starting today or is in the past
+            if form.start_date.data <= datetime.now().date():
+                driver = Driver.query.get(form.driver_id.data)
+                driver.current_vehicle_id = form.vehicle_id.data
+                assignment.status = 'active'
+            
+            db.session.commit()
+            
+            log_audit('create_vehicle_assignment', 'assignment', assignment.id,
+                     {'driver': assignment.assignment_driver.full_name, 
+                      'vehicle': assignment.assignment_vehicle.registration_number})
+            
+            flash('Vehicle assignment created successfully!', 'success')
+            return redirect(url_for('admin.assignments'))
+    
+    return render_template('admin/add_assignment.html', form=form)
+
+@admin_bp.route('/assignments/<int:assignment_id>/end', methods=['POST'])
+@login_required
+@admin_required
+def end_assignment(assignment_id):
+    assignment = VehicleAssignment.query.get_or_404(assignment_id)
+    
+    assignment.status = 'completed'
+    assignment.end_date = datetime.now().date()
+    assignment.updated_at = datetime.utcnow()
+    
+    # Clear driver's current vehicle
+    if assignment.assignment_driver.current_vehicle_id == assignment.vehicle_id:
+        assignment.assignment_driver.current_vehicle_id = None
+    
+    db.session.commit()
+    
+    log_audit('end_vehicle_assignment', 'assignment', assignment_id,
+             {'driver': assignment.assignment_driver.full_name,
+              'vehicle': assignment.assignment_vehicle.registration_number})
+    
+    flash('Assignment ended successfully.', 'success')
+    return redirect(url_for('admin.assignments'))
 
 @admin_bp.route('/vehicles')
 @login_required

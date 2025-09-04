@@ -44,6 +44,19 @@ class DriverProfileForm(FlaskForm):
     license_photo = FileField('License Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
     profile_photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
 
+class VehicleAssignmentForm(FlaskForm):
+    driver_id = SelectField('Driver', coerce=int, validators=[DataRequired()])
+    vehicle_id = SelectField('Vehicle', coerce=int, validators=[DataRequired()])
+    start_date = DateField('Start Date', validators=[DataRequired()])
+    end_date = DateField('End Date', validators=[Optional()])
+    shift_type = SelectField('Shift Type', choices=[
+        ('full_day', 'Full Day'),
+        ('morning', 'Morning Shift'),
+        ('evening', 'Evening Shift'),
+        ('night', 'Night Shift')
+    ], default='full_day')
+    assignment_notes = TextAreaField('Notes')
+
 class VehicleForm(FlaskForm):
     registration_number = StringField('Registration Number', validators=[DataRequired()])
     vehicle_type = SelectField('Vehicle Type', choices=[

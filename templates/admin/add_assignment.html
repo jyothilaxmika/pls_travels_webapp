@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule Vehicle Assignment - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('admin.assignments') }}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i> Back to Assignments
+        </a>
+        <div>
+            <h2><i class="fas fa-calendar-plus me-2"></i>Schedule Vehicle Assignment</h2>
+            <p class="text-muted mb-0">Assign a driver to a vehicle for a specific period</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Assignment Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.driver_id.label(class="form-label") }}
+                            {{ form.driver_id(class="form-select") }}
+                            {% if form.driver_id.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.driver_id.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.vehicle_id.label(class="form-label") }}
+                            {{ form.vehicle_id(class="form-select") }}
+                            {% if form.vehicle_id.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.vehicle_id.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.start_date.label(class="form-label") }}
+                            {{ form.start_date(class="form-control", min=moment().format('YYYY-MM-DD')) }}
+                            {% if form.start_date.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.start_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.end_date.label(class="form-label") }}
+                            {{ form.end_date(class="form-control") }}
+                            <div class="form-text">Leave empty for ongoing assignment</div>
+                            {% if form.end_date.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.end_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.shift_type.label(class="form-label") }}
+                        {{ form.shift_type(class="form-select") }}
+                        {% if form.shift_type.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.shift_type.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.assignment_notes.label(class="form-label") }}
+                        {{ form.assignment_notes(class="form-control", rows="3", placeholder="Optional notes about this assignment...") }}
+                        {% if form.assignment_notes.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.assignment_notes.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.assignments') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-calendar-check me-2"></i>Schedule Assignment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Assignment Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Important Notes:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Only active drivers and available vehicles can be assigned</li>
+                        <li>Conflicts will be detected automatically</li>
+                        <li>Assignments starting today become active immediately</li>
+                        <li>Driver's current vehicle will be updated for active assignments</li>
+                    </ul>
+                </div>
+                
+                <h6>Shift Types:</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Full Day:</strong> 24-hour assignment</li>
+                    <li><strong>Morning:</strong> 6 AM - 2 PM</li>
+                    <li><strong>Evening:</strong> 2 PM - 10 PM</li>
+                    <li><strong>Night:</strong> 10 PM - 6 AM</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

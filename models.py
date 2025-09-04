@@ -224,6 +224,31 @@ class Asset(db.Model):
     # Relationships
     asset_driver = db.relationship('Driver', backref='assets')
 
+class VehicleAssignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'), nullable=False)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    
+    # Schedule Information
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date)  # NULL for ongoing assignments
+    shift_type = db.Column(db.String(20), default='full_day')  # full_day, morning, evening, night
+    
+    # Assignment Details
+    assigned_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    assignment_notes = db.Column(db.Text)
+    
+    # Status
+    status = db.Column(db.String(20), default='scheduled')  # scheduled, active, completed, cancelled
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    assignment_driver = db.relationship('Driver', backref='vehicle_assignments')
+    assignment_vehicle = db.relationship('Vehicle', backref='driver_assignments')
+    assigned_by_user = db.relationship('User', foreign_keys=[assigned_by], backref='vehicle_assignments_made')
+
 class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
