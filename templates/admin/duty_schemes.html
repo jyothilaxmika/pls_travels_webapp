@@ -56,7 +56,7 @@
                 </div>
                 
                 <div class="text-muted">
-                    <small>Created: {{ scheme.created_at.strftime('%Y-%m-%d') }}</small>
+                    <small>Created: {{ scheme.created_at.strftime('%Y-%m-%d') if scheme.created_at else 'N/A' }}</small>
                 </div>
             </div>
             <div class="card-footer">
@@ -88,6 +88,7 @@
                             <p><strong>Type:</strong> {{ scheme.scheme_type.replace('_', ' ').title() }}</p>
                             <p><strong>Branch:</strong> {{ scheme.branch.name if scheme.branch else 'Global (All Branches)' }}</p>
                             <p><strong>BMG Amount:</strong> ₹{{ "{:,.2f}".format(scheme.bmg_amount) }}</p>
+                            <p><strong>Created:</strong> {{ scheme.created_at.strftime('%Y-%m-%d') if scheme.created_at else 'N/A' }}</p>
                             <p><strong>Status:</strong> 
                                 <span class="badge bg-{{ 'success' if scheme.is_active else 'secondary' }}">
                                     {{ 'Active' if scheme.is_active else 'Inactive' }}
