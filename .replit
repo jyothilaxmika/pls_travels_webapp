@@ -34,3 +34,6 @@ localPort = 5000
 externalPort = 80
 
 [agent]
+
+[objectStorage]
+defaultBucketID = "replit-objstore-65984266-623e-43b0-a660-93a441e8fc09"
