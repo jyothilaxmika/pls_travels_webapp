@@ -13,9 +13,15 @@
     {% if current_user.is_authenticated %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
-                <i class="fas fa-bus me-2"></i>PLS TRAVELS
-            </a>
+            <!-- Left column hamburger menu -->
+            <div class="d-flex align-items-center">
+                <button class="btn btn-outline-light btn-sm me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                    <i class="fas fa-bus me-2"></i>PLS TRAVELS
+                </a>
+            </div>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -109,6 +115,97 @@
             </div>
         </div>
     </nav>
+
+    <!-- Offcanvas Sidebar Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="sidebarMenuLabel">
+                <i class="fas fa-bus me-2"></i>PLS TRAVELS
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="nav nav-pills flex-column mb-auto">
+                {% if current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.drivers') }}">
+                            <i class="fas fa-users me-2"></i>Drivers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.vehicles') }}">
+                            <i class="fas fa-car me-2"></i>Vehicles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.duties') }}">
+                            <i class="fas fa-clipboard-list me-2"></i>Duties
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.duty_schemes') }}">
+                            <i class="fas fa-calculator me-2"></i>Duty Schemes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.reports') }}">
+                            <i class="fas fa-chart-bar me-2"></i>Reports
+                        </a>
+                    </li>
+                {% elif current_user.role == 'manager' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manager.dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manager.drivers') }}">
+                            <i class="fas fa-users me-2"></i>Drivers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manager.reports') }}">
+                            <i class="fas fa-chart-bar me-2"></i>Reports
+                        </a>
+                    </li>
+                {% elif current_user.role == 'driver' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('driver.dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('driver.profile') }}">
+                            <i class="fas fa-user me-2"></i>Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('driver.duty') }}">
+                            <i class="fas fa-play-circle me-2"></i>Duty Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('driver.earnings') }}">
+                            <i class="fas fa-money-bill-wave me-2"></i>Earnings
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <hr>
+                
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
     {% endif %}
 
     <!-- Flash Messages -->
