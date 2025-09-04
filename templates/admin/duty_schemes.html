@@ -44,7 +44,7 @@
                     {% elif scheme.scheme_type == 'slab' %}
                         <small>
                             {% for slab in config.get('slabs', []) %}
-                            ₹{{ slab.min }} - ₹{{ slab.max }}: {{ slab.percentage }}%<br>
+                            ₹{{ slab.get('min', 0) }} - ₹{{ slab.get('max', 0) if slab.get('max', 0) < 999999 else '∞' }}: {{ slab.get('percentage', 0) }}%<br>
                             {% endfor %}
                         </small>
                     {% elif scheme.scheme_type == 'mixed' %}
@@ -118,9 +118,9 @@
                                         <tbody>
                                             {% for slab in config.get('slabs', []) %}
                                             <tr>
-                                                <td>₹{{ "{:,.0f}".format(slab.min) }}</td>
-                                                <td>₹{{ "{:,.0f}".format(slab.max) if slab.max < 999999 else '∞' }}</td>
-                                                <td>{{ slab.percentage }}%</td>
+                                                <td>₹{{ "{:,.0f}".format(slab.get('min', 0)) }}</td>
+                                                <td>₹{{ "{:,.0f}".format(slab.get('max', 0)) if slab.get('max', 0) < 999999 else '∞' }}</td>
+                                                <td>{{ slab.get('percentage', 0) }}%</td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
@@ -149,11 +149,11 @@
                                         <p><strong>Example for ₹2000 revenue:</strong></p>
                                         {% set total_earning = 0 %}
                                         {% for slab in config.get('slabs', []) %}
-                                            {% if 2000 > slab.min %}
-                                                {% set applicable_amount = [2000, slab.max]|min - slab.min %}
-                                                {% set slab_earning = applicable_amount * slab.percentage / 100 %}
+                                            {% if 2000 > slab.get('min', 0) %}
+                                                {% set applicable_amount = [2000, slab.get('max', 0)]|min - slab.get('min', 0) %}
+                                                {% set slab_earning = applicable_amount * slab.get('percentage', 0) / 100 %}
                                                 {% set total_earning = total_earning + slab_earning %}
-                                                <small>₹{{ slab.min }} - ₹{{ [2000, slab.max]|min }}: {{ slab.percentage }}% = ₹{{ "{:,.2f}".format(slab_earning) }}</small><br>
+                                                <small>₹{{ slab.get('min', 0) }} - ₹{{ [2000, slab.get('max', 0)]|min }}: {{ slab.get('percentage', 0) }}% = ₹{{ "{:,.2f}".format(slab_earning) }}</small><br>
                                             {% endif %}
                                         {% endfor %}
                                         <strong>Total: ₹{{ "{:,.2f}".format(total_earning) }}</strong>
