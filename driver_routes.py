@@ -171,7 +171,8 @@ def profile():
                 return redirect(url_for('driver.dashboard'))
             except Exception as e:
                 db.session.rollback()
-                flash('Error creating profile. Please try again.', 'error')
+                print(f"Error creating profile: {str(e)}")  # Debug logging
+                flash(f'Error creating profile: {str(e)}', 'error')
                 return render_template('driver/profile.html', driver=None, branches=branches)
 
         return render_template('driver/profile.html', driver=None, branches=branches)
