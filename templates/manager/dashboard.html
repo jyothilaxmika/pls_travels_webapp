@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tachometer-alt me-2"></i>Manager Dashboard</h2>
+    <div class="text-muted">
+        <i class="fas fa-calendar me-1"></i>{{ moment().format('MMMM DD, YYYY') }}
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ active_drivers }}</h4>
+                        <p class="mb-0">Active Drivers</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ active_vehicles }}</h4>
+                        <p class="mb-0">Active Vehicles</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-car fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ todays_duties }}</h4>
+                        <p class="mb-0">Today's Duties</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ pending_drivers }}</h4>
+                        <p class="mb-0">Pending Approvals</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Branch Performance & Charts -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Revenue Trend (Last 7 Days)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Top Drivers</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="driverChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Branch Performance Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Today's Branch Performance</h5>
+            </div>
+            <div class="card-body">
+                {% if revenue_stats %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Target Revenue</th>
+                                <th>Actual Revenue</th>
+                                <th>Achievement %</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in revenue_stats %}
+                            {% set achievement = (stat.actual_revenue / stat.target_revenue * 100) if stat.target_revenue > 0 else 0 %}
+                            <tr>
+                                <td><strong>{{ stat.name }}</strong></td>
+                                <td>₹{{ "{:,.2f}".format(stat.target_revenue) }}</td>
+                                <td>₹{{ "{:,.2f}".format(stat.actual_revenue) }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 80px;">
+                                            <div class="progress-bar 
+                                                {% if achievement >= 100 %}bg-success
+                                                {% elif achievement >= 75 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                role="progressbar" style="width: {{ [achievement, 100]|min }}%" 
+                                                aria-valuenow="{{ achievement }}" aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <span>{{ "{:.1f}".format(achievement) }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if achievement >= 100 %}
+                                        <span class="badge bg-success">Target Met</span>
+                                    {% elif achievement >= 75 %}
+                                        <span class="badge bg-warning">On Track</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Below Target</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                    <h5>No performance data available</h5>
+                    <p class="text-muted">No branches assigned to your account.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Duties</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_duties %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Driver</th>
+                                <th>Vehicle</th>
+                                <th>Start Time</th>
+                                <th>Revenue</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for duty in recent_duties %}
+                            <tr>
+                                <td>{{ duty.driver.full_name }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ duty.vehicle.registration_number }}</span>
+                                </td>
+                                <td>{{ duty.start_time.strftime('%m/%d %H:%M') if duty.start_time else 'Not started' }}</td>
+                                <td>₹{{ "{:,.0f}".format(duty.revenue) }}</td>
+                                <td>
+                                    {% if duty.status == 'active' %}
+                                        <span class="badge bg-warning">Active</span>
+                                    {% elif duty.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                    <h5>No recent activities</h5>
+                    <p class="text-muted">No duties recorded in your branches.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load revenue chart
+fetch('/manager/api/branch-revenue-chart')
+    .then(response => response.json())
+    .then(data => {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Daily Revenue',
+                    data: data.data,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error loading revenue chart:', error);
+        document.getElementById('revenueChart').style.display = 'none';
+    });
+
+// Load driver performance chart
+fetch('/manager/api/driver-performance')
+    .then(response => response.json())
+    .then(data => {
+        const ctx = document.getElementById('driverChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.map(d => d.name),
+                datasets: [{
+                    data: data.map(d => d.earnings),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 205, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10,
+                            padding: 8
+                        }
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error loading driver chart:', error);
+        document.getElementById('driverChart').style.display = 'none';
+    });
+</script>
+{% endblock %}

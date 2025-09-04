@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Duty Schemes - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-calculator me-2"></i>Duty Schemes</h2>
+    <div>
+        <a href="{{ url_for('admin.add_duty_scheme') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add Duty Scheme
+        </a>
+    </div>
+</div>
+
+<!-- Duty Schemes Cards -->
+<div class="row">
+    {% for scheme in schemes %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ scheme.name }}</h5>
+                <span class="badge bg-primary">{{ scheme.scheme_type.replace('_', ' ').title() }}</span>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">Branch:</small><br>
+                    <strong>{{ scheme.branch.name if scheme.branch else 'Global' }}</strong>
+                </div>
+                
+                {% if scheme.bmg_amount > 0 %}
+                <div class="mb-3">
+                    <small class="text-muted">BMG Amount:</small><br>
+                    <strong>₹{{ "{:,.2f}".format(scheme.bmg_amount) }}</strong>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <small class="text-muted">Configuration:</small><br>
+                    {% set config = scheme.get_config() %}
+                    {% if scheme.scheme_type == 'fixed' %}
+                        <span class="text-success">₹{{ "{:,.2f}".format(config.get('daily_amount', 0)) }} per day</span>
+                    {% elif scheme.scheme_type == 'per_trip' %}
+                        <span class="text-success">₹{{ "{:,.2f}".format(config.get('per_trip_amount', 0)) }} per trip</span>
+                    {% elif scheme.scheme_type == 'slab' %}
+                        <small>
+                            {% for slab in config.get('slabs', []) %}
+                            ₹{{ slab.min }} - ₹{{ slab.max }}: {{ slab.percentage }}%<br>
+                            {% endfor %}
+                        </small>
+                    {% elif scheme.scheme_type == 'mixed' %}
+                        <span class="text-success">
+                            Base: ₹{{ "{:,.2f}".format(config.get('base_amount', 0)) }}<br>
+                            Incentive: {{ config.get('percentage', 0) }}%
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="text-muted">
+                    <small>Created: {{ scheme.created_at.strftime('%Y-%m-%d') }}</small>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100">
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#schemeModal{{ scheme.id }}">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scheme Details Modal -->
+    <div class="modal fade" id="schemeModal{{ scheme.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ scheme.name }} - Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Basic Information</h6>
+                            <p><strong>Name:</strong> {{ scheme.name }}</p>
+                            <p><strong>Type:</strong> {{ scheme.scheme_type.replace('_', ' ').title() }}</p>
+                            <p><strong>Branch:</strong> {{ scheme.branch.name if scheme.branch else 'Global (All Branches)' }}</p>
+                            <p><strong>BMG Amount:</strong> ₹{{ "{:,.2f}".format(scheme.bmg_amount) }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-{{ 'success' if scheme.is_active else 'secondary' }}">
+                                    {{ 'Active' if scheme.is_active else 'Inactive' }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Configuration Details</h6>
+                            {% set config = scheme.get_config() %}
+                            {% if scheme.scheme_type == 'fixed' %}
+                                <p><strong>Daily Amount:</strong> ₹{{ "{:,.2f}".format(config.get('daily_amount', 0)) }}</p>
+                                <p><em>Driver receives a fixed amount per day regardless of revenue.</em></p>
+                            {% elif scheme.scheme_type == 'per_trip' %}
+                                <p><strong>Per Trip Amount:</strong> ₹{{ "{:,.2f}".format(config.get('per_trip_amount', 0)) }}</p>
+                                <p><em>Driver receives a fixed amount for each trip completed.</em></p>
+                            {% elif scheme.scheme_type == 'slab' %}
+                                <p><strong>Revenue Slabs:</strong></p>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Min Revenue</th>
+                                                <th>Max Revenue</th>
+                                                <th>Percentage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for slab in config.get('slabs', []) %}
+                                            <tr>
+                                                <td>₹{{ "{:,.0f}".format(slab.min) }}</td>
+                                                <td>₹{{ "{:,.0f}".format(slab.max) if slab.max < 999999 else '∞' }}</td>
+                                                <td>{{ slab.percentage }}%</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% elif scheme.scheme_type == 'mixed' %}
+                                <p><strong>Base Amount:</strong> ₹{{ "{:,.2f}".format(config.get('base_amount', 0)) }}</p>
+                                <p><strong>Incentive Percentage:</strong> {{ config.get('percentage', 0) }}%</p>
+                                <p><em>Driver receives base amount plus percentage of revenue as incentive.</em></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Earnings Calculation Example</h6>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    {% if scheme.scheme_type == 'fixed' %}
+                                        <p><strong>Example:</strong> Daily earnings = ₹{{ "{:,.2f}".format(config.get('daily_amount', 0)) }}</p>
+                                    {% elif scheme.scheme_type == 'per_trip' %}
+                                        <p><strong>Example:</strong> For 10 trips = ₹{{ "{:,.2f}".format(config.get('per_trip_amount', 0) * 10) }}</p>
+                                    {% elif scheme.scheme_type == 'slab' %}
+                                        <p><strong>Example for ₹2000 revenue:</strong></p>
+                                        {% set total_earning = 0 %}
+                                        {% for slab in config.get('slabs', []) %}
+                                            {% if 2000 > slab.min %}
+                                                {% set applicable_amount = [2000, slab.max]|min - slab.min %}
+                                                {% set slab_earning = applicable_amount * slab.percentage / 100 %}
+                                                {% set total_earning = total_earning + slab_earning %}
+                                                <small>₹{{ slab.min }} - ₹{{ [2000, slab.max]|min }}: {{ slab.percentage }}% = ₹{{ "{:,.2f}".format(slab_earning) }}</small><br>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <strong>Total: ₹{{ "{:,.2f}".format(total_earning) }}</strong>
+                                    {% elif scheme.scheme_type == 'mixed' %}
+                                        <p><strong>Example for ₹2000 revenue:</strong></p>
+                                        <p>Base: ₹{{ "{:,.2f}".format(config.get('base_amount', 0)) }}</p>
+                                        <p>Incentive: ₹{{ "{:,.2f}".format(2000 * config.get('percentage', 0) / 100) }}</p>
+                                        <strong>Total: ₹{{ "{:,.2f}".format(config.get('base_amount', 0) + (2000 * config.get('percentage', 0) / 100)) }}</strong>
+                                    {% endif %}
+                                    
+                                    {% if scheme.bmg_amount > 0 %}
+                                    <hr>
+                                    <small class="text-muted">
+                                        <strong>BMG Protection:</strong> If calculated earnings are less than ₹{{ "{:,.2f}".format(scheme.bmg_amount) }}, driver receives BMG amount.
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% if not schemes %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-calculator fa-3x text-muted mb-3"></i>
+            <h4>No duty schemes found</h4>
+            <p class="text-muted">Create your first duty scheme to start managing driver earnings.</p>
+            <a href="{{ url_for('admin.add_duty_scheme') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Duty Scheme
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Duty Management - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-clipboard-list me-2"></i>Duty Management</h2>
+    <div>
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="fas fa-filter me-2"></i>Filter
+        </button>
+    </div>
+</div>
+
+<!-- Filters Summary -->
+{% if status_filter or branch_filter or date_filter %}
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    Showing duties 
+    {% if status_filter %}with status: <strong>{{ status_filter.title() }}</strong>{% endif %}
+    {% if branch_filter %}in branch: <strong>{{ branches | selectattr('id', 'equalto', branch_filter) | map(attribute='name') | first }}</strong>{% endif %}
+    {% if date_filter %}for date: <strong>{{ date_filter }}</strong>{% endif %}
+    <a href="{{ url_for('admin.duties') }}" class="btn btn-sm btn-outline-primary ms-2">Clear Filters</a>
+</div>
+{% endif %}
+
+<!-- Duties Table -->
+<div class="card">
+    <div class="card-body">
+        {% if duties.items %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Driver</th>
+                        <th>Vehicle</th>
+                        <th>Branch</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Revenue</th>
+                        <th>Earnings</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for duty in duties.items %}
+                    <tr>
+                        <td>
+                            <div>
+                                <strong>{{ duty.driver.full_name }}</strong><br>
+                                <small class="text-muted">{{ duty.driver.user.username }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ duty.vehicle.registration_number }}</span><br>
+                            <small class="text-muted">{{ duty.vehicle.vehicle_type.title() }}</small>
+                        </td>
+                        <td>{{ duty.branch.name }}</td>
+                        <td>
+                            {% if duty.start_time %}
+                                {{ duty.start_time.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                <span class="text-muted">Not started</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if duty.end_time %}
+                                {{ duty.end_time.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                <span class="text-warning">In Progress</span>
+                            {% endif %}
+                        </td>
+                        <td>₹{{ "{:,.2f}".format(duty.revenue) }}</td>
+                        <td>₹{{ "{:,.2f}".format(duty.driver_earnings) }}</td>
+                        <td>
+                            {% if duty.status == 'active' %}
+                                <span class="badge bg-warning">Active</span>
+                            {% elif duty.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif duty.status == 'cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#dutyModal{{ duty.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    
+                    <!-- Duty Details Modal -->
+                    <div class="modal fade" id="dutyModal{{ duty.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Duty Details - {{ duty.driver.full_name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Basic Information</h6>
+                                            <p><strong>Driver:</strong> {{ duty.driver.full_name }}</p>
+                                            <p><strong>Vehicle:</strong> {{ duty.vehicle.registration_number }}</p>
+                                            <p><strong>Branch:</strong> {{ duty.branch.name }}</p>
+                                            <p><strong>Status:</strong> 
+                                                {% if duty.status == 'active' %}
+                                                    <span class="badge bg-warning">Active</span>
+                                                {% elif duty.status == 'completed' %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Time & Distance</h6>
+                                            <p><strong>Start Time:</strong> {{ duty.start_time.strftime('%Y-%m-%d %H:%M') if duty.start_time else 'Not started' }}</p>
+                                            <p><strong>End Time:</strong> {{ duty.end_time.strftime('%Y-%m-%d %H:%M') if duty.end_time else 'In progress' }}</p>
+                                            <p><strong>Distance:</strong> {{ duty.distance_km or 0 }} km</p>
+                                            <p><strong>Trip Count:</strong> {{ duty.trip_count }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Financial Details</h6>
+                                            <p><strong>Revenue:</strong> ₹{{ "{:,.2f}".format(duty.revenue) }}</p>
+                                            <p><strong>Driver Earnings:</strong> ₹{{ "{:,.2f}".format(duty.driver_earnings) }}</p>
+                                            <p><strong>BMG Applied:</strong> ₹{{ "{:,.2f}".format(duty.bmg_applied) }}</p>
+                                            <p><strong>Incentive:</strong> ₹{{ "{:,.2f}".format(duty.incentive) }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Odometer Readings</h6>
+                                            <p><strong>Start Reading:</strong> {{ duty.start_odometer or 'Not recorded' }}</p>
+                                            <p><strong>End Reading:</strong> {{ duty.end_odometer or 'Not recorded' }}</p>
+                                            <p><strong>Fuel Amount:</strong> {{ duty.fuel_amount or 0 }} liters</p>
+                                            {% if duty.duty_scheme %}
+                                            <p><strong>Duty Scheme:</strong> {{ duty.duty_scheme.name }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if duty.start_photo or duty.end_photo %}
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h6>Photos</h6>
+                                            <div class="row">
+                                                {% if duty.start_photo %}
+                                                <div class="col-md-6">
+                                                    <p><strong>Start Photo:</strong></p>
+                                                    <img src="/uploads/{{ duty.start_photo }}" class="img-fluid rounded" style="max-height: 200px;">
+                                                </div>
+                                                {% endif %}
+                                                {% if duty.end_photo %}
+                                                <div class="col-md-6">
+                                                    <p><strong>End Photo:</strong></p>
+                                                    <img src="/uploads/{{ duty.end_photo }}" class="img-fluid rounded" style="max-height: 200px;">
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if duties.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if duties.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.duties', page=duties.prev_num, status=status_filter, branch=branch_filter, date=date_filter) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in duties.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != duties.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.duties', page=page_num, status=status_filter, branch=branch_filter, date=date_filter) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if duties.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.duties', page=duties.next_num, status=status_filter, branch=branch_filter, date=date_filter) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+            <h4>No duties found</h4>
+            <p class="text-muted">No duties match your current filters.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Duties</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="GET">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="branch" class="form-label">Branch</label>
+                        <select name="branch" id="branch" class="form-select">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.id }}" {% if branch_filter == branch.id %}selected{% endif %}>
+                                {{ branch.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" name="date" id="date" class="form-control" value="{{ date_filter }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

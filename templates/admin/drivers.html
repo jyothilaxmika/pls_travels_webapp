@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Drivers Management - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users me-2"></i>Drivers Management</h2>
+    <div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="fas fa-filter me-2"></i>Filter
+        </button>
+    </div>
+</div>
+
+<!-- Filters Summary -->
+{% if status_filter or branch_filter %}
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    Showing drivers 
+    {% if status_filter %}with status: <strong>{{ status_filter.title() }}</strong>{% endif %}
+    {% if branch_filter %}in branch: <strong>{{ branches | selectattr('id', 'equalto', branch_filter) | map(attribute='name') | first }}</strong>{% endif %}
+    <a href="{{ url_for('admin.drivers') }}" class="btn btn-sm btn-outline-primary ms-2">Clear Filters</a>
+</div>
+{% endif %}
+
+<!-- Drivers Table -->
+<div class="card">
+    <div class="card-body">
+        {% if drivers.items %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Driver</th>
+                        <th>Branch</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Total Earnings</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for driver in drivers.items %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if driver.profile_photo %}
+                                <img src="/uploads/{{ driver.profile_photo }}" class="rounded-circle me-2" width="32" height="32">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ driver.full_name }}</strong><br>
+                                    <small class="text-muted">{{ driver.user.username }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ driver.branch.name }}</td>
+                        <td>{{ driver.phone }}</td>
+                        <td>
+                            {% if driver.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif driver.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif driver.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ driver.status.title() }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ driver.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>₹{{ "{:,.2f}".format(driver.total_earnings) }}</td>
+                        <td>
+                            {% if driver.status == 'pending' %}
+                            <div class="btn-group" role="group">
+                                <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#driverModal{{ driver.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Driver Details Modal -->
+                    <div class="modal fade" id="driverModal{{ driver.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">{{ driver.full_name }} - Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Personal Information</h6>
+                                            <p><strong>Full Name:</strong> {{ driver.full_name }}</p>
+                                            <p><strong>Phone:</strong> {{ driver.phone }}</p>
+                                            <p><strong>Address:</strong> {{ driver.address or 'Not provided' }}</p>
+                                            <p><strong>Aadhar:</strong> {{ driver.aadhar_number }}</p>
+                                            <p><strong>License:</strong> {{ driver.license_number }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Bank Details</h6>
+                                            <p><strong>Bank:</strong> {{ driver.bank_name or 'Not provided' }}</p>
+                                            <p><strong>Account:</strong> {{ driver.account_number or 'Not provided' }}</p>
+                                            <p><strong>IFSC:</strong> {{ driver.ifsc_code or 'Not provided' }}</p>
+                                            <p><strong>Holder:</strong> {{ driver.account_holder_name or 'Not provided' }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if driver.status == 'active' %}
+                                    <div class="mt-3">
+                                        <h6>Performance</h6>
+                                        <p><strong>Total Earnings:</strong> ₹{{ "{:,.2f}".format(driver.total_earnings) }}</p>
+                                        {% if driver.current_vehicle %}
+                                        <p><strong>Current Vehicle:</strong> {{ driver.current_vehicle.registration_number }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if drivers.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if drivers.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.drivers', page=drivers.prev_num, status=status_filter, branch=branch_filter) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in drivers.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != drivers.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.drivers', page=page_num, status=status_filter, branch=branch_filter) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if drivers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.drivers', page=drivers.next_num, status=status_filter, branch=branch_filter) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h4>No drivers found</h4>
+            <p class="text-muted">No drivers match your current filters.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Drivers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="GET">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                            <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="branch" class="form-label">Branch</label>
+                        <select name="branch" id="branch" class="form-select">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.id }}" {% if branch_filter == branch.id %}selected{% endif %}>
+                                {{ branch.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

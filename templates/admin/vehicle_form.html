@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-car me-2"></i>{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Basic Vehicle Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.registration_number.label(class="form-label") }}
+                                    {{ form.registration_number(class="form-control") }}
+                                    {% if form.registration_number.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.registration_number.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.vehicle_type.label(class="form-label") }}
+                                    {{ form.vehicle_type(class="form-select") }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    {{ form.model.label(class="form-label") }}
+                                    {{ form.model(class="form-control") }}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    {{ form.year.label(class="form-label") }}
+                                    {{ form.year(class="form-control") }}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    {{ form.color.label(class="form-label") }}
+                                    {{ form.color(class="form-control") }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.branch_id.label(class="form-label") }}
+                                    {{ form.branch_id(class="form-select") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Compliance Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-certificate me-2"></i>Compliance & Insurance</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.insurance_number.label(class="form-label") }}
+                                    {{ form.insurance_number(class="form-control") }}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.insurance_expiry.label(class="form-label") }}
+                                    {{ form.insurance_expiry(class="form-control", type="date") }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.fitness_expiry.label(class="form-label") }}
+                                    {{ form.fitness_expiry(class="form-control", type="date") }}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.permit_expiry.label(class="form-label") }}
+                                    {{ form.permit_expiry(class="form-control", type="date") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assets & Devices -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-microchip me-2"></i>Assets & Devices</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.fastag_number.label(class="form-label") }}
+                                    {{ form.fastag_number(class="form-control") }}
+                                    <small class="text-muted">FASTag device number for toll payments</small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.device_imei.label(class="form-label") }}
+                                    {{ form.device_imei(class="form-control") }}
+                                    <small class="text-muted">GPS tracking device IMEI number</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-save me-2"></i>Save Vehicle
+                            </button>
+                            <a href="{{ url_for('admin.vehicles') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

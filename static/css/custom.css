@@ -1,0 +1,402 @@
+/* Custom CSS for PLS TRAVELS Fleet Management System */
+
+/* Override Bootstrap theme variables when needed */
+:root {
+    --pls-primary: #0d6efd;
+    --pls-success: #198754;
+    --pls-warning: #ffc107;
+    --pls-danger: #dc3545;
+    --pls-info: #0dcaf0;
+}
+
+/* Mobile-first responsive design enhancements */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1rem;
+        font-size: 1.1rem;
+    }
+    
+    /* Mobile-optimized tables */
+    .table-responsive table.table-mobile {
+        font-size: 0.85rem;
+    }
+    
+    .table-responsive table.table-mobile th,
+    .table-responsive table.table-mobile td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    /* Hide desktop-only columns on mobile */
+    .d-md-table-cell {
+        display: none !important;
+    }
+    
+    @media (min-width: 768px) {
+        .d-md-table-cell {
+            display: table-cell !important;
+        }
+    }
+}
+
+/* Enhanced card styling */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: var(--bs-gray-50);
+    border-bottom: 1px solid var(--bs-gray-200);
+    font-weight: 600;
+}
+
+/* Status badges enhancement */
+.badge {
+    font-weight: 500;
+    padding: 0.375em 0.75em;
+}
+
+/* Photo preview styling */
+.photo-preview img {
+    max-width: 100%;
+    border: 2px solid var(--bs-success);
+    transition: transform 0.2s ease;
+}
+
+.photo-preview img:hover {
+    transform: scale(1.05);
+}
+
+/* Progress bars with smooth animations */
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* Chart containers */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 1rem 0;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 200px;
+    }
+}
+
+/* Enhanced form controls */
+.form-control:focus {
+    border-color: var(--pls-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-select:focus {
+    border-color: var(--pls-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* File input styling */
+input[type="file"] {
+    padding: 0.375rem 0.75rem;
+}
+
+/* Custom button enhancements */
+.btn {
+    transition: all 0.15s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Loading states */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Alert positioning for mobile */
+#duty-alerts {
+    max-width: 90%;
+    right: 5% !important;
+}
+
+@media (max-width: 768px) {
+    #duty-alerts {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none;
+    }
+}
+
+/* Dashboard metric cards */
+.metric-card {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary) 100%);
+    color: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.metric-card .card-body {
+    position: relative;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+}
+
+/* Enhanced table styling */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: var(--bs-gray-700);
+    background-color: var(--bs-gray-50);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+/* Navigation enhancements */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+/* Footer spacing */
+.main-content {
+    min-height: calc(100vh - 200px);
+}
+
+/* Print styles */
+@media print {
+    .btn, .navbar, .card-header .btn, .alert {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .page-break {
+        page-break-before: always;
+    }
+}
+
+/* Accessibility improvements */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card {
+        border: 2px solid var(--bs-gray-600);
+    }
+    
+    .badge {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .progress-bar,
+    .photo-preview img {
+        transition: none;
+    }
+    
+    .loading-spinner {
+        animation: none;
+    }
+}
+
+/* Dark theme enhancements (already using dark theme) */
+[data-bs-theme="dark"] {
+    --bs-body-bg: #1a1d20;
+    --bs-body-color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #2d3135;
+    border: 1px solid #404448;
+}
+
+[data-bs-theme="dark"] .table th {
+    background-color: #404448;
+    color: #dee2e6;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bs-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bs-gray-400);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-gray-500);
+}
+
+/* Utility classes for spacing */
+.mb-half {
+    margin-bottom: 0.5rem !important;
+}
+
+.mt-half {
+    margin-top: 0.5rem !important;
+}
+
+.py-half {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+/* Enhanced focus indicators for form controls */
+.form-check-input:checked {
+    background-color: var(--pls-primary);
+    border-color: var(--pls-primary);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Responsive typography */
+@media (max-width: 576px) {
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    h4 { font-size: 1.1rem; }
+    h5 { font-size: 1rem; }
+    h6 { font-size: 0.9rem; }
+}
+
+/* Animation for page transitions */
+.page-transition {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Enhanced modal styling */
+.modal-content {
+    border: none;
+    border-radius: 10px;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--bs-gray-200);
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bs-gray-200);
+    padding: 1.5rem;
+}
+
+/* Tooltip customization */
+.tooltip {
+    font-size: 0.875rem;
+}
+
+.tooltip-inner {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+}
+
+/* Custom list group styling */
+.list-group-item {
+    border-left: 4px solid transparent;
+    transition: border-left-color 0.15s ease-in-out;
+}
+
+.list-group-item:hover {
+    border-left-color: var(--pls-primary);
+}
+
+/* Performance optimizations */
+.gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Loading placeholder animations */
+.placeholder-glow .placeholder {
+    animation: placeholder-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes placeholder-glow {
+    50% { opacity: 0.2; }
+}
+
+/* Enhanced error states */
+.is-invalid {
+    border-color: var(--pls-danger);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6.4.4.4-.4M6 8.5V6.5'/%3e%3c/svg%3e");
+}
+
+.is-valid {
+    border-color: var(--pls-success);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.4.27.4-.27L8 2.5l-.5-.25-3.5 3.5L2 4l-.5.25L2.3 6.73z'/%3e%3c/svg%3e");
+}

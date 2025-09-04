@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-bar me-2"></i>Reports & Analytics</h2>
+    <div>
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print
+        </button>
+        <button class="btn btn-outline-success" onclick="exportToCSV()">
+            <i class="fas fa-file-csv me-2"></i>Export CSV
+        </button>
+    </div>
+</div>
+
+<!-- Revenue by Branch -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Revenue by Branch (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                {% if branch_revenue %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Total Revenue</th>
+                                <th>Percentage</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set total_revenue = branch_revenue | sum(attribute='total_revenue') %}
+                            {% for branch in branch_revenue %}
+                            {% set percentage = (branch.total_revenue / total_revenue * 100) if total_revenue > 0 else 0 %}
+                            <tr>
+                                <td><strong>{{ branch.name }}</strong></td>
+                                <td>₹{{ "{:,.2f}".format(branch.total_revenue) }}</td>
+                                <td>{{ "{:.1f}".format(percentage) }}%</td>
+                                <td>
+                                    <div class="progress" style="width: 100px;">
+                                        <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="table-primary">
+                                <td><strong>Total</strong></td>
+                                <td><strong>₹{{ "{:,.2f}".format(total_revenue) }}</strong></td>
+                                <td><strong>100%</strong></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <h5>No revenue data available</h5>
+                    <p class="text-muted">No revenue recorded in the last 30 days.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Drivers Performance -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Drivers by Earnings (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                {% if top_drivers %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Driver</th>
+                                <th>Branch</th>
+                                <th>Total Earnings</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set max_earning = top_drivers[0].total_earnings if top_drivers else 0 %}
+                            {% for driver in top_drivers %}
+                            {% set percentage = (driver.total_earnings / max_earning * 100) if max_earning > 0 else 0 %}
+                            <tr>
+                                <td>
+                                    {% if loop.index == 1 %}
+                                        <i class="fas fa-trophy text-warning"></i> {{ loop.index }}
+                                    {% elif loop.index == 2 %}
+                                        <i class="fas fa-medal text-secondary"></i> {{ loop.index }}
+                                    {% elif loop.index == 3 %}
+                                        <i class="fas fa-award text-warning"></i> {{ loop.index }}
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ driver.full_name }}</strong></td>
+                                <td>{{ driver.branch_name }}</td>
+                                <td>₹{{ "{:,.2f}".format(driver.total_earnings) }}</td>
+                                <td>
+                                    <div class="progress" style="width: 120px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                    <h5>No driver performance data</h5>
+                    <p class="text-muted">No earnings recorded in the last 30 days.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-doughnut me-2"></i>Top Performers</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="topDriversChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vehicle Utilization -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-car me-2"></i>Vehicle Utilization Report</h5>
+            </div>
+            <div class="card-body">
+                {% if vehicle_stats %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Registration Number</th>
+                                <th>Branch</th>
+                                <th>Total Duties</th>
+                                <th>Total Distance</th>
+                                <th>Utilization</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set max_duties = vehicle_stats | max(attribute='duty_count') %}
+                            {% for vehicle in vehicle_stats %}
+                            {% set utilization = (vehicle.duty_count / max_duties.duty_count * 100) if max_duties.duty_count > 0 else 0 %}
+                            <tr>
+                                <td><strong>{{ vehicle.registration_number }}</strong></td>
+                                <td>{{ vehicle.branch_name }}</td>
+                                <td>{{ vehicle.duty_count }}</td>
+                                <td>{{ "{:,.1f}".format(vehicle.total_distance or 0) }} km</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 100px;">
+                                            <div class="progress-bar 
+                                                {% if utilization >= 80 %}bg-success
+                                                {% elif utilization >= 50 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                role="progressbar" style="width: {{ utilization }}%" 
+                                                aria-valuenow="{{ utilization }}" aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <small>{{ "{:.1f}".format(utilization) }}%</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if utilization >= 80 %}
+                                        <span class="badge bg-success">High</span>
+                                    {% elif utilization >= 50 %}
+                                        <span class="badge bg-warning">Medium</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Low</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                    <h5>No vehicle utilization data</h5>
+                    <p class="text-muted">No duties recorded for vehicles.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize top drivers chart
+{% if top_drivers %}
+const topDriversData = {{ top_drivers | tojson }};
+const ctx = document.getElementById('topDriversChart').getContext('2d');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: topDriversData.slice(0, 5).map(d => d.full_name),
+        datasets: [{
+            data: topDriversData.slice(0, 5).map(d => d.total_earnings),
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12,
+                    padding: 10
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function exportToCSV() {
+    // Create CSV content
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Add revenue by branch data
+    csvContent += "Branch Revenue Report\n";
+    csvContent += "Branch,Total Revenue\n";
+    {% for branch in branch_revenue %}
+    csvContent += "{{ branch.name }},{{ branch.total_revenue }}\n";
+    {% endfor %}
+    
+    csvContent += "\n\nTop Drivers Report\n";
+    csvContent += "Rank,Driver Name,Branch,Total Earnings\n";
+    {% for driver in top_drivers %}
+    csvContent += "{{ loop.index }},{{ driver.full_name }},{{ driver.branch_name }},{{ driver.total_earnings }}\n";
+    {% endfor %}
+    
+    csvContent += "\n\nVehicle Utilization Report\n";
+    csvContent += "Registration,Branch,Duty Count,Total Distance\n";
+    {% for vehicle in vehicle_stats %}
+    csvContent += "{{ vehicle.registration_number }},{{ vehicle.branch_name }},{{ vehicle.duty_count }},{{ vehicle.total_distance or 0 }}\n";
+    {% endfor %}
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "pls_travels_report_{{ moment().format('YYYY-MM-DD') }}.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

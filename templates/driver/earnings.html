@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}Earnings - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3><i class="fas fa-rupee-sign me-2"></i>My Earnings</h3>
+        <div class="text-muted">
+            <small>{{ start_date }} to {{ end_date }}</small>
+        </div>
+    </div>
+    
+    {% if not driver %}
+    <div class="alert alert-warning text-center py-4">
+        <i class="fas fa-user-times fa-3x mb-3"></i>
+        <h5>Profile Not Found</h5>
+        <p class="mb-0">Please complete your driver profile first.</p>
+        <a href="{{ url_for('driver.profile') }}" class="btn btn-warning mt-2">
+            <i class="fas fa-user-edit me-2"></i>Complete Profile
+        </a>
+    </div>
+    {% else %}
+    
+    <!-- Date Range Filter -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>Filter Period</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-5">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-5">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Earnings Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-rupee-sign fa-2x mb-2"></i>
+                    <h5 class="mb-0">₹{{ "{:,.0f}".format(total_earnings) }}</h5>
+                    <small>Total Earnings</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <h5 class="mb-0">₹{{ "{:,.0f}".format(total_revenue) }}</h5>
+                    <small>Total Revenue</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                    <h5 class="mb-0">₹{{ "{:,.0f}".format(total_bmg) }}</h5>
+                    <small>BMG Applied</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-2x mb-2"></i>
+                    <h5 class="mb-0">₹{{ "{:,.0f}".format(total_incentive) }}</h5>
+                    <small>Incentives</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Earnings Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-area me-2"></i>Earnings Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="earningsTrendChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Penalties Section -->
+    {% if penalties or total_penalties > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Penalties & Deductions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-danger">
+                                <strong>Total Penalties:</strong> ₹{{ "{:,.2f}".format(total_penalties) }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if penalties %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Reason</th>
+                                    <th>Applied By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for penalty in penalties %}
+                                <tr>
+                                    <td>{{ penalty.applied_at.strftime('%m/%d') }}</td>
+                                    <td class="text-danger">-₹{{ "{:,.2f}".format(penalty.amount) }}</td>
+                                    <td>{{ penalty.reason }}</td>
+                                    <td>{{ penalty.applied_by_user.username }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Duties List -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Duty History</h6>
+            <span class="badge bg-primary">{{ duties|length }} duties</span>
+        </div>
+        <div class="card-body">
+            {% if duties %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="d-none d-md-table-header-group">
+                        <tr>
+                            <th>Date</th>
+                            <th>Vehicle</th>
+                            <th>Duration</th>
+                            <th>Revenue</th>
+                            <th>Trips</th>
+                            <th>Earnings</th>
+                            <th>BMG</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for duty in duties %}
+                        <tr>
+                            <!-- Mobile layout -->
+                            <td class="d-md-none">
+                                <div class="card border-0 bg-light mb-2">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <strong>{{ duty.start_time.strftime('%m/%d %H:%M') if duty.start_time else 'N/A' }}</strong><br>
+                                                <span class="badge bg-info">{{ duty.vehicle.registration_number }}</span>
+                                            </div>
+                                            <div class="text-end">
+                                                <h5 class="text-success mb-0">₹{{ "{:,.0f}".format(duty.driver_earnings) }}</h5>
+                                                <small class="text-muted">Earnings</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row text-center">
+                                            <div class="col-3">
+                                                <small class="text-muted">Duration</small><br>
+                                                <strong>
+                                                    {% if duty.start_time and duty.end_time %}
+                                                        {% set duration = duty.end_time - duty.start_time %}
+                                                        {{ duration.seconds // 3600 }}h {{ (duration.seconds % 3600) // 60 }}m
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </strong>
+                                            </div>
+                                            <div class="col-3">
+                                                <small class="text-muted">Revenue</small><br>
+                                                <strong>₹{{ "{:,.0f}".format(duty.revenue) }}</strong>
+                                            </div>
+                                            <div class="col-3">
+                                                <small class="text-muted">Trips</small><br>
+                                                <strong>{{ duty.trip_count }}</strong>
+                                            </div>
+                                            <div class="col-3">
+                                                <small class="text-muted">BMG</small><br>
+                                                <strong>₹{{ "{:,.0f}".format(duty.bmg_applied) }}</strong>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if duty.bmg_applied > 0 %}
+                                        <div class="mt-2">
+                                            <small class="badge bg-warning">BMG Applied</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Desktop layout -->
+                            <td class="d-none d-md-table-cell">
+                                {{ duty.start_time.strftime('%m/%d %H:%M') if duty.start_time else 'N/A' }}
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                <span class="badge bg-info">{{ duty.vehicle.registration_number }}</span>
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                {% if duty.start_time and duty.end_time %}
+                                    {% set duration = duty.end_time - duty.start_time %}
+                                    {{ duration.seconds // 3600 }}h {{ (duration.seconds % 3600) // 60 }}m
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-md-table-cell">₹{{ "{:,.2f}".format(duty.revenue) }}</td>
+                            <td class="d-none d-md-table-cell">{{ duty.trip_count }}</td>
+                            <td class="d-none d-md-table-cell">
+                                <strong class="text-success">₹{{ "{:,.2f}".format(duty.driver_earnings) }}</strong>
+                                {% if duty.incentive > 0 %}
+                                <br><small class="text-muted">+₹{{ "{:,.2f}".format(duty.incentive) }} incentive</small>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                {% if duty.bmg_applied > 0 %}
+                                    <span class="badge bg-warning">₹{{ "{:,.2f}".format(duty.bmg_applied) }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary Row -->
+            <div class="card bg-primary text-white mt-3">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-3">
+                            <h5 class="mb-0">{{ duties|length }}</h5>
+                            <small>Total Duties</small>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <h5 class="mb-0">₹{{ "{:,.0f}".format(total_revenue) }}</h5>
+                            <small>Total Revenue</small>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <h5 class="mb-0">₹{{ "{:,.0f}".format(total_earnings) }}</h5>
+                            <small>Total Earnings</small>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <h5 class="mb-0">₹{{ "{:,.0f}".format(total_earnings / duties|length if duties|length > 0 else 0) }}</h5>
+                            <small>Avg. per Duty</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                <h5>No earnings data</h5>
+                <p class="text-muted mb-3">No duties found for the selected period.</p>
+                <a href="{{ url_for('driver.duty') }}" class="btn btn-success">
+                    <i class="fas fa-play me-2"></i>Start Your First Duty
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Export Options -->
+    {% if duties %}
+    <div class="text-center mt-4">
+        <button class="btn btn-outline-primary me-2" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print
+        </button>
+        <button class="btn btn-outline-success" onclick="exportEarningsCSV()">
+            <i class="fas fa-file-csv me-2"></i>Export CSV
+        </button>
+    </div>
+    {% endif %}
+    
+    {% endif %}
+</div>
+
+<script>
+// Earnings trend chart
+{% if duties %}
+const dutiesData = {{ duties | tojson }};
+const chartData = dutiesData.map(duty => ({
+    date: new Date(duty.start_time).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+    earnings: duty.driver_earnings
+}));
+
+const ctx = document.getElementById('earningsTrendChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: chartData.map(d => d.date),
+        datasets: [{
+            label: 'Daily Earnings',
+            data: chartData.map(d => d.earnings),
+            borderColor: 'rgb(40, 167, 69)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            tension: 0.1,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '₹' + value.toLocaleString('en-IN');
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function exportEarningsCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    csvContent += "Driver Earnings Report\n";
+    csvContent += "Driver: {{ driver.full_name }}\n";
+    csvContent += "Period: {{ start_date }} to {{ end_date }}\n";
+    csvContent += "Total Earnings: ₹{{ '{:,.2f}'.format(total_earnings) }}\n\n";
+    
+    csvContent += "Date,Vehicle,Start Time,End Time,Duration,Revenue,Trips,Earnings,BMG Applied,Incentive\n";
+    
+    {% for duty in duties %}
+    csvContent += "{{ duty.start_time.strftime('%Y-%m-%d') if duty.start_time else 'N/A' }},";
+    csvContent += "{{ duty.vehicle.registration_number }},";
+    csvContent += "{{ duty.start_time.strftime('%H:%M') if duty.start_time else 'N/A' }},";
+    csvContent += "{{ duty.end_time.strftime('%H:%M') if duty.end_time else 'N/A' }},";
+    csvContent += "{% if duty.start_time and duty.end_time %}{% set duration = duty.end_time - duty.start_time %}{{ duration.seconds // 3600 }}h {{ (duration.seconds % 3600) // 60 }}m{% else %}N/A{% endif %},";
+    csvContent += "{{ duty.revenue }},";
+    csvContent += "{{ duty.trip_count }},";
+    csvContent += "{{ duty.driver_earnings }},";
+    csvContent += "{{ duty.bmg_applied }},";
+    csvContent += "{{ duty.incentive }}\n";
+    {% endfor %}
+    
+    {% if penalties %}
+    csvContent += "\n\nPenalties\n";
+    csvContent += "Date,Amount,Reason,Applied By\n";
+    {% for penalty in penalties %}
+    csvContent += "{{ penalty.applied_at.strftime('%Y-%m-%d') }},{{ penalty.amount }},{{ penalty.reason }},{{ penalty.applied_by_user.username }}\n";
+    {% endfor %}
+    {% endif %}
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "earnings_{{ driver.user.username }}_{{ start_date }}_to_{{ end_date }}.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Auto-refresh earnings data every 5 minutes if on current date
+{% if end_date == moment().format('YYYY-MM-DD') %}
+setInterval(function() {
+    // Only refresh if we're still on the same page
+    if (document.title.includes('Earnings')) {
+        location.reload();
+    }
+}, 300000); // 5 minutes
+{% endif %}
+</script>
+{% endblock %}

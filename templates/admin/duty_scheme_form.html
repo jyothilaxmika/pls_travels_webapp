@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-calculator me-2"></i>{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.branch_id.label(class="form-label") }}
+                            {{ form.branch_id(class="form-select") }}
+                            <small class="text-muted">Select 'Global' to apply to all branches</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.scheme_type.label(class="form-label") }}
+                            {{ form.scheme_type(class="form-select", id="scheme-type") }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.bmg_amount.label(class="form-label") }}
+                            {{ form.bmg_amount(class="form-control") }}
+                            <small class="text-muted">Business Minimum Guarantee (optional)</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Fixed Scheme Fields -->
+                    <div id="fixed-fields" class="scheme-fields" style="display: none;">
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6><i class="fas fa-money-bill me-2"></i>Fixed Amount Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.fixed_amount.label(class="form-label") }}
+                                        {{ form.fixed_amount(class="form-control") }}
+                                        <small class="text-muted">Amount driver receives per day</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Per Trip Scheme Fields -->
+                    <div id="per-trip-fields" class="scheme-fields" style="display: none;">
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6><i class="fas fa-route me-2"></i>Per Trip Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.per_trip_amount.label(class="form-label") }}
+                                        {{ form.per_trip_amount(class="form-control") }}
+                                        <small class="text-muted">Amount driver receives per trip</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Slab Scheme Fields -->
+                    <div id="slab-fields" class="scheme-fields" style="display: none;">
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6><i class="fas fa-layer-group me-2"></i>Slab-Based Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        {{ form.slab1_max.label(class="form-label") }}
+                                        {{ form.slab1_max(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.slab1_percent.label(class="form-label") }}
+                                        {{ form.slab1_percent(class="form-control") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        {{ form.slab2_max.label(class="form-label") }}
+                                        {{ form.slab2_max(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.slab2_percent.label(class="form-label") }}
+                                        {{ form.slab2_percent(class="form-control") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Slab 3 Max Revenue</label>
+                                        <input type="text" class="form-control" value="Above Slab 2" readonly>
+                                    </div>
+                                    <div class="col-md-4">
+                                        {{ form.slab3_percent.label(class="form-label") }}
+                                        {{ form.slab3_percent(class="form-control") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <small>
+                                        <strong>Example:</strong> If Slab 1 Max is ₹1000 at 30%, Slab 2 Max is ₹3000 at 40%, and Slab 3 is 50%:<br>
+                                        - Revenue ₹0-₹1000: 30% earning<br>
+                                        - Revenue ₹1001-₹3000: 40% earning<br>
+                                        - Revenue above ₹3000: 50% earning
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Mixed Scheme Fields -->
+                    <div id="mixed-fields" class="scheme-fields" style="display: none;">
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6><i class="fas fa-mix me-2"></i>Mixed (Base + Incentive) Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.base_amount.label(class="form-label") }}
+                                        {{ form.base_amount(class="form-control") }}
+                                        <small class="text-muted">Fixed base amount per day</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.incentive_percent.label(class="form-label") }}
+                                        {{ form.incentive_percent(class="form-control") }}
+                                        <small class="text-muted">Percentage of revenue as incentive</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info mt-3">
+                                    <small>
+                                        <strong>Example:</strong> Base ₹500 + 20% incentive<br>
+                                        For ₹2000 revenue: ₹500 + (₹2000 × 20%) = ₹500 + ₹400 = ₹900
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-save me-2"></i>Save Duty Scheme
+                            </button>
+                            <a href="{{ url_for('admin.duty_schemes') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const schemeTypeSelect = document.getElementById('scheme-type');
+    const schemeFields = document.querySelectorAll('.scheme-fields');
+    
+    function showSchemeFields() {
+        // Hide all fields first
+        schemeFields.forEach(field => field.style.display = 'none');
+        
+        // Show relevant fields
+        const selectedType = schemeTypeSelect.value;
+        const targetField = document.getElementById(selectedType + '-fields');
+        if (targetField) {
+            targetField.style.display = 'block';
+        }
+    }
+    
+    schemeTypeSelect.addEventListener('change', showSchemeFields);
+    
+    // Show initial fields
+    showSchemeFields();
+});
+</script>
+{% endblock %}

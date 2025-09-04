@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Duty Management - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3><i class="fas fa-play-circle me-2"></i>Duty Management</h3>
+        <div class="text-muted">
+            <small>{{ moment().format('MMM DD, YYYY') }}</small>
+        </div>
+    </div>
+    
+    {% if not driver or driver.status != 'active' %}
+    <!-- Not Active Driver -->
+    <div class="alert alert-warning">
+        <div class="text-center py-4">
+            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+            <h5>Access Restricted</h5>
+            <p class="mb-0">Your driver profile must be approved before you can manage duties.</p>
+            <a href="{{ url_for('driver.profile') }}" class="btn btn-warning mt-2">
+                <i class="fas fa-user-edit me-2"></i>View Profile
+            </a>
+        </div>
+    </div>
+    
+    {% elif active_duty %}
+    <!-- Active Duty - End Duty Form -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Active Duty</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-6">
+                    <strong>Vehicle:</strong><br>
+                    <span class="badge bg-info fs-6">{{ active_duty.vehicle.registration_number }}</span>
+                </div>
+                <div class="col-6">
+                    <strong>Started:</strong><br>
+                    <span class="text-success">{{ active_duty.start_time.strftime('%H:%M') if active_duty.start_time else 'N/A' }}</span>
+                </div>
+            </div>
+            
+            {% if active_duty.start_photo %}
+            <div class="mb-3">
+                <strong>Start Duty Photo:</strong><br>
+                <img src="/uploads/{{ active_duty.start_photo }}" class="img-fluid rounded mt-2" style="max-height: 200px;">
+            </div>
+            {% endif %}
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Duration:</strong> 
+                <span id="duty-duration">Calculating...</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- End Duty Form -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-stop-circle me-2"></i>End Duty</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="end_odometer" class="form-label">Ending Odometer Reading *</label>
+                        <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
+                               min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
+                        <small class="text-muted">
+                            Started at: {{ active_duty.start_odometer or 'Not recorded' }}
+                        </small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="revenue" class="form-label">Total Revenue Collected *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" name="revenue" id="revenue" 
+                                   min="0" step="0.01" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="trip_count" class="form-label">Number of Trips *</label>
+                        <input type="number" class="form-control" name="trip_count" id="trip_count" 
+                               min="0" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="fuel_amount" class="form-label">Fuel Filled (Liters)</label>
+                        <input type="number" class="form-control" name="fuel_amount" id="fuel_amount" 
+                               min="0" step="0.1">
+                        <small class="text-muted">Optional: Amount of fuel filled during duty</small>
+                    </div>
+                </div>
+                
+                <!-- End Duty Photo -->
+                <div class="mb-3">
+                    <label for="end_photo" class="form-label">End Duty Photo *</label>
+                    <input type="file" class="form-control" name="end_photo" id="end_photo" 
+                           accept="image/*" capture="camera" required>
+                    <small class="text-muted">Take a photo to confirm duty completion</small>
+                </div>
+                
+                <!-- Photo Preview -->
+                <div id="photo-preview" class="mb-3" style="display: none;">
+                    <img id="preview-image" class="img-fluid rounded" style="max-height: 200px;">
+                </div>
+                
+                <!-- Earnings Calculation -->
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <h6><i class="fas fa-calculator me-2"></i>Estimated Earnings</h6>
+                        <div id="earnings-calculation">
+                            <p class="mb-1"><strong>Revenue:</strong> <span id="calc-revenue">₹0.00</span></p>
+                            <p class="mb-1"><strong>Estimated Earnings:</strong> <span id="calc-earnings">₹0.00</span></p>
+                            <small class="text-muted">
+                                Actual earnings may vary based on duty scheme and BMG
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-danger btn-lg w-100" onclick="return confirm('Are you sure you want to end this duty?')">
+                    <i class="fas fa-stop-circle me-2"></i>End Duty
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Start Duty Form -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Start New Duty</h5>
+        </div>
+        <div class="card-body">
+            {% if not available_vehicles %}
+            <div class="alert alert-warning text-center py-4">
+                <i class="fas fa-car fa-3x mb-3"></i>
+                <h5>No Vehicles Available</h5>
+                <p class="mb-0">No vehicles are currently available in your branch. Please contact your manager.</p>
+            </div>
+            {% else %}
+            
+            <form method="POST" action="{{ url_for('driver.start_duty') }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="vehicle_id" class="form-label">Select Vehicle *</label>
+                    <select class="form-select" name="vehicle_id" id="vehicle_id" required>
+                        <option value="">Choose Vehicle</option>
+                        {% for vehicle in available_vehicles %}
+                        <option value="{{ vehicle.id }}">
+                            {{ vehicle.registration_number }} - {{ vehicle.vehicle_type.title() }}
+                            {% if vehicle.model %}({{ vehicle.model }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="start_odometer" class="form-label">Starting Odometer Reading *</label>
+                    <input type="number" class="form-control" name="start_odometer" id="start_odometer" 
+                           min="0" step="0.1" required>
+                    <small class="text-muted">Enter the current odometer reading of the vehicle</small>
+                </div>
+                
+                <!-- Start Duty Photo -->
+                <div class="mb-3">
+                    <label for="start_photo" class="form-label">Start Duty Photo *</label>
+                    <input type="file" class="form-control" name="start_photo" id="start_photo" 
+                           accept="image/*" capture="camera" required>
+                    <small class="text-muted">Take a photo with the vehicle to confirm duty start</small>
+                </div>
+                
+                <!-- Photo Preview -->
+                <div id="start-photo-preview" class="mb-3" style="display: none;">
+                    <img id="start-preview-image" class="img-fluid rounded" style="max-height: 200px;">
+                </div>
+                
+                <!-- Pre-duty Checklist -->
+                <div class="card bg-light mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Pre-Duty Checklist</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check_fuel">
+                            <label class="form-check-label" for="check_fuel">Vehicle fuel level checked</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check_documents">
+                            <label class="form-check-label" for="check_documents">Vehicle documents verified</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check_condition">
+                            <label class="form-check-label" for="check_condition">Vehicle condition inspected</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check_safety">
+                            <label class="form-check-label" for="check_safety">Safety equipment present</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-lg w-100" id="start-duty-btn">
+                    <i class="fas fa-play me-2"></i>Start Duty
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Instructions Card -->
+    <div class="card border-info mt-4">
+        <div class="card-header bg-info text-white">
+            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Duty Instructions</h6>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li><strong>Starting Duty:</strong> Select vehicle, record odometer, take photo</li>
+                <li><strong>During Duty:</strong> Collect revenue, count trips, maintain records</li>
+                <li><strong>Ending Duty:</strong> Record final odometer, revenue, trips, take end photo</li>
+                <li><strong>Important:</strong> Ensure photos are clear and show vehicle registration</li>
+                <li><strong>Support:</strong> Contact branch manager for any issues during duty</li>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Photo preview functionality
+function setupPhotoPreview(inputId, previewDivId, previewImageId) {
+    const input = document.getElementById(inputId);
+    const previewDiv = document.getElementById(previewDivId);
+    const previewImage = document.getElementById(previewImageId);
+    
+    if (input && previewDiv && previewImage) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewDiv.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Setup photo previews
+setupPhotoPreview('start_photo', 'start-photo-preview', 'start-preview-image');
+setupPhotoPreview('end_photo', 'photo-preview', 'preview-image');
+
+// Earnings calculation
+function calculateEarnings() {
+    const revenue = parseFloat(document.getElementById('revenue').value) || 0;
+    const trips = parseInt(document.getElementById('trip_count').value) || 0;
+    
+    // Simple estimation (actual calculation done server-side)
+    const estimatedEarnings = revenue * 0.3; // Assume 30% as basic estimate
+    
+    document.getElementById('calc-revenue').textContent = '₹' + revenue.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    document.getElementById('calc-earnings').textContent = '₹' + estimatedEarnings.toLocaleString('en-IN', {minimumFractionDigits: 2});
+}
+
+// Setup calculation listeners
+const revenueInput = document.getElementById('revenue');
+const tripInput = document.getElementById('trip_count');
+if (revenueInput && tripInput) {
+    revenueInput.addEventListener('input', calculateEarnings);
+    tripInput.addEventListener('input', calculateEarnings);
+}
+
+// Duty duration calculation
+{% if active_duty and active_duty.start_time %}
+function updateDuration() {
+    const startTime = new Date('{{ active_duty.start_time.isoformat() }}');
+    const now = new Date();
+    const diff = now - startTime;
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    document.getElementById('duty-duration').textContent = `${hours}h ${minutes}m`;
+}
+
+// Update duration every minute
+updateDuration();
+setInterval(updateDuration, 60000);
+{% endif %}
+
+// Checklist validation for start duty
+const startDutyBtn = document.getElementById('start-duty-btn');
+if (startDutyBtn) {
+    const checkboxes = ['check_fuel', 'check_documents', 'check_condition', 'check_safety'];
+    
+    function validateChecklist() {
+        const allChecked = checkboxes.every(id => document.getElementById(id).checked);
+        startDutyBtn.disabled = !allChecked;
+        
+        if (allChecked) {
+            startDutyBtn.classList.remove('btn-secondary');
+            startDutyBtn.classList.add('btn-success');
+        } else {
+            startDutyBtn.classList.remove('btn-success');
+            startDutyBtn.classList.add('btn-secondary');
+        }
+    }
+    
+    checkboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+            checkbox.addEventListener('change', validateChecklist);
+        }
+    });
+    
+    // Initial validation
+    validateChecklist();
+}
+
+// Distance calculation helper
+const startOdo = document.getElementById('start_odometer');
+const endOdo = document.getElementById('end_odometer');
+if (startOdo && endOdo) {
+    endOdo.addEventListener('input', function() {
+        const start = parseFloat(startOdo.value) || 0;
+        const end = parseFloat(endOdo.value) || 0;
+        
+        if (end < start) {
+            endOdo.setCustomValidity('End reading must be greater than start reading');
+        } else {
+            endOdo.setCustomValidity('');
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Profile - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3><i class="fas fa-user me-2"></i>My Profile</h3>
+        {% if driver and driver.status %}
+        <span class="badge bg-{{ 'success' if driver.status == 'active' else 'warning' if driver.status == 'pending' else 'secondary' }} fs-6">
+            {{ driver.status.title() }}
+        </span>
+        {% endif %}
+    </div>
+    
+    <!-- Profile Form -->
+    <form method="POST" enctype="multipart/form-data">
+        <!-- Personal Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-user-circle me-2"></i>Personal Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="full_name" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" name="full_name" id="full_name" 
+                               value="{{ driver.full_name if driver else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-control" name="phone" id="phone" 
+                               value="{{ driver.phone if driver else '' }}" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea class="form-control" name="address" id="address" rows="3">{{ driver.address if driver else '' }}</textarea>
+                </div>
+                
+                {% if not driver %}
+                <div class="mb-3">
+                    <label for="branch_id" class="form-label">Branch *</label>
+                    <select class="form-select" name="branch_id" id="branch_id" required>
+                        <option value="">Select Branch</option>
+                        {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% else %}
+                <div class="mb-3">
+                    <label class="form-label">Branch</label>
+                    <input type="text" class="form-control" value="{{ driver.branch.name }}" readonly>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Documents -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Documents</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="aadhar_number" class="form-label">Aadhar Number *</label>
+                        <input type="text" class="form-control" name="aadhar_number" id="aadhar_number" 
+                               value="{{ driver.aadhar_number if driver else '' }}" 
+                               maxlength="12" pattern="[0-9]{12}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="license_number" class="form-label">License Number *</label>
+                        <input type="text" class="form-control" name="license_number" id="license_number" 
+                               value="{{ driver.license_number if driver else '' }}" required>
+                    </div>
+                </div>
+                
+                <!-- Document Upload Section -->
+                {% if not driver or driver.status in ['pending', 'rejected'] %}
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="aadhar_photo" class="form-label">Aadhar Photo</label>
+                        <input type="file" class="form-control" name="aadhar_photo" id="aadhar_photo" accept="image/*">
+                        <small class="text-muted">Upload clear photo of Aadhar card</small>
+                        {% if driver and driver.aadhar_photo %}
+                        <div class="mt-2">
+                            <img src="/uploads/{{ driver.aadhar_photo }}" class="img-fluid rounded" style="max-height: 100px;">
+                            <small class="d-block text-success">Current photo uploaded</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="license_photo" class="form-label">License Photo</label>
+                        <input type="file" class="form-control" name="license_photo" id="license_photo" accept="image/*">
+                        <small class="text-muted">Upload clear photo of driving license</small>
+                        {% if driver and driver.license_photo %}
+                        <div class="mt-2">
+                            <img src="/uploads/{{ driver.license_photo }}" class="img-fluid rounded" style="max-height: 100px;">
+                            <small class="d-block text-success">Current photo uploaded</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="profile_photo" class="form-label">Profile Photo</label>
+                        <input type="file" class="form-control" name="profile_photo" id="profile_photo" accept="image/*">
+                        <small class="text-muted">Upload your clear profile photo</small>
+                        {% if driver and driver.profile_photo %}
+                        <div class="mt-2">
+                            <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded" style="max-height: 100px;">
+                            <small class="d-block text-success">Current photo uploaded</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <!-- Show existing documents for approved drivers -->
+                <div class="row">
+                    {% if driver.aadhar_photo %}
+                    <div class="col-md-4 text-center mb-3">
+                        <p><strong>Aadhar Photo</strong></p>
+                        <img src="/uploads/{{ driver.aadhar_photo }}" class="img-fluid rounded" style="max-height: 150px;">
+                    </div>
+                    {% endif %}
+                    {% if driver.license_photo %}
+                    <div class="col-md-4 text-center mb-3">
+                        <p><strong>License Photo</strong></p>
+                        <img src="/uploads/{{ driver.license_photo }}" class="img-fluid rounded" style="max-height: 150px;">
+                    </div>
+                    {% endif %}
+                    {% if driver.profile_photo %}
+                    <div class="col-md-4 text-center mb-3">
+                        <p><strong>Profile Photo</strong></p>
+                        <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded" style="max-height: 150px;">
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Bank Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-university me-2"></i>Bank Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="bank_name" class="form-label">Bank Name</label>
+                        <input type="text" class="form-control" name="bank_name" id="bank_name" 
+                               value="{{ driver.bank_name if driver else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="account_number" class="form-label">Account Number</label>
+                        <input type="text" class="form-control" name="account_number" id="account_number" 
+                               value="{{ driver.account_number if driver else '' }}">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="ifsc_code" class="form-label">IFSC Code</label>
+                        <input type="text" class="form-control" name="ifsc_code" id="ifsc_code" 
+                               value="{{ driver.ifsc_code if driver else '' }}" style="text-transform: uppercase;">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="account_holder_name" class="form-label">Account Holder Name</label>
+                        <input type="text" class="form-control" name="account_holder_name" id="account_holder_name" 
+                               value="{{ driver.account_holder_name if driver else '' }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Information -->
+        {% if driver %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Profile Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            {% if driver.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif driver.status == 'pending' %}
+                                <span class="badge bg-warning">Pending Approval</span>
+                            {% elif driver.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ driver.status.title() }}</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Profile Created:</strong> {{ driver.created_at.strftime('%Y-%m-%d') }}</p>
+                        {% if driver.approved_at %}
+                        <p><strong>Approved On:</strong> {{ driver.approved_at.strftime('%Y-%m-%d') }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if driver.status == 'active' %}
+                        <p><strong>Total Earnings:</strong> ₹{{ "{:,.2f}".format(driver.total_earnings) }}</p>
+                        {% if driver.current_vehicle %}
+                        <p><strong>Current Vehicle:</strong> {{ driver.current_vehicle.registration_number }}</p>
+                        {% endif %}
+                        {% endif %}
+                        
+                        {% if driver.approver %}
+                        <p><strong>Approved By:</strong> {{ driver.approver.username }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if driver.status == 'pending' %}
+                <div class="alert alert-info">
+                    <i class="fas fa-clock me-2"></i>
+                    Your profile is under review. You will be notified once approved.
+                </div>
+                {% elif driver.status == 'rejected' %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle me-2"></i>
+                    Your profile was rejected. Please update the required information and resubmit.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Submit Button -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-save me-2"></i>
+                    {{ 'Update Profile' if driver else 'Create Profile' }}
+                </button>
+                
+                {% if driver %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('driver.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+    
+    <!-- Help Section -->
+    <div class="card border-info">
+        <div class="card-header bg-info text-white">
+            <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Help & Guidelines</h6>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li>Ensure all personal information is accurate and matches your documents</li>
+                <li>Upload clear, readable photos of documents (JPEG/PNG format)</li>
+                <li>Bank details are required for salary processing</li>
+                <li>Profile approval may take 1-2 business days</li>
+                <li>Contact your branch manager for any queries</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-format IFSC code
+document.getElementById('ifsc_code').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+});
+
+// Aadhar number formatting
+document.getElementById('aadhar_number').addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 12);
+});
+
+// File upload preview
+function setupFilePreview(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Create or update preview
+                    let preview = document.getElementById(previewId);
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.id = previewId;
+                        preview.className = 'img-fluid rounded mt-2';
+                        preview.style.maxHeight = '100px';
+                        input.parentNode.appendChild(preview);
+                    }
+                    preview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+// Setup previews for file inputs
+setupFilePreview('aadhar_photo', 'aadhar_preview');
+setupFilePreview('license_photo', 'license_preview');
+setupFilePreview('profile_photo', 'profile_preview');
+</script>
+{% endblock %}

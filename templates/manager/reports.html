@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Branch Reports - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-bar me-2"></i>Branch Reports</h2>
+    <div>
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print
+        </button>
+        <button class="btn btn-outline-success" onclick="exportToCSV()">
+            <i class="fas fa-file-csv me-2"></i>Export CSV
+        </button>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>Report Period</h6>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="col-md-4">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Generate Report
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Revenue Trend -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Revenue Trend</h5>
+            </div>
+            <div class="card-body">
+                {% if revenue_trend %}
+                <canvas id="revenueTrendChart" height="100"></canvas>
+                <div class="table-responsive mt-4">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trend in revenue_trend %}
+                            <tr>
+                                <td>{{ trend.date.strftime('%Y-%m-%d') }}</td>
+                                <td>₹{{ "{:,.2f}".format(trend.revenue) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5>No revenue data available</h5>
+                    <p class="text-muted">No revenue recorded for the selected period.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Drivers Performance -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Performing Drivers</h5>
+            </div>
+            <div class="card-body">
+                {% if top_drivers %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Driver</th>
+                                <th>Branch</th>
+                                <th>Total Earnings</th>
+                                <th>Duty Count</th>
+                                <th>Avg. per Duty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for driver in top_drivers %}
+                            <tr>
+                                <td>
+                                    {% if loop.index == 1 %}
+                                        <i class="fas fa-trophy text-warning"></i> {{ loop.index }}
+                                    {% elif loop.index == 2 %}
+                                        <i class="fas fa-medal text-secondary"></i> {{ loop.index }}
+                                    {% elif loop.index == 3 %}
+                                        <i class="fas fa-award text-warning"></i> {{ loop.index }}
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ driver.full_name }}</strong></td>
+                                <td>{{ driver.branch_name }}</td>
+                                <td>₹{{ "{:,.2f}".format(driver.total_earnings) }}</td>
+                                <td>{{ driver.duty_count }}</td>
+                                <td>₹{{ "{:,.2f}".format(driver.total_earnings / driver.duty_count) if driver.duty_count > 0 else 0 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                    <h5>No driver performance data</h5>
+                    <p class="text-muted">No earnings recorded for the selected period.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Driver Distribution</h6>
+            </div>
+            <div class="card-body">
+                {% if top_drivers %}
+                <canvas id="driverDistributionChart" height="250"></canvas>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-pie fa-2x text-muted mb-2"></i>
+                    <p class="mb-0 text-muted">No data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Branch Performance Summary -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-building me-2"></i>Branch Performance Summary</h5>
+            </div>
+            <div class="card-body">
+                {% if branch_performance %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Target Revenue</th>
+                                <th>Actual Revenue</th>
+                                <th>Achievement %</th>
+                                <th>Total Duties</th>
+                                <th>Avg. Revenue per Duty</th>
+                                <th>Performance Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for branch in branch_performance %}
+                            {% set achievement = (branch.actual_revenue / branch.target_revenue * 100) if branch.target_revenue > 0 else 0 %}
+                            {% set avg_revenue = (branch.actual_revenue / branch.duty_count) if branch.duty_count > 0 else 0 %}
+                            <tr>
+                                <td><strong>{{ branch.name }}</strong></td>
+                                <td>₹{{ "{:,.2f}".format(branch.target_revenue) }}</td>
+                                <td>₹{{ "{:,.2f}".format(branch.actual_revenue) }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 80px;">
+                                            <div class="progress-bar 
+                                                {% if achievement >= 100 %}bg-success
+                                                {% elif achievement >= 75 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                role="progressbar" style="width: {{ [achievement, 100]|min }}%" 
+                                                aria-valuenow="{{ achievement }}" aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <span>{{ "{:.1f}".format(achievement) }}%</span>
+                                    </div>
+                                </td>
+                                <td>{{ branch.duty_count }}</td>
+                                <td>₹{{ "{:,.2f}".format(avg_revenue) }}</td>
+                                <td>
+                                    {% if achievement >= 100 %}
+                                        <span class="badge bg-success">Excellent</span>
+                                    {% elif achievement >= 80 %}
+                                        <span class="badge bg-success">Good</span>
+                                    {% elif achievement >= 60 %}
+                                        <span class="badge bg-warning">Average</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Below Par</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                    <h5>No branch performance data</h5>
+                    <p class="text-muted">No data available for the selected period.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Revenue Trend Chart
+{% if revenue_trend %}
+const revenueTrendData = {{ revenue_trend | tojson }};
+const trendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: revenueTrendData.map(item => item.date),
+        datasets: [{
+            label: 'Daily Revenue',
+            data: revenueTrendData.map(item => item.revenue),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            tension: 0.1,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '₹' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+// Driver Distribution Chart
+{% if top_drivers %}
+const driverData = {{ top_drivers[:5] | tojson }};
+const driverCtx = document.getElementById('driverDistributionChart').getContext('2d');
+new Chart(driverCtx, {
+    type: 'doughnut',
+    data: {
+        labels: driverData.map(d => d.full_name),
+        datasets: [{
+            data: driverData.map(d => d.total_earnings),
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 10,
+                    padding: 8
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+function exportToCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Revenue trend data
+    csvContent += "Revenue Trend Report\n";
+    csvContent += "Date,Revenue\n";
+    {% for trend in revenue_trend %}
+    csvContent += "{{ trend.date.strftime('%Y-%m-%d') }},{{ trend.revenue }}\n";
+    {% endfor %}
+    
+    csvContent += "\n\nTop Drivers Report\n";
+    csvContent += "Rank,Driver Name,Branch,Total Earnings,Duty Count\n";
+    {% for driver in top_drivers %}
+    csvContent += "{{ loop.index }},{{ driver.full_name }},{{ driver.branch_name }},{{ driver.total_earnings }},{{ driver.duty_count }}\n";
+    {% endfor %}
+    
+    csvContent += "\n\nBranch Performance Report\n";
+    csvContent += "Branch,Target Revenue,Actual Revenue,Achievement %,Duty Count\n";
+    {% for branch in branch_performance %}
+    {% set achievement = (branch.actual_revenue / branch.target_revenue * 100) if branch.target_revenue > 0 else 0 %}
+    csvContent += "{{ branch.name }},{{ branch.target_revenue }},{{ branch.actual_revenue }},{{ '{:.1f}'.format(achievement) }},{{ branch.duty_count }}\n";
+    {% endfor %}
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "manager_report_{{ start_date }}_to_{{ end_date }}.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

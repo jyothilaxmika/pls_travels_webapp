@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Dashboard - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Mobile-first header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h3>
+        <div class="text-muted">
+            <small>{{ moment().format('MMM DD, YYYY') }}</small>
+        </div>
+    </div>
+    
+    {% if not driver %}
+    <!-- Profile completion prompt -->
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div>
+                <h5 class="mb-1">Complete Your Profile</h5>
+                <p class="mb-0">Please complete your driver profile to start taking duties.</p>
+                <a href="{{ url_for('driver.profile') }}" class="btn btn-sm btn-warning mt-2">
+                    <i class="fas fa-user-edit me-1"></i>Complete Profile
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    
+    <!-- Driver Status Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    {% if driver.profile_photo %}
+                    <img src="/uploads/{{ driver.profile_photo }}" class="rounded-circle" width="60" height="60">
+                    {% else %}
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="fas fa-user fa-2x text-white"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col">
+                    <h5 class="mb-1">{{ driver.full_name }}</h5>
+                    <p class="text-muted mb-0">{{ driver.branch.name }}</p>
+                    <div class="mt-1">
+                        {% if driver.status == 'active' %}
+                            <span class="badge bg-success">Active Driver</span>
+                        {% elif driver.status == 'pending' %}
+                            <span class="badge bg-warning">Pending Approval</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ driver.status.title() }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-auto">
+                    {% if todays_duty %}
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-play-circle me-1"></i>On Duty
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary fs-6">
+                            <i class="fas fa-pause-circle me-1"></i>Off Duty
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Earnings Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-6">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-rupee-sign fa-2x mb-2"></i>
+                    <h4 class="mb-0">₹{{ "{:,.0f}".format(todays_earnings) }}</h4>
+                    <small>Today's Earnings</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-month fa-2x mb-2"></i>
+                    <h4 class="mb-0">₹{{ "{:,.0f}".format(monthly_earnings) }}</h4>
+                    <small>This Month</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Current Duty Status -->
+    {% if driver.status == 'active' %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Current Duty Status</h6>
+        </div>
+        <div class="card-body">
+            {% if todays_duty %}
+            <div class="alert alert-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-play-circle fa-2x me-3"></i>
+                        <strong>Duty Active</strong><br>
+                        <small>Vehicle: {{ todays_duty.vehicle.registration_number }}</small><br>
+                        <small>Started: {{ todays_duty.start_time.strftime('%H:%M') if todays_duty.start_time else 'N/A' }}</small>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('driver.duty') }}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-stop-circle me-1"></i>End Duty
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-3">
+                <i class="fas fa-play-circle fa-3x text-muted mb-3"></i>
+                <h6>Ready to start duty?</h6>
+                <p class="text-muted mb-3">Click below to begin your duty for today</p>
+                <a href="{{ url_for('driver.duty') }}" class="btn btn-success btn-lg">
+                    <i class="fas fa-play me-2"></i>Start Duty
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-6">
+            <a href="{{ url_for('driver.duty') }}" class="btn btn-outline-primary w-100 py-3">
+                <i class="fas fa-play-circle fa-2x d-block mb-2"></i>
+                <small>Duty</small>
+            </a>
+        </div>
+        <div class="col-6">
+            <a href="{{ url_for('driver.earnings') }}" class="btn btn-outline-success w-100 py-3">
+                <i class="fas fa-rupee-sign fa-2x d-block mb-2"></i>
+                <small>Earnings</small>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Earnings Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Last 7 Days Earnings</h6>
+        </div>
+        <div class="card-body">
+            <canvas id="earningsChart" height="120"></canvas>
+        </div>
+    </div>
+    
+    <!-- Recent Duties -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recent Duties</h6>
+        </div>
+        <div class="card-body">
+            {% if recent_duties %}
+            <div class="list-group list-group-flush">
+                {% for duty in recent_duties %}
+                <div class="list-group-item px-0">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ duty.vehicle.registration_number }}</strong>
+                                <span class="badge bg-success">₹{{ "{:,.0f}".format(duty.driver_earnings) }}</span>
+                            </div>
+                            <small class="text-muted">
+                                {{ duty.start_time.strftime('%m/%d %H:%M') if duty.start_time else 'N/A' }} - 
+                                {{ duty.end_time.strftime('%H:%M') if duty.end_time else 'Active' }}
+                            </small><br>
+                            <small class="text-muted">
+                                Revenue: ₹{{ "{:,.0f}".format(duty.revenue) }} | 
+                                Trips: {{ duty.trip_count }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                <h6>No recent duties</h6>
+                <p class="text-muted mb-0">Your duty history will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Penalties Alert -->
+    {% if pending_penalties %}
+    <div class="card border-warning">
+        <div class="card-header bg-warning">
+            <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Pending Penalties</h6>
+        </div>
+        <div class="card-body">
+            {% for penalty in pending_penalties %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>₹{{ "{:,.2f}".format(penalty.amount) }}</strong><br>
+                    <small class="text-muted">{{ penalty.reason }}</small>
+                </div>
+                <small class="text-muted">{{ penalty.applied_at.strftime('%m/%d') }}</small>
+            </div>
+            {% if not loop.last %}<hr>{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load earnings chart
+{% if driver %}
+fetch('/driver/api/earnings-chart')
+    .then(response => response.json())
+    .then(data => {
+        const ctx = document.getElementById('earningsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Daily Earnings',
+                    data: data.data,
+                    borderColor: 'rgb(40, 167, 69)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error loading earnings chart:', error);
+        document.getElementById('earningsChart').style.display = 'none';
+    });
+{% endif %}
+</script>
+{% endblock %}
