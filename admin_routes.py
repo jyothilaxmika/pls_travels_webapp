@@ -93,7 +93,7 @@ def approve_driver(driver_id):
     driver.approved_at = datetime.utcnow()
     
     # Activate user account
-    driver.user.is_active = True
+    driver.user.active = True
     
     db.session.commit()
     

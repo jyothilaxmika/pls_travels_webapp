@@ -35,7 +35,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         
-        if user and user.is_active and user.password_hash and form.password.data and check_password_hash(user.password_hash, form.password.data):
+        if user and user.active and user.password_hash and form.password.data and check_password_hash(user.password_hash, form.password.data):
             login_user(user, remember=form.remember_me.data)
             
             # Log successful login

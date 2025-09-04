@@ -148,6 +148,12 @@ def create_app():
                 return redirect(url_for('driver.dashboard'))
         
         return redirect(url_for('auth.login'))
+    
+    # Add direct /login route for convenience
+    @app.route('/login')
+    def login_redirect():
+        from flask import redirect, url_for
+        return redirect(url_for('auth.login'))
 
     return app
 
