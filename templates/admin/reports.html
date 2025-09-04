@@ -40,7 +40,7 @@
                             {% set percentage = (branch.total_revenue / total_revenue * 100) if total_revenue > 0 else 0 %}
                             <tr>
                                 <td><strong>{{ branch.name }}</strong></td>
-                                <td>₹{{ "{:,.2f}".format(branch.total_revenue) }}</td>
+                                <td>₹{{ "{:,.2f}".format(branch.total_revenue or 0) }}</td>
                                 <td>{{ "{:.1f}".format(percentage) }}%</td>
                                 <td>
                                     <div class="progress" style="width: 100px;">
@@ -108,7 +108,7 @@
                                 </td>
                                 <td><strong>{{ driver.full_name }}</strong></td>
                                 <td>{{ driver.branch_name }}</td>
-                                <td>₹{{ "{:,.2f}".format(driver.total_earnings) }}</td>
+                                <td>₹{{ "{:,.2f}".format(driver.total_earnings or 0) }}</td>
                                 <td>
                                     <div class="progress" style="width: 120px;">
                                         <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
@@ -129,7 +129,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
@@ -253,26 +253,26 @@ new Chart(ctx, {
 function exportToCSV() {
     // Create CSV content
     let csvContent = "data:text/csv;charset=utf-8,";
-    
+
     // Add revenue by branch data
     csvContent += "Branch Revenue Report\n";
     csvContent += "Branch,Total Revenue\n";
     {% for branch in branch_revenue %}
     csvContent += "{{ branch.name }},{{ branch.total_revenue }}\n";
     {% endfor %}
-    
+
     csvContent += "\n\nTop Drivers Report\n";
     csvContent += "Rank,Driver Name,Branch,Total Earnings\n";
     {% for driver in top_drivers %}
     csvContent += "{{ loop.index }},{{ driver.full_name }},{{ driver.branch_name }},{{ driver.total_earnings }}\n";
     {% endfor %}
-    
+
     csvContent += "\n\nVehicle Utilization Report\n";
     csvContent += "Registration,Branch,Duty Count,Total Distance\n";
     {% for vehicle in vehicle_stats %}
     csvContent += "{{ vehicle.registration_number }},{{ vehicle.branch_name }},{{ vehicle.duty_count }},{{ vehicle.total_distance or 0 }}\n";
     {% endfor %}
-    
+
     // Create download link
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");

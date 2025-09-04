@@ -133,7 +133,7 @@
                                 {% for penalty in penalties %}
                                 <tr>
                                     <td>{{ penalty.applied_at.strftime('%m/%d') }}</td>
-                                    <td class="text-danger">-₹{{ "{:,.2f}".format(penalty.amount) }}</td>
+                                    <td class="text-danger">-₹{{ "{:,.2f}".format(penalty.amount or 0) }}</td>
                                     <td>{{ penalty.reason }}</td>
                                     <td>{{ penalty.applied_by_user.username }}</td>
                                 </tr>

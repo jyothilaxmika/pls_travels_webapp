@@ -90,7 +90,7 @@
                             </button>
                         </td>
                     </tr>
-                    
+
                     <!-- Duty Details Modal -->
                     <div class="modal fade" id="dutyModal{{ duty.id }}" tabindex="-1">
                         <div class="modal-dialog modal-lg">
@@ -124,14 +124,14 @@
                                             <p><strong>Trip Count:</strong> {{ duty.trip_count }}</p>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="row">
                                         <div class="col-md-6">
                                             <h6>Financial Details</h6>
-                                            <p><strong>Revenue:</strong> ₹{{ "{:,.2f}".format(duty.revenue) }}</p>
-                                            <p><strong>Driver Earnings:</strong> ₹{{ "{:,.2f}".format(duty.driver_earnings) }}</p>
-                                            <p><strong>BMG Applied:</strong> ₹{{ "{:,.2f}".format(duty.bmg_applied) }}</p>
-                                            <p><strong>Incentive:</strong> ₹{{ "{:,.2f}".format(duty.incentive) }}</p>
+                                            <p><strong>Revenue:</strong> ₹{{ "{:,.2f}".format(duty.revenue or 0) }}</p>
+                                            <p><strong>Driver Earnings:</strong> ₹{{ "{:,.2f}".format(duty.driver_earnings or 0) }}</p>
+                                            <p><strong>BMG Applied:</strong> ₹{{ "{:,.2f}".format(duty.bmg_applied or 0) }}</p>
+                                            <p><strong>Incentive:</strong> ₹{{ "{:,.2f}".format(duty.incentive or 0) }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <h6>Odometer Readings</h6>
@@ -143,7 +143,7 @@
                                             {% endif %}
                                         </div>
                                     </div>
-                                    
+
                                     {% if duty.start_photo or duty.end_photo %}
                                     <div class="row">
                                         <div class="col-12">
@@ -173,7 +173,7 @@
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Pagination -->
         {% if duties.pages > 1 %}
         <nav class="mt-4">
@@ -183,7 +183,7 @@
                     <a class="page-link" href="{{ url_for('admin.duties', page=duties.prev_num, status=status_filter, branch=branch_filter, date=date_filter) }}">Previous</a>
                 </li>
                 {% endif %}
-                
+
                 {% for page_num in duties.iter_pages() %}
                     {% if page_num %}
                         {% if page_num != duties.page %}
@@ -201,7 +201,7 @@
                     </li>
                     {% endif %}
                 {% endfor %}
-                
+
                 {% if duties.has_next %}
                 <li class="page-item">
                     <a class="page-link" href="{{ url_for('admin.duties', page=duties.next_num, status=status_filter, branch=branch_filter, date=date_filter) }}">Next</a>
@@ -210,7 +210,7 @@
             </ul>
         </nav>
         {% endif %}
-        
+
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
@@ -240,7 +240,7 @@
                             <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="branch" class="form-label">Branch</label>
                         <select name="branch" id="branch" class="form-select">
@@ -252,7 +252,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="date" class="form-label">Date</label>
                         <input type="date" name="date" id="date" class="form-control" value="{{ date_filter }}">
