@@ -141,8 +141,6 @@ class Duty(db.Model):
     end_photo = db.Column(db.String(255))
     start_odometer = db.Column(db.Float)
     end_odometer = db.Column(db.Float)
-    start_cng_level = db.Column(db.Float)  # CNG level at start (0-100%)
-    end_cng_level = db.Column(db.Float)    # CNG level at end (0-100%)
     
     # Location Data for Start/End Photos
     start_latitude = db.Column(db.Float)
@@ -189,13 +187,6 @@ class Duty(db.Model):
     distance_km = db.Column(db.Float, default=0.0)
     fuel_amount = db.Column(db.Float, default=0.0)
     
-    # Corrections and Verification
-    correction_requested = db.Column(db.Boolean, default=False)
-    correction_reason = db.Column(db.String(255))
-    correction_photo = db.Column(db.String(255))
-    correction_timestamp = db.Column(db.DateTime)
-    correction_approved = db.Column(db.Boolean, default=False)
-    corrected_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
