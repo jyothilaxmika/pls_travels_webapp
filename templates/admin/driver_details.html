@@ -29,6 +29,46 @@
 <div class="row">
     <!-- Personal Information -->
     <div class="col-lg-8">
+        <!-- Driver Statistics Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center card-compact">
+                    <div class="card-body py-3">
+                        <i class="fas fa-clipboard-list fa-2x text-primary mb-2"></i>
+                        <h5 class="mb-1">{{ total_duties }}</h5>
+                        <small class="text-muted">Total Duties</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center card-compact">
+                    <div class="card-body py-3">
+                        <i class="fas fa-rupee-sign fa-2x text-success mb-2"></i>
+                        <h5 class="mb-1">₹{{ "{:,.0f}".format(total_earnings) }}</h5>
+                        <small class="text-muted">Total Earnings</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center card-compact">
+                    <div class="card-body py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <h5 class="mb-1">₹{{ "{:,.0f}".format(total_penalties) }}</h5>
+                        <small class="text-muted">Total Penalties</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center card-compact">
+                    <div class="card-body py-3">
+                        <i class="fas fa-money-bill-wave fa-2x text-info mb-2"></i>
+                        <h5 class="mb-1">₹{{ "{:,.0f}".format(net_earnings) }}</h5>
+                        <small class="text-muted">Net Earnings</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card mb-4">
             <div class="card-header d-flex align-items-center">
                 <i class="fas fa-user-circle me-2"></i>
@@ -207,31 +247,80 @@
         </div>
         {% endif %}
 
-        <!-- Penalties -->
-        {% if penalties %}
-        <div class="card mb-4">
+        <!-- Vehicle Assignments History -->
+        {% if assignments %}
+        <div class="card card-compact">
             <div class="card-header d-flex align-items-center">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <h5 class="mb-0">Penalties</h5>
+                <i class="fas fa-calendar-alt me-2"></i>
+                <h6 class="mb-0">Vehicle Assignment History</h6>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Amount</th>
-                                <th>Reason</th>
-                                <th>Applied By</th>
+                                <th><small>Vehicle</small></th>
+                                <th><small>Period</small></th>
+                                <th><small>Shift</small></th>
+                                <th><small>Status</small></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr>
+                                <td><small><strong>{{ assignment.assignment_vehicle.registration_number }}</strong></small></td>
+                                <td><small>
+                                    {{ assignment.start_date.strftime('%m-%d') }}
+                                    {% if assignment.end_date %}
+                                    to {{ assignment.end_date.strftime('%m-%d') }}
+                                    {% else %}
+                                    <span class="text-primary">(Ongoing)</span>
+                                    {% endif %}
+                                </small></td>
+                                <td><small>{{ assignment.shift_type.replace('_', ' ').title() }}</small></td>
+                                <td>
+                                    {% if assignment.status == 'active' %}
+                                        <span class="badge badge-sm bg-success">Active</span>
+                                    {% elif assignment.status == 'scheduled' %}
+                                        <span class="badge badge-sm bg-primary">Scheduled</span>
+                                    {% else %}
+                                        <span class="badge badge-sm bg-secondary">{{ assignment.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Penalties -->
+        {% if penalties %}
+        <div class="card card-compact">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <h6 class="mb-0">Penalties History</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th><small>Date</small></th>
+                                <th><small>Amount</small></th>
+                                <th><small>Reason</small></th>
+                                <th><small>Applied By</small></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for penalty in penalties %}
                             <tr>
-                                <td>{{ penalty.applied_at.strftime('%Y-%m-%d') }}</td>
-                                <td class="text-danger">₹{{ "{:,.2f}".format(penalty.amount) }}</td>
-                                <td>{{ penalty.reason }}</td>
-                                <td>{{ penalty.applied_by_user.username if penalty.applied_by_user else 'System' }}</td>
+                                <td><small>{{ penalty.applied_at.strftime('%m-%d') }}</small></td>
+                                <td><small class="text-danger">₹{{ "{:,.0f}".format(penalty.amount) }}</small></td>
+                                <td><small>{{ penalty.reason }}</small></td>
+                                <td><small>{{ penalty.applied_by_user.username if penalty.applied_by_user else 'System' }}</small></td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -126,8 +126,9 @@ def reject_driver(driver_id):
 def view_driver(driver_id):
     driver = Driver.query.get_or_404(driver_id)
     
-    # Get driver's recent duties
-    recent_duties = Duty.query.filter_by(driver_id=driver_id).order_by(desc(Duty.created_at)).limit(10).all()
+    # Get driver's recent duties (all duties)
+    all_duties = Duty.query.filter_by(driver_id=driver_id).order_by(desc(Duty.created_at)).all()
+    recent_duties = all_duties[:10]  # Show top 10 for recent section
     
     # Get driver's penalties
     penalties = Penalty.query.filter_by(driver_id=driver_id).order_by(desc(Penalty.applied_at)).all()
@@ -135,11 +136,47 @@ def view_driver(driver_id):
     # Get driver's assets
     assets = Asset.query.filter_by(driver_id=driver_id).all()
     
+    # Get vehicle assignments
+    assignments = VehicleAssignment.query.filter_by(driver_id=driver_id).order_by(desc(VehicleAssignment.start_date)).all()
+    
+    # Calculate comprehensive statistics
+    total_duties = len(all_duties)
+    total_earnings = sum(duty.driver_earnings or 0 for duty in all_duties)
+    total_penalties = sum(penalty.amount for penalty in penalties)
+    net_earnings = total_earnings - total_penalties
+    
+    # Active duty statistics
+    active_duties = [d for d in all_duties if d.status == 'active']
+    completed_duties = [d for d in all_duties if d.status == 'completed']
+    
+    # Monthly breakdown (last 6 months)
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    
+    six_months_ago = datetime.now() - timedelta(days=180)
+    recent_duties_for_stats = [d for d in all_duties if d.created_at >= six_months_ago]
+    
+    monthly_stats = defaultdict(lambda: {'duties': 0, 'earnings': 0, 'trips': 0})
+    for duty in recent_duties_for_stats:
+        month_key = duty.created_at.strftime('%Y-%m')
+        monthly_stats[month_key]['duties'] += 1
+        monthly_stats[month_key]['earnings'] += duty.driver_earnings or 0
+        monthly_stats[month_key]['trips'] += duty.trip_count or 0
+    
     return render_template('admin/driver_details.html', 
                          driver=driver, 
                          recent_duties=recent_duties,
+                         all_duties=all_duties,
                          penalties=penalties,
-                         assets=assets)
+                         assets=assets,
+                         assignments=assignments,
+                         total_duties=total_duties,
+                         total_earnings=total_earnings,
+                         total_penalties=total_penalties,
+                         net_earnings=net_earnings,
+                         active_duties=len(active_duties),
+                         completed_duties=len(completed_duties),
+                         monthly_stats=dict(monthly_stats))
 
 @admin_bp.route('/assignments')
 @login_required
