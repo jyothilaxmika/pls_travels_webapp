@@ -6,12 +6,11 @@
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div class="d-flex align-items-center">
-        <a href="{{ url_for('admin.drivers') }}" class="btn btn-outline-secondary me-3">
-            <i class="fas fa-arrow-left"></i> Back to Drivers
+        <a href="{{ url_for('admin.drivers') }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left"></i>
         </a>
         <div>
-            <h2><i class="fas fa-user me-2"></i>{{ driver.full_name }}</h2>
-            <p class="text-muted mb-0">Driver Details & Performance</p>
+            <h4><i class="fas fa-user me-1"></i>{{ driver.full_name }}</h4>
         </div>
     </div>
     <div>
