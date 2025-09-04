@@ -112,7 +112,7 @@
                                                 {% elif duty.status == 'completed' %}
                                                     <span class="badge bg-success">Completed</span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                                                    <span class="badge bg-secondary">{{ duty.status.value.title() }}</span>
                                                 {% endif %}
                                             </p>
                                         </div>
