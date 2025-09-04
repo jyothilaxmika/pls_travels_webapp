@@ -204,10 +204,18 @@ function showNotification(message, type = 'info', duration = 5000) {
     
     var alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    
+    // Create message text safely using textContent to prevent XSS
+    var messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    alertDiv.appendChild(messageSpan);
+    
+    // Create close button safely
+    var closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.className = 'btn-close';
+    closeButton.setAttribute('data-bs-dismiss', 'alert');
+    alertDiv.appendChild(closeButton);
     
     alertContainer.appendChild(alertDiv);
     
