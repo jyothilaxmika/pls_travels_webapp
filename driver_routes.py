@@ -46,7 +46,7 @@ def generate_employee_id():
 
 def get_last_duty_values(driver_id, vehicle_id=None):
     """Get odometer values from the last completed duty"""
-    query = Duty.query.filter_by(driver_id=driver_id, status='completed')
+    query = Duty.query.filter_by(driver_id=driver_id, status=DutyStatus.COMPLETED)
     if vehicle_id:
         query = query.filter_by(vehicle_id=vehicle_id)
 
@@ -397,7 +397,7 @@ def end_duty():
     active_duty.end_odometer = end_odometer
     active_duty.trip_count = trip_count
     active_duty.fuel_amount = fuel_amount
-    active_duty.status = 'completed'
+    active_duty.status = DutyStatus.COMPLETED
 
     if end_odometer and active_duty.start_odometer:
         active_duty.distance_km = end_odometer - active_duty.start_odometer
@@ -491,7 +491,7 @@ def earnings():
         Duty.driver_id == driver.id,
         func.date(Duty.start_time) >= start_date_obj,
         func.date(Duty.start_time) <= end_date_obj,
-        Duty.status == 'completed'
+        Duty.status == DutyStatus.COMPLETED
     ).order_by(desc(Duty.start_time)).all()
 
     # Calculate totals
@@ -539,7 +539,7 @@ def earnings_chart():
         daily_earning = db.session.query(func.sum(func.coalesce(Duty.driver_earnings, 0))).filter(
             Duty.driver_id == driver.id,
             func.date(Duty.start_time) == date,
-            Duty.status == 'completed'
+            Duty.status == DutyStatus.COMPLETED
         ).scalar() or 0
 
         days.append(date.strftime('%m/%d'))

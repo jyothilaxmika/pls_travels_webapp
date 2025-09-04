@@ -151,7 +151,7 @@ def view_driver(driver_id):
     
     # Active duty statistics
     active_duties = [d for d in all_duties if d.status == DutyStatus.ACTIVE]
-    completed_duties = [d for d in all_duties if d.status == 'completed']
+    completed_duties = [d for d in all_duties if d.status == DutyStatus.COMPLETED]
     
     # Monthly breakdown (last 6 months)
     from datetime import datetime, timedelta
@@ -272,7 +272,9 @@ def add_assignment():
 def end_assignment(assignment_id):
     assignment = VehicleAssignment.query.get_or_404(assignment_id)
     
-    assignment.status = 'completed'
+    # Import AssignmentStatus enum
+    from models import AssignmentStatus
+    assignment.status = AssignmentStatus.COMPLETED
     assignment.end_date = datetime.now().date()
     assignment.updated_at = datetime.utcnow()
     
