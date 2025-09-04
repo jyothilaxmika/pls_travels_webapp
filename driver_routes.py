@@ -30,6 +30,20 @@ def get_driver_profile():
         return current_user.driver_profile
     return None
 
+def generate_employee_id():
+    """Generate unique employee ID for driver"""
+    import random
+    import string
+    
+    while True:
+        # Generate format: EMP + 6 digit number
+        employee_id = f"EMP{random.randint(100000, 999999)}"
+        
+        # Check if it already exists
+        existing = Driver.query.filter_by(employee_id=employee_id).first()
+        if not existing:
+            return employee_id
+
 def get_last_duty_values(driver_id, vehicle_id=None):
     """Get odometer values from the last completed duty"""
     query = Duty.query.filter_by(driver_id=driver_id, status='completed')
@@ -110,6 +124,7 @@ def profile():
             # Create new driver profile
             driver = Driver()
             driver.user_id = current_user.id
+            driver.employee_id = generate_employee_id()  # Generate unique employee ID
             driver.full_name = request.form.get('full_name') or ''
             # Phone is stored in User model
             if request.form.get('phone'):
@@ -146,13 +161,18 @@ def profile():
                     file.save(os.path.join('uploads', filename))
                     driver.profile_photo = filename
 
-            db.session.add(driver)
-            db.session.commit()
+            try:
+                db.session.add(driver)
+                db.session.commit()
 
-            log_audit('create_driver_profile', 'driver', driver.id)
+                log_audit('create_driver_profile', 'driver', driver.id)
 
-            flash('Profile created successfully! Waiting for approval.', 'success')
-            return redirect(url_for('driver.dashboard'))
+                flash('Profile created successfully! Waiting for approval.', 'success')
+                return redirect(url_for('driver.dashboard'))
+            except Exception as e:
+                db.session.rollback()
+                flash('Error creating profile. Please try again.', 'error')
+                return render_template('driver/profile.html', driver=None, branches=branches)
 
         return render_template('driver/profile.html', driver=None, branches=branches)
 
@@ -191,12 +211,16 @@ def profile():
                     file.save(os.path.join('uploads', filename))
                     driver.profile_photo = filename
 
-        db.session.commit()
+        try:
+            db.session.commit()
 
-        log_audit('update_driver_profile', 'driver', driver.id)
+            log_audit('update_driver_profile', 'driver', driver.id)
 
-        flash('Profile updated successfully!', 'success')
-        return redirect(url_for('driver.profile'))
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('driver.profile'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating profile. Please try again.', 'error')
 
     branches = Branch.query.filter_by(is_active=True).all()
     return render_template('driver/profile.html', driver=driver, branches=branches)
