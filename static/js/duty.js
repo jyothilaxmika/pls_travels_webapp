@@ -64,17 +64,46 @@ function createPhotoPreview(file, input) {
             input.parentNode.appendChild(previewContainer);
         }
         
-        previewContainer.innerHTML = `
-            <div class="position-relative d-inline-block">
-                <img src="${e.target.result}" class="img-fluid rounded shadow" style="max-height: 200px;">
-                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 mt-1 me-1" onclick="removePhoto(this, '${input.id}')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <small class="d-block text-success mt-1">
-                <i class="fas fa-check-circle"></i> Photo captured successfully
-            </small>
-        `;
+        // Clear previous content
+        previewContainer.textContent = '';
+        
+        // Create container div
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'position-relative d-inline-block';
+        
+        // Create image element
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'img-fluid rounded shadow';
+        img.style.maxHeight = '200px';
+        containerDiv.appendChild(img);
+        
+        // Create remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 mt-1 me-1';
+        removeBtn.addEventListener('click', function() {
+            removePhoto(this, input.id);
+        });
+        
+        // Create button icon
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-times';
+        removeBtn.appendChild(icon);
+        containerDiv.appendChild(removeBtn);
+        
+        // Create success message
+        const successMsg = document.createElement('small');
+        successMsg.className = 'd-block text-success mt-1';
+        
+        const successIcon = document.createElement('i');
+        successIcon.className = 'fas fa-check-circle';
+        successMsg.appendChild(successIcon);
+        successMsg.appendChild(document.createTextNode(' Photo captured successfully'));
+        
+        // Append all elements
+        previewContainer.appendChild(containerDiv);
+        previewContainer.appendChild(successMsg);
     };
     reader.readAsDataURL(file);
 }
