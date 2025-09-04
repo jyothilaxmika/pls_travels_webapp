@@ -347,7 +347,7 @@
                 </div>
                 {% endif %}
                 <h6>{{ driver.full_name }}</h6>
-                <p class="text-muted">{{ driver.user.role.title() }}</p>
+                <p class="text-muted">{{ driver.user.role.value.title() }}</p>
             </div>
         </div>
 
@@ -362,11 +362,11 @@
                 {% for asset in assets %}
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
-                        <strong>{{ asset.asset_type.title() }}</strong><br>
+                        <strong>{{ asset.asset_type.value.title() }}</strong><br>
                         <small class="text-muted">{{ asset.asset_id }}</small>
                     </div>
-                    <span class="badge bg-{% if asset.status == 'assigned' %}success{% elif asset.status == 'returned' %}secondary{% else %}warning{% endif %}">
-                        {{ asset.status.title() }}
+                    <span class="badge bg-{% if asset.status.value == 'assigned' %}success{% elif asset.status.value == 'returned' %}secondary{% else %}warning{% endif %}">
+                        {{ asset.status.value.title() }}
                     </span>
                 </div>
                 {% if not loop.last %}<hr>{% endif %}
@@ -376,7 +376,7 @@
         {% endif %}
 
         <!-- Approval Actions for Pending Drivers -->
-        {% if driver.status == 'pending' %}
+        {% if driver.status.value == 'pending' %}
         <div class="card">
             <div class="card-header bg-warning">
                 <h5 class="mb-0">Approval Actions</h5>
