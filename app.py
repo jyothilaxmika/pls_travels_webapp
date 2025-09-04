@@ -102,27 +102,44 @@ def create_app():
         
         admin = User.query.filter_by(username='admin').first()
         if not admin:
+            from models import UserRole, UserStatus
             admin = User()
             admin.username = 'admin'
             admin.email = 'admin@plstravels.com'
             admin.password_hash = generate_password_hash('admin123')
-            admin.role = 'admin'
-            admin.active = True
+            admin.role = UserRole.ADMIN
+            admin.status = UserStatus.ACTIVE
+            admin.first_name = 'System'
+            admin.last_name = 'Administrator'
             db.session.add(admin)
             
         # Create default branches
         if not Branch.query.first():
+            from models import Region
+            # Create a default region first
+            region = Region()
+            region.name = 'South India'
+            region.code = 'SI'
+            region.state = 'Tamil Nadu'
+            region.country = 'India'
+            db.session.add(region)
+            db.session.flush()  # Get the ID
+            
             chennai = Branch()
             chennai.name = 'Chennai HQ'
+            chennai.code = 'CHN'
+            chennai.region_id = region.id
             chennai.city = 'Chennai'
             chennai.address = 'Chennai, Tamil Nadu'
-            chennai.target_revenue = 500000.0
+            chennai.target_revenue_monthly = 500000.0
             
             bangalore = Branch()
             bangalore.name = 'Bangalore Office'
+            bangalore.code = 'BLR'
+            bangalore.region_id = region.id
             bangalore.city = 'Bangalore'
             bangalore.address = 'Bangalore, Karnataka'
-            bangalore.target_revenue = 400000.0
+            bangalore.target_revenue_monthly = 400000.0
             db.session.add(chennai)
             db.session.add(bangalore)
             

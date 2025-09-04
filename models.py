@@ -95,7 +95,11 @@ class User(UserMixin, db.Model):
     
     # Relationships
     driver_profile = db.relationship('Driver', foreign_keys='Driver.user_id', backref='user', uselist=False, cascade='all, delete-orphan')
-    managed_branches = db.relationship('Branch', secondary=manager_branches, backref='managers')
+    managed_branches = db.relationship('Branch', 
+                                     secondary=manager_branches, 
+                                     primaryjoin='User.id == manager_branches.c.manager_id',
+                                     secondaryjoin='Branch.id == manager_branches.c.branch_id',
+                                     backref='managers')
     
     @hybrid_property
     def full_name(self):
@@ -162,6 +166,10 @@ class Branch(db.Model):
     vehicles = db.relationship('Vehicle', backref='branch', lazy=True)
     duties = db.relationship('Duty', backref='branch', lazy=True)
     duty_schemes = db.relationship('DutyScheme', backref='branch', lazy=True)
+    
+    @hybrid_property
+    def target_revenue(self):
+        return self.target_revenue_monthly
     
     def __repr__(self):
         return f'<Branch {self.name}>'
@@ -333,8 +341,8 @@ class Vehicle(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
+    vehicle_type_obj = db.relationship('VehicleType', backref='vehicle_instances', lazy=True)
     duties = db.relationship('Duty', backref='vehicle', lazy=True)
-    assignments = db.relationship('VehicleAssignment', backref='vehicle', lazy=True)
     maintenance_records = db.relationship('MaintenanceRecord', backref='vehicle', lazy=True)
     
     # Constraints and indexes
@@ -350,6 +358,71 @@ class Vehicle(db.Model):
         return (self.insurance_expiry_date and self.insurance_expiry_date > today and
                 self.fitness_expiry_date and self.fitness_expiry_date > today and
                 self.permit_expiry_date and self.permit_expiry_date > today)
+    
+    @hybrid_property
+    def vehicle_type(self):
+        return self.vehicle_type_obj.name if self.vehicle_type_obj else None
+    
+    @vehicle_type.setter
+    def vehicle_type(self, value):
+        # This would need to handle finding/creating VehicleType
+        pass
+    
+    @hybrid_property
+    def year(self):
+        return self.manufacturing_year
+    
+    @year.setter
+    def year(self, value):
+        self.manufacturing_year = value
+    
+    @hybrid_property
+    def insurance_number(self):
+        return self.insurance_policy_number
+    
+    @insurance_number.setter
+    def insurance_number(self, value):
+        self.insurance_policy_number = value
+    
+    @hybrid_property
+    def insurance_expiry(self):
+        return self.insurance_expiry_date
+    
+    @insurance_expiry.setter
+    def insurance_expiry(self, value):
+        self.insurance_expiry_date = value
+    
+    @hybrid_property
+    def fitness_expiry(self):
+        return self.fitness_expiry_date
+    
+    @fitness_expiry.setter
+    def fitness_expiry(self, value):
+        self.fitness_expiry_date = value
+    
+    @hybrid_property
+    def permit_expiry(self):
+        return self.permit_expiry_date
+    
+    @permit_expiry.setter
+    def permit_expiry(self, value):
+        self.permit_expiry_date = value
+    
+    @hybrid_property
+    def fastag_number(self):
+        return self.fastag_id
+    
+    @fastag_number.setter
+    def fastag_number(self, value):
+        self.fastag_id = value
+    
+    @hybrid_property
+    def device_imei(self):
+        return self.gps_device_id
+    
+    @device_imei.setter
+    def device_imei(self, value):
+        self.gps_device_id = value
     
     def __repr__(self):
         return f'<Vehicle {self.registration_number}>'
@@ -394,6 +467,18 @@ class DutyScheme(db.Model):
     
     def set_configuration(self, config_dict):
         self.configuration = json.dumps(config_dict)
+    
+    def set_config(self, config_dict):
+        """Alias for set_configuration for compatibility"""
+        self.set_configuration(config_dict)
+    
+    @hybrid_property
+    def bmg_amount(self):
+        return self.minimum_guarantee
+    
+    @bmg_amount.setter
+    def bmg_amount(self, value):
+        self.minimum_guarantee = value
     
     def __repr__(self):
         return f'<DutyScheme {self.name}>'
@@ -502,6 +587,18 @@ class Duty(db.Model):
     def total_revenue(self):
         return (self.cash_collection or 0) + (self.digital_payments or 0) + (self.card_payments or 0) + (self.wallet_payments or 0)
     
+    @hybrid_property
+    def start_time(self):
+        return self.actual_start
+    
+    @hybrid_property
+    def revenue(self):
+        return self.gross_revenue
+    
+    @hybrid_property
+    def distance_km(self):
+        return self.total_distance
+    
     def __repr__(self):
         return f'<Duty {self.uuid}>'
 
@@ -537,8 +634,25 @@ class VehicleAssignment(db.Model):
     
     # Relationships
     driver = db.relationship('Driver', backref='assignments')
+    vehicle = db.relationship('Vehicle', backref='vehicle_assignments')
     assigner = db.relationship('User', foreign_keys=[assigned_by])
     approver = db.relationship('User', foreign_keys=[approved_by])
+    
+    @hybrid_property
+    def assignment_notes(self):
+        return self.notes
+    
+    @assignment_notes.setter
+    def assignment_notes(self, value):
+        self.notes = value
+    
+    @hybrid_property
+    def assignment_driver(self):
+        return self.driver
+    
+    @hybrid_property
+    def assignment_vehicle(self):
+        return self.vehicle
     
     # Constraints
     __table_args__ = (
@@ -673,6 +787,57 @@ class Penalty(db.Model):
     duty = db.relationship('Duty', backref='penalties')
     applier = db.relationship('User', foreign_keys=[applied_by])
     approver = db.relationship('User', foreign_keys=[approved_by])
+
+class Asset(db.Model):
+    __tablename__ = 'assets'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Asset identification
+    asset_id = db.Column(db.String(100), nullable=False, unique=True, index=True)
+    asset_type = db.Column(db.String(50), nullable=False)  # device, uniform, toolkit, etc.
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    
+    # Assignment details
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=True, index=True)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False, index=True)
+    
+    # Status and tracking
+    status = db.Column(db.String(20), default='available')  # available, assigned, returned, lost, damaged
+    condition = db.Column(db.String(20), default='good')  # good, fair, poor, damaged
+    
+    # Assignment tracking
+    assigned_at = db.Column(db.DateTime)
+    assigned_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    returned_at = db.Column(db.DateTime)
+    returned_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Financial details
+    purchase_cost = db.Column(db.Float)
+    purchase_date = db.Column(db.Date)
+    depreciation_rate = db.Column(db.Float)  # annual percentage
+    current_value = db.Column(db.Float)
+    
+    # Metadata
+    serial_number = db.Column(db.String(100))
+    manufacturer = db.Column(db.String(100))
+    model = db.Column(db.String(100))
+    warranty_expiry = db.Column(db.Date)
+    
+    # Notes and documentation
+    notes = db.Column(db.Text)
+    photos = db.Column(db.Text)  # JSON array of photo URLs
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    driver = db.relationship('Driver', backref='assets')
+    branch = db.relationship('Branch', backref='assets')
+    assigner = db.relationship('User', foreign_keys=[assigned_by])
+    returner = db.relationship('User', foreign_keys=[returned_by])
 
 class AuditLog(db.Model):
     __tablename__ = 'audit_logs'

@@ -69,7 +69,7 @@
                         </td>
                         <td>
                             {% if vehicle.insurance_expiry %}
-                                {% set today = moment.utcnow().date() if moment else None %}
+                                {% set today = moment().date() if moment else None %}
                                 {% if today and (vehicle.insurance_expiry < today) %}
                                     <span class="text-danger">Expired ({{ vehicle.insurance_expiry.strftime('%Y-%m-%d') }})</span>
                                 {% elif today and ((vehicle.insurance_expiry - today).days < 30) %}
