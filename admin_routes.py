@@ -444,9 +444,10 @@ def reports():
         Driver.full_name,
         Branch.name.label('branch_name'),
         func.sum(Duty.driver_earnings).label('total_earnings')
-    ).join(Branch).join(Duty).filter(
-        Duty.start_time >= thirty_days_ago
-    ).group_by(Driver.id, Driver.full_name, Branch.name) \
+    ).join(Branch, Driver.branch_id == Branch.id) \
+     .join(Duty, Driver.id == Duty.driver_id) \
+     .filter(Duty.start_time >= thirty_days_ago) \
+     .group_by(Driver.id, Driver.full_name, Branch.name) \
      .order_by(desc(func.sum(Duty.driver_earnings))).limit(10).all()
     
     # Vehicle utilization
@@ -455,9 +456,10 @@ def reports():
         Branch.name.label('branch_name'),
         func.count(Duty.id).label('duty_count'),
         func.sum(Duty.distance_km).label('total_distance')
-    ).join(Branch).outerjoin(Duty).filter(
-        Vehicle.status == 'active'
-    ).group_by(Vehicle.id, Vehicle.registration_number, Branch.name).all()
+    ).join(Branch, Vehicle.branch_id == Branch.id) \
+     .outerjoin(Duty, Vehicle.id == Duty.vehicle_id) \
+     .filter(Vehicle.status == 'active') \
+     .group_by(Vehicle.id, Vehicle.registration_number, Branch.name).all()
     
     return render_template('admin/reports.html',
                          branch_revenue=branch_revenue,
