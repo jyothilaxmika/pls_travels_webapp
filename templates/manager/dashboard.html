@@ -199,12 +199,12 @@
                                 <td>{{ duty.start_time.strftime('%m/%d %H:%M') if duty.start_time else 'Not started' }}</td>
                                 <td>₹{{ "{:,.0f}".format(duty.revenue) }}</td>
                                 <td>
-                                    {% if duty.status == 'active' %}
+                                    {% if duty.status.value == 'active' %}
                                         <span class="badge bg-warning">Active</span>
-                                    {% elif duty.status == 'completed' %}
+                                    {% elif duty.status.value == 'completed' %}
                                         <span class="badge bg-success">Completed</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                                        <span class="badge bg-secondary">{{ duty.status.value.title() }}</span>
                                     {% endif %}
                                 </td>
                             </tr>

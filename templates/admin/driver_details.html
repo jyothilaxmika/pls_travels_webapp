@@ -14,14 +14,14 @@
         </div>
     </div>
     <div>
-        {% if driver.status == 'active' %}
+        {% if driver.status.value == 'active' %}
         <span class="badge bg-success fs-6">Active</span>
-        {% elif driver.status == 'pending' %}
+        {% elif driver.status.value == 'pending' %}
         <span class="badge bg-warning fs-6">Pending Approval</span>
-        {% elif driver.status == 'rejected' %}
+        {% elif driver.status.value == 'rejected' %}
         <span class="badge bg-danger fs-6">Rejected</span>
         {% else %}
-        <span class="badge bg-secondary fs-6">{{ driver.status.title() }}</span>
+        <span class="badge bg-secondary fs-6">{{ driver.status.value.title() }}</span>
         {% endif %}
     </div>
 </div>
@@ -235,7 +235,7 @@
                                     {% elif duty.status == 'completed' %}
                                     <span class="badge bg-success">Completed</span>
                                     {% else %}
-                                    <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                                    <span class="badge bg-secondary">{{ duty.status.value.title() }}</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -284,7 +284,7 @@
                                     {% elif assignment.status == 'scheduled' %}
                                         <span class="badge badge-sm bg-primary">Scheduled</span>
                                     {% else %}
-                                        <span class="badge badge-sm bg-secondary">{{ assignment.status.title() }}</span>
+                                        <span class="badge badge-sm bg-secondary">{{ assignment.status.value.title() }}</span>
                                     {% endif %}
                                 </td>
                             </tr>
