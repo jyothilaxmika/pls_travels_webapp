@@ -93,7 +93,7 @@
                         <tbody>
                             {% set max_earning = top_drivers[0].total_earnings if top_drivers else 0 %}
                             {% for driver in top_drivers %}
-                            {% set percentage = ((driver.total_earnings or 0) / (max_earning or 1) * 100) if max_earning > 0 else 0 0 %}
+                            {% set percentage = ((driver.total_earnings or 0) / (max_earning or 1) * 100) if max_earning > 0 else 0 %}
                             <tr>
                                 <td>
                                     {% if loop.index == 1 %}
