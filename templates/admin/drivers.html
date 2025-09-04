@@ -68,7 +68,7 @@
                             {% elif driver.status == 'rejected' %}
                                 <span class="badge bg-danger">Rejected</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ driver.status.title() }}</span>
+                                <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
                             {% endif %}
                         </td>
                         <td>{{ driver.created_at.strftime('%Y-%m-%d') if driver.created_at else 'N/A' }}</td>
