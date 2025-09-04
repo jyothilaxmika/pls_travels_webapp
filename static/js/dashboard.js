@@ -184,7 +184,8 @@ function showLoading(elementId) {
 function hideLoading(elementId, content) {
     var element = document.getElementById(elementId);
     if (element) {
-        element.innerHTML = content;
+        // Use safe DOM method instead of innerHTML to prevent XSS
+        element.textContent = content;
     }
 }
 
