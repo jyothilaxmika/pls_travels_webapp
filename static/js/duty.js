@@ -125,7 +125,11 @@ function addCameraButton(input) {
     const cameraBtn = document.createElement('button');
     cameraBtn.type = 'button';
     cameraBtn.className = 'btn btn-outline-primary btn-sm mt-2';
-    cameraBtn.innerHTML = '<i class="fas fa-camera me-1"></i>Open Camera';
+    // Create icon element safely
+    const cameraIcon = document.createElement('i');
+    cameraIcon.className = 'fas fa-camera me-1';
+    cameraBtn.appendChild(cameraIcon);
+    cameraBtn.appendChild(document.createTextNode('Open Camera'));
     
     cameraBtn.addEventListener('click', function() {
         input.click();
@@ -222,7 +226,13 @@ function showLocationStatus(container, message, type = 'info') {
                  type === 'warning' ? 'fa-exclamation-triangle' : 
                  'fa-spinner fa-spin';
     
-    statusDiv.innerHTML = `<i class="fas ${icon} me-1"></i>${message}`;
+    // Create icon element safely
+    const iconElement = document.createElement('i');
+    iconElement.className = `fas ${icon} me-1`;
+    
+    // Add content safely using textContent
+    statusDiv.appendChild(iconElement);
+    statusDiv.appendChild(document.createTextNode(message));
     container.appendChild(statusDiv);
     
     // Auto-remove after 5 seconds for non-error messages
@@ -615,15 +625,28 @@ function showAlert(message, type = 'info') {
     const alertContainer = getAlertContainer();
     const alertId = 'alert_' + Date.now();
     
-    const alertHTML = `
-        <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
-            <i class="fas fa-${getAlertIcon(type)} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
+    // Create alert element safely
+    const alertDiv = document.createElement('div');
+    alertDiv.id = alertId;
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
     
-    alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+    // Create icon
+    const iconElement = document.createElement('i');
+    iconElement.className = `fas fa-${getAlertIcon(type)} me-2`;
+    alertDiv.appendChild(iconElement);
+    
+    // Add message safely
+    alertDiv.appendChild(document.createTextNode(message));
+    
+    // Create close button
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-close';
+    closeBtn.setAttribute('data-bs-dismiss', 'alert');
+    alertDiv.appendChild(closeBtn);
+    
+    alertContainer.appendChild(alertDiv);
     
     // Auto-dismiss after 5 seconds
     setTimeout(() => {
