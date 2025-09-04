@@ -7,8 +7,8 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3><i class="fas fa-user me-2"></i>My Profile</h3>
         {% if driver and driver.status %}
-        <span class="badge bg-{{ 'success' if driver.status == 'active' else 'warning' if driver.status == 'pending' else 'secondary' }} fs-6">
-            {{ driver.status.title() }}
+        <span class="badge bg-{{ 'success' if driver.status.value == 'active' else 'warning' if driver.status.value == 'pending' else 'secondary' }} fs-6">
+            {{ driver.status.value.title() }}
         </span>
         {% endif %}
     </div>
@@ -187,14 +187,14 @@
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Status:</strong> 
-                            {% if driver.status == 'active' %}
+                            {% if driver.status.value == 'active' %}
                                 <span class="badge bg-success">Active</span>
-                            {% elif driver.status == 'pending' %}
+                            {% elif driver.status.value == 'pending' %}
                                 <span class="badge bg-warning">Pending Approval</span>
-                            {% elif driver.status == 'rejected' %}
+                            {% elif driver.status.value == 'rejected' %}
                                 <span class="badge bg-danger">Rejected</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ driver.status.title() }}</span>
+                                <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
                             {% endif %}
                         </p>
                         <p><strong>Profile Created:</strong> {{ driver.created_at.strftime('%Y-%m-%d') }}</p>
@@ -203,7 +203,7 @@
                         {% endif %}
                     </div>
                     <div class="col-md-6">
-                        {% if driver.status == 'active' %}
+                        {% if driver.status.value == 'active' %}
                         <p><strong>Total Earnings:</strong> ₹{{ "{:,.2f}".format(driver.total_earnings) }}</p>
                         {% if driver.current_vehicle %}
                         <p><strong>Current Vehicle:</strong> {{ driver.current_vehicle.registration_number }}</p>
@@ -216,12 +216,12 @@
                     </div>
                 </div>
                 
-                {% if driver.status == 'pending' %}
+                {% if driver.status.value == 'pending' %}
                 <div class="alert alert-info">
                     <i class="fas fa-clock me-2"></i>
                     Your profile is under review. You will be notified once approved.
                 </div>
-                {% elif driver.status == 'rejected' %}
+                {% elif driver.status.value == 'rejected' %}
                 <div class="alert alert-danger">
                     <i class="fas fa-times-circle me-2"></i>
                     Your profile was rejected. Please update the required information and resubmit.

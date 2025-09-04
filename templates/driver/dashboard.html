@@ -45,12 +45,18 @@
                     <h5 class="mb-1">{{ driver.full_name }}</h5>
                     <p class="text-muted mb-0">{{ driver.branch.name }}</p>
                     <div class="mt-1">
-                        {% if driver.status == 'active' %}
+                        {% if driver.status.value == 'active' %}
                             <span class="badge bg-success">Active Driver</span>
-                        {% elif driver.status == 'pending' %}
+                        {% elif driver.status.value == 'pending' %}
                             <span class="badge bg-warning">Pending Approval</span>
+                        {% elif driver.status.value == 'rejected' %}
+                            <span class="badge bg-danger">Rejected</span>
+                        {% elif driver.status.value == 'suspended' %}
+                            <span class="badge bg-warning">Suspended</span>
+                        {% elif driver.status.value == 'terminated' %}
+                            <span class="badge bg-dark">Terminated</span>
                         {% else %}
-                            <span class="badge bg-secondary">{{ driver.status.title() }}</span>
+                            <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
                         {% endif %}
                     </div>
                 </div>
