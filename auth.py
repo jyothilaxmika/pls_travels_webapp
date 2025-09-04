@@ -24,9 +24,10 @@ def log_audit(action, entity_type=None, entity_id=None, details=None):
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        if current_user.role == 'admin':
+        from models import UserRole
+        if current_user.role == UserRole.ADMIN:
             return redirect(url_for('admin.dashboard'))
-        elif current_user.role == 'manager':
+        elif current_user.role == UserRole.MANAGER:
             return redirect(url_for('manager.dashboard'))
         else:
             return redirect(url_for('driver.dashboard'))
@@ -35,7 +36,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         
-        if user and user.active and user.password_hash and form.password.data and check_password_hash(user.password_hash, form.password.data):
+        if user and user.status.name == 'ACTIVE' and user.password_hash and form.password.data and check_password_hash(user.password_hash, form.password.data):
             login_user(user, remember=form.remember_me.data)
             
             # Log successful login
@@ -44,9 +45,10 @@ def login():
             flash(f'Welcome back, {user.username}!', 'success')
             
             # Redirect based on role
-            if user.role == 'admin':
+            from models import UserRole
+            if user.role == UserRole.ADMIN:
                 return redirect(url_for('admin.dashboard'))
-            elif user.role == 'manager':
+            elif user.role == UserRole.MANAGER:
                 return redirect(url_for('manager.dashboard'))
             else:
                 return redirect(url_for('driver.dashboard'))

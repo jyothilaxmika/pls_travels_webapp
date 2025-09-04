@@ -16,7 +16,8 @@ driver_bp = Blueprint('driver', __name__)
 def driver_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'driver':
+        from models import UserRole
+        if not current_user.is_authenticated or current_user.role != UserRole.DRIVER:
             flash('Driver access required.', 'error')
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)

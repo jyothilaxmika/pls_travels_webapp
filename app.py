@@ -173,11 +173,12 @@ def create_app():
         from flask_login import current_user
         
         if current_user.is_authenticated:
-            if current_user.role == 'admin':
+            from models import UserRole
+            if current_user.role == UserRole.ADMIN:
                 return redirect(url_for('admin.dashboard'))
-            elif current_user.role == 'manager':
+            elif current_user.role == UserRole.MANAGER:
                 return redirect(url_for('manager.dashboard'))
-            elif current_user.role == 'driver':
+            elif current_user.role == UserRole.DRIVER:
                 return redirect(url_for('driver.dashboard'))
         
         return redirect(url_for('auth.login'))

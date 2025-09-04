@@ -12,7 +12,8 @@ manager_bp = Blueprint('manager', __name__)
 def manager_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'manager':
+        from models import UserRole
+        if not current_user.is_authenticated or current_user.role != UserRole.MANAGER:
             flash('Manager access required.', 'error')
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
