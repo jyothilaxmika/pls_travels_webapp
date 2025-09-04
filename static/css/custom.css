@@ -408,3 +408,22 @@ input[type="file"] {
     line-height: 1.2;
     border-radius: 0.2rem;
 }
+
+/* Compact design elements */
+.badge-sm {
+    font-size: 0.65em;
+    padding: 0.25em 0.4em;
+}
+
+.table-sm td, .table-sm th {
+    padding: 0.3rem;
+    font-size: 0.875rem;
+}
+
+.card-compact {
+    margin-bottom: 0.75rem;
+}
+
+.card-compact .card-body {
+    padding: 0.75rem;
+}

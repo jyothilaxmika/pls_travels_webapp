@@ -3,26 +3,28 @@
 {% block title %}Vehicle Assignments - PLS TRAVELS{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-calendar-alt me-2"></i>Vehicle Assignments</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5><i class="fas fa-calendar-alt me-2"></i>Assignments</h5>
     <div>
-        <a href="{{ url_for('admin.add_assignment') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Schedule Assignment
+        <a href="{{ url_for('admin.add_assignment') }}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>Schedule
         </a>
-        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
-            <i class="fas fa-filter me-2"></i>Filter
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="fas fa-filter me-1"></i>Filter
         </button>
     </div>
 </div>
 
 <!-- Filters Summary -->
 {% if status_filter or branch_filter %}
-<div class="alert alert-info mb-4">
-    <i class="fas fa-info-circle me-2"></i>
-    Showing assignments
-    {% if status_filter %}with status: <strong>{{ status_filter.title() }}</strong>{% endif %}
-    {% if branch_filter %}in branch: <strong>{{ branches | selectattr('id', 'equalto', branch_filter) | map(attribute='name') | first }}</strong>{% endif %}
-    <a href="{{ url_for('admin.assignments') }}" class="btn btn-sm btn-outline-primary ms-2">Clear Filters</a>
+<div class="alert alert-info py-2 mb-3">
+    <small>
+        <i class="fas fa-info-circle me-1"></i>
+        Filtered
+        {% if status_filter %}{{ status_filter.title() }}{% endif %}
+        {% if branch_filter %}{{ branches | selectattr('id', 'equalto', branch_filter) | map(attribute='name') | first }}{% endif %}
+        <a href="{{ url_for('admin.assignments') }}" class="btn btn-xs btn-outline-primary ms-2">Clear</a>
+    </small>
 </div>
 {% endif %}
 
@@ -31,69 +33,69 @@
     <div class="card-body">
         {% if assignments.items %}
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-sm table-striped">
                 <thead>
                     <tr>
-                        <th>Driver</th>
-                        <th>Vehicle</th>
-                        <th>Schedule</th>
-                        <th>Shift</th>
-                        <th>Status</th>
-                        <th>Assigned By</th>
-                        <th>Actions</th>
+                        <th><small>Driver</small></th>
+                        <th><small>Vehicle</small></th>
+                        <th><small>Schedule</small></th>
+                        <th><small>Shift</small></th>
+                        <th><small>Status</small></th>
+                        <th><small>By</small></th>
+                        <th><small>Actions</small></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for assignment in assignments.items %}
                     <tr>
                         <td>
-                            <div>
+                            <small>
                                 <strong>{{ assignment.assignment_driver.full_name }}</strong><br>
-                                <small class="text-muted">{{ assignment.assignment_driver.branch.name }}</small>
-                            </div>
+                                <span class="text-muted">{{ assignment.assignment_driver.branch.name }}</span>
+                            </small>
                         </td>
                         <td>
-                            <div>
+                            <small>
                                 <strong>{{ assignment.assignment_vehicle.registration_number }}</strong><br>
-                                <small class="text-muted">{{ assignment.assignment_vehicle.vehicle_type.title() }}</small>
-                            </div>
+                                <span class="text-muted">{{ assignment.assignment_vehicle.vehicle_type.title() }}</span>
+                            </small>
                         </td>
                         <td>
-                            <div>
-                                <strong>{{ assignment.start_date.strftime('%Y-%m-%d') }}</strong>
+                            <small>
+                                <strong>{{ assignment.start_date.strftime('%m-%d') }}</strong>
                                 {% if assignment.end_date %}
-                                to {{ assignment.end_date.strftime('%Y-%m-%d') }}
+                                to {{ assignment.end_date.strftime('%m-%d') }}
                                 {% else %}
                                 <span class="text-primary">(Ongoing)</span>
                                 {% endif %}
-                            </div>
+                            </small>
                         </td>
                         <td>
-                            <span class="badge bg-secondary">{{ assignment.shift_type.replace('_', ' ').title() }}</span>
+                            <span class="badge badge-sm bg-secondary">{{ assignment.shift_type.replace('_', ' ').title() }}</span>
                         </td>
                         <td>
                             {% if assignment.status == 'active' %}
-                                <span class="badge bg-success">Active</span>
+                                <span class="badge badge-sm bg-success">Active</span>
                             {% elif assignment.status == 'scheduled' %}
-                                <span class="badge bg-primary">Scheduled</span>
+                                <span class="badge badge-sm bg-primary">Scheduled</span>
                             {% elif assignment.status == 'completed' %}
-                                <span class="badge bg-secondary">Completed</span>
+                                <span class="badge badge-sm bg-secondary">Completed</span>
                             {% else %}
-                                <span class="badge bg-warning">{{ assignment.status.title() }}</span>
+                                <span class="badge badge-sm bg-warning">{{ assignment.status.title() }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ assignment.assigned_by_user.username }}</td>
+                        <td><small>{{ assignment.assigned_by_user.username }}</small></td>
                         <td>
                             {% if assignment.status in ['active', 'scheduled'] %}
                             <form method="POST" action="{{ url_for('admin.end_assignment', assignment_id=assignment.id) }}" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('End this assignment?')" title="End Assignment">
+                                <button type="submit" class="btn btn-xs btn-warning" onclick="return confirm('End this assignment?')" title="End">
                                     <i class="fas fa-stop"></i>
                                 </button>
                             </form>
                             {% endif %}
                             
                             {% if assignment.assignment_notes %}
-                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#notesModal{{ assignment.id }}" title="View Notes">
+                            <button class="btn btn-xs btn-outline-info" data-bs-toggle="modal" data-bs-target="#notesModal{{ assignment.id }}" title="Notes">
                                 <i class="fas fa-sticky-note"></i>
                             </button>
                             {% endif %}
