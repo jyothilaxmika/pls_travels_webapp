@@ -1,0 +1,190 @@
+Perfect 👍 — let me give you a **detailed, end-to-end full app overview** of your upgraded **PLS TRAVELS Driver & Fleet Management System** with **multi-city, manager role, duty schemes, and portals**.
+
+---
+
+# 🚌 PLS TRAVELS — Comprehensive Multi-City Driver & Fleet Management System
+
+## 1. High-Level Architecture
+
+* **Backend**: Flask (Blueprint + Application Factory)
+* **Database**: SQLAlchemy ORM
+
+  * SQLite (Dev)
+  * PostgreSQL (Prod)
+* **Frontend**: Bootstrap 5 + Jinja2 Templates
+* **Authentication**: Flask-Login with Role-Based Access Control
+* **File Handling**: Object storage integration (local / S3-ready)
+* **Security**: CSRF Protection, Password Hashing, Audit Logging
+* **Deployment Ready**: Gunicorn / Docker, Vercel for frontend if split
+
+---
+
+## 2. User Roles
+
+1. **Admin**
+
+   * Full-system control across all branches.
+   * Access to drivers, vehicles, duties, finances, reports globally.
+   * Manage multi-branch operations.
+2. **Manager**
+
+   * Restricted to one or more branches (e.g., Chennai, Bangalore).
+   * Approve drivers in their branch.
+   * Track branch revenue vs target.
+   * Access branch-only reports, fleet status, and duty monitoring.
+3. **Driver**
+
+   * Mobile-first portal for duty logging.
+   * Document upload, profile management, duty start/stop.
+   * Earnings dashboard with BMG and incentives.
+
+---
+
+## 3. Multi-City / Multi-Branch Support
+
+* `Branch` model stores city-specific info (e.g., Chennai HQ, Bangalore Office).
+* **Drivers, Vehicles, Duties** are linked to a branch.
+* Managers are linked to one or more branches through `manager_branches`.
+* Admins see **all branches**, Managers see **only their branch**.
+
+---
+
+## 4. Core Modules
+
+### (a) Driver Portal (Mobile-First)
+
+* **Profile Management**
+
+  * Upload Aadhar, License, Selfie
+  * Bank details & Address
+  * Status tracking (pending / active / rejected)
+* **Duty Management**
+
+  * Start/End duty with timestamp + photo
+  * Auto vehicle assignment
+  * Real-time earnings & BMG calculation
+* **Earnings Dashboard**
+
+  * Daily / monthly breakdown
+  * Incentives, penalties, BMG top-up
+  * Performance history
+
+---
+
+### (b) Manager Portal
+
+* **Dashboard**
+
+  * Branch overview: revenue vs target
+  * Active drivers, active vehicles, duties running
+  * KPIs (driver count, trip count, revenue)
+* **Driver Management**
+
+  * Approve/reject drivers in branch
+  * Track driver compliance
+* **Reports**
+
+  * Revenue trends (daily/weekly/monthly)
+  * Top drivers by revenue
+  * Vehicle utilization reports
+* **Branch Target Monitoring**
+
+  * Compare actual revenue vs branch target
+  * Alerts when below threshold
+
+---
+
+### (c) Admin Portal
+
+* **Driver Management**
+
+  * Approve all drivers across branches
+  * Bulk imports, status updates
+* **Vehicle Management**
+
+  * Assign to branches
+  * Maintenance scheduling
+  * Insurance/fitness expiry alerts
+* **Duty Monitoring**
+
+  * Real-time duty status across all branches
+  * Approval workflow for anomalies
+* **Financial Management**
+
+  * Duty scheme setup (fixed, per-trip, slab, mixed)
+  * Salary calculations
+  * BMG and penalty management
+* **Analytics & Reports**
+
+  * Cross-branch revenue comparison
+  * Driver performance rankings
+  * Vehicle downtime reports
+
+---
+
+## 5. Duty Scheme Types
+
+* **Fixed Salary**: Flat monthly/daily payout.
+* **Per-Trip**: Rate per duty/trip.
+* **Slab-Based**: Tiered % on revenue (e.g., 30% upto ₹1000, 50% upto ₹3000).
+* **Mixed**: Combination of BMG (base guarantee) + incentive %.
+
+### DutyScheme Model
+
+* `scheme_type`: fixed, per\_trip, slab, mixed
+* `config`: JSON rules (slabs, % splits, etc.)
+* `branch_id`: NULL = global scheme, else branch-specific
+
+---
+
+## 6. Advanced Features
+
+* **BMG (Business Minimum Guarantee)**
+
+  * Automatic top-up if daily earnings < threshold.
+* **Penalty Management**
+
+  * Deduct for damages, absences, etc.
+* **Asset Tracking**
+
+  * FASTag, phones, devices linked to drivers.
+* **Audit Trail**
+
+  * Every driver approval, duty log, financial transaction stored with timestamp.
+* **Reports Export**
+
+  * PDF / CSV reports for compliance and payroll.
+
+---
+
+## 7. Security & Access Control
+
+* Role-based access (Admin, Manager, Driver).
+* Manager access restricted by `branch_id`.
+* Secure file handling for sensitive driver documents.
+* Audit logging for compliance.
+
+---
+
+## 8. UI/UX
+
+* **Drivers**: Mobile-first, touch optimized, camera integration for timestamp proof.
+* **Managers**: Clean dashboards with KPIs and charts (Chart.js).
+* **Admins**: Full-featured, data-heavy dashboard with filters & exports.
+
+---
+
+## 9. Deployment Strategy
+
+* **Dev**: SQLite + Flask server (Replit).
+* **Prod**: PostgreSQL + Gunicorn + Nginx (Dockerized).
+* **Storage**: AWS S3 / DigitalOcean Spaces for docs & photos.
+* **Scaling**: Multi-branch ready, user-based sharding possible in future.
+
+---
+
+✅ With this structure, your system is **enterprise-ready**: it can handle **multi-branch operations (Chennai, Bangalore today; easily extendable tomorrow)**, **manager dashboards**, and **flexible salary schemes**.
+
+---
+
+Do you want me to now create a **single visual architecture diagram (flow + modules + roles)** so you can show it to your team/investors?
