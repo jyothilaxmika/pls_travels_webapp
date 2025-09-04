@@ -366,7 +366,7 @@ def end_duty():
     db.session.commit()
     
     log_audit('end_duty', 'duty', active_duty.id,
-             {'revenue': revenue, 'earnings': active_duty.driver_earnings})
+             {'revenue': active_duty.revenue, 'earnings': active_duty.driver_earnings})
     
     flash(f'Duty completed! You earned ₹{active_duty.driver_earnings:.2f}', 'success')
     return redirect(url_for('driver.earnings'))

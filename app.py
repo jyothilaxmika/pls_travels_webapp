@@ -43,6 +43,26 @@ def create_app():
     def load_user(user_id):
         from models import User
         return User.query.get(int(user_id))
+    
+    # Add template functions
+    from datetime import datetime
+    
+    @app.template_global()
+    def moment():
+        class MomentJS:
+            def format(self, format_str):
+                now = datetime.now()
+                format_mapping = {
+                    'MMMM DD, YYYY': now.strftime('%B %d, %Y'),
+                    'MMM DD, YYYY': now.strftime('%b %d, %Y'), 
+                    'YYYY-MM-DD': now.strftime('%Y-%m-%d'),
+                }
+                return format_mapping.get(format_str, now.strftime('%Y-%m-%d'))
+            
+            def date(self):
+                return datetime.now().date()
+        
+        return MomentJS()
 
     # Register blueprints
     from auth import auth_bp
@@ -71,7 +91,7 @@ def create_app():
             admin.email = 'admin@plstravels.com'
             admin.password_hash = generate_password_hash('admin123')
             admin.role = 'admin'
-            admin.is_active = True
+            admin.active = True
             db.session.add(admin)
             
         # Create default branches
