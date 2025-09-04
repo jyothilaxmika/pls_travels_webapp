@@ -22,11 +22,27 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     # Configure the database
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///pls_travels.db")
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
+    database_url = os.environ.get("DATABASE_URL", "sqlite:///pls_travels.db")
+    
+    # Configure for PostgreSQL production database
+    if database_url.startswith("postgresql://"):
+        # Use connection pooling for PostgreSQL
+        database_url = database_url.replace('.us-east-2', '-pooler.us-east-2')
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_size": 5,
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+            "pool_timeout": 30,
+            "max_overflow": 10
+        }
+    else:
+        # Fallback to SQLite for local development
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+        }
     
     # File upload configuration
     app.config["UPLOAD_FOLDER"] = "uploads"
