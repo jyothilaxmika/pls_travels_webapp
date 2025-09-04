@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}{{ driver.full_name }} - Driver Details - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('admin.drivers') }}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i> Back to Drivers
+        </a>
+        <div>
+            <h2><i class="fas fa-user me-2"></i>{{ driver.full_name }}</h2>
+            <p class="text-muted mb-0">Driver Details & Performance</p>
+        </div>
+    </div>
+    <div>
+        {% if driver.status == 'active' %}
+        <span class="badge bg-success fs-6">Active</span>
+        {% elif driver.status == 'pending' %}
+        <span class="badge bg-warning fs-6">Pending Approval</span>
+        {% elif driver.status == 'rejected' %}
+        <span class="badge bg-danger fs-6">Rejected</span>
+        {% else %}
+        <span class="badge bg-secondary fs-6">{{ driver.status.title() }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Personal Information -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-user-circle me-2"></i>
+                <h5 class="mb-0">Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Full Name:</strong></td>
+                                <td>{{ driver.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>{{ driver.user.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td>{{ driver.phone }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ driver.user.email }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date of Birth:</strong></td>
+                                <td>{{ driver.date_of_birth.strftime('%Y-%m-%d') if driver.date_of_birth else 'Not provided' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Branch:</strong></td>
+                                <td>{{ driver.branch.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Address:</strong></td>
+                                <td>{{ driver.address or 'Not provided' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Joined Date:</strong></td>
+                                <td>{{ driver.created_at.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Earnings:</strong></td>
+                                <td class="text-success"><strong>₹{{ "{:,.2f}".format(driver.total_earnings) }}</strong></td>
+                            </tr>
+                            {% if driver.current_vehicle %}
+                            <tr>
+                                <td><strong>Current Vehicle:</strong></td>
+                                <td>{{ driver.current_vehicle.registration_number }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Information -->
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-id-card me-2"></i>
+                <h5 class="mb-0">Documents & Verification</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Identity Documents</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Aadhar Number:</strong></td>
+                                <td>{{ driver.aadhar_number or 'Not provided' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>License Number:</strong></td>
+                                <td>{{ driver.license_number or 'Not provided' }}</td>
+                            </tr>
+                        </table>
+                        
+                        <!-- Document Photos -->
+                        <div class="mt-3">
+                            <h6>Document Photos</h6>
+                            <div class="row g-2">
+                                {% if driver.aadhar_photo %}
+                                <div class="col-6">
+                                    <img src="/uploads/{{ driver.aadhar_photo }}" class="img-fluid rounded" alt="Aadhar">
+                                    <small class="text-muted d-block">Aadhar</small>
+                                </div>
+                                {% endif %}
+                                {% if driver.license_photo %}
+                                <div class="col-6">
+                                    <img src="/uploads/{{ driver.license_photo }}" class="img-fluid rounded" alt="License">
+                                    <small class="text-muted d-block">License</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Bank Details</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Bank Name:</strong></td>
+                                <td>{{ driver.bank_name or 'Not provided' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Account Number:</strong></td>
+                                <td>{{ driver.account_number or 'Not provided' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>IFSC Code:</strong></td>
+                                <td>{{ driver.ifsc_code or 'Not provided' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Account Holder:</strong></td>
+                                <td>{{ driver.account_holder_name or 'Not provided' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Duties -->
+        {% if recent_duties %}
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-clipboard-list me-2"></i>
+                <h5 class="mb-0">Recent Duties</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vehicle</th>
+                                <th>Duration</th>
+                                <th>Distance</th>
+                                <th>Earnings</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for duty in recent_duties %}
+                            <tr>
+                                <td>{{ duty.start_time.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ duty.vehicle.registration_number if duty.vehicle else 'N/A' }}</td>
+                                <td>
+                                    {% if duty.end_time %}
+                                    {{ ((duty.end_time - duty.start_time).seconds // 3600) }}h {{ (((duty.end_time - duty.start_time).seconds % 3600) // 60) }}m
+                                    {% else %}
+                                    In Progress
+                                    {% endif %}
+                                </td>
+                                <td>{{ "{:.1f}".format(duty.distance_km) if duty.distance_km else '0' }} km</td>
+                                <td class="text-success">₹{{ "{:,.2f}".format(duty.driver_earnings) }}</td>
+                                <td>
+                                    {% if duty.status == 'active' %}
+                                    <span class="badge bg-primary">Active</span>
+                                    {% elif duty.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Penalties -->
+        {% if penalties %}
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <h5 class="mb-0">Penalties</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Reason</th>
+                                <th>Applied By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for penalty in penalties %}
+                            <tr>
+                                <td>{{ penalty.applied_at.strftime('%Y-%m-%d') }}</td>
+                                <td class="text-danger">₹{{ "{:,.2f}".format(penalty.amount) }}</td>
+                                <td>{{ penalty.reason }}</td>
+                                <td>{{ penalty.applied_by_user.username if penalty.applied_by_user else 'System' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="col-lg-4">
+        <!-- Profile Photo -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Profile Photo</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if driver.profile_photo %}
+                <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded-circle mb-3" style="max-width: 150px; height: 150px; object-fit: cover;" alt="Profile Photo">
+                {% else %}
+                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                    <i class="fas fa-user fa-4x text-white"></i>
+                </div>
+                {% endif %}
+                <h6>{{ driver.full_name }}</h6>
+                <p class="text-muted">{{ driver.user.role.title() }}</p>
+            </div>
+        </div>
+
+        <!-- Assets -->
+        {% if assets %}
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="fas fa-tools me-2"></i>
+                <h5 class="mb-0">Assigned Assets</h5>
+            </div>
+            <div class="card-body">
+                {% for asset in assets %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <strong>{{ asset.asset_type.title() }}</strong><br>
+                        <small class="text-muted">{{ asset.asset_id }}</small>
+                    </div>
+                    <span class="badge bg-{% if asset.status == 'assigned' %}success{% elif asset.status == 'returned' %}secondary{% else %}warning{% endif %}">
+                        {{ asset.status.title() }}
+                    </span>
+                </div>
+                {% if not loop.last %}<hr>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Approval Actions for Pending Drivers -->
+        {% if driver.status == 'pending' %}
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">Approval Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}">
+                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this driver?')">
+                            <i class="fas fa-check me-2"></i>Approve Driver
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}">
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Reject this driver?')">
+                            <i class="fas fa-times me-2"></i>Reject Driver
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

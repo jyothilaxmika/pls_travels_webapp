@@ -120,6 +120,27 @@ def reject_driver(driver_id):
     flash(f'Driver {driver.full_name} has been rejected.', 'warning')
     return redirect(url_for('admin.drivers'))
 
+@admin_bp.route('/drivers/<int:driver_id>/view')
+@login_required
+@admin_required
+def view_driver(driver_id):
+    driver = Driver.query.get_or_404(driver_id)
+    
+    # Get driver's recent duties
+    recent_duties = Duty.query.filter_by(driver_id=driver_id).order_by(desc(Duty.created_at)).limit(10).all()
+    
+    # Get driver's penalties
+    penalties = Penalty.query.filter_by(driver_id=driver_id).order_by(desc(Penalty.applied_at)).all()
+    
+    # Get driver's assets
+    assets = Asset.query.filter_by(driver_id=driver_id).all()
+    
+    return render_template('admin/driver_details.html', 
+                         driver=driver, 
+                         recent_duties=recent_duties,
+                         penalties=penalties,
+                         assets=assets)
+
 @admin_bp.route('/vehicles')
 @login_required
 @admin_required
