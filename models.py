@@ -142,6 +142,16 @@ class Duty(db.Model):
     start_odometer = db.Column(db.Float)
     end_odometer = db.Column(db.Float)
     
+    # Location Data for Start/End Photos
+    start_latitude = db.Column(db.Float)
+    start_longitude = db.Column(db.Float)
+    start_location_accuracy = db.Column(db.Float)
+    start_photo_timestamp = db.Column(db.DateTime)
+    end_latitude = db.Column(db.Float)
+    end_longitude = db.Column(db.Float)
+    end_location_accuracy = db.Column(db.Float)
+    end_photo_timestamp = db.Column(db.DateTime)
+    
     # Financial - Earnings
     cash_collected = db.Column(db.Float, default=0.0)
     qr_payment = db.Column(db.Float, default=0.0)

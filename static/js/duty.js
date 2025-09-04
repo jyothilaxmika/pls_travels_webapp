@@ -43,6 +43,9 @@ function handlePhotoCapture(event) {
             return;
         }
         
+        // Capture GPS location and timestamp
+        captureLocationAndTimestamp(file, input);
+        
         // Create preview
         createPhotoPreview(file, input);
         
@@ -92,14 +95,16 @@ function createPhotoPreview(file, input) {
         removeBtn.appendChild(icon);
         containerDiv.appendChild(removeBtn);
         
-        // Create success message
+        // Create success message with timestamp
         const successMsg = document.createElement('small');
         successMsg.className = 'd-block text-success mt-1';
         
         const successIcon = document.createElement('i');
         successIcon.className = 'fas fa-check-circle';
         successMsg.appendChild(successIcon);
-        successMsg.appendChild(document.createTextNode(' Photo captured successfully'));
+        
+        const timestamp = new Date().toLocaleString();
+        successMsg.appendChild(document.createTextNode(` Photo captured at ${timestamp}`));
         
         // Append all elements
         previewContainer.appendChild(containerDiv);
@@ -127,6 +132,107 @@ function addCameraButton(input) {
     });
     
     input.parentNode.appendChild(cameraBtn);
+}
+
+// GPS Location and Timestamp Capture
+function captureLocationAndTimestamp(file, input) {
+    const timestamp = new Date().toISOString();
+    const inputType = input.id.includes('start') ? 'start' : 'end';
+    
+    // Store timestamp
+    const timestampField = document.createElement('input');
+    timestampField.type = 'hidden';
+    timestampField.name = `${inputType}_photo_timestamp`;
+    timestampField.value = timestamp;
+    input.parentNode.appendChild(timestampField);
+    
+    // Show location capture status
+    showLocationStatus(input.parentNode, 'Capturing location...');
+    
+    // Get GPS location
+    if (navigator.geolocation) {
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+        };
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
+                
+                // Store location data
+                const latField = document.createElement('input');
+                latField.type = 'hidden';
+                latField.name = `${inputType}_latitude`;
+                latField.value = lat;
+                input.parentNode.appendChild(latField);
+                
+                const lngField = document.createElement('input');
+                lngField.type = 'hidden';
+                lngField.name = `${inputType}_longitude`;
+                lngField.value = lng;
+                input.parentNode.appendChild(lngField);
+                
+                const accField = document.createElement('input');
+                accField.type = 'hidden';
+                accField.name = `${inputType}_location_accuracy`;
+                accField.value = accuracy;
+                input.parentNode.appendChild(accField);
+                
+                showLocationStatus(input.parentNode, `Location captured (${accuracy.toFixed(0)}m accuracy)`, 'success');
+            },
+            function(error) {
+                let errorMsg = 'Location unavailable';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg = 'Location permission denied';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg = 'Location unavailable';
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg = 'Location timeout';
+                        break;
+                }
+                showLocationStatus(input.parentNode, errorMsg, 'warning');
+            },
+            options
+        );
+    } else {
+        showLocationStatus(input.parentNode, 'GPS not supported', 'warning');
+    }
+}
+
+function showLocationStatus(container, message, type = 'info') {
+    // Remove existing status
+    const existingStatus = container.querySelector('.location-status');
+    if (existingStatus) {
+        existingStatus.remove();
+    }
+    
+    // Create status element
+    const statusDiv = document.createElement('div');
+    statusDiv.className = `location-status alert alert-${type} alert-sm mt-2 py-1 px-2`;
+    statusDiv.style.fontSize = '0.75rem';
+    
+    const icon = type === 'success' ? 'fa-map-marker-alt' : 
+                 type === 'warning' ? 'fa-exclamation-triangle' : 
+                 'fa-spinner fa-spin';
+    
+    statusDiv.innerHTML = `<i class="fas ${icon} me-1"></i>${message}`;
+    container.appendChild(statusDiv);
+    
+    // Auto-remove after 5 seconds for non-error messages
+    if (type !== 'warning') {
+        setTimeout(() => {
+            if (statusDiv.parentNode) {
+                statusDiv.remove();
+            }
+        }, 5000);
+    }
 }
 
 // Image compression for better performance

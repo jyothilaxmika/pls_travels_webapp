@@ -273,6 +273,19 @@ def start_duty():
             file.save(os.path.join('uploads', filename))
             duty.start_photo = filename
     
+    # Handle start location and timestamp data
+    duty.start_latitude = request.form.get('start_latitude', type=float)
+    duty.start_longitude = request.form.get('start_longitude', type=float)
+    duty.start_location_accuracy = request.form.get('start_location_accuracy', type=float)
+    
+    # Parse timestamp if provided
+    timestamp_str = request.form.get('start_photo_timestamp')
+    if timestamp_str:
+        try:
+            duty.start_photo_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        except ValueError:
+            duty.start_photo_timestamp = datetime.utcnow()
+    
     # Mark vehicle as not available
     vehicle.is_available = False
     driver.current_vehicle_id = vehicle.id
@@ -342,6 +355,19 @@ def end_duty():
             filename = secure_filename(f"duty_end_{driver.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
             file.save(os.path.join('uploads', filename))
             active_duty.end_photo = filename
+    
+    # Handle end location and timestamp data
+    active_duty.end_latitude = request.form.get('end_latitude', type=float)
+    active_duty.end_longitude = request.form.get('end_longitude', type=float)
+    active_duty.end_location_accuracy = request.form.get('end_location_accuracy', type=float)
+    
+    # Parse timestamp if provided
+    timestamp_str = request.form.get('end_photo_timestamp')
+    if timestamp_str:
+        try:
+            active_duty.end_photo_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        except ValueError:
+            active_duty.end_photo_timestamp = datetime.utcnow()
     
     # Calculate comprehensive tripsheet
     from utils import calculate_tripsheet
