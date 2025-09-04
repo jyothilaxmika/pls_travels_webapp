@@ -15,7 +15,7 @@ def log_audit(action, entity_type=None, entity_id=None, details=None):
         audit.action = action
         audit.entity_type = entity_type
         audit.entity_id = entity_id
-        audit.details = json.dumps(details) if details else None
+        audit.new_values = json.dumps(details) if details else None
         audit.ip_address = request.remote_addr
         audit.user_agent = request.headers.get('User-Agent', '')[:255]
         db.session.add(audit)
@@ -78,13 +78,16 @@ def register():
         user.username = form.username.data
         user.email = form.email.data
         user.password_hash = generate_password_hash(form.password.data) if form.password.data else ''
-        user.role = form.role.data if form.role.data else 'driver'
+        # Convert string role to UserRole enum
+        from models import UserRole
+        role_str = form.role.data if form.role.data else 'driver'
+        user.role = UserRole.ADMIN if role_str == 'admin' else UserRole.MANAGER if role_str == 'manager' else UserRole.DRIVER
         
         db.session.add(user)
         db.session.flush()  # Get user ID
         
         # If registering as manager, assign branch
-        if form.role.data == 'manager' and form.branch.data:
+        if user.role == UserRole.MANAGER and form.branch.data:
             branch = Branch.query.get(form.branch.data)
             if branch:
                 user.managed_branches.append(branch)
