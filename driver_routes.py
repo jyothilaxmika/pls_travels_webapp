@@ -28,6 +28,26 @@ def get_driver_profile():
         return current_user.driver_profile
     return None
 
+def get_last_duty_values(driver_id, vehicle_id=None):
+    """Get odometer and CNG values from the last completed duty"""
+    query = Duty.query.filter_by(driver_id=driver_id, status='completed')
+    if vehicle_id:
+        query = query.filter_by(vehicle_id=vehicle_id)
+    
+    last_duty = query.order_by(desc(Duty.created_at)).first()
+    
+    if last_duty:
+        return {
+            'last_odometer': last_duty.end_odometer,
+            'last_cng_level': last_duty.end_cng_level,
+            'last_duty_date': last_duty.end_time.strftime('%Y-%m-%d %H:%M') if last_duty.end_time else None
+        }
+    return {
+        'last_odometer': None,
+        'last_cng_level': None,
+        'last_duty_date': None
+    }
+
 @driver_bp.route('/dashboard')
 @login_required
 @driver_required
@@ -227,6 +247,15 @@ def start_duty():
     
     vehicle_id = request.form.get('vehicle_id')
     start_odometer = request.form.get('start_odometer', type=float)
+    start_cng_level = request.form.get('start_cng_level', type=float)
+    
+    # Auto-fill from last duty if not provided
+    if not start_odometer or not start_cng_level:
+        last_duty_data = get_last_duty_values(driver.id, int(vehicle_id) if vehicle_id else None)
+        if not start_odometer and last_duty_data['last_odometer']:
+            start_odometer = last_duty_data['last_odometer']
+        if not start_cng_level and last_duty_data['last_cng_level']:
+            start_cng_level = last_duty_data['last_cng_level']
     
     if not vehicle_id:
         flash('Please select a vehicle.', 'error')
@@ -263,6 +292,7 @@ def start_duty():
     duty.duty_scheme_id = duty_scheme.id if duty_scheme else None
     duty.start_time = datetime.utcnow()
     duty.start_odometer = start_odometer or 0.0
+    duty.start_cng_level = start_cng_level or 0.0
     duty.status = 'active'
     
     # Handle start photo
@@ -321,6 +351,7 @@ def end_duty():
     
     # Get financial data from form
     end_odometer = request.form.get('end_odometer', type=float)
+    end_cng_level = request.form.get('end_cng_level', type=float)
     trip_count = request.form.get('trip_count', type=int, default=0)
     fuel_amount = request.form.get('fuel_amount', type=float, default=0.0)
     
@@ -341,6 +372,7 @@ def end_duty():
     # Update basic duty info
     active_duty.end_time = datetime.utcnow()
     active_duty.end_odometer = end_odometer
+    active_duty.end_cng_level = end_cng_level
     active_duty.trip_count = trip_count
     active_duty.fuel_amount = fuel_amount
     active_duty.status = 'completed'
@@ -396,6 +428,67 @@ def end_duty():
     
     flash(f'Duty completed! You earned ₹{active_duty.driver_earnings:.2f}', 'success')
     return redirect(url_for('driver.earnings'))
+
+@driver_bp.route('/duty/correction/<int:duty_id>', methods=['POST'])
+@login_required
+@driver_required
+def request_correction(duty_id):
+    """Request correction for duty with photo verification"""
+    driver = get_driver_profile()
+    
+    if not driver:
+        flash('Driver profile not found.', 'error')
+        return redirect(url_for('driver.duty'))
+    
+    duty = Duty.query.filter_by(id=duty_id, driver_id=driver.id).first()
+    
+    if not duty:
+        flash('Duty not found.', 'error')
+        return redirect(url_for('driver.earnings'))
+    
+    correction_reason = request.form.get('correction_reason')
+    if not correction_reason:
+        flash('Please provide a reason for correction.', 'error')
+        return redirect(url_for('driver.earnings'))
+    
+    # Handle correction photo (required)
+    if 'correction_photo' not in request.files or not request.files['correction_photo'].filename:
+        flash('Photo verification is required for corrections.', 'error')
+        return redirect(url_for('driver.earnings'))
+    
+    file = request.files['correction_photo']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(f"correction_{duty.id}_{driver.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+        file.save(os.path.join('uploads', filename))
+        
+        duty.correction_requested = True
+        duty.correction_reason = correction_reason
+        duty.correction_photo = filename
+        duty.correction_timestamp = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_audit('request_correction', 'duty', duty_id,
+                 {'reason': correction_reason, 'driver': driver.full_name})
+        
+        flash('Correction request submitted successfully. Admin will review it.', 'info')
+    else:
+        flash('Invalid photo format. Please upload JPG, PNG, or JPEG.', 'error')
+    
+    return redirect(url_for('driver.earnings'))
+
+@driver_bp.route('/duty/last-values/<int:vehicle_id>')
+@login_required
+@driver_required
+def get_last_values(vehicle_id):
+    """API endpoint to get last duty values for auto-fill"""
+    driver = get_driver_profile()
+    
+    if not driver:
+        return jsonify({'error': 'Driver not found'}), 404
+    
+    last_duty_data = get_last_duty_values(driver.id, vehicle_id)
+    return jsonify(last_duty_data)
 
 @driver_bp.route('/earnings')
 @login_required

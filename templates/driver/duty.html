@@ -66,7 +66,7 @@
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
                 <!-- Basic Duty Information -->
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="end_odometer" class="form-label">Ending Odometer Reading *</label>
                         <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
                                min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
@@ -75,7 +75,16 @@
                         </small>
                     </div>
                     
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
+                        <label for="end_cng_level" class="form-label">CNG Level (%) *</label>
+                        <input type="number" class="form-control" name="end_cng_level" id="end_cng_level" 
+                               min="0" max="100" step="1" required>
+                        <small class="text-muted">
+                            Started at: {{ active_duty.start_cng_level or 'Not recorded' }}%
+                        </small>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
                         <label for="trip_count" class="form-label">Number of Trips *</label>
                         <input type="number" class="form-control" name="trip_count" id="trip_count" 
                                min="0" required>
@@ -298,11 +307,21 @@
                     </select>
                 </div>
                 
-                <div class="mb-3">
-                    <label for="start_odometer" class="form-label">Starting Odometer Reading *</label>
-                    <input type="number" class="form-control" name="start_odometer" id="start_odometer" 
-                           min="0" step="0.1" required>
-                    <small class="text-muted">Enter the current odometer reading of the vehicle</small>
+                <!-- Odometer and CNG Level Row -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="start_odometer" class="form-label">Starting Odometer Reading *</label>
+                        <input type="number" class="form-control" name="start_odometer" id="start_odometer" 
+                               min="0" step="0.1" required>
+                        <small class="text-muted" id="last-odometer-info">Enter the current odometer reading</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="start_cng_level" class="form-label">CNG Level (%) *</label>
+                        <input type="number" class="form-control" name="start_cng_level" id="start_cng_level" 
+                               min="0" max="100" step="1" required>
+                        <small class="text-muted" id="last-cng-info">Enter current CNG level (0-100%)</small>
+                    </div>
                 </div>
                 
                 <!-- Start Duty Photo -->
@@ -493,6 +512,42 @@ if (startDutyBtn) {
     
     // Initial validation
     validateChecklist();
+}
+
+// Auto-fill odometer and CNG levels from last submission
+function loadLastValues() {
+    const vehicleSelect = document.getElementById('vehicle_id');
+    if (vehicleSelect && vehicleSelect.value) {
+        fetch(`/driver/duty/last-values/${vehicleSelect.value}`)
+            .then(response => response.json())
+            .then(data => {
+                const startOdometerField = document.getElementById('start_odometer');
+                const startCngField = document.getElementById('start_cng_level');
+                const odometerInfo = document.getElementById('last-odometer-info');
+                const cngInfo = document.getElementById('last-cng-info');
+                
+                if (data.last_odometer && !startOdometerField.value) {
+                    startOdometerField.value = data.last_odometer;
+                    if (odometerInfo) odometerInfo.innerHTML = `Last submission: ${data.last_odometer} km`;
+                }
+                
+                if (data.last_cng_level && !startCngField.value) {
+                    startCngField.value = data.last_cng_level;
+                    if (cngInfo) cngInfo.innerHTML = `Last submission: ${data.last_cng_level}%`;
+                }
+            })
+            .catch(error => console.log('Could not load last values:', error));
+    }
+}
+
+// Load last values when vehicle is selected
+const vehicleSelect = document.getElementById('vehicle_id');
+if (vehicleSelect) {
+    vehicleSelect.addEventListener('change', loadLastValues);
+    // Load on page load if vehicle is already selected
+    if (vehicleSelect.value) {
+        setTimeout(loadLastValues, 500);
+    }
 }
 
 // Distance calculation helper
