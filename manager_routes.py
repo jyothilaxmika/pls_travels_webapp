@@ -4,7 +4,8 @@ from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc, and_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, db)
+                   Penalty, Asset, AuditLog, db,
+                   DriverStatus, VehicleStatus, DutyStatus)
 from auth import log_audit
 
 manager_bp = Blueprint('manager', __name__)
@@ -39,13 +40,13 @@ def dashboard():
     # Active drivers in managed branches
     active_drivers = Driver.query.filter(
         Driver.branch_id.in_(branch_ids),
-        Driver.status == 'active'
+        Driver.status == DriverStatus.ACTIVE
     ).count()
     
     # Active vehicles in managed branches
     active_vehicles = Vehicle.query.filter(
         Vehicle.branch_id.in_(branch_ids),
-        Vehicle.status == 'active'
+        Vehicle.status == VehicleStatus.ACTIVE
     ).count()
     
     # Today's duties
@@ -121,7 +122,7 @@ def approve_driver(driver_id):
         flash('Driver is not in pending status.', 'error')
         return redirect(url_for('manager.drivers'))
     
-    driver.status = 'active'
+    driver.status = DriverStatus.ACTIVE
     driver.approved_by = current_user.id
     driver.approved_at = datetime.utcnow()
     

@@ -6,7 +6,8 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, db)
+                   Penalty, Asset, AuditLog, db,
+                   DriverStatus, VehicleStatus, DutyStatus)
 from forms import DriverProfileForm, DutyForm
 from utils import allowed_file, calculate_earnings
 from auth import log_audit
@@ -64,7 +65,7 @@ def dashboard():
     todays_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
         func.date(Duty.start_time) == today,
-        Duty.status == 'active'
+        Duty.status == DutyStatus.ACTIVE
     ).first()
 
     # Today's earnings
@@ -202,20 +203,20 @@ def profile():
 def duty():
     driver = get_driver_profile()
 
-    if not driver or driver.status != 'active':
+    if not driver or driver.status != DriverStatus.ACTIVE:
         flash('Your driver profile is not active. Please contact admin.', 'error')
         return redirect(url_for('driver.dashboard'))
 
     # Check for active duty
     active_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
-        Duty.status == 'active'
+        Duty.status == DutyStatus.ACTIVE
     ).first()
 
     # Available vehicles in driver's branch
     available_vehicles = Vehicle.query.filter(
         Vehicle.branch_id == driver.branch_id,
-        Vehicle.status == 'active',
+        Vehicle.status == VehicleStatus.ACTIVE,
         Vehicle.is_available == True
     ).all()
 
@@ -230,14 +231,14 @@ def duty():
 def start_duty():
     driver = get_driver_profile()
 
-    if not driver or driver.status != 'active':
+    if not driver or driver.status != DriverStatus.ACTIVE:
         flash('Your driver profile is not active.', 'error')
         return redirect(url_for('driver.duty'))
 
     # Check if already has active duty
     active_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
-        Duty.status == 'active'
+        Duty.status == DutyStatus.ACTIVE
     ).first()
 
     if active_duty:
@@ -288,7 +289,7 @@ def start_duty():
     duty.duty_scheme_id = duty_scheme.id if duty_scheme else None
     duty.start_time = datetime.utcnow()
     duty.start_odometer = start_odometer or 0.0
-    duty.status = 'active'
+    duty.status = DutyStatus.ACTIVE
 
     # Handle start photo
     if 'start_photo' in request.files:
@@ -337,7 +338,7 @@ def end_duty():
     # Get active duty
     active_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
-        Duty.status == 'active'
+        Duty.status == DutyStatus.ACTIVE
     ).first()
 
     if not active_duty:

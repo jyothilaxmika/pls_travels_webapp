@@ -6,7 +6,8 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, VehicleAssignment, db)
+                   Penalty, Asset, AuditLog, VehicleAssignment, db,
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm
 from utils import allowed_file, calculate_earnings
 from auth import log_audit
@@ -28,15 +29,17 @@ def admin_required(f):
 @admin_required
 def dashboard():
     # Get overall statistics
-    total_drivers = Driver.query.filter_by(status='active').count()
-    total_vehicles = Vehicle.query.filter_by(status='active').count()
+    from models import DriverStatus, VehicleStatus
+    total_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).count()
+    total_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE).count()
     total_branches = Branch.query.filter_by(is_active=True).count()
     
     # Active duties today
     today = datetime.now().date()
+    from models import DutyStatus
     active_duties = Duty.query.filter(
         func.date(Duty.start_time) == today,
-        Duty.status == 'active'
+        Duty.status == DutyStatus.ACTIVE
     ).count()
     
     # Revenue statistics
@@ -89,7 +92,7 @@ def drivers():
 @admin_required
 def approve_driver(driver_id):
     driver = Driver.query.get_or_404(driver_id)
-    driver.status = 'active'
+    driver.status = DriverStatus.ACTIVE
     driver.approved_by = current_user.id
     driver.approved_at = datetime.utcnow()
     
@@ -147,7 +150,7 @@ def view_driver(driver_id):
     net_earnings = total_earnings - total_penalties
     
     # Active duty statistics
-    active_duties = [d for d in all_duties if d.status == 'active']
+    active_duties = [d for d in all_duties if d.status == DutyStatus.ACTIVE]
     completed_duties = [d for d in all_duties if d.status == 'completed']
     
     # Monthly breakdown (last 6 months)
@@ -211,8 +214,8 @@ def add_assignment():
     form = VehicleAssignmentForm()
     
     # Populate form choices
-    form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name})") for d in Driver.query.filter_by(status='active').all()]
-    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.vehicle_type}") for v in Vehicle.query.filter_by(status='active', is_available=True).all()]
+    form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name})") for d in Driver.query.filter_by(status=DriverStatus.ACTIVE).all()]
+    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.vehicle_type}") for v in Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).all()]
     
     if form.validate_on_submit():
         # Check for conflicting assignments
@@ -250,7 +253,7 @@ def add_assignment():
             if form.start_date.data <= datetime.now().date():
                 driver = Driver.query.get(form.driver_id.data)
                 driver.current_vehicle_id = form.vehicle_id.data
-                assignment.status = 'active'
+                assignment.status = AssignmentStatus.ACTIVE
             
             db.session.commit()
             
@@ -472,7 +475,7 @@ def reports():
         func.sum(Duty.distance_km).label('total_distance')
     ).join(Branch, Vehicle.branch_id == Branch.id) \
      .outerjoin(Duty, Vehicle.id == Duty.vehicle_id) \
-     .filter(Vehicle.status == 'active') \
+     .filter(Vehicle.status == VehicleStatus.ACTIVE) \
      .group_by(Vehicle.id, Vehicle.registration_number, Branch.name).all()
     
     return render_template('admin/reports.html',
