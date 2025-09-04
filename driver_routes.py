@@ -465,10 +465,10 @@ def earnings():
     ).order_by(desc(Duty.start_time)).all()
     
     # Calculate totals
-    total_earnings = sum(duty.driver_earnings for duty in duties)
-    total_revenue = sum(duty.revenue for duty in duties)
-    total_bmg = sum(duty.bmg_applied for duty in duties)
-    total_incentive = sum(duty.incentive for duty in duties)
+    total_earnings = sum(duty.driver_earnings or 0 for duty in duties)
+    total_revenue = sum(duty.revenue or 0 for duty in duties)
+    total_bmg = sum(duty.bmg_applied or 0 for duty in duties)
+    total_incentive = sum(duty.incentive or 0 for duty in duties)
     
     # Get penalties in date range
     penalties = Penalty.query.filter(
@@ -477,7 +477,7 @@ def earnings():
         func.date(Penalty.applied_at) <= end_date_obj
     ).all()
     
-    total_penalties = sum(penalty.amount for penalty in penalties)
+    total_penalties = sum(penalty.amount or 0 for penalty in penalties)
     
     return render_template('driver/earnings.html',
                          driver=driver,
@@ -506,7 +506,7 @@ def earnings_chart():
     
     for i in range(6, -1, -1):
         date = datetime.now().date() - timedelta(days=i)
-        daily_earning = db.session.query(func.sum(Duty.driver_earnings)).filter(
+        daily_earning = db.session.query(func.sum(func.coalesce(Duty.driver_earnings, 0))).filter(
             Duty.driver_id == driver.id,
             func.date(Duty.start_time) == date,
             Duty.status == 'completed'

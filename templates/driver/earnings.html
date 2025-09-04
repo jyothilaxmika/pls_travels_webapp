@@ -360,7 +360,7 @@ function exportEarningsCSV() {
     csvContent += "Driver Earnings Report\n";
     csvContent += "Driver: {{ driver.full_name }}\n";
     csvContent += "Period: {{ start_date }} to {{ end_date }}\n";
-    csvContent += "Total Earnings: ₹{{ '{:,.2f}'.format(total_earnings) }}\n\n";
+    csvContent += "Total Earnings: ₹{{ '{:,.2f}'.format(total_earnings or 0) }}\n\n";
     
     csvContent += "Date,Vehicle,Start Time,End Time,Duration,Revenue,Trips,Earnings,BMG Applied,Incentive\n";
     

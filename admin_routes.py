@@ -142,7 +142,7 @@ def view_driver(driver_id):
     # Calculate comprehensive statistics
     total_duties = len(all_duties)
     total_earnings = sum(duty.driver_earnings or 0 for duty in all_duties)
-    total_penalties = sum(penalty.amount for penalty in penalties)
+    total_penalties = sum(penalty.amount or 0 for penalty in penalties)
     net_earnings = total_earnings - total_penalties
     
     # Active duty statistics
