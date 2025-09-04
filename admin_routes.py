@@ -300,10 +300,12 @@ def vehicles():
     vehicles = query.paginate(page=page, per_page=20, error_out=False)
     branches = Branch.query.filter_by(is_active=True).all()
     
+    from datetime import datetime
     return render_template('admin/vehicles.html', 
                          vehicles=vehicles, 
                          branches=branches,
-                         branch_filter=branch_filter)
+                         branch_filter=branch_filter,
+                         today=datetime.now().date())
 
 @admin_bp.route('/vehicles/add', methods=['GET', 'POST'])
 @login_required
