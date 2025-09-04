@@ -215,21 +215,21 @@ def add_assignment():
     
     # Populate form choices
     form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name})") for d in Driver.query.filter_by(status=DriverStatus.ACTIVE).all()]
-    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.vehicle_type}") for v in Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).all()]
+    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.vehicle_type.value}") for v in Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).all()]
     
     if form.validate_on_submit():
         # Check for conflicting assignments
         existing_assignment = VehicleAssignment.query.filter(
             VehicleAssignment.driver_id == form.driver_id.data,
             VehicleAssignment.start_date <= form.start_date.data,
-            VehicleAssignment.status.in_(['scheduled', 'active']),
+            VehicleAssignment.status.in_([AssignmentStatus.SCHEDULED, AssignmentStatus.ACTIVE]),
             VehicleAssignment.end_date.is_(None) | (VehicleAssignment.end_date >= form.start_date.data)
         ).first()
         
         vehicle_assignment = VehicleAssignment.query.filter(
             VehicleAssignment.vehicle_id == form.vehicle_id.data,
             VehicleAssignment.start_date <= form.start_date.data,
-            VehicleAssignment.status.in_(['scheduled', 'active']),
+            VehicleAssignment.status.in_([AssignmentStatus.SCHEDULED, AssignmentStatus.ACTIVE]),
             VehicleAssignment.end_date.is_(None) | (VehicleAssignment.end_date >= form.start_date.data)
         ).first()
         

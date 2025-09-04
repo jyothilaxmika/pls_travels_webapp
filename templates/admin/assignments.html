@@ -57,7 +57,7 @@
                         <td>
                             <small>
                                 <strong>{{ assignment.assignment_vehicle.registration_number }}</strong><br>
-                                <span class="text-muted">{{ assignment.assignment_vehicle.vehicle_type.title() }}</span>
+                                <span class="text-muted">{{ assignment.assignment_vehicle.vehicle_type.value.title() }}</span>
                             </small>
                         </td>
                         <td>
@@ -74,19 +74,19 @@
                             <span class="badge badge-sm bg-secondary">{{ assignment.shift_type.replace('_', ' ').title() }}</span>
                         </td>
                         <td>
-                            {% if assignment.status == 'active' %}
+                            {% if assignment.status.value == 'active' %}
                                 <span class="badge badge-sm bg-success">Active</span>
-                            {% elif assignment.status == 'scheduled' %}
+                            {% elif assignment.status.value == 'scheduled' %}
                                 <span class="badge badge-sm bg-primary">Scheduled</span>
-                            {% elif assignment.status == 'completed' %}
+                            {% elif assignment.status.value == 'completed' %}
                                 <span class="badge badge-sm bg-secondary">Completed</span>
                             {% else %}
-                                <span class="badge badge-sm bg-warning">{{ assignment.status.title() }}</span>
+                                <span class="badge badge-sm bg-warning">{{ assignment.status.value.title() }}</span>
                             {% endif %}
                         </td>
                         <td><small>{{ assignment.assigned_by_user.username }}</small></td>
                         <td>
-                            {% if assignment.status in ['active', 'scheduled'] %}
+                            {% if assignment.status.value in ['active', 'scheduled'] %}
                             <form method="POST" action="{{ url_for('admin.end_assignment', assignment_id=assignment.id) }}" class="d-inline">
                                 <button type="submit" class="btn btn-xs btn-warning" onclick="return confirm('End this assignment?')" title="End">
                                     <i class="fas fa-stop"></i>
