@@ -81,7 +81,7 @@
                             {% elif duty.status == 'cancelled' %}
                                 <span class="badge bg-danger">Cancelled</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ duty.status.title() }}</span>
+                                <span class="badge bg-secondary">{{ duty.status.value.title() }}</span>
                             {% endif %}
                         </td>
                         <td>
