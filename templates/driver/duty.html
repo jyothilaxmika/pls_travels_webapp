@@ -64,6 +64,7 @@
         </div>
         <div class="card-body">
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
+                <!-- Basic Duty Information -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="end_odometer" class="form-label">Ending Odometer Reading *</label>
@@ -75,27 +76,175 @@
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <label for="revenue" class="form-label">Total Revenue Collected *</label>
-                        <div class="input-group">
-                            <span class="input-group-text">₹</span>
-                            <input type="number" class="form-control" name="revenue" id="revenue" 
-                                   min="0" step="0.01" required>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 mb-3">
                         <label for="trip_count" class="form-label">Number of Trips *</label>
                         <input type="number" class="form-control" name="trip_count" id="trip_count" 
                                min="0" required>
                     </div>
-                    
+                </div>
+                
+                <!-- Comprehensive Financial Section -->
+                <div class="card bg-light mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Revenue & Collections</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="cash_collected" class="form-label">Cash Collected *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="cash_collected" id="cash_collected" 
+                                           min="0" step="0.01" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="qr_payment" class="form-label">QR/UPI Payments</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="qr_payment" id="qr_payment" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="outside_cash" class="form-label">Outside Cash</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="outside_cash" id="outside_cash" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Company Expenses Section -->
+                <div class="card bg-light mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-receipt me-2"></i>Company Expenses</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="operator_bill" class="form-label">Operator Bill *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="operator_bill" id="operator_bill" 
+                                           min="0" step="0.01" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="toll" class="form-label">Toll Charges</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="toll" id="toll" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="petrol_expenses" class="form-label">Petrol/Diesel</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="petrol_expenses" id="petrol_expenses" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="gas_expenses" class="form-label">Gas Expenses</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="gas_expenses" id="gas_expenses" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="other_expenses" class="form-label">Other Expenses</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="other_expenses" id="other_expenses" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Driver Salary & Deductions Section -->
+                <div class="card bg-light mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-user-tie me-2"></i>Driver Salary & Deductions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="company_pay" class="form-label">Company Pay *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="company_pay" id="company_pay" 
+                                           min="0" step="0.01" required>
+                                </div>
+                                <small class="text-muted">Base salary/guarantee</small>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="advance" class="form-label">Advance</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="advance" id="advance" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="driver_expenses" class="form-label">Driver Expenses</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="driver_expenses" id="driver_expenses" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="pass_deduction" class="form-label">Pass Deduction</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" name="pass_deduction" id="pass_deduction" 
+                                           min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fuel Information -->
+                <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="fuel_amount" class="form-label">Fuel Filled (Liters)</label>
                         <input type="number" class="form-control" name="fuel_amount" id="fuel_amount" 
-                               min="0" step="0.1">
-                        <small class="text-muted">Optional: Amount of fuel filled during duty</small>
+                               min="0" step="0.1" value="0">
+                        <small class="text-muted">Amount of fuel filled during duty</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body p-2">
+                                <h6 class="text-info mb-1"><i class="fas fa-calculator me-2"></i>Live Calculation</h6>
+                                <div id="live-calculation">
+                                    <small>
+                                        <div>Total Earnings: <span id="calc-total-earnings">₹0.00</span></div>
+                                        <div>Driver Salary: <span id="calc-driver-salary">₹0.00</span></div>
+                                        <div>Company Profit: <span id="calc-company-profit">₹0.00</span></div>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -112,19 +261,6 @@
                     <img id="preview-image" class="img-fluid rounded" style="max-height: 200px;">
                 </div>
                 
-                <!-- Earnings Calculation -->
-                <div class="card bg-light mb-3">
-                    <div class="card-body">
-                        <h6><i class="fas fa-calculator me-2"></i>Estimated Earnings</h6>
-                        <div id="earnings-calculation">
-                            <p class="mb-1"><strong>Revenue:</strong> <span id="calc-revenue">₹0.00</span></p>
-                            <p class="mb-1"><strong>Estimated Earnings:</strong> <span id="calc-earnings">₹0.00</span></p>
-                            <small class="text-muted">
-                                Actual earnings may vary based on duty scheme and BMG
-                            </small>
-                        </div>
-                    </div>
-                </div>
                 
                 <button type="submit" class="btn btn-danger btn-lg w-100" onclick="return confirm('Are you sure you want to end this duty?')">
                     <i class="fas fa-stop-circle me-2"></i>End Duty
@@ -261,25 +397,56 @@ function setupPhotoPreview(inputId, previewDivId, previewImageId) {
 setupPhotoPreview('start_photo', 'start-photo-preview', 'start-preview-image');
 setupPhotoPreview('end_photo', 'photo-preview', 'preview-image');
 
-// Earnings calculation
-function calculateEarnings() {
-    const revenue = parseFloat(document.getElementById('revenue').value) || 0;
-    const trips = parseInt(document.getElementById('trip_count').value) || 0;
-    
-    // Simple estimation (actual calculation done server-side)
-    const estimatedEarnings = revenue * 0.3; // Assume 30% as basic estimate
-    
-    document.getElementById('calc-revenue').textContent = '₹' + revenue.toLocaleString('en-IN', {minimumFractionDigits: 2});
-    document.getElementById('calc-earnings').textContent = '₹' + estimatedEarnings.toLocaleString('en-IN', {minimumFractionDigits: 2});
+// Live tripsheet calculation
+function calculateTripsheet() {
+    // Get all financial input values
+    const cashCollected = parseFloat(document.getElementById('cash_collected')?.value) || 0;
+    const qrPayment = parseFloat(document.getElementById('qr_payment')?.value) || 0;
+    const outsideCash = parseFloat(document.getElementById('outside_cash')?.value) || 0;
+    const operatorBill = parseFloat(document.getElementById('operator_bill')?.value) || 0;
+    const toll = parseFloat(document.getElementById('toll')?.value) || 0;
+    const petrolExpenses = parseFloat(document.getElementById('petrol_expenses')?.value) || 0;
+    const gasExpenses = parseFloat(document.getElementById('gas_expenses')?.value) || 0;
+    const otherExpenses = parseFloat(document.getElementById('other_expenses')?.value) || 0;
+    const companyPay = parseFloat(document.getElementById('company_pay')?.value) || 0;
+    const advance = parseFloat(document.getElementById('advance')?.value) || 0;
+    const driverExpenses = parseFloat(document.getElementById('driver_expenses')?.value) || 0;
+    const passDeduction = parseFloat(document.getElementById('pass_deduction')?.value) || 0;
+
+    // Perform tripsheet calculations
+    const incentive = Math.max(cashCollected - operatorBill, 0);
+    const driverSalary = companyPay + incentive - (advance + driverExpenses + passDeduction);
+    const totalEarnings = cashCollected + qrPayment + outsideCash;
+    const totalExpenses = operatorBill + toll + petrolExpenses + gasExpenses + otherExpenses;
+    const companyProfit = totalEarnings - (driverSalary + totalExpenses);
+
+    // Update live calculation display
+    const totalEarningsSpan = document.getElementById('calc-total-earnings');
+    const driverSalarySpan = document.getElementById('calc-driver-salary');
+    const companyProfitSpan = document.getElementById('calc-company-profit');
+
+    if (totalEarningsSpan) totalEarningsSpan.textContent = '₹' + totalEarnings.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    if (driverSalarySpan) driverSalarySpan.textContent = '₹' + driverSalary.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    if (companyProfitSpan) companyProfitSpan.textContent = '₹' + companyProfit.toLocaleString('en-IN', {minimumFractionDigits: 2});
 }
 
-// Setup calculation listeners
-const revenueInput = document.getElementById('revenue');
-const tripInput = document.getElementById('trip_count');
-if (revenueInput && tripInput) {
-    revenueInput.addEventListener('input', calculateEarnings);
-    tripInput.addEventListener('input', calculateEarnings);
-}
+// Setup live calculation listeners for all financial inputs
+const financialInputIds = [
+    'cash_collected', 'qr_payment', 'outside_cash', 'operator_bill', 'toll',
+    'petrol_expenses', 'gas_expenses', 'other_expenses', 'company_pay',
+    'advance', 'driver_expenses', 'pass_deduction'
+];
+
+financialInputIds.forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.addEventListener('input', calculateTripsheet);
+        input.addEventListener('change', calculateTripsheet);
+    }
+});
+
+// Initial calculation on page load
+document.addEventListener('DOMContentLoaded', calculateTripsheet);
 
 // Duty duration calculation
 {% if active_duty and active_duty.start_time %}

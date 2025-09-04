@@ -142,11 +142,31 @@ class Duty(db.Model):
     start_odometer = db.Column(db.Float)
     end_odometer = db.Column(db.Float)
     
-    # Financial
-    revenue = db.Column(db.Float, default=0.0)
-    driver_earnings = db.Column(db.Float, default=0.0)
+    # Financial - Earnings
+    cash_collected = db.Column(db.Float, default=0.0)
+    qr_payment = db.Column(db.Float, default=0.0)
+    outside_cash = db.Column(db.Float, default=0.0)
+    
+    # Financial - Company Expenses
+    operator_bill = db.Column(db.Float, default=0.0)
+    toll = db.Column(db.Float, default=0.0)
+    petrol_expenses = db.Column(db.Float, default=0.0)
+    gas_expenses = db.Column(db.Float, default=0.0)
+    other_expenses = db.Column(db.Float, default=0.0)
+    
+    # Financial - Driver Calculations
+    company_pay = db.Column(db.Float, default=0.0)  # Base salary/guarantee
+    advance = db.Column(db.Float, default=0.0)
+    driver_expenses = db.Column(db.Float, default=0.0)
+    pass_deduction = db.Column(db.Float, default=0.0)
+    
+    # Calculated Fields (from tripsheet calculation)
+    revenue = db.Column(db.Float, default=0.0)  # Total earnings
+    driver_earnings = db.Column(db.Float, default=0.0)  # Final driver salary
+    company_expenses = db.Column(db.Float, default=0.0)  # Total company expenses
+    company_profit = db.Column(db.Float, default=0.0)  # Company profit
+    incentive = db.Column(db.Float, default=0.0)  # Driver incentive
     bmg_applied = db.Column(db.Float, default=0.0)
-    incentive = db.Column(db.Float, default=0.0)
     penalty = db.Column(db.Float, default=0.0)
     
     # Status

@@ -306,15 +306,28 @@ def end_duty():
         flash('No active duty found.', 'error')
         return redirect(url_for('driver.duty'))
     
+    # Get financial data from form
     end_odometer = request.form.get('end_odometer', type=float)
-    revenue = request.form.get('revenue', type=float, default=0.0)
     trip_count = request.form.get('trip_count', type=int, default=0)
     fuel_amount = request.form.get('fuel_amount', type=float, default=0.0)
     
-    # Update duty
+    # Comprehensive financial data
+    active_duty.cash_collected = request.form.get('cash_collected', type=float, default=0.0)
+    active_duty.qr_payment = request.form.get('qr_payment', type=float, default=0.0)
+    active_duty.outside_cash = request.form.get('outside_cash', type=float, default=0.0)
+    active_duty.operator_bill = request.form.get('operator_bill', type=float, default=0.0)
+    active_duty.toll = request.form.get('toll', type=float, default=0.0)
+    active_duty.petrol_expenses = request.form.get('petrol_expenses', type=float, default=0.0)
+    active_duty.gas_expenses = request.form.get('gas_expenses', type=float, default=0.0)
+    active_duty.other_expenses = request.form.get('other_expenses', type=float, default=0.0)
+    active_duty.company_pay = request.form.get('company_pay', type=float, default=0.0)
+    active_duty.advance = request.form.get('advance', type=float, default=0.0)
+    active_duty.driver_expenses = request.form.get('driver_expenses', type=float, default=0.0)
+    active_duty.pass_deduction = request.form.get('pass_deduction', type=float, default=0.0)
+    
+    # Update basic duty info
     active_duty.end_time = datetime.utcnow()
     active_duty.end_odometer = end_odometer
-    active_duty.revenue = revenue
     active_duty.trip_count = trip_count
     active_duty.fuel_amount = fuel_amount
     active_duty.status = 'completed'
@@ -330,12 +343,16 @@ def end_duty():
             file.save(os.path.join('uploads', filename))
             active_duty.end_photo = filename
     
-    # Calculate earnings
-    if active_duty.duty_scheme:
-        earnings_info = calculate_earnings(active_duty.duty_scheme, revenue, trip_count)
-        active_duty.driver_earnings = earnings_info['earnings']
-        active_duty.bmg_applied = earnings_info['bmg_applied']
-        active_duty.incentive = earnings_info['incentive']
+    # Calculate comprehensive tripsheet
+    from utils import calculate_tripsheet
+    tripsheet_result = calculate_tripsheet(active_duty)
+    
+    # Update all calculated fields
+    active_duty.revenue = tripsheet_result['company_earnings']
+    active_duty.driver_earnings = tripsheet_result['driver_salary']
+    active_duty.company_expenses = tripsheet_result['company_expenses']
+    active_duty.company_profit = tripsheet_result['company_profit']
+    active_duty.incentive = tripsheet_result['incentive']
     
     # Update driver total earnings
     driver.total_earnings += active_duty.driver_earnings

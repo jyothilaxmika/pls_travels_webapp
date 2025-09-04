@@ -92,6 +92,27 @@ def create_app():
             
         db.session.commit()
 
+    # API routes
+    @app.route('/api/calculate-salary', methods=['POST'])
+    def calculate_salary():
+        from flask import request, jsonify
+        from utils import calculate_tripsheet
+        
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No input provided"}), 400
+
+        # Handle single row or multiple rows
+        if isinstance(data, dict):
+            result = calculate_tripsheet(data)
+        elif isinstance(data, list):
+            result = [calculate_tripsheet(row) for row in data]
+        else:
+            return jsonify({"error": "Invalid input format"}), 400
+
+        return jsonify(result)
+
     # Root route
     @app.route('/')
     def index():
