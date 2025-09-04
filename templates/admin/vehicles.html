@@ -73,9 +73,9 @@
                                 {% if days_left < 0 %}
                                     <span class="text-danger">Expired</span>
                                 {% elif days_left < 30 %}
-                                    <span class="text-warning">{{ vehicle.insurance_expiry.strftime('%Y-%m-%d') }}</span>
+                                    <span class="text-warning">{{ vehicle.insurance_expiry.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' }}</span>
                                 {% else %}
-                                    <span class="text-success">{{ vehicle.insurance_expiry.strftime('%Y-%m-%d') }}</span>
+                                    <span class="text-success">{{ vehicle.insurance_expiry.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' }}</span>
                                 {% endif %}
                             {% else %}
                                 <span class="text-muted">Not set</span>
@@ -87,9 +87,9 @@
                                 {% if days_left < 0 %}
                                     <span class="text-danger">Expired</span>
                                 {% elif days_left < 30 %}
-                                    <span class="text-warning">{{ vehicle.fitness_expiry.strftime('%Y-%m-%d') }}</span>
+                                    <span class="text-warning">{{ vehicle.fitness_expiry.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' }}</span>
                                 {% else %}
-                                    <span class="text-success">{{ vehicle.fitness_expiry.strftime('%Y-%m-%d') }}</span>
+                                    <span class="text-success">{{ vehicle.fitness_expiry.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' }}</span>
                                 {% endif %}
                             {% else %}
                                 <span class="text-muted">Not set</span>
@@ -124,9 +124,9 @@
                                         <div class="col-md-6">
                                             <h6>Compliance</h6>
                                             <p><strong>Insurance:</strong> {{ vehicle.insurance_number or 'Not specified' }}</p>
-                                            <p><strong>Insurance Expiry:</strong> {{ vehicle.insurance_expiry.strftime('%Y-%m-%d') if vehicle.insurance_expiry else 'Not set' }}</p>
-                                            <p><strong>Fitness Expiry:</strong> {{ vehicle.fitness_expiry.strftime('%Y-%m-%d') if vehicle.fitness_expiry else 'Not set' }}</p>
-                                            <p><strong>Permit Expiry:</strong> {{ vehicle.permit_expiry.strftime('%Y-%m-%d') if vehicle.permit_expiry else 'Not set' }}</p>
+                                            <p><strong>Insurance Expiry:</strong> {{ vehicle.insurance_expiry.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' if vehicle.insurance_expiry else 'Not set' }}</p>
+                                            <p><strong>Fitness Expiry:</strong> {{ vehicle.fitness_expiry.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' if vehicle.fitness_expiry else 'Not set' }}</p>
+                                            <p><strong>Permit Expiry:</strong> {{ vehicle.permit_expiry.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' if vehicle.permit_expiry else 'Not set' }}</p>
                                         </div>
                                     </div>
                                     
@@ -149,7 +149,7 @@
                                                     <span class="badge bg-secondary">{{ vehicle.status.title() }}</span>
                                                 {% endif %}
                                             </p>
-                                            <p><strong>Added:</strong> {{ vehicle.created_at.strftime('%Y-%m-%d') }}</p>
+                                            <p><strong>Added:</strong> {{ vehicle.created_at.strftime('%Y-%m-%d') if vehicle.created_at else 'N/A' }}</p>
                                         </div>
                                     </div>
                                 </div>

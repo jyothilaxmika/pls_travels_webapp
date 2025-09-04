@@ -69,7 +69,7 @@
                                 <span class="badge bg-secondary">{{ driver.status.title() }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ driver.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ driver.created_at.strftime('%Y-%m-%d') if driver.created_at else 'N/A' }}</td>
                         <td>₹{{ "{:,.2f}".format(driver.total_earnings) }}</td>
                         <td>
                             {% if driver.status == 'pending' %}
@@ -138,7 +138,7 @@
                                             <h6>Account Information</h6>
                                             <p><strong>Approved By:</strong> {{ driver.approver.username if driver.approver else 'System' }}</p>
                                             <p><strong>Approved On:</strong> {{ driver.approved_at.strftime('%Y-%m-%d') if driver.approved_at else 'N/A' }}</p>
-                                            <p><strong>Joined:</strong> {{ driver.created_at.strftime('%Y-%m-%d') }}</p>
+                                            <p><strong>Joined:</strong> {{ driver.created_at.strftime('%Y-%m-%d') if driver.created_at else 'N/A' }}</p>
                                         </div>
                                     </div>
                                     {% endif %}
