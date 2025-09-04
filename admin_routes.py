@@ -313,8 +313,14 @@ def add_vehicle():
     form.branch_id.choices = [(b.id, b.name) for b in Branch.query.filter_by(is_active=True).all()]
     
     if form.validate_on_submit():
+        # Check if registration number already exists
+        existing_vehicle = Vehicle.query.filter_by(registration_number=form.registration_number.data).first()
+        if existing_vehicle:
+            flash('Vehicle with this registration number already exists.', 'error')
+            return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
+        
         vehicle = Vehicle()
-        vehicle.registration_number = form.registration_number.data
+        vehicle.registration_number = form.registration_number.data.upper()  # Store in uppercase
         vehicle.vehicle_type = form.vehicle_type.data
         vehicle.model = form.model.data
         vehicle.year = form.year.data
@@ -327,14 +333,19 @@ def add_vehicle():
         vehicle.fastag_number = form.fastag_number.data
         vehicle.device_imei = form.device_imei.data
         
-        db.session.add(vehicle)
-        db.session.commit()
-        
-        log_audit('add_vehicle', 'vehicle', vehicle.id,
-                 {'registration': vehicle.registration_number, 'type': vehicle.vehicle_type})
-        
-        flash('Vehicle added successfully.', 'success')
-        return redirect(url_for('admin.vehicles'))
+        try:
+            db.session.add(vehicle)
+            db.session.commit()
+            
+            log_audit('add_vehicle', 'vehicle', vehicle.id,
+                     {'registration': vehicle.registration_number, 'type': vehicle.vehicle_type})
+            
+            flash('Vehicle added successfully.', 'success')
+            return redirect(url_for('admin.vehicles'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error adding vehicle. Please try again.', 'error')
+            return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
     
     return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
 

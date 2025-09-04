@@ -58,7 +58,7 @@ class VehicleAssignmentForm(FlaskForm):
     assignment_notes = TextAreaField('Notes')
 
 class VehicleForm(FlaskForm):
-    registration_number = StringField('Registration Number', validators=[DataRequired()])
+    registration_number = StringField('Registration Number', validators=[DataRequired(), Length(min=3, max=20)])
     vehicle_type = SelectField('Vehicle Type', choices=[
         ('bus', 'Bus'),
         ('taxi', 'Taxi'),
@@ -66,18 +66,18 @@ class VehicleForm(FlaskForm):
         ('truck', 'Truck'),
         ('other', 'Other')
     ], validators=[DataRequired()])
-    model = StringField('Model')
+    model = StringField('Model', validators=[Optional(), Length(max=100)])
     year = IntegerField('Year', validators=[Optional(), NumberRange(min=1990, max=2030)])
-    color = StringField('Color')
+    color = StringField('Color', validators=[Optional(), Length(max=30)])
     branch_id = SelectField('Branch', coerce=int, validators=[DataRequired()])
     
-    insurance_number = StringField('Insurance Number')
+    insurance_number = StringField('Insurance Number', validators=[Optional(), Length(max=100)])
     insurance_expiry = DateField('Insurance Expiry', validators=[Optional()])
     fitness_expiry = DateField('Fitness Expiry', validators=[Optional()])
     permit_expiry = DateField('Permit Expiry', validators=[Optional()])
     
-    fastag_number = StringField('FASTag Number')
-    device_imei = StringField('Device IMEI')
+    fastag_number = StringField('FASTag Number', validators=[Optional(), Length(max=50)])
+    device_imei = StringField('Device IMEI', validators=[Optional(), Length(max=20)])
 
 class DutySchemeForm(FlaskForm):
     name = StringField('Scheme Name', validators=[DataRequired()])
