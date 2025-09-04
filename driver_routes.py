@@ -30,12 +30,12 @@ def get_driver_profile():
 
 def get_last_duty_values(driver_id, vehicle_id=None):
     """Get odometer values from the last completed duty"""
-    query = Duty.query.filter_by(driver_id=driver_id, status='completed')
+    query = Duty.query.filter_by(driver_id=driver.id, status='completed')
     if vehicle_id:
         query = query.filter_by(vehicle_id=vehicle_id)
-    
+
     last_duty = query.order_by(desc(Duty.created_at)).first()
-    
+
     if last_duty:
         return {
             'last_odometer': last_duty.end_odometer,
@@ -51,42 +51,42 @@ def get_last_duty_values(driver_id, vehicle_id=None):
 @driver_required
 def dashboard():
     driver = get_driver_profile()
-    
+
     if not driver:
         flash('Driver profile not found. Please complete your profile.', 'warning')
         return redirect(url_for('driver.profile'))
-    
+
     # Today's statistics
     today = datetime.now().date()
-    
+
     # Today's duty
     todays_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
         func.date(Duty.start_time) == today,
         Duty.status == 'active'
     ).first()
-    
+
     # Today's earnings
     todays_earnings = db.session.query(func.sum(Duty.driver_earnings)).filter(
         Duty.driver_id == driver.id,
         func.date(Duty.start_time) == today
     ).scalar() or 0
-    
+
     # This month's earnings
     start_of_month = datetime.now().replace(day=1).date()
     monthly_earnings = db.session.query(func.sum(Duty.driver_earnings)).filter(
         Duty.driver_id == driver.id,
         func.date(Duty.start_time) >= start_of_month
     ).scalar() or 0
-    
+
     # Recent duties
     recent_duties = Duty.query.filter(
         Duty.driver_id == driver.id
     ).order_by(desc(Duty.start_time)).limit(5).all()
-    
+
     # Pending penalties
     pending_penalties = Penalty.query.filter_by(driver_id=driver.id).all()
-    
+
     return render_template('driver/dashboard.html',
                          driver=driver,
                          todays_duty=todays_duty,
@@ -100,7 +100,7 @@ def dashboard():
 @driver_required
 def profile():
     driver = get_driver_profile()
-    
+
     # Create driver profile if doesn't exist
     if not driver:
         branches = Branch.query.filter_by(is_active=True).all()
@@ -119,7 +119,7 @@ def profile():
             driver.account_number = request.form.get('account_number')
             driver.ifsc_code = request.form.get('ifsc_code')
             driver.account_holder_name = request.form.get('account_holder_name')
-            
+
             # Handle file uploads
             if 'aadhar_photo' in request.files:
                 file = request.files['aadhar_photo']
@@ -127,31 +127,31 @@ def profile():
                     filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.aadhar_photo = filename
-            
+
             if 'license_photo' in request.files:
                 file = request.files['license_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.license_photo = filename
-            
+
             if 'profile_photo' in request.files:
                 file = request.files['profile_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"profile_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.profile_photo = filename
-            
+
             db.session.add(driver)
             db.session.commit()
-            
+
             log_audit('create_driver_profile', 'driver', driver.id)
-            
+
             flash('Profile created successfully! Waiting for approval.', 'success')
             return redirect(url_for('driver.dashboard'))
-        
+
         return render_template('driver/profile.html', driver=None, branches=branches)
-    
+
     # Update existing profile
     if request.method == 'POST':
         driver.full_name = request.form.get('full_name', driver.full_name)
@@ -161,7 +161,7 @@ def profile():
         driver.account_number = request.form.get('account_number', driver.account_number)
         driver.ifsc_code = request.form.get('ifsc_code', driver.ifsc_code)
         driver.account_holder_name = request.form.get('account_holder_name', driver.account_holder_name)
-        
+
         # Handle file uploads if driver is not yet approved
         if driver.status in ['pending', 'rejected']:
             if 'aadhar_photo' in request.files:
@@ -170,28 +170,28 @@ def profile():
                     filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.aadhar_photo = filename
-            
+
             if 'license_photo' in request.files:
                 file = request.files['license_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.license_photo = filename
-            
+
             if 'profile_photo' in request.files:
                 file = request.files['profile_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"profile_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.profile_photo = filename
-        
+
         db.session.commit()
-        
+
         log_audit('update_driver_profile', 'driver', driver.id)
-        
+
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('driver.profile'))
-    
+
     branches = Branch.query.filter_by(is_active=True).all()
     return render_template('driver/profile.html', driver=driver, branches=branches)
 
@@ -200,24 +200,24 @@ def profile():
 @driver_required
 def duty():
     driver = get_driver_profile()
-    
+
     if not driver or driver.status != 'active':
         flash('Your driver profile is not active. Please contact admin.', 'error')
         return redirect(url_for('driver.dashboard'))
-    
+
     # Check for active duty
     active_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
         Duty.status == 'active'
     ).first()
-    
+
     # Available vehicles in driver's branch
     available_vehicles = Vehicle.query.filter(
         Vehicle.branch_id == driver.branch_id,
         Vehicle.status == 'active',
         Vehicle.is_available == True
     ).all()
-    
+
     return render_template('driver/duty.html',
                          driver=driver,
                          active_duty=active_duty,
@@ -228,57 +228,57 @@ def duty():
 @driver_required
 def start_duty():
     driver = get_driver_profile()
-    
+
     if not driver or driver.status != 'active':
         flash('Your driver profile is not active.', 'error')
         return redirect(url_for('driver.duty'))
-    
+
     # Check if already has active duty
     active_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
         Duty.status == 'active'
     ).first()
-    
+
     if active_duty:
         flash('You already have an active duty.', 'error')
         return redirect(url_for('driver.duty'))
-    
+
     vehicle_id = request.form.get('vehicle_id')
     start_odometer = request.form.get('start_odometer', type=float)
-    
+
     # Auto-fill from last duty if not provided
     if not start_odometer:
         last_duty_data = get_last_duty_values(driver.id, int(vehicle_id) if vehicle_id else None)
         if last_duty_data['last_odometer']:
             start_odometer = last_duty_data['last_odometer']
-    
+
     if not vehicle_id:
         flash('Please select a vehicle.', 'error')
         return redirect(url_for('driver.duty'))
-    
+
     vehicle = Vehicle.query.filter(
         Vehicle.id == vehicle_id,
         Vehicle.branch_id == driver.branch_id,
         Vehicle.is_available == True
     ).first()
-    
+
     if not vehicle:
         flash('Selected vehicle is not available.', 'error')
         return redirect(url_for('driver.duty'))
-    
+
     # Get default duty scheme for branch
     duty_scheme = DutyScheme.query.filter(
         DutyScheme.branch_id == driver.branch_id,
         DutyScheme.is_active == True
     ).first()
-    
+
     if not duty_scheme:
         # Get global scheme
         duty_scheme = DutyScheme.query.filter(
             DutyScheme.branch_id.is_(None),
             DutyScheme.is_active == True
         ).first()
-    
+
     # Create new duty
     duty = Duty()
     duty.driver_id = driver.id
@@ -288,7 +288,7 @@ def start_duty():
     duty.start_time = datetime.utcnow()
     duty.start_odometer = start_odometer or 0.0
     duty.status = 'active'
-    
+
     # Handle start photo
     if 'start_photo' in request.files:
         file = request.files['start_photo']
@@ -296,12 +296,12 @@ def start_duty():
             filename = secure_filename(f"duty_start_{duty.driver_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
             file.save(os.path.join('uploads', filename))
             duty.start_photo = filename
-    
+
     # Handle start location and timestamp data
     duty.start_latitude = request.form.get('start_latitude', type=float)
     duty.start_longitude = request.form.get('start_longitude', type=float)
     duty.start_location_accuracy = request.form.get('start_location_accuracy', type=float)
-    
+
     # Parse timestamp if provided
     timestamp_str = request.form.get('start_photo_timestamp')
     if timestamp_str:
@@ -309,17 +309,17 @@ def start_duty():
             duty.start_photo_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
         except ValueError:
             duty.start_photo_timestamp = datetime.utcnow()
-    
+
     # Mark vehicle as not available
     vehicle.is_available = False
     driver.current_vehicle_id = vehicle.id
-    
+
     db.session.add(duty)
     db.session.commit()
-    
+
     log_audit('start_duty', 'duty', duty.id,
              {'vehicle': vehicle.registration_number, 'odometer': start_odometer})
-    
+
     flash('Duty started successfully!', 'success')
     return redirect(url_for('driver.duty'))
 
@@ -328,26 +328,26 @@ def start_duty():
 @driver_required
 def end_duty():
     driver = get_driver_profile()
-    
+
     if not driver:
         flash('Driver profile not found.', 'error')
         return redirect(url_for('driver.duty'))
-    
+
     # Get active duty
     active_duty = Duty.query.filter(
         Duty.driver_id == driver.id,
         Duty.status == 'active'
     ).first()
-    
+
     if not active_duty:
         flash('No active duty found.', 'error')
         return redirect(url_for('driver.duty'))
-    
+
     # Get financial data from form
     end_odometer = request.form.get('end_odometer', type=float)
     trip_count = request.form.get('trip_count', type=int, default=0)
     fuel_amount = request.form.get('fuel_amount', type=float, default=0.0)
-    
+
     # Comprehensive financial data
     active_duty.cash_collected = request.form.get('cash_collected', type=float, default=0.0)
     active_duty.qr_payment = request.form.get('qr_payment', type=float, default=0.0)
@@ -361,17 +361,17 @@ def end_duty():
     active_duty.advance = request.form.get('advance', type=float, default=0.0)
     active_duty.driver_expenses = request.form.get('driver_expenses', type=float, default=0.0)
     active_duty.pass_deduction = request.form.get('pass_deduction', type=float, default=0.0)
-    
+
     # Update basic duty info
     active_duty.end_time = datetime.utcnow()
     active_duty.end_odometer = end_odometer
     active_duty.trip_count = trip_count
     active_duty.fuel_amount = fuel_amount
     active_duty.status = 'completed'
-    
+
     if end_odometer and active_duty.start_odometer:
         active_duty.distance_km = end_odometer - active_duty.start_odometer
-    
+
     # Handle end photo
     if 'end_photo' in request.files:
         file = request.files['end_photo']
@@ -379,12 +379,12 @@ def end_duty():
             filename = secure_filename(f"duty_end_{driver.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
             file.save(os.path.join('uploads', filename))
             active_duty.end_photo = filename
-    
+
     # Handle end location and timestamp data
     active_duty.end_latitude = request.form.get('end_latitude', type=float)
     active_duty.end_longitude = request.form.get('end_longitude', type=float)
     active_duty.end_location_accuracy = request.form.get('end_location_accuracy', type=float)
-    
+
     # Parse timestamp if provided
     timestamp_str = request.form.get('end_photo_timestamp')
     if timestamp_str:
@@ -392,32 +392,32 @@ def end_duty():
             active_duty.end_photo_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
         except ValueError:
             active_duty.end_photo_timestamp = datetime.utcnow()
-    
+
     # Calculate comprehensive tripsheet
     from utils import calculate_tripsheet
     tripsheet_result = calculate_tripsheet(active_duty)
-    
+
     # Update all calculated fields
     active_duty.revenue = tripsheet_result['company_earnings']
     active_duty.driver_earnings = tripsheet_result['driver_salary']
     active_duty.company_expenses = tripsheet_result['company_expenses']
     active_duty.company_profit = tripsheet_result['company_profit']
     active_duty.incentive = tripsheet_result['incentive']
-    
+
     # Update driver total earnings
     driver.total_earnings += active_duty.driver_earnings
-    
+
     # Make vehicle available
     if active_duty.vehicle:
         active_duty.vehicle.is_available = True
-    
+
     driver.current_vehicle_id = None
-    
+
     db.session.commit()
-    
+
     log_audit('end_duty', 'duty', active_duty.id,
              {'revenue': active_duty.revenue, 'earnings': active_duty.driver_earnings})
-    
+
     flash(f'Duty completed! You earned ₹{active_duty.driver_earnings:.2f}', 'success')
     return redirect(url_for('driver.earnings'))
 
@@ -428,10 +428,10 @@ def end_duty():
 def get_last_values(vehicle_id):
     """API endpoint to get last duty values for auto-fill"""
     driver = get_driver_profile()
-    
+
     if not driver:
         return jsonify({'error': 'Driver not found'}), 404
-    
+
     last_duty_data = get_last_duty_values(driver.id, vehicle_id)
     return jsonify(last_duty_data)
 
@@ -440,22 +440,22 @@ def get_last_values(vehicle_id):
 @driver_required
 def earnings():
     driver = get_driver_profile()
-    
+
     if not driver:
         flash('Driver profile not found.', 'error')
         return redirect(url_for('driver.profile'))
-    
+
     # Date range filter
     start_date = request.args.get('start_date', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
     end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
-    
+
     try:
         start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
         end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
     except ValueError:
         start_date_obj = (datetime.now() - timedelta(days=30)).date()
         end_date_obj = datetime.now().date()
-    
+
     # Get duties in date range
     duties = Duty.query.filter(
         Duty.driver_id == driver.id,
@@ -463,22 +463,22 @@ def earnings():
         func.date(Duty.start_time) <= end_date_obj,
         Duty.status == 'completed'
     ).order_by(desc(Duty.start_time)).all()
-    
+
     # Calculate totals
     total_earnings = sum(duty.driver_earnings or 0 for duty in duties)
     total_revenue = sum(duty.revenue or 0 for duty in duties)
     total_bmg = sum(duty.bmg_applied or 0 for duty in duties)
     total_incentive = sum(duty.incentive or 0 for duty in duties)
-    
+
     # Get penalties in date range
     penalties = Penalty.query.filter(
         Penalty.driver_id == driver.id,
         func.date(Penalty.applied_at) >= start_date_obj,
         func.date(Penalty.applied_at) <= end_date_obj
     ).all()
-    
+
     total_penalties = sum(penalty.amount or 0 for penalty in penalties)
-    
+
     return render_template('driver/earnings.html',
                          driver=driver,
                          duties=duties,
@@ -496,14 +496,14 @@ def earnings():
 @driver_required
 def earnings_chart():
     driver = get_driver_profile()
-    
+
     if not driver:
         return jsonify({'error': 'Driver not found'}), 404
-    
+
     # Get last 7 days earnings
     days = []
     earnings = []
-    
+
     for i in range(6, -1, -1):
         date = datetime.now().date() - timedelta(days=i)
         daily_earning = db.session.query(func.sum(func.coalesce(Duty.driver_earnings, 0))).filter(
@@ -511,10 +511,10 @@ def earnings_chart():
             func.date(Duty.start_time) == date,
             Duty.status == 'completed'
         ).scalar() or 0
-        
+
         days.append(date.strftime('%m/%d'))
         earnings.append(float(daily_earning))
-    
+
     return jsonify({
         'labels': days,
         'data': earnings

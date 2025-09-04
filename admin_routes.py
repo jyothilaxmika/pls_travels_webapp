@@ -154,7 +154,7 @@ def view_driver(driver_id):
     from collections import defaultdict
     
     six_months_ago = datetime.now() - timedelta(days=180)
-    recent_duties_for_stats = [d for d in all_duties if d.created_at >= six_months_ago]
+    recent_duties_for_stats = [d for d in all_duties if d.created_at and d.created_at >= six_months_ago]
     
     monthly_stats = defaultdict(lambda: {'duties': 0, 'earnings': 0, 'trips': 0})
     for duty in recent_duties_for_stats:
