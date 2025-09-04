@@ -112,7 +112,7 @@ def approve_driver(driver_id):
 @admin_required
 def reject_driver(driver_id):
     driver = Driver.query.get_or_404(driver_id)
-    driver.status = 'rejected'
+    driver.status = DriverStatus.REJECTED
     driver.approved_by = current_user.id
     driver.approved_at = datetime.utcnow()
     
@@ -250,9 +250,10 @@ def add_assignment():
             db.session.add(assignment)
             
             # Update driver's current vehicle if assignment is starting today or is in the past
-            if form.start_date.data <= datetime.now().date():
+            if form.start_date.data and form.start_date.data <= datetime.now().date():
                 driver = Driver.query.get(form.driver_id.data)
-                driver.current_vehicle_id = form.vehicle_id.data
+                if driver:
+                    driver.current_vehicle_id = form.vehicle_id.data
                 assignment.status = AssignmentStatus.ACTIVE
             
             db.session.commit()
@@ -272,8 +273,6 @@ def add_assignment():
 def end_assignment(assignment_id):
     assignment = VehicleAssignment.query.get_or_404(assignment_id)
     
-    # Import AssignmentStatus enum
-    from models import AssignmentStatus
     assignment.status = AssignmentStatus.COMPLETED
     assignment.end_date = datetime.now().date()
     assignment.updated_at = datetime.utcnow()
