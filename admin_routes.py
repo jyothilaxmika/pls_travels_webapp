@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, VehicleAssignment, db,
+                   Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, db,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm
 from utils import allowed_file, calculate_earnings
@@ -317,6 +317,7 @@ def vehicles():
 def add_vehicle():
     form = VehicleForm()
     form.branch_id.choices = [(b.id, b.name) for b in Branch.query.filter_by(is_active=True).all()]
+    form.vehicle_type_id.choices = [(vt.id, vt.name) for vt in VehicleType.query.filter_by(is_active=True).all()]
     
     if form.validate_on_submit():
         # Check if registration number already exists
@@ -327,24 +328,24 @@ def add_vehicle():
         
         vehicle = Vehicle()
         vehicle.registration_number = form.registration_number.data.upper()  # Store in uppercase
-        vehicle.vehicle_type = form.vehicle_type.data
+        vehicle.vehicle_type_id = form.vehicle_type_id.data
         vehicle.model = form.model.data
-        vehicle.year = form.year.data
+        vehicle.manufacturing_year = form.manufacturing_year.data
         vehicle.color = form.color.data
         vehicle.branch_id = form.branch_id.data
-        vehicle.insurance_number = form.insurance_number.data
-        vehicle.insurance_expiry = form.insurance_expiry.data
-        vehicle.fitness_expiry = form.fitness_expiry.data
-        vehicle.permit_expiry = form.permit_expiry.data
-        vehicle.fastag_number = form.fastag_number.data
-        vehicle.device_imei = form.device_imei.data
+        vehicle.insurance_policy_number = form.insurance_number.data
+        vehicle.insurance_expiry_date = form.insurance_expiry.data
+        vehicle.fitness_expiry_date = form.fitness_expiry.data
+        vehicle.permit_expiry_date = form.permit_expiry.data
+        vehicle.fastag_id = form.fastag_number.data
+        vehicle.gps_device_id = form.device_imei.data
         
         try:
             db.session.add(vehicle)
             db.session.commit()
             
             log_audit('add_vehicle', 'vehicle', vehicle.id,
-                     {'registration': vehicle.registration_number, 'type': vehicle.vehicle_type})
+                     {'registration': vehicle.registration_number, 'type_id': vehicle.vehicle_type_id})
             
             flash('Vehicle added successfully.', 'success')
             return redirect(url_for('admin.vehicles'))

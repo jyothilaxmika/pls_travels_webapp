@@ -59,15 +59,9 @@ class VehicleAssignmentForm(FlaskForm):
 
 class VehicleForm(FlaskForm):
     registration_number = StringField('Registration Number', validators=[DataRequired(), Length(min=3, max=20)])
-    vehicle_type = SelectField('Vehicle Type', choices=[
-        ('bus', 'Bus'),
-        ('taxi', 'Taxi'),
-        ('auto', 'Auto Rickshaw'),
-        ('truck', 'Truck'),
-        ('other', 'Other')
-    ], validators=[DataRequired()])
+    vehicle_type_id = SelectField('Vehicle Type', coerce=int, validators=[DataRequired()])
     model = StringField('Model', validators=[Optional(), Length(max=100)])
-    year = IntegerField('Year', validators=[Optional(), NumberRange(min=1990, max=2030)])
+    manufacturing_year = IntegerField('Year', validators=[Optional(), NumberRange(min=1990, max=2030)])
     color = StringField('Color', validators=[Optional(), Length(max=30)])
     branch_id = SelectField('Branch', coerce=int, validators=[DataRequired()])
     
