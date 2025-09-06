@@ -41,6 +41,24 @@ def create_default_vehicle_types():
     except Exception:
         db.session.rollback()
 
+def create_default_branch():
+    """Create a default branch if none exist"""
+    if Branch.query.filter_by(is_active=True).count() == 0:
+        default_branch = Branch()
+        default_branch.name = "Main Branch"
+        default_branch.code = "MAIN"
+        default_branch.address = "Main Office"
+        default_branch.city = "City"
+        default_branch.phone = "0000000000"
+        default_branch.is_active = True
+        default_branch.is_head_office = True
+        
+        try:
+            db.session.add(default_branch)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -343,12 +361,26 @@ def vehicles():
 @login_required
 @admin_required
 def add_vehicle():
-    # Ensure default vehicle types exist
+    # Ensure default data exists
+    create_default_branch()
     create_default_vehicle_types()
     
     form = VehicleForm()
-    form.branch_id.choices = [(b.id, b.name) for b in Branch.query.filter_by(is_active=True).all()]
-    form.vehicle_type_id.choices = [(vt.id, vt.name) for vt in VehicleType.query.filter_by(is_active=True).all()]
+    
+    # Get branches and vehicle types
+    branches = Branch.query.filter_by(is_active=True).all()
+    vehicle_types = VehicleType.query.filter_by(is_active=True).all()
+    
+    if not branches:
+        flash('No active branches found. Please create a branch first.', 'error')
+        return redirect(url_for('admin.dashboard'))
+    
+    if not vehicle_types:
+        flash('No vehicle types found. Please create vehicle types first.', 'error')
+        return redirect(url_for('admin.dashboard'))
+        
+    form.branch_id.choices = [(b.id, b.name) for b in branches]
+    form.vehicle_type_id.choices = [(vt.id, vt.name) for vt in vehicle_types]
     
     if form.validate_on_submit():
         # Check if registration number already exists
@@ -372,6 +404,15 @@ def add_vehicle():
         vehicle.fastag_id = form.fastag_number.data
         vehicle.gps_device_id = form.device_imei.data
         
+        # Set defaults for required fields
+        vehicle.status = VehicleStatus.ACTIVE
+        vehicle.is_available = True
+        vehicle.current_odometer = 0.0
+        
+        # Debug info
+        print(f"Creating vehicle with registration: {vehicle.registration_number}")
+        print(f"Branch ID: {vehicle.branch_id}, Vehicle Type ID: {vehicle.vehicle_type_id}")
+        
         try:
             db.session.add(vehicle)
             db.session.commit()
@@ -383,7 +424,8 @@ def add_vehicle():
             return redirect(url_for('admin.vehicles'))
         except Exception as e:
             db.session.rollback()
-            flash('Error adding vehicle. Please try again.', 'error')
+            print(f"Vehicle creation error: {str(e)}")  # Debug logging
+            flash(f'Error adding vehicle: {str(e)}', 'error')
             return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
     
     return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
