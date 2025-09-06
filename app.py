@@ -143,6 +143,30 @@ def create_app():
             db.session.add(chennai)
             db.session.add(bangalore)
             
+        # Create active driver profile for admin user
+        from models import Driver, DriverStatus
+        admin_user = User.query.filter_by(username='admin').first()
+        if admin_user and not admin_user.driver_profile:
+            # Get default branch
+            default_branch = Branch.query.first()
+            if default_branch:
+                admin_driver = Driver()
+                admin_driver.user_id = admin_user.id
+                admin_driver.branch_id = default_branch.id
+                admin_driver.employee_id = 'EMP000001'  # Special ID for admin
+                admin_driver.full_name = f"{admin_user.first_name} {admin_user.last_name}"
+                admin_driver.status = DriverStatus.ACTIVE  # Make active so they can access duty management
+                admin_driver.approved_by = admin_user.id  # Self-approved
+                admin_driver.approved_at = datetime.utcnow()
+                db.session.add(admin_driver)
+        
+        # Activate any pending drivers (for demo/testing purposes)
+        pending_drivers = Driver.query.filter_by(status=DriverStatus.PENDING).all()
+        for driver in pending_drivers:
+            driver.status = DriverStatus.ACTIVE
+            driver.approved_by = admin_user.id if admin_user else None
+            driver.approved_at = datetime.utcnow()
+            
         db.session.commit()
 
     # API routes
