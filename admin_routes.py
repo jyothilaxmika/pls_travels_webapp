@@ -409,10 +409,6 @@ def add_vehicle():
         vehicle.is_available = True
         vehicle.current_odometer = 0.0
         
-        # Debug info
-        print(f"Creating vehicle with registration: {vehicle.registration_number}")
-        print(f"Branch ID: {vehicle.branch_id}, Vehicle Type ID: {vehicle.vehicle_type_id}")
-        
         try:
             db.session.add(vehicle)
             db.session.commit()
@@ -424,8 +420,7 @@ def add_vehicle():
             return redirect(url_for('admin.vehicles'))
         except Exception as e:
             db.session.rollback()
-            print(f"Vehicle creation error: {str(e)}")  # Debug logging
-            flash(f'Error adding vehicle: {str(e)}', 'error')
+            flash('Error adding vehicle. Please try again.', 'error')
             return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
     
     return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
