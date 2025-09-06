@@ -59,6 +59,7 @@ class VehicleAssignmentForm(FlaskForm):
 
 class VehicleForm(FlaskForm):
     registration_number = StringField('Registration Number', validators=[DataRequired(), Length(min=3, max=20)])
+    vehicle_type_id = SelectField('Vehicle Type', coerce=int, validators=[DataRequired()])
     model = StringField('Model', validators=[Optional(), Length(max=100)])
     manufacturing_year = IntegerField('Year', validators=[Optional(), NumberRange(min=1990, max=2030)])
     color = StringField('Color', validators=[Optional(), Length(max=30)])
@@ -81,7 +82,7 @@ class DutySchemeForm(FlaskForm):
         ('scheme_4', 'Scheme Type 4'),
         ('scheme_5', 'Scheme Type 5')
     ], validators=[DataRequired()])
-    branch_id = SelectField('Branch', coerce=int, validators=[Optional()])
+    branch_id = SelectField('Branch', coerce=str, validators=[Optional()])
     bmg_amount = FloatField('BMG Amount', validators=[Optional(), NumberRange(min=0)])
     
     # Fixed scheme fields

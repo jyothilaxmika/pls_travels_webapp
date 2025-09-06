@@ -14,6 +14,33 @@ from auth import log_audit
 
 admin_bp = Blueprint('admin', __name__)
 
+def create_default_vehicle_types():
+    """Create default vehicle types if they don't exist"""
+    default_types = [
+        {'name': 'Taxi', 'category': 'Commercial', 'capacity_passengers': 4, 'fuel_type': 'CNG'},
+        {'name': 'Auto Rickshaw', 'category': 'Commercial', 'capacity_passengers': 3, 'fuel_type': 'CNG'},
+        {'name': 'Bus', 'category': 'Public', 'capacity_passengers': 40, 'fuel_type': 'Diesel'},
+        {'name': 'Mini Bus', 'category': 'Commercial', 'capacity_passengers': 20, 'fuel_type': 'Diesel'},
+        {'name': 'Truck', 'category': 'Commercial', 'capacity_passengers': 2, 'fuel_type': 'Diesel'}
+    ]
+    
+    for vtype_data in default_types:
+        existing = VehicleType.query.filter_by(name=vtype_data['name']).first()
+        if not existing:
+            vtype = VehicleType(
+                name=vtype_data['name'],
+                category=vtype_data['category'],
+                capacity_passengers=vtype_data['capacity_passengers'],
+                fuel_type=vtype_data['fuel_type'],
+                is_active=True
+            )
+            db.session.add(vtype)
+    
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -316,8 +343,12 @@ def vehicles():
 @login_required
 @admin_required
 def add_vehicle():
+    # Ensure default vehicle types exist
+    create_default_vehicle_types()
+    
     form = VehicleForm()
     form.branch_id.choices = [(b.id, b.name) for b in Branch.query.filter_by(is_active=True).all()]
+    form.vehicle_type_id.choices = [(vt.id, vt.name) for vt in VehicleType.query.filter_by(is_active=True).all()]
     
     if form.validate_on_submit():
         # Check if registration number already exists
@@ -329,6 +360,7 @@ def add_vehicle():
         
         vehicle = Vehicle()
         vehicle.registration_number = (form.registration_number.data or '').upper()  # Store in uppercase
+        vehicle.vehicle_type_id = form.vehicle_type_id.data
         vehicle.model = form.model.data
         vehicle.manufacturing_year = form.manufacturing_year.data
         vehicle.color = form.color.data
@@ -403,7 +435,7 @@ def duty_schemes():
 def add_duty_scheme():
     form = DutySchemeForm()
     branches = Branch.query.filter_by(is_active=True).all()
-    form.branch_id.choices = [('0', 'Global')] + [(str(b.id), b.name) for b in branches]
+    form.branch_id.choices = [('', 'Global')] + [(str(b.id), b.name) for b in branches]
     
     if form.validate_on_submit():
         # For the new 5 scheme types, store the configuration
@@ -424,7 +456,7 @@ def add_duty_scheme():
         scheme = DutyScheme()
         scheme.name = form.name.data
         scheme.scheme_type = form.scheme_type.data
-        scheme.branch_id = form.branch_id.data if form.branch_id.data != '0' else None
+        scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != '' else None
         scheme.minimum_guarantee = form.bmg_amount.data or 0.0
         scheme.calculation_formula = form.calculation_formula.data or ''
         scheme.set_config(config)
