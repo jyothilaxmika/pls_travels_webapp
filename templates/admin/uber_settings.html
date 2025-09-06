@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Uber Integration Settings - PLS TRAVELS Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-cogs"></i> Uber Integration Settings</h2>
+        <a href="{{ url_for('admin.uber_integration') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Integration
+        </a>
+    </div>
+
+    <!-- Settings Form -->
+    <div class="row">
+        <div class="col-md-8">
+            <form method="POST">
+                <!-- Basic Settings -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-toggle-on me-2"></i>Basic Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="is_enabled" name="is_enabled" 
+                                   {{ 'checked' if settings and settings.is_enabled }}>
+                            <label class="form-check-label" for="is_enabled">
+                                <strong>Enable Uber Integration</strong>
+                            </label>
+                            <small class="form-text text-muted d-block">
+                                Turn on/off the entire Uber Fleet integration
+                            </small>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="auto_sync_enabled" name="auto_sync_enabled" 
+                                   {{ 'checked' if settings and settings.auto_sync_enabled }}>
+                            <label class="form-check-label" for="auto_sync_enabled">
+                                <strong>Enable Automatic Synchronization</strong>
+                            </label>
+                            <small class="form-text text-muted d-block">
+                                Automatically sync data at scheduled intervals
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sync_interval_minutes" class="form-label">Sync Interval (minutes)</label>
+                            <input type="number" class="form-control" id="sync_interval_minutes" name="sync_interval_minutes" 
+                                   value="{{ settings.sync_interval_minutes if settings else 60 }}" min="5" max="1440">
+                            <small class="form-text text-muted">How often to run automatic sync (5-1440 minutes)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sync Direction Settings -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-arrows-alt-h me-2"></i>Sync Direction Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="sync_direction_vehicles" class="form-label">Vehicle Sync Direction</label>
+                                    <select class="form-select" id="sync_direction_vehicles" name="sync_direction_vehicles">
+                                        <option value="to_uber" {{ 'selected' if settings and settings.sync_direction_vehicles == 'to_uber' }}>
+                                            To Uber (Export)
+                                        </option>
+                                        <option value="from_uber" {{ 'selected' if settings and settings.sync_direction_vehicles == 'from_uber' }}>
+                                            From Uber (Import)
+                                        </option>
+                                        <option value="bidirectional" {{ 'selected' if settings and settings.sync_direction_vehicles == 'bidirectional' }}>
+                                            Bidirectional
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="sync_direction_drivers" class="form-label">Driver Sync Direction</label>
+                                    <select class="form-select" id="sync_direction_drivers" name="sync_direction_drivers">
+                                        <option value="to_uber" {{ 'selected' if settings and settings.sync_direction_drivers == 'to_uber' }}>
+                                            To Uber (Export)
+                                        </option>
+                                        <option value="from_uber" {{ 'selected' if settings and settings.sync_direction_drivers == 'from_uber' }}>
+                                            From Uber (Import)
+                                        </option>
+                                        <option value="bidirectional" {{ 'selected' if settings and settings.sync_direction_drivers == 'bidirectional' }}>
+                                            Bidirectional
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Trip Sync Direction</label>
+                                    <select class="form-select" disabled>
+                                        <option>From Uber (Import Only)</option>
+                                    </select>
+                                    <small class="form-text text-muted">Trip data is always imported from Uber</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Configuration -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-key me-2"></i>API Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>API Credentials:</strong> Your Uber API credentials are securely stored as environment variables and cannot be displayed here for security reasons.
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="api_base_url" class="form-label">API Base URL</label>
+                            <input type="url" class="form-control" id="api_base_url" name="api_base_url" 
+                                   value="{{ settings.api_base_url if settings else 'https://api.uber.com' }}" readonly>
+                            <small class="form-text text-muted">Uber Fleet API endpoint</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="webhook_url" class="form-label">Webhook URL (Optional)</label>
+                            <input type="url" class="form-control" id="webhook_url" name="webhook_url" 
+                                   value="{{ settings.webhook_url if settings else '' }}" 
+                                   placeholder="https://your-domain.com/webhooks/uber">
+                            <small class="form-text text-muted">URL to receive Uber webhook notifications</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Settings -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cog me-2"></i>Advanced Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="max_retry_attempts" class="form-label">Max Retry Attempts</label>
+                                    <input type="number" class="form-control" id="max_retry_attempts" name="max_retry_attempts" 
+                                           value="{{ settings.max_retry_attempts if settings else 3 }}" min="1" max="10">
+                                    <small class="form-text text-muted">Number of retries for failed sync operations</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="request_timeout" class="form-label">Request Timeout (seconds)</label>
+                                    <input type="number" class="form-control" id="request_timeout" name="request_timeout" 
+                                           value="{{ settings.request_timeout if settings else 30 }}" min="10" max="300">
+                                    <small class="form-text text-muted">Timeout for API requests</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="log_api_requests" name="log_api_requests" 
+                                       {{ 'checked' if settings and settings.log_api_requests }}>
+                                <label class="form-check-label" for="log_api_requests">
+                                    Enable API Request Logging
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    Log all API requests and responses for debugging (may impact performance)
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sync_batch_size" class="form-label">Sync Batch Size</label>
+                            <input type="number" class="form-control" id="sync_batch_size" name="sync_batch_size" 
+                                   value="{{ settings.sync_batch_size if settings else 50 }}" min="10" max="1000">
+                            <small class="form-text text-muted">Number of records to sync in each batch</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Help & Status Panel -->
+        <div class="col-md-4">
+            <!-- Connection Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-wifi me-2"></i>Connection Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-question-circle fa-2x text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-3">Click to test your Uber API connection</p>
+                        <a href="{{ url_for('admin.uber_test_connection') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plug me-2"></i>Test Connection
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help & Documentation -->
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-question-circle me-2"></i>Help & Documentation</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Sync Directions:</h6>
+                        <ul class="small">
+                            <li><strong>To Uber:</strong> Export data from PLS TRAVELS to Uber</li>
+                            <li><strong>From Uber:</strong> Import data from Uber to PLS TRAVELS</li>
+                            <li><strong>Bidirectional:</strong> Keep both systems in sync</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Recommended Settings:</h6>
+                        <ul class="small">
+                            <li>Sync Interval: 30-60 minutes</li>
+                            <li>Batch Size: 50-100 records</li>
+                            <li>Max Retries: 3-5 attempts</li>
+                            <li>Timeout: 30-60 seconds</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <small><i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Note:</strong> Changes take effect immediately. Test your connection after saving changes.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

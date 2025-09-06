@@ -33,7 +33,7 @@ class UberConfig:
     client_secret: str
     base_url: str = "https://api.uber.com"
     auth_url: str = "https://login.uber.com/oauth/v2/token"
-    scope: str = "fleet.vehicles fleet.drivers fleet.trips"
+    scope: str = "fleet"
 
 class UberFleetService:
     """
