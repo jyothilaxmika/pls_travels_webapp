@@ -437,10 +437,13 @@ class DutyScheme(db.Model):
     
     name = db.Column(db.String(100), nullable=False, index=True)
     description = db.Column(db.Text)
-    scheme_type = db.Column(db.String(20), nullable=False, index=True)  # fixed, per_trip, slab, mixed, commission
+    scheme_type = db.Column(db.String(20), nullable=False, index=True)  # scheme_1, scheme_2, scheme_3, scheme_4, scheme_5
     
     # Configuration stored as JSON with validation
     configuration = db.Column(db.Text)  # JSON configuration
+    
+    # Editable calculation formula for this scheme
+    calculation_formula = db.Column(db.Text)  # Mathematical formula for salary calculation
     
     # Minimum guarantees and limits
     minimum_guarantee = db.Column(db.Float, default=0.0)
