@@ -362,66 +362,33 @@ class Vehicle(db.Model):
     def vehicle_type(self):
         return self.vehicle_type_obj.name if self.vehicle_type_obj else None
     
-    @vehicle_type.setter
-    def vehicle_type(self, value):
-        # This would need to handle finding/creating VehicleType
-        pass
-    
     @hybrid_property
     def year(self):
         return self.manufacturing_year
-    
-    @year.setter
-    def year(self, value):
-        self.manufacturing_year = value
     
     @hybrid_property
     def insurance_number(self):
         return self.insurance_policy_number
     
-    @insurance_number.setter
-    def insurance_number(self, value):
-        self.insurance_policy_number = value
-    
     @hybrid_property
     def insurance_expiry(self):
         return self.insurance_expiry_date
-    
-    @insurance_expiry.setter
-    def insurance_expiry(self, value):
-        self.insurance_expiry_date = value
     
     @hybrid_property
     def fitness_expiry(self):
         return self.fitness_expiry_date
     
-    @fitness_expiry.setter
-    def fitness_expiry(self, value):
-        self.fitness_expiry_date = value
-    
     @hybrid_property
     def permit_expiry(self):
         return self.permit_expiry_date
-    
-    @permit_expiry.setter
-    def permit_expiry(self, value):
-        self.permit_expiry_date = value
     
     @hybrid_property
     def fastag_number(self):
         return self.fastag_id
     
-    @fastag_number.setter
-    def fastag_number(self, value):
-        self.fastag_id = value
-    
     @hybrid_property
     def device_imei(self):
         return self.gps_device_id
-    
-    @device_imei.setter
-    def device_imei(self, value):
-        self.gps_device_id = value
     
     def __repr__(self):
         return f'<Vehicle {self.registration_number}>'
@@ -477,10 +444,6 @@ class DutyScheme(db.Model):
     @hybrid_property
     def bmg_amount(self):
         return self.minimum_guarantee
-    
-    @bmg_amount.setter
-    def bmg_amount(self, value):
-        self.minimum_guarantee = value
     
     def __repr__(self):
         return f'<DutyScheme {self.name}>'
@@ -664,10 +627,6 @@ class VehicleAssignment(db.Model):
     @hybrid_property
     def assignment_notes(self):
         return self.notes
-    
-    @assignment_notes.setter
-    def assignment_notes(self, value):
-        self.notes = value
     
     @hybrid_property
     def assignment_driver(self):
