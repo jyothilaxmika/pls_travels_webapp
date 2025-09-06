@@ -389,7 +389,7 @@ def start_duty():
     duty.vehicle_id = vehicle.id
     duty.branch_id = driver.branch_id
     duty.duty_scheme_id = duty_scheme.id if duty_scheme else None
-    duty.start_time = datetime.utcnow()
+    duty.actual_start = datetime.utcnow()
     duty.start_odometer = start_odometer or 0.0
     duty.status = DutyStatus.ACTIVE
 
@@ -489,7 +489,7 @@ def end_duty():
     active_duty.pass_deduction = request.form.get('pass_deduction', type=float, default=0.0)
 
     # Update basic duty info
-    active_duty.end_time = datetime.utcnow()
+    active_duty.actual_end = datetime.utcnow()
     active_duty.end_odometer = end_odometer
     active_duty.trip_count = trip_count
     active_duty.fuel_amount = fuel_amount
