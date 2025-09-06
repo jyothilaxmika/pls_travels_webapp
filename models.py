@@ -242,6 +242,14 @@ class Driver(db.Model):
     current_shift_start = db.Column(db.DateTime)
     current_shift_end = db.Column(db.DateTime)
     
+    # Uber Fleet Integration
+    uber_driver_id = db.Column(db.String(100), unique=True, index=True)  # Uber's driver ID
+    uber_driver_uuid = db.Column(db.String(100), unique=True)  # Uber's driver UUID
+    uber_sync_status = db.Column(db.String(20), default='none', index=True)  # none, synced, failed, pending
+    uber_last_sync = db.Column(db.DateTime)  # Last successful sync timestamp
+    uber_sync_error = db.Column(db.Text)  # Last sync error message
+    uber_profile_data = db.Column(db.Text)  # JSON: Cached Uber profile data
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -336,6 +344,14 @@ class Vehicle(db.Model):
     purchase_price = db.Column(db.Float)
     current_market_value = db.Column(db.Float)
     total_maintenance_cost = db.Column(db.Float, default=0.0)
+    
+    # Uber Fleet Integration
+    uber_vehicle_id = db.Column(db.String(100), unique=True, index=True)  # Uber's vehicle ID
+    uber_vehicle_uuid = db.Column(db.String(100), unique=True)  # Uber's vehicle UUID
+    uber_sync_status = db.Column(db.String(20), default='none', index=True)  # none, synced, failed, pending
+    uber_last_sync = db.Column(db.DateTime)  # Last successful sync timestamp
+    uber_sync_error = db.Column(db.Text)  # Last sync error message
+    uber_vehicle_data = db.Column(db.Text)  # JSON: Cached Uber vehicle data
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -992,6 +1008,112 @@ class SystemConfiguration(db.Model):
     # Relationships
     updater = db.relationship('User', foreign_keys=[updated_by])
 
+class UberSyncJob(db.Model):
+    """Track Uber API synchronization jobs"""
+    __tablename__ = 'uber_sync_jobs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Job details
+    job_type = db.Column(db.String(50), nullable=False, index=True)  # vehicles, drivers, trips
+    sync_direction = db.Column(db.String(20), nullable=False)  # to_uber, from_uber, bidirectional
+    status = db.Column(db.String(20), default='pending', index=True)  # pending, running, completed, failed
+    
+    # Timing
+    scheduled_at = db.Column(db.DateTime, nullable=False)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    
+    # Results
+    records_processed = db.Column(db.Integer, default=0)
+    records_successful = db.Column(db.Integer, default=0)
+    records_failed = db.Column(db.Integer, default=0)
+    
+    # Error tracking
+    error_message = db.Column(db.Text)
+    error_details = db.Column(db.Text)  # JSON: Detailed error information
+    
+    # Configuration
+    sync_config = db.Column(db.Text)  # JSON: Job-specific configuration
+    
+    # Metadata
+    initiated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    initiator = db.relationship('User', foreign_keys=[initiated_by])
+    sync_logs = db.relationship('UberSyncLog', backref='sync_job', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<UberSyncJob {self.job_type}:{self.status}>'
+
+class UberSyncLog(db.Model):
+    """Detailed logs for Uber sync operations"""
+    __tablename__ = 'uber_sync_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    sync_job_id = db.Column(db.Integer, db.ForeignKey('uber_sync_jobs.id'), nullable=False, index=True)
+    
+    # Record details
+    record_type = db.Column(db.String(30), nullable=False)  # driver, vehicle, trip
+    local_record_id = db.Column(db.Integer)  # ID in our system
+    uber_record_id = db.Column(db.String(100))  # ID in Uber's system
+    
+    # Operation details
+    operation = db.Column(db.String(20), nullable=False)  # create, update, delete, sync
+    status = db.Column(db.String(20), nullable=False, index=True)  # success, failed, skipped
+    
+    # Data
+    request_data = db.Column(db.Text)  # JSON: Data sent to Uber
+    response_data = db.Column(db.Text)  # JSON: Response from Uber
+    error_message = db.Column(db.Text)
+    
+    # Timing
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    def __repr__(self):
+        return f'<UberSyncLog {self.record_type}:{self.operation}:{self.status}>'
+
+class UberIntegrationSettings(db.Model):
+    """Configuration settings for Uber integration"""
+    __tablename__ = 'uber_integration_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Integration status
+    is_enabled = db.Column(db.Boolean, default=False)
+    last_full_sync = db.Column(db.DateTime)
+    sync_frequency_hours = db.Column(db.Integer, default=24)  # How often to sync
+    
+    # Sync preferences
+    auto_sync_vehicles = db.Column(db.Boolean, default=True)
+    auto_sync_drivers = db.Column(db.Boolean, default=True)
+    auto_sync_trips = db.Column(db.Boolean, default=False)  # Might be resource intensive
+    
+    # Data mapping preferences
+    sync_direction_vehicles = db.Column(db.String(20), default='bidirectional')  # to_uber, from_uber, bidirectional
+    sync_direction_drivers = db.Column(db.String(20), default='to_uber')
+    
+    # Error handling
+    max_retry_attempts = db.Column(db.Integer, default=3)
+    error_notification_email = db.Column(db.String(120))
+    
+    # API limits and throttling
+    api_calls_per_minute = db.Column(db.Integer, default=60)
+    batch_size = db.Column(db.Integer, default=50)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Relationships
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def __repr__(self):
+        return f'<UberIntegrationSettings enabled:{self.is_enabled}>'
+
 # Create all indexes
 def create_performance_indexes():
     """Create additional performance indexes"""
@@ -1000,3 +1122,8 @@ def create_performance_indexes():
     Index('idx_vehicle_status_available', Vehicle.status, Vehicle.is_available)
     Index('idx_driver_status_branch_active', Driver.status, Driver.branch_id, Driver.user_id)
     Index('idx_payment_status_period', PaymentRecord.status, PaymentRecord.payment_period_start)
+    
+    # Uber integration indexes
+    Index('idx_uber_sync_job_type_status', UberSyncJob.job_type, UberSyncJob.status)
+    Index('idx_uber_sync_log_timestamp', UberSyncLog.timestamp)
+    Index('idx_uber_sync_log_record', UberSyncLog.record_type, UberSyncLog.local_record_id)
