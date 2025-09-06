@@ -1,0 +1,499 @@
+<!-- Camera Capture Component -->
+<!-- Usage: include this component and call initCameraCapture(fieldName, isRequired) -->
+
+<div id="camera-modal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-camera me-2"></i>
+                    <span id="capture-title">Capture Photo</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Camera Status -->
+                <div id="camera-status" class="text-center mb-3">
+                    <div id="camera-loading" class="d-none">
+                        <div class="spinner-border text-primary mb-2"></div>
+                        <p class="mb-0">Accessing camera and location...</p>
+                    </div>
+                    <div id="camera-error" class="d-none alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="error-message">Camera access denied</span>
+                    </div>
+                </div>
+
+                <!-- Camera Preview -->
+                <div id="camera-preview" class="text-center d-none">
+                    <video id="camera-video" autoplay muted playsinline class="img-fluid rounded mb-3" style="max-height: 400px; max-width: 100%;"></video>
+                    
+                    <!-- Location Info -->
+                    <div id="location-info" class="card bg-light mb-3">
+                        <div class="card-body py-2">
+                            <div class="row text-start">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-map-marker-alt me-1"></i>Location:
+                                    </small>
+                                    <span id="location-status" class="fw-bold">Getting location...</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-clock me-1"></i>Time:
+                                    </small>
+                                    <span id="timestamp-display" class="fw-bold">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capture Controls -->
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary btn-lg" id="capture-btn">
+                            <i class="fas fa-camera me-2"></i>Capture Photo
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="switch-camera-btn" style="display: none;">
+                            <i class="fas fa-sync-alt me-2"></i>Switch Camera
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Captured Photo Review -->
+                <div id="photo-review" class="text-center d-none">
+                    <img id="captured-photo" class="img-fluid rounded mb-3" style="max-height: 400px;">
+                    
+                    <!-- Photo Metadata Display -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body py-2">
+                            <div class="row text-start small">
+                                <div class="col-md-6">
+                                    <div class="mb-1">
+                                        <i class="fas fa-map-marker-alt text-success me-1"></i>
+                                        <strong>Location:</strong>
+                                    </div>
+                                    <div id="captured-location" class="text-muted mb-2">--</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-1">
+                                        <i class="fas fa-clock text-info me-1"></i>
+                                        <strong>Captured at:</strong>
+                                    </div>
+                                    <div id="captured-timestamp" class="text-muted mb-2">--</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="mb-1">
+                                        <i class="fas fa-crosshairs text-warning me-1"></i>
+                                        <strong>Accuracy:</strong>
+                                    </div>
+                                    <div id="captured-accuracy" class="text-muted">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success btn-lg" id="confirm-photo-btn">
+                            <i class="fas fa-check me-2"></i>Use This Photo
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="retake-btn">
+                            <i class="fas fa-redo me-2"></i>Retake Photo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Canvas for image processing (hidden) -->
+<canvas id="capture-canvas" style="display: none;"></canvas>
+
+<script>
+class CameraCapture {
+    constructor() {
+        this.stream = null;
+        this.video = document.getElementById('camera-video');
+        this.canvas = document.getElementById('capture-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.currentField = null;
+        this.location = null;
+        this.timestamp = null;
+        this.facingMode = 'environment'; // Start with back camera
+        this.devices = [];
+        this.currentDeviceIndex = 0;
+    }
+
+    async init(fieldName, title = 'Capture Photo') {
+        this.currentField = fieldName;
+        document.getElementById('capture-title').textContent = title;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('camera-modal'));
+        modal.show();
+        
+        // Reset UI
+        this.resetUI();
+        
+        // Start camera and get location
+        await this.startCamera();
+        await this.getLocation();
+        
+        // Update timestamp every second
+        this.updateTimestamp();
+        setInterval(() => this.updateTimestamp(), 1000);
+    }
+
+    resetUI() {
+        document.getElementById('camera-loading').classList.remove('d-none');
+        document.getElementById('camera-error').classList.add('d-none');
+        document.getElementById('camera-preview').classList.add('d-none');
+        document.getElementById('photo-review').classList.add('d-none');
+    }
+
+    async startCamera() {
+        try {
+            // Get available devices
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            this.devices = devices.filter(device => device.kind === 'videoinput');
+            
+            if (this.devices.length > 1) {
+                document.getElementById('switch-camera-btn').style.display = 'block';
+            }
+
+            const constraints = {
+                video: {
+                    facingMode: this.facingMode,
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            };
+
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            this.video.srcObject = this.stream;
+
+            document.getElementById('camera-loading').classList.add('d-none');
+            document.getElementById('camera-preview').classList.remove('d-none');
+
+            // Setup event listeners
+            this.setupEventListeners();
+
+        } catch (error) {
+            console.error('Camera access error:', error);
+            this.showError('Camera access denied or not available. Please allow camera permissions and try again.');
+        }
+    }
+
+    async getLocation() {
+        if (!navigator.geolocation) {
+            document.getElementById('location-status').textContent = 'Location not supported';
+            return;
+        }
+
+        document.getElementById('location-status').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Getting location...';
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                this.location = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: new Date().toISOString()
+                };
+
+                const accuracy = Math.round(position.coords.accuracy);
+                document.getElementById('location-status').innerHTML = 
+                    `<i class="fas fa-check-circle text-success me-1"></i>Located (±${accuracy}m)`;
+            },
+            (error) => {
+                console.error('Location error:', error);
+                document.getElementById('location-status').innerHTML = 
+                    '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Location unavailable';
+                
+                // Set default location data
+                this.location = {
+                    latitude: null,
+                    longitude: null,
+                    accuracy: null,
+                    timestamp: new Date().toISOString(),
+                    error: error.message
+                };
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5 minutes
+            }
+        );
+    }
+
+    updateTimestamp() {
+        const now = new Date();
+        this.timestamp = now.toISOString();
+        document.getElementById('timestamp-display').textContent = 
+            now.toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+    }
+
+    setupEventListeners() {
+        // Capture button
+        document.getElementById('capture-btn').onclick = () => this.capturePhoto();
+        
+        // Switch camera button
+        document.getElementById('switch-camera-btn').onclick = () => this.switchCamera();
+        
+        // Retake button
+        document.getElementById('retake-btn').onclick = () => this.retakePhoto();
+        
+        // Confirm button
+        document.getElementById('confirm-photo-btn').onclick = () => this.confirmPhoto();
+    }
+
+    async switchCamera() {
+        if (this.devices.length <= 1) return;
+        
+        this.currentDeviceIndex = (this.currentDeviceIndex + 1) % this.devices.length;
+        this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment';
+        
+        await this.stopCamera();
+        await this.startCamera();
+    }
+
+    async stopCamera() {
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+    }
+
+    capturePhoto() {
+        const video = this.video;
+        const canvas = this.canvas;
+        const ctx = this.ctx;
+
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Add timestamp overlay
+        this.addTimestampOverlay(ctx, canvas.width, canvas.height);
+
+        // Convert to base64
+        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+
+        // Show review
+        document.getElementById('captured-photo').src = dataURL;
+        
+        // Update metadata display
+        if (this.location && this.location.latitude) {
+            document.getElementById('captured-location').textContent = 
+                `${this.location.latitude.toFixed(6)}, ${this.location.longitude.toFixed(6)}`;
+            document.getElementById('captured-accuracy').textContent = 
+                this.location.accuracy ? `±${Math.round(this.location.accuracy)} meters` : 'Unknown';
+        } else {
+            document.getElementById('captured-location').textContent = 'Location unavailable';
+            document.getElementById('captured-accuracy').textContent = 'N/A';
+        }
+        
+        document.getElementById('captured-timestamp').textContent = 
+            new Date(this.timestamp).toLocaleString('en-IN', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+        // Switch UI
+        document.getElementById('camera-preview').classList.add('d-none');
+        document.getElementById('photo-review').classList.remove('d-none');
+    }
+
+    addTimestampOverlay(ctx, width, height) {
+        const timestamp = new Date().toLocaleString('en-IN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        const locationText = this.location && this.location.latitude 
+            ? `${this.location.latitude.toFixed(6)}, ${this.location.longitude.toFixed(6)}`
+            : 'Location unavailable';
+
+        // Set text properties
+        ctx.font = '16px Arial';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.textAlign = 'left';
+
+        // Background rectangles
+        const padding = 10;
+        const lineHeight = 25;
+        
+        ctx.fillRect(padding, height - 70, width - (padding * 2), 60);
+        
+        // White text
+        ctx.fillStyle = 'white';
+        ctx.fillText(`📅 ${timestamp}`, padding + 10, height - 45);
+        ctx.fillText(`📍 ${locationText}`, padding + 10, height - 20);
+    }
+
+    retakePhoto() {
+        document.getElementById('photo-review').classList.add('d-none');
+        document.getElementById('camera-preview').classList.remove('d-none');
+    }
+
+    confirmPhoto() {
+        // Get the photo data
+        const photoData = document.getElementById('captured-photo').src;
+        
+        // Create metadata
+        const metadata = {
+            timestamp: this.timestamp,
+            location: this.location,
+            device_info: {
+                user_agent: navigator.userAgent,
+                facing_mode: this.facingMode
+            }
+        };
+
+        // Create hidden inputs for the form
+        this.createHiddenInputs(photoData, metadata);
+        
+        // Update the UI to show photo was captured
+        this.updateFieldUI(photoData);
+        
+        // Close modal and cleanup
+        this.cleanup();
+        bootstrap.Modal.getInstance(document.getElementById('camera-modal')).hide();
+    }
+
+    createHiddenInputs(photoData, metadata) {
+        const form = document.querySelector('form[enctype="multipart/form-data"]');
+        
+        // Remove existing inputs for this field
+        const existingPhoto = document.getElementById(`${this.currentField}_data`);
+        const existingMetadata = document.getElementById(`${this.currentField}_metadata`);
+        if (existingPhoto) existingPhoto.remove();
+        if (existingMetadata) existingMetadata.remove();
+
+        // Create photo data input
+        const photoInput = document.createElement('input');
+        photoInput.type = 'hidden';
+        photoInput.name = `${this.currentField}_data`;
+        photoInput.id = `${this.currentField}_data`;
+        photoInput.value = photoData;
+        form.appendChild(photoInput);
+
+        // Create metadata input
+        const metadataInput = document.createElement('input');
+        metadataInput.type = 'hidden';
+        metadataInput.name = `${this.currentField}_metadata`;
+        metadataInput.id = `${this.currentField}_metadata`;
+        metadataInput.value = JSON.stringify(metadata);
+        form.appendChild(metadataInput);
+    }
+
+    updateFieldUI(photoData) {
+        const container = document.getElementById(`${this.currentField}_container`);
+        if (!container) return;
+
+        // Update the capture button to show success
+        const captureBtn = container.querySelector('.capture-photo-btn');
+        if (captureBtn) {
+            captureBtn.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Photo Captured';
+            captureBtn.classList.remove('btn-primary');
+            captureBtn.classList.add('btn-success');
+        }
+
+        // Show preview
+        const preview = container.querySelector('.photo-preview');
+        if (preview) {
+            preview.style.display = 'block';
+            const img = preview.querySelector('img');
+            if (img) {
+                img.src = photoData;
+            }
+        }
+    }
+
+    cleanup() {
+        this.stopCamera();
+        document.getElementById('switch-camera-btn').style.display = 'none';
+    }
+
+    showError(message) {
+        document.getElementById('error-message').textContent = message;
+        document.getElementById('camera-loading').classList.add('d-none');
+        document.getElementById('camera-error').classList.remove('d-none');
+    }
+}
+
+// Global camera capture instance
+const cameraCapture = new CameraCapture();
+
+// Global function to init camera for any field
+function initCameraCapture(fieldName, title) {
+    cameraCapture.init(fieldName, title);
+}
+
+// Clean up on modal close
+document.getElementById('camera-modal').addEventListener('hidden.bs.modal', function () {
+    cameraCapture.cleanup();
+});
+</script>
+
+<style>
+#camera-video {
+    object-fit: cover;
+    border: 2px solid #dee2e6;
+}
+
+.photo-preview {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.375rem;
+    background-color: #f8f9fa;
+}
+
+.capture-photo-btn {
+    min-height: 60px;
+    font-size: 1.1rem;
+}
+
+.camera-capture-container {
+    border: 2px dashed #0d6efd;
+    border-radius: 0.375rem;
+    background-color: #f0f7ff;
+    padding: 20px;
+    text-align: center;
+}
+
+.camera-capture-container:hover {
+    background-color: #e7f3ff;
+    border-color: #0b5ed7;
+}
+
+@media (max-width: 576px) {
+    #camera-modal .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+    
+    #camera-video {
+        max-height: 300px;
+    }
+}
+</style>
