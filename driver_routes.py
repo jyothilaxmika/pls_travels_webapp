@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, db,
+                   Penalty, Asset, AuditLog, VehicleTracking, db,
                    DriverStatus, VehicleStatus, DutyStatus)
 from forms import DriverProfileForm, DutyForm
 from utils import allowed_file, calculate_earnings
@@ -342,9 +342,31 @@ def start_duty():
 
     # Mark vehicle as not available
     vehicle.is_available = False
+    vehicle.current_odometer = start_odometer or 0.0
     driver.current_vehicle_id = vehicle.id
 
     db.session.add(duty)
+    db.session.commit()
+    
+    # Create vehicle tracking record for duty start
+    tracking_record = VehicleTracking()
+    tracking_record.vehicle_id = vehicle.id
+    tracking_record.duty_id = duty.id
+    tracking_record.driver_id = driver.id
+    tracking_record.recorded_at = duty.actual_start or datetime.utcnow()
+    tracking_record.odometer_reading = start_odometer or 0.0
+    tracking_record.odometer_type = 'start'
+    tracking_record.source = 'duty'
+    tracking_record.latitude = duty.start_location_lat
+    tracking_record.longitude = duty.start_location_lng
+    tracking_record.location_accuracy = duty.start_location_accuracy
+    
+    # Calculate distance from previous record
+    last_tracking = VehicleTracking.query.filter_by(vehicle_id=vehicle.id).order_by(VehicleTracking.recorded_at.desc()).first()
+    if last_tracking and start_odometer:
+        tracking_record.distance_traveled = max(0, start_odometer - last_tracking.odometer_reading)
+    
+    db.session.add(tracking_record)
     db.session.commit()
 
     log_audit('start_duty', 'duty', duty.id,
@@ -437,12 +459,37 @@ def end_duty():
     # Update driver total earnings
     driver.total_earnings += active_duty.driver_earnings
 
-    # Make vehicle available
+    # Make vehicle available and update current odometer
     if active_duty.vehicle:
         active_duty.vehicle.is_available = True
+        active_duty.vehicle.current_odometer = end_odometer or active_duty.vehicle.current_odometer
 
     driver.current_vehicle_id = None
-
+    
+    # Create vehicle tracking record for duty end
+    end_tracking_record = VehicleTracking()
+    end_tracking_record.vehicle_id = active_duty.vehicle_id
+    end_tracking_record.duty_id = active_duty.id
+    end_tracking_record.driver_id = driver.id
+    end_tracking_record.recorded_at = active_duty.actual_end or datetime.utcnow()
+    end_tracking_record.odometer_reading = end_odometer or 0.0
+    end_tracking_record.odometer_type = 'end'
+    end_tracking_record.source = 'duty'
+    end_tracking_record.latitude = active_duty.end_location_lat
+    end_tracking_record.longitude = active_duty.end_location_lng
+    end_tracking_record.location_accuracy = active_duty.end_location_accuracy
+    
+    # CNG/fuel tracking data
+    end_tracking_record.cng_point = request.form.get('cng_point')
+    end_tracking_record.cng_level = request.form.get('end_cng', type=float)
+    end_tracking_record.cng_cost = request.form.get('cng_cost', type=float)
+    end_tracking_record.cng_quantity = request.form.get('cng_quantity', type=float)
+    
+    # Calculate distance traveled during this duty
+    if end_odometer and active_duty.start_odometer:
+        end_tracking_record.distance_traveled = max(0, end_odometer - active_duty.start_odometer)
+    
+    db.session.add(end_tracking_record)
     db.session.commit()
 
     log_audit('end_duty', 'duty', active_duty.id,

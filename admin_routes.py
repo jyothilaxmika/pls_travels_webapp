@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, db,
+                   Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, db,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm
 from utils import allowed_file, calculate_earnings
@@ -439,6 +439,108 @@ def add_duty_scheme():
         return redirect(url_for('admin.duty_schemes'))
     
     return render_template('admin/duty_scheme_form.html', form=form, title='Add Duty Scheme')
+
+@admin_bp.route('/vehicle-tracking')
+@login_required
+@admin_required
+def vehicle_tracking():
+    """Vehicle tracking dashboard with odometer and CNG continuity"""
+    page = request.args.get('page', 1, type=int)
+    vehicle_filter = request.args.get('vehicle_id', type=int)
+    date_filter = request.args.get('date_filter')
+    
+    # Base query
+    query = VehicleTracking.query
+    
+    # Apply filters
+    if vehicle_filter:
+        query = query.filter_by(vehicle_id=vehicle_filter)
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(func.date(VehicleTracking.recorded_at) == filter_date)
+        except ValueError:
+            pass
+    
+    # Get tracking records
+    tracking_records = query.order_by(desc(VehicleTracking.recorded_at)).paginate(
+        page=page, per_page=50, error_out=False)
+    
+    # Get vehicles for filter dropdown
+    vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE).all()
+    
+    return render_template('admin/vehicle_tracking.html',
+                         tracking_records=tracking_records,
+                         vehicles=vehicles,
+                         vehicle_filter=vehicle_filter,
+                         date_filter=date_filter)
+
+@admin_bp.route('/vehicle-tracking/<int:vehicle_id>')
+@login_required
+@admin_required
+def vehicle_tracking_detail(vehicle_id):
+    """Detailed vehicle tracking with continuity analysis"""
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    
+    # Get date range from request
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Default to last 30 days
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+    
+    # Get vehicle tracking records
+    tracking_records = VehicleTracking.get_vehicle_continuity(
+        vehicle_id, 
+        datetime.strptime(start_date, '%Y-%m-%d'),
+        datetime.strptime(end_date, '%Y-%m-%d')
+    )
+    
+    # Validate continuity
+    continuity_errors = VehicleTracking.validate_continuity(vehicle_id)
+    
+    # Calculate summary statistics
+    total_distance = sum(record.distance_traveled or 0 for record in tracking_records)
+    total_cng_used = sum(record.cng_quantity or 0 for record in tracking_records if record.cng_quantity)
+    avg_efficiency = round(total_distance / total_cng_used, 2) if total_cng_used > 0 else 0
+    
+    # Group CNG points by usage frequency
+    cng_points = {}
+    for record in tracking_records:
+        if record.cng_point:
+            cng_points[record.cng_point] = cng_points.get(record.cng_point, 0) + 1
+    
+    return render_template('admin/vehicle_tracking_detail.html',
+                         vehicle=vehicle,
+                         tracking_records=tracking_records,
+                         continuity_errors=continuity_errors,
+                         total_distance=total_distance,
+                         total_cng_used=total_cng_used,
+                         avg_efficiency=avg_efficiency,
+                         cng_points=cng_points,
+                         start_date=start_date,
+                         end_date=end_date)
+
+@admin_bp.route('/vehicle-tracking/validate/<int:vehicle_id>')
+@login_required
+@admin_required
+def validate_vehicle_continuity(vehicle_id):
+    """Run continuity validation for a specific vehicle"""
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    errors = VehicleTracking.validate_continuity(vehicle_id)
+    
+    if errors:
+        flash(f'Found {len(errors)} continuity issues for {vehicle.registration_number}', 'warning')
+        for error in errors[:5]:  # Show first 5 errors
+            flash(error, 'error')
+    else:
+        flash(f'No continuity issues found for {vehicle.registration_number}', 'success')
+    
+    return redirect(url_for('admin.vehicle_tracking_detail', vehicle_id=vehicle_id))
 
 @admin_bp.route('/reports')
 @login_required
