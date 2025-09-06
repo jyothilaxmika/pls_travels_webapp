@@ -282,7 +282,7 @@ class Vehicle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False, index=True)
-    vehicle_type_id = db.Column(db.Integer, db.ForeignKey('vehicle_types.id'), nullable=False)
+    vehicle_type_id = db.Column(db.Integer, db.ForeignKey('vehicle_types.id'), nullable=True)
     
     # Vehicle identification
     registration_number = db.Column(db.String(20), unique=True, nullable=False, index=True)

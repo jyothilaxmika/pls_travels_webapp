@@ -318,7 +318,6 @@ def vehicles():
 def add_vehicle():
     form = VehicleForm()
     form.branch_id.choices = [(b.id, b.name) for b in Branch.query.filter_by(is_active=True).all()]
-    form.vehicle_type_id.choices = [(vt.id, vt.name) for vt in VehicleType.query.filter_by(is_active=True).all()]
     
     if form.validate_on_submit():
         # Check if registration number already exists
@@ -329,7 +328,6 @@ def add_vehicle():
         
         vehicle = Vehicle()
         vehicle.registration_number = form.registration_number.data.upper()  # Store in uppercase
-        vehicle.vehicle_type_id = form.vehicle_type_id.data
         vehicle.model = form.model.data
         vehicle.manufacturing_year = form.manufacturing_year.data
         vehicle.color = form.color.data
@@ -346,7 +344,7 @@ def add_vehicle():
             db.session.commit()
             
             log_audit('add_vehicle', 'vehicle', vehicle.id,
-                     {'registration': vehicle.registration_number, 'type_id': vehicle.vehicle_type_id})
+                     {'registration': vehicle.registration_number})
             
             flash('Vehicle added successfully.', 'success')
             return redirect(url_for('admin.vehicles'))

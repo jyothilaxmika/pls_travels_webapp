@@ -59,7 +59,6 @@ class VehicleAssignmentForm(FlaskForm):
 
 class VehicleForm(FlaskForm):
     registration_number = StringField('Registration Number', validators=[DataRequired(), Length(min=3, max=20)])
-    vehicle_type_id = SelectField('Vehicle Type', coerce=int, validators=[DataRequired()])
     model = StringField('Model', validators=[Optional(), Length(max=100)])
     manufacturing_year = IntegerField('Year', validators=[Optional(), NumberRange(min=1990, max=2030)])
     color = StringField('Color', validators=[Optional(), Length(max=30)])

@@ -31,18 +31,6 @@
                                         </div>
                                     {% endif %}
                                 </div>
-                                
-                                <div class="col-md-6 mb-3">
-                                    {{ form.vehicle_type_id.label(class="form-label") }}
-                                    {{ form.vehicle_type_id(class="form-select") }}
-                                    {% if form.vehicle_type_id.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.vehicle_type_id.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
                             </div>
                             
                             <div class="row">
