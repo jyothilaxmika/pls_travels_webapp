@@ -1,6 +1,9 @@
 import os
 import re
 import math
+import json
+import base64
+from datetime import datetime
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
@@ -212,3 +215,109 @@ def ensure_upload_dir():
     if not os.path.exists(upload_dir):
         os.makedirs(upload_dir)
     return upload_dir
+
+def process_camera_capture(form_data, field_name, user_id, photo_type="photo"):
+    """
+    Process camera capture data (base64 image + metadata) and save to file
+    
+    Args:
+        form_data: Flask request.form object
+        field_name: Name of the photo field (e.g., 'aadhar_photo', 'start_photo')
+        user_id: User ID for filename generation
+        photo_type: Type of photo for filename (e.g., 'aadhar', 'license', 'profile', 'duty_start', 'duty_end')
+    
+    Returns:
+        tuple: (filename, metadata) or (None, None) if no data
+    """
+    data_key = f"{field_name}_data"
+    metadata_key = f"{field_name}_metadata"
+    
+    # Check if camera capture data exists
+    if data_key not in form_data:
+        return None, None
+    
+    try:
+        # Get base64 image data
+        image_data = form_data[data_key]
+        if not image_data or not image_data.startswith('data:image/'):
+            return None, None
+        
+        # Extract metadata if available
+        metadata = {}
+        if metadata_key in form_data:
+            try:
+                metadata = json.loads(form_data[metadata_key])
+            except json.JSONDecodeError:
+                metadata = {}
+        
+        # Parse base64 data
+        header, encoded = image_data.split(',', 1)
+        # Determine file extension from header
+        if 'jpeg' in header or 'jpg' in header:
+            ext = 'jpg'
+        elif 'png' in header:
+            ext = 'png'
+        elif 'webp' in header:
+            ext = 'webp'
+        else:
+            ext = 'jpg'  # Default
+        
+        # Decode base64 image
+        image_bytes = base64.b64decode(encoded)
+        
+        # Generate unique filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = secure_filename(f"{photo_type}_{user_id}_{timestamp}.{ext}")
+        
+        # Ensure upload directory exists
+        upload_dir = ensure_upload_dir()
+        file_path = os.path.join(upload_dir, filename)
+        
+        # Save image file
+        with open(file_path, 'wb') as f:
+            f.write(image_bytes)
+        
+        # Save metadata as separate JSON file if metadata exists
+        if metadata:
+            metadata_filename = secure_filename(f"{photo_type}_{user_id}_{timestamp}_metadata.json")
+            metadata_path = os.path.join(upload_dir, metadata_filename)
+            
+            # Add processed timestamp to metadata
+            metadata['processed_at'] = datetime.now().isoformat()
+            metadata['filename'] = filename
+            
+            with open(metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+        
+        return filename, metadata
+        
+    except Exception as e:
+        print(f"Error processing camera capture for {field_name}: {e}")
+        return None, None
+
+def get_photo_metadata(filename):
+    """
+    Get metadata for a photo if it exists
+    
+    Args:
+        filename: Photo filename
+    
+    Returns:
+        dict: Metadata dictionary or empty dict if not found
+    """
+    if not filename:
+        return {}
+    
+    try:
+        # Construct metadata filename
+        name, ext = os.path.splitext(filename)
+        metadata_filename = f"{name}_metadata.json"
+        metadata_path = os.path.join(ensure_upload_dir(), metadata_filename)
+        
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    
+    return {}

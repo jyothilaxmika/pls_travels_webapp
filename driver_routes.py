@@ -9,7 +9,7 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
                    Penalty, Asset, AuditLog, VehicleTracking, db,
                    DriverStatus, VehicleStatus, DutyStatus)
 from forms import DriverProfileForm, DutyForm
-from utils import allowed_file, calculate_earnings
+from utils import allowed_file, calculate_earnings, process_camera_capture
 from auth import log_audit
 
 driver_bp = Blueprint('driver', __name__)
@@ -156,22 +156,46 @@ def profile():
             driver.ifsc_code = request.form.get('ifsc_code')
             driver.account_holder_name = request.form.get('account_holder_name')
 
-            # Handle file uploads
-            if 'aadhar_photo' in request.files:
+            # Handle camera capture uploads
+            # Process Aadhar photo
+            aadhar_filename, aadhar_metadata = process_camera_capture(
+                request.form, 'aadhar_photo', driver.user_id, 'aadhar'
+            )
+            if aadhar_filename:
+                driver.aadhar_document = aadhar_filename
+            
+            # Fallback to traditional file upload if no camera capture
+            elif 'aadhar_photo' in request.files:
                 file = request.files['aadhar_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.aadhar_document = filename
 
-            if 'license_photo' in request.files:
+            # Process License photo
+            license_filename, license_metadata = process_camera_capture(
+                request.form, 'license_photo', driver.user_id, 'license'
+            )
+            if license_filename:
+                driver.license_document = license_filename
+            
+            # Fallback to traditional file upload if no camera capture
+            elif 'license_photo' in request.files:
                 file = request.files['license_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.license_document = filename
 
-            if 'profile_photo' in request.files:
+            # Process Profile photo
+            profile_filename, profile_metadata = process_camera_capture(
+                request.form, 'profile_photo', driver.user_id, 'profile'
+            )
+            if profile_filename:
+                driver.profile_photo = profile_filename
+            
+            # Fallback to traditional file upload if no camera capture
+            elif 'profile_photo' in request.files:
                 file = request.files['profile_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"profile_{driver.user_id}_{file.filename}")
@@ -205,23 +229,47 @@ def profile():
         driver.ifsc_code = request.form.get('ifsc_code', driver.ifsc_code)
         driver.account_holder_name = request.form.get('account_holder_name', driver.account_holder_name)
 
-        # Handle file uploads if driver is not yet approved
+        # Handle camera capture uploads if driver is not yet approved
         if driver.status in ['pending', 'rejected']:
-            if 'aadhar_photo' in request.files:
+            # Process Aadhar photo
+            aadhar_filename, aadhar_metadata = process_camera_capture(
+                request.form, 'aadhar_photo', driver.user_id, 'aadhar'
+            )
+            if aadhar_filename:
+                driver.aadhar_document = aadhar_filename
+            
+            # Fallback to traditional file upload if no camera capture
+            elif 'aadhar_photo' in request.files:
                 file = request.files['aadhar_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.aadhar_document = filename
 
-            if 'license_photo' in request.files:
+            # Process License photo
+            license_filename, license_metadata = process_camera_capture(
+                request.form, 'license_photo', driver.user_id, 'license'
+            )
+            if license_filename:
+                driver.license_document = license_filename
+            
+            # Fallback to traditional file upload if no camera capture
+            elif 'license_photo' in request.files:
                 file = request.files['license_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
                     file.save(os.path.join('uploads', filename))
                     driver.license_document = filename
 
-            if 'profile_photo' in request.files:
+            # Process Profile photo
+            profile_filename, profile_metadata = process_camera_capture(
+                request.form, 'profile_photo', driver.user_id, 'profile'
+            )
+            if profile_filename:
+                driver.profile_photo = profile_filename
+            
+            # Fallback to traditional file upload if no camera capture
+            elif 'profile_photo' in request.files:
                 file = request.files['profile_photo']
                 if file and allowed_file(file.filename):
                     filename = secure_filename(f"profile_{driver.user_id}_{file.filename}")
@@ -393,8 +441,15 @@ def start_duty():
     duty.start_odometer = start_odometer or 0.0
     duty.status = DutyStatus.ACTIVE
 
-    # Handle start photo
-    if 'start_photo' in request.files:
+    # Handle start photo camera capture
+    start_photo_filename, start_photo_metadata = process_camera_capture(
+        request.form, 'start_photo', driver.id, 'duty_start'
+    )
+    if start_photo_filename:
+        duty.start_photo = start_photo_filename
+    
+    # Fallback to traditional file upload if no camera capture
+    elif 'start_photo' in request.files:
         file = request.files['start_photo']
         if file and allowed_file(file.filename):
             filename = secure_filename(f"duty_start_{duty.driver_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
@@ -498,8 +553,15 @@ def end_duty():
     if end_odometer and active_duty.start_odometer:
         active_duty.distance_km = end_odometer - active_duty.start_odometer
 
-    # Handle end photo
-    if 'end_photo' in request.files:
+    # Handle end photo camera capture
+    end_photo_filename, end_photo_metadata = process_camera_capture(
+        request.form, 'end_photo', driver.id, 'duty_end'
+    )
+    if end_photo_filename:
+        active_duty.end_photo = end_photo_filename
+    
+    # Fallback to traditional file upload if no camera capture
+    elif 'end_photo' in request.files:
         file = request.files['end_photo']
         if file and allowed_file(file.filename):
             filename = secure_filename(f"duty_end_{driver.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
