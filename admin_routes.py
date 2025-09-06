@@ -321,13 +321,14 @@ def add_vehicle():
     
     if form.validate_on_submit():
         # Check if registration number already exists
-        existing_vehicle = Vehicle.query.filter_by(registration_number=form.registration_number.data).first()
+        reg_number = (form.registration_number.data or '').upper()
+        existing_vehicle = Vehicle.query.filter_by(registration_number=reg_number).first()
         if existing_vehicle:
             flash('Vehicle with this registration number already exists.', 'error')
             return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
         
         vehicle = Vehicle()
-        vehicle.registration_number = form.registration_number.data.upper()  # Store in uppercase
+        vehicle.registration_number = (form.registration_number.data or '').upper()  # Store in uppercase
         vehicle.model = form.model.data
         vehicle.manufacturing_year = form.manufacturing_year.data
         vehicle.color = form.color.data
@@ -401,7 +402,8 @@ def duty_schemes():
 @admin_required
 def add_duty_scheme():
     form = DutySchemeForm()
-    form.branch_id.choices = [('0', 'Global')] + [(str(b.id), b.name) for b in Branch.query.filter_by(is_active=True).all()]
+    branches = Branch.query.filter_by(is_active=True).all()
+    form.branch_id.choices = [('0', 'Global')] + [(str(b.id), b.name) for b in branches]
     
     if form.validate_on_submit():
         config = {}
