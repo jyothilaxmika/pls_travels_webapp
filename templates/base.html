@@ -60,6 +60,11 @@
                                 <i class="fas fa-chart-bar me-1"></i>Reports
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.uber_integration') }}">
+                                <i class="fab fa-uber me-1"></i>Uber Integration
+                            </a>
+                        </li>
                     {% elif current_user.role.name == 'MANAGER' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('manager.dashboard') }}">
@@ -160,6 +165,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('admin.reports') }}">
                             <i class="fas fa-chart-bar me-2"></i>Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.uber_integration') }}">
+                            <i class="fab fa-uber me-2"></i>Uber Integration
                         </a>
                     </li>
                 {% elif current_user.role.name == 'MANAGER' %}
