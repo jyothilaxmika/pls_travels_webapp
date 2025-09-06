@@ -1,0 +1,245 @@
+[API] Get Drivers Information
+Privileged and Confidential This endpoint design has been confidentially shared with you. It is still under development and is subject to change without notice. Please do not share this document or API endpoint details with anyone who is not authorized to have access. For more information read about scopes.
+
+Retrieves the essential data about an individual driver or all drivers associated with Fleet Owners. This API is crucial for accessing fundamental details and driver-related information efficiently within the system, including real-time reflection of the removal or addition of drivers to the fleet.
+
+Use case
+Fleet suppliers can use the “Get Driver’s information” API to access driver details, including profiles, contact information, encrypted UUID, and raw UUIDs. Additionally, the availability of encrypted and raw UUIDs facilitates the use of APIs that accept these formats for driver identification and management. The data refresh rate for this API is near real-time, with an expected delay of 2–3 minutes, ensuring that the information is updated with only a slight delay.
+
+Using Dependent API
+To gather details about drivers, such as their driver UUID and name, fleet owners should follow two steps. Firstly, they must utilize the Get Organizations API, entering the Fleet Supplier’s unique ID. This action fetches all the connected encrypted organizations. Secondly, using the encrypted Organization UUID as input, they can access the Get Driver’s Information API to obtain specific driver details.
+
+Supported supplier types
+Fleets
+
+Scopes
+Required
+One of - solutions.suppliers.drivers.status.read, solutions.suppliers.metrics.read
+
+Supplementary
+solutions.suppliers.driver.pii_data.read This scope will only be used to return (#DrivingLicense) info for authorized fleets.
+Resource
+/v1/vehicle-suppliers/drivers
+
+HTTP Method
+GET
+
+Access Method
+Client Credentials
+
+Example Request
+curl -i -X GET "https://api.uber.com/v1/vehicle-suppliers/drivers?org_id=<org_id>&page_token=<page_token>&page_size=<page_size>" \
+-H "Authorization: Bearer <TOKEN>" \
+-H "Content-Type: application/json" \
+Example Request with driver filter
+
+curl -i -X GET "https://api.uber.com/v1/vehicle-suppliers/drivers?org_id=<org_id>&page_token=<page_token>&page_size=<page_size>&driver_id=<driver_uuid>" \
+-H "Authorization: Bearer <TOKEN>" \
+-H "Content-Type: application/json" \
+Example Request for fetching assignedVehicle information
+
+curl -i -X GET "https://api.uber.com/v1/vehicle-suppliers/drivers?org_id=<org_id>&page_token=<page_token>&page_size=<page_size>&include_assigned_vehicles=true" \
+-H "Authorization: Bearer <TOKEN>" \
+-H "Content-Type: application/json" \
+Example Response
+{
+  "driverInformation": [
+    {
+      "driverId": "910a15d2-a5b4-402b-8888-83ed261e6f99",
+      "driverIdEncrypted": "y9M1JoXUkOKQlE6OF4F0v34Aw3bHpF3a1x7F1FhMz6Lc6oKQgPEP2GM0eGcx2B2rtyVud50m0E8rGgJ3FXm97DGASbQT43tss5Cy0sUKt1vY8qjsu4tS3oj0snc2ZuYZs79DxW",
+      "firstName": "FirstName",
+      "lastName": "LastName",
+      "phoneNumber": {
+        "countryCode": "+1",
+        "number": "1234567890"
+      },
+      "email": "abc@gmail.com",
+      "assignedVehicles": [{
+       "vehicleId": "4jMffsUkOKQlE6OF4F0v34Aw3bHpF3a1x7F1FhMz6Lc6oKQgPEP2GM0eGcx2B2rtyVud50m0E8rGgJ3FXm97DGASbQT43tss5Cy0sUKt1vY8qjsu4tS3oj0snc2ZuYZs79DxW",
+       "assignedAt": "2023-03-30T00:10:55.926Z"
+      }],
+      "drivingLicense": {
+        "licenseNumber": {
+          "encryptedData": "encryptedData",
+          "encryptedSymmetricKey": "encryptedSymmetricKey"
+        },
+        "state": "CA",
+        "expirationDate": "2025-10-26T23:59:59.000Z"
+      }
+    }
+  ],
+  "paginationResult": {
+    "nextPageToken": ""
+  }
+}
+Request Query Parameters
+Name	Type	Required	Description
+org_id	string	Y	Encrypted organization UUID.
+page_token	string	N	Options for Pagination - page cursor for the page.
+page_size	int32	N	Options for Pagination - maximum number of records to be fetched in each request 0<x<=100.
+driver_id	string	N	Raw driver uuid to get the results for requested driver_uuid.
+include_assigned_vehicles	boolean	N	This Boolean parameter is used to retrieve the information about the vehicles assigned to each driver.
+Response Body Fields
+Name	Type	Nullable	Description
+driverInformation	object array	Y	Array of DriverInformation contains list of driver’s with their information.
+paginationResult	object	N	object of type PaginationResult.
+DriverInformation
+
+Name	Type	Description
+driverId	string	Driver’s id in uuid format.
+driverIdEncrypted	string	Driver’s id in encrypted format.
+firstName	string	First Name.
+lastName	string	Last Name.
+phoneNumber	object	Driver’s registered PhoneNumber.
+email	string	Driver’s email Id
+assignedVehicles	object	Vehicles assigned to the driver at current moment AssignedVehicle
+drivingLicense	object	Driver’s license information DrivingLicense
+PhoneNumber
+
+Name	Type	Description
+countryCode	string	country code for the phone number.
+number	string	phone number.
+AssignedVehicle
+
+Name	Type	Description
+vehicleId	string	Encrypted uuid of vehicle.
+assignedAt	string	Time in UTC timezone when the vehicle was assigned to the driver.
+DrivingLicense
+
+Name	Type	Description
+licenseNumber	object	Contains encrypted license number information LicenseNumber
+state	string	State where the license was issued
+expirationDate	string	License expiration date in UTC timezone
+LicenseNumber
+
+Name	Type	Description
+encryptedData	string	Encrypted license number data
+encryptedSymmetricKey	string	Encrypted symmetric key for license number
+PaginationResult
+
+Name	Type	Description
+nextPageToken	string	Can be empty, if there are no more records
+Rate Limit
+Rate limit for accessing this endpoint is set at 100000 requests per hour per Developer Application.
+
+Endpoint-specific Errors
+Http Status Code	Code	Message
+400	bad_request	The request parameters are invalid.
+500	internal_server_error	Internal server error.
+403	unauthenticated	User does not have permission.
+429	rate_limited	Number of requests exceeds the allowed limit.
+503	service_unavailable	Service unavailable.
+401	unauthorized	Invalid OAuth 2.0 credentials.
+Notes
+If page_token parameter is not specified, its default value will be an empty string.
+If the returned paginationResult object is not empty, it indicates that further entities can be retrieved by calling the endpoint again with the provided nextPageToken and a valid pageSize (between 1 and 100).
+Updates made to driver profiles will be reflected in real-time in this endpoint.
+How to decrypt the encrypted data
+Here’s a code sample in golang to explain how you can decrypt the data. The code uses open source libraries only and can be replicated in to any other coding language.
+
+package cryptography
+
+import (
+	"bytes"
+	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha1"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	// add your public key here
+	testAccountPublicKey = `-----BEGIN RSA PUBLIC KEY-----
+....
+....
+....
+-----END RSA PUBLIC KEY-----`
+
+	// add your private key here
+	testAccountPrivateKey = `-----BEGIN PRIVATE KEY-----
+....
+....
+....
+....
+-----END PRIVATE KEY-----`
+)
+
+func TestEncryptDecryptFlow(t *testing.T) {
+
+	// These are the encrypted values that you would receive from the Uber's API response
+	encoded_encrypted_SymmetricKey = "COv9yxOtYI80r9AThf2M0lu6akLCHDC1mjQeatR66QdA+J3967dMk+m814VBhS8H1KDv6S9xYcisGl3DFP+yCnlUbU0BtTI1kfN7Ubl0dLYawQ1xaJw01rilzDM2XhtUBWeqV2uvH4RV+wuQnZ2UmhEyHODs/4bSXUhTB7vc3PBiaTGSdyJloaVkM/aa0z01wpY6Tuor9Th3hcoeVI0aPpkME5OSMxxQGGWsjY5cU+q3sHnevbdJrlX/nL3BEe8nhT3FB+QuqedViM0VyaIEHPOOU25z/yqa6SBVxB6rRF/0smcGsN0+weFs61FhNc9uGx7QnsQ+J7eueXqDZiYOgw=="
+	encoded_encrypted_data = "Aqsx/VK1K8VKJrUIliWJqbEiG5fyWaGj50OqNWw9BVgLvu04BB8="
+
+	// Step 1: Format Private Key
+	privateKey := getPrivateKey(t)
+
+	// Step 2: Decode the encrypted symmetric key
+	encrypted_SymmetricKey, err := base64.StdEncoding.DecodeString(encoded_encrypted_SymmetricKey)
+	if err != nil {
+		t.Fatalf("failed to decode encrypted symmetric key: %v", err)
+	}
+
+	// Step 3: RSA-OAEP decrypt symmetric Key
+	encoded_symmetricKey, err := rsa.DecryptOAEP(sha1.New(), rand.Reader, privateKey, encrypted_SymmetricKey, nil)
+	if err != nil {
+		t.Fatalf("failed to decrypt symmetric key: %v", err)
+	}
+
+	// Step 4: Decode the symmetric key again since it was encoded in base64 before being encrypted
+	symmetricKey := make([]byte, 32)
+	n, err := base64.StdEncoding.Decode(symmetricKey, encoded_symmetricKey)
+	if err != nil {
+		t.Fatalf("failed to base64-decode symmetric key: %v", err)
+	}
+	if n != 32 {
+		t.Fatalf("decoded symmetric key is not 32 bytes: %d", n)
+	}
+
+	// Step 5: Decode the transformed license number
+	decoded_encrypted_data, err := base64.StdEncoding.DecodeString(encoded_encrypted_data)
+	if err != nil {
+		t.Fatalf("failed to decode transformed license number: %v", err)
+	}
+
+	// Step 6: Decrypt the license number
+	block, _ := aes.NewCipher(symmetricKey)
+	aesgcm, _ := cipher.NewGCM(block)
+
+	// In AES-256 encryption, specifically when using the GCM (Galois/Counter Mode) mode, the nonce (Initialization Vector) has a length of 12 bytes.
+	// This is a standardized requirement for AES-GCM
+	// The rest of the bytes form the cipherText
+	decrypted_data_bytes, err := aesgcm.Open(nil, decoded_encrypted_data[:12], decoded_encrypted_data[12:], nil)
+	if err != nil {
+		t.Fatalf("failed to open license number: %v", err)
+	}
+
+	decrypted_data := string(decrypted_data_bytes)
+
+	// Step 7: Verify the decrypted license number
+	// you need to know this to verify the decryption code. But this is just for testing purposes
+	// In real scenarios, you would rely on the decryption logic to give you the plaintext
+	plaintext = "17546013-A"
+	assert.Equal(t, plaintext, decrypted_data)
+}
+
+func getPrivateKey(t *testing.T) *rsa.PrivateKey {
+	pKeyData, _ := pem.Decode([]byte(testAccountPrivateKey))
+	key, err := x509.ParsePKCS8PrivateKey(pKeyData.Bytes)
+	if err != nil {
+		t.Fatalf("failed to parse private key: %v", err)
+	}
+	privateKey, ok := key.(*rsa.PrivateKey)
+	if !ok {
+		t.Fatalf("not an RSA private key")
+	}
+	return privateKey
+}
+
