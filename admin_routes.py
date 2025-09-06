@@ -6,7 +6,8 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, db,
+                   Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
+                   UberSyncJob, UberSyncLog, UberIntegrationSettings, db,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm
 from utils import allowed_file, calculate_earnings
@@ -693,3 +694,236 @@ def branch_performance():
         'target': float(row.target_revenue),
         'actual': float(row.actual_revenue or 0)
     } for row in branch_data])
+
+# Uber Integration Management Routes
+
+@admin_bp.route('/uber')
+@login_required
+@admin_required
+def uber_integration():
+    """Main Uber integration management page"""
+    from uber_sync import uber_sync
+    
+    # Get current settings
+    settings = uber_sync.get_sync_settings()
+    if not settings:
+        settings = uber_sync.create_default_settings(current_user.id)
+    
+    # Get recent sync jobs
+    recent_jobs = UberSyncJob.query.order_by(desc(UberSyncJob.created_at)).limit(10).all()
+    
+    # Get sync statistics
+    total_jobs = UberSyncJob.query.count()
+    successful_jobs = UberSyncJob.query.filter_by(status='completed').count()
+    failed_jobs = UberSyncJob.query.filter_by(status='failed').count()
+    pending_jobs = UberSyncJob.query.filter_by(status='pending').count()
+    
+    # Get sync counts by type
+    vehicle_synced = Vehicle.query.filter_by(uber_sync_status='synced').count()
+    driver_synced = Driver.query.filter_by(uber_sync_status='synced').count()
+    vehicle_failed = Vehicle.query.filter_by(uber_sync_status='failed').count()
+    driver_failed = Driver.query.filter_by(uber_sync_status='failed').count()
+    
+    return render_template('admin/uber_integration.html',
+                         settings=settings,
+                         recent_jobs=recent_jobs,
+                         stats={
+                             'total_jobs': total_jobs,
+                             'successful_jobs': successful_jobs,
+                             'failed_jobs': failed_jobs,
+                             'pending_jobs': pending_jobs,
+                             'vehicle_synced': vehicle_synced,
+                             'driver_synced': driver_synced,
+                             'vehicle_failed': vehicle_failed,
+                             'driver_failed': driver_failed
+                         })
+
+@admin_bp.route('/uber/test-connection')
+@login_required
+@admin_required
+def uber_test_connection():
+    """Test connection to Uber APIs"""
+    from uber_sync import uber_sync
+    
+    result = uber_sync.test_connection()
+    
+    if result['status'] == 'success':
+        flash(f"Connection successful! {result['message']}", 'success')
+    else:
+        flash(f"Connection failed: {result['message']}", 'error')
+    
+    return redirect(url_for('admin.uber_integration'))
+
+@admin_bp.route('/uber/settings', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def uber_settings():
+    """Manage Uber integration settings"""
+    from uber_sync import uber_sync
+    
+    settings = uber_sync.get_sync_settings()
+    if not settings:
+        settings = uber_sync.create_default_settings(current_user.id)
+    
+    if request.method == 'POST':
+        try:
+            # Update settings
+            settings.is_enabled = request.form.get('is_enabled') == 'on'
+            settings.auto_sync_vehicles = request.form.get('auto_sync_vehicles') == 'on'
+            settings.auto_sync_drivers = request.form.get('auto_sync_drivers') == 'on'
+            settings.auto_sync_trips = request.form.get('auto_sync_trips') == 'on'
+            settings.sync_frequency_hours = int(request.form.get('sync_frequency_hours', 24))
+            settings.sync_direction_vehicles = request.form.get('sync_direction_vehicles', 'bidirectional')
+            settings.sync_direction_drivers = request.form.get('sync_direction_drivers', 'to_uber')
+            settings.max_retry_attempts = int(request.form.get('max_retry_attempts', 3))
+            settings.error_notification_email = request.form.get('error_notification_email', '')
+            settings.api_calls_per_minute = int(request.form.get('api_calls_per_minute', 60))
+            settings.batch_size = int(request.form.get('batch_size', 50))
+            settings.updated_by = current_user.id
+            settings.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            
+            log_audit(current_user.id, 'UPDATE', 'UberIntegrationSettings', settings.id, 
+                     'Updated Uber integration settings')
+            
+            flash('Uber integration settings updated successfully!', 'success')
+            return redirect(url_for('admin.uber_integration'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating settings: {str(e)}', 'error')
+    
+    return render_template('admin/uber_settings.html', settings=settings)
+
+@admin_bp.route('/uber/sync/<job_type>')
+@login_required
+@admin_required
+def uber_start_sync(job_type):
+    """Start a sync job"""
+    from uber_sync import uber_sync
+    
+    # Validate job type
+    if job_type not in ['vehicles', 'drivers', 'trips']:
+        flash('Invalid sync job type', 'error')
+        return redirect(url_for('admin.uber_integration'))
+    
+    # Get sync direction from settings
+    settings = uber_sync.get_sync_settings()
+    if not settings:
+        flash('Please configure Uber integration settings first', 'error')
+        return redirect(url_for('admin.uber_settings'))
+    
+    if not settings.is_enabled:
+        flash('Uber integration is not enabled', 'error')
+        return redirect(url_for('admin.uber_integration'))
+    
+    try:
+        # Determine sync direction
+        if job_type == 'vehicles':
+            sync_direction = settings.sync_direction_vehicles
+        elif job_type == 'drivers':
+            sync_direction = settings.sync_direction_drivers
+        else:  # trips
+            sync_direction = 'from_uber'  # trips are always from Uber
+        
+        # Create and run sync job
+        config = {}
+        if job_type == 'trips':
+            # For trips, sync last 7 days by default
+            config = {
+                'start_date': (datetime.utcnow() - timedelta(days=7)).isoformat(),
+                'end_date': datetime.utcnow().isoformat()
+            }
+        
+        job = uber_sync.create_sync_job(job_type, sync_direction, current_user.id, config)
+        result = uber_sync.run_sync_job(job.id)
+        
+        if result['status'] == 'completed':
+            flash(f"Sync completed! {result['message']}", 'success')
+        else:
+            flash(f"Sync failed: {result['message']}", 'error')
+        
+        log_audit(current_user.id, 'CREATE', 'UberSyncJob', job.id, 
+                 f'Started {job_type} sync job')
+        
+    except Exception as e:
+        flash(f'Error starting sync job: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.uber_integration'))
+
+@admin_bp.route('/uber/sync-jobs')
+@login_required
+@admin_required
+def uber_sync_jobs():
+    """View all sync jobs"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    jobs = UberSyncJob.query.order_by(desc(UberSyncJob.created_at)).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    return render_template('admin/uber_sync_jobs.html', jobs=jobs)
+
+@admin_bp.route('/uber/sync-job/<int:job_id>')
+@login_required
+@admin_required
+def uber_sync_job_details(job_id):
+    """View detailed sync job information"""
+    job = UberSyncJob.query.get_or_404(job_id)
+    
+    # Get sync logs for this job
+    logs = UberSyncLog.query.filter_by(sync_job_id=job_id).order_by(
+        desc(UberSyncLog.timestamp)
+    ).all()
+    
+    return render_template('admin/uber_sync_job_details.html', job=job, logs=logs)
+
+@admin_bp.route('/uber/sync-status')
+@login_required
+@admin_required
+def uber_sync_status():
+    """View sync status for all vehicles and drivers"""
+    # Get vehicles with sync status
+    vehicles = Vehicle.query.filter(Vehicle.uber_sync_status.isnot(None)).all()
+    
+    # Get drivers with sync status  
+    drivers = Driver.query.filter(Driver.uber_sync_status.isnot(None)).all()
+    
+    return render_template('admin/uber_sync_status.html', vehicles=vehicles, drivers=drivers)
+
+@admin_bp.route('/uber/reset-sync/<record_type>/<int:record_id>')
+@login_required
+@admin_required
+def uber_reset_sync(record_type, record_id):
+    """Reset sync status for a record"""
+    try:
+        if record_type == 'vehicle':
+            record = Vehicle.query.get_or_404(record_id)
+            record.uber_sync_status = 'none'
+            record.uber_sync_error = None
+            record.uber_last_sync = None
+            
+        elif record_type == 'driver':
+            record = Driver.query.get_or_404(record_id)
+            record.uber_sync_status = 'none' 
+            record.uber_sync_error = None
+            record.uber_last_sync = None
+            
+        else:
+            flash('Invalid record type', 'error')
+            return redirect(url_for('admin.uber_sync_status'))
+        
+        db.session.commit()
+        
+        log_audit(current_user.id, 'UPDATE', record_type.capitalize(), record_id,
+                 f'Reset Uber sync status for {record_type}')
+        
+        flash(f'Sync status reset for {record_type}', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error resetting sync status: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.uber_sync_status'))

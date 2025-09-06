@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Uber Integration - PLS TRAVELS Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-car"></i> Uber Fleet Integration</h2>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('admin.uber_test_connection') }}" class="btn btn-outline-primary">
+                <i class="fas fa-wifi"></i> Test Connection
+            </a>
+            <a href="{{ url_for('admin.uber_settings') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Integration Status Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card {% if settings.is_enabled %}border-success{% else %}border-warning{% endif %}">
+                <div class="card-header {% if settings.is_enabled %}bg-success text-white{% else %}bg-warning text-dark{% endif %}">
+                    <h5 class="card-title mb-0">
+                        <i class="fas {% if settings.is_enabled %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %}"></i>
+                        Integration Status: {% if settings.is_enabled %}ENABLED{% else %}DISABLED{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Last Full Sync:</strong> 
+                                {% if settings.last_full_sync %}
+                                    {{ settings.last_full_sync.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </p>
+                            <p><strong>Sync Frequency:</strong> Every {{ settings.sync_frequency_hours }} hours</p>
+                            <p><strong>API Rate Limit:</strong> {{ settings.api_calls_per_minute }} calls/minute</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Auto Sync:</strong></p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas {% if settings.auto_sync_vehicles %}fa-check text-success{% else %}fa-times text-danger{% endif %}"></i> Vehicles</li>
+                                <li><i class="fas {% if settings.auto_sync_drivers %}fa-check text-success{% else %}fa-times text-danger{% endif %}"></i> Drivers</li>
+                                <li><i class="fas {% if settings.auto_sync_trips %}fa-check text-success{% else %}fa-times text-danger{% endif %}"></i> Trips</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title">{{ stats.total_jobs }}</h4>
+                            <p class="card-text">Total Sync Jobs</p>
+                        </div>
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title">{{ stats.successful_jobs }}</h4>
+                            <p class="card-text">Successful Jobs</p>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title">{{ stats.failed_jobs }}</h4>
+                            <p class="card-text">Failed Jobs</p>
+                        </div>
+                        <i class="fas fa-times-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title">{{ stats.pending_jobs }}</h4>
+                            <p class="card-text">Pending Jobs</p>
+                        </div>
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sync-alt"></i> Data Synchronization
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if settings.is_enabled %}
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-truck fa-3x mb-3 text-primary"></i>
+                                        <h5>Vehicles</h5>
+                                        <p class="text-muted">Synced: {{ stats.vehicle_synced }} | Failed: {{ stats.vehicle_failed }}</p>
+                                        <a href="{{ url_for('admin.uber_start_sync', job_type='vehicles') }}" class="btn btn-primary btn-block">
+                                            <i class="fas fa-sync"></i> Sync Vehicles
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-users fa-3x mb-3 text-success"></i>
+                                        <h5>Drivers</h5>
+                                        <p class="text-muted">Synced: {{ stats.driver_synced }} | Failed: {{ stats.driver_failed }}</p>
+                                        <a href="{{ url_for('admin.uber_start_sync', job_type='drivers') }}" class="btn btn-success btn-block">
+                                            <i class="fas fa-sync"></i> Sync Drivers
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-route fa-3x mb-3 text-info"></i>
+                                        <h5>Trip Data</h5>
+                                        <p class="text-muted">Import trip data from Uber Fleet</p>
+                                        <a href="{{ url_for('admin.uber_start_sync', job_type='trips') }}" class="btn btn-info btn-block">
+                                            <i class="fas fa-download"></i> Import Trips
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <h5>Integration Disabled</h5>
+                            <p>Enable Uber integration in settings to start syncing data.</p>
+                            <a href="{{ url_for('admin.uber_settings') }}" class="btn btn-warning">
+                                <i class="fas fa-cog"></i> Go to Settings
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sync Jobs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history"></i> Recent Sync Jobs
+                    </h5>
+                    <a href="{{ url_for('admin.uber_sync_jobs') }}" class="btn btn-sm btn-outline-primary">
+                        View All Jobs
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_jobs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Job Type</th>
+                                        <th>Status</th>
+                                        <th>Direction</th>
+                                        <th>Records</th>
+                                        <th>Started</th>
+                                        <th>Duration</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in recent_jobs %}
+                                    <tr>
+                                        <td>
+                                            <i class="fas {% if job.job_type == 'vehicles' %}fa-truck{% elif job.job_type == 'drivers' %}fa-user{% else %}fa-route{% endif %}"></i>
+                                            {{ job.job_type.title() }}
+                                        </td>
+                                        <td>
+                                            {% if job.status == 'completed' %}
+                                                <span class="badge badge-success">{{ job.status.title() }}</span>
+                                            {% elif job.status == 'failed' %}
+                                                <span class="badge badge-danger">{{ job.status.title() }}</span>
+                                            {% elif job.status == 'running' %}
+                                                <span class="badge badge-warning">{{ job.status.title() }}</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">{{ job.status.title() }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ job.sync_direction.replace('_', ' ').title() }}</td>
+                                        <td>
+                                            {% if job.records_processed %}
+                                                <span class="text-success">{{ job.records_successful or 0 }}</span> / 
+                                                <span class="text-danger">{{ job.records_failed or 0 }}</span> / 
+                                                <span class="text-muted">{{ job.records_processed }}</span>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if job.started_at %}
+                                                {{ job.started_at.strftime('%m-%d %H:%M') }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if job.started_at and job.completed_at %}
+                                                {{ ((job.completed_at - job.started_at).total_seconds() / 60)|round(1) }}m
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('admin.uber_sync_job_details', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No sync jobs yet. Start your first sync above.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transition: box-shadow 0.15s ease-in-out;
+    }
+    
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-block {
+        width: 100%;
+    }
+</style>
+{% endblock %}
