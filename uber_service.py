@@ -32,7 +32,7 @@ class UberConfig:
     client_id: str
     client_secret: str
     base_url: str = "https://api.uber.com"
-    auth_url: str = "https://login.uber.com/oauth/v2/token"
+    auth_url: str = "https://auth.uber.com/oauth/v2/token"
     scope: str = "fleet"
 
 class UberFleetService:
@@ -53,9 +53,8 @@ class UberFleetService:
         self._token_expires_at: Optional[datetime] = None
         self.session = requests.Session()
         
-        # Set default headers
+        # Set default headers for API calls (not auth)
         self.session.headers.update({
-            'Content-Type': 'application/json',
             'User-Agent': 'PLS-TRAVELS/1.0'
         })
     
@@ -75,7 +74,11 @@ class UberFleetService:
             }
             
             logger.info("Attempting to authenticate with Uber Fleet APIs")
-            response = requests.post(self.config.auth_url, data=auth_data)
+            # Use form data for authentication as per Uber API specification
+            auth_headers = {
+                'User-Agent': 'PLS-TRAVELS/1.0'
+            }
+            response = requests.post(self.config.auth_url, data=auth_data, headers=auth_headers)
             
             if response.status_code == 200:
                 token_data = response.json()
@@ -84,9 +87,10 @@ class UberFleetService:
                 
                 self._token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in - 60)  # Refresh 1 min early
                 
-                # Update session headers with access token
+                # Update session headers with access token and content type for API calls
                 self.session.headers.update({
-                    'Authorization': f'Bearer {self._access_token}'
+                    'Authorization': f'Bearer {self._access_token}',
+                    'Content-Type': 'application/json'
                 })
                 
                 logger.info("Successfully authenticated with Uber Fleet APIs")
