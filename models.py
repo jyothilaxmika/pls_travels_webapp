@@ -903,6 +903,110 @@ class AuditLog(db.Model):
         Index('idx_audit_entity', 'entity_type', 'entity_id'),
     )
 
+class VehicleTracking(db.Model):
+    """
+    Track vehicle odometer readings and CNG usage with full continuity
+    """
+    __tablename__ = 'vehicle_tracking'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Core relationships
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicles.id'), nullable=False, index=True)
+    duty_id = db.Column(db.Integer, db.ForeignKey('duties.id'), nullable=True, index=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False, index=True)
+    
+    # Tracking data with timestamps
+    recorded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    
+    # Odometer tracking
+    odometer_reading = db.Column(db.Float, nullable=False)
+    odometer_type = db.Column(db.String(20), nullable=False)  # 'start', 'end', 'maintenance', 'manual'
+    distance_traveled = db.Column(db.Float, default=0.0)  # Calculated from previous reading
+    
+    # CNG/Fuel tracking
+    cng_level = db.Column(db.Float)  # CNG level in kg or percentage
+    cng_point = db.Column(db.String(100))  # CNG station name/location
+    cng_cost = db.Column(db.Float)  # Cost of CNG filled
+    cng_quantity = db.Column(db.Float)  # Quantity filled in kg
+    
+    # Location data
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    location_accuracy = db.Column(db.Float)
+    location_name = db.Column(db.String(200))
+    
+    # Validation and continuity
+    is_validated = db.Column(db.Boolean, default=False)
+    validated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    validated_at = db.Column(db.DateTime)
+    continuity_error = db.Column(db.Text)  # Store any continuity issues
+    
+    # Additional metadata
+    notes = db.Column(db.Text)
+    source = db.Column(db.String(50), default='duty')  # 'duty', 'maintenance', 'manual', 'gps'
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    vehicle = db.relationship('Vehicle', backref='tracking_records')
+    driver = db.relationship('Driver', backref='vehicle_tracking')
+    duty = db.relationship('Duty', backref='tracking_record')
+    validator = db.relationship('User', foreign_keys=[validated_by])
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_vehicle_tracking_vehicle_date', 'vehicle_id', 'recorded_at'),
+        Index('idx_vehicle_tracking_driver_date', 'driver_id', 'recorded_at'),
+        Index('idx_vehicle_tracking_odometer', 'vehicle_id', 'odometer_reading'),
+        Index('idx_vehicle_tracking_validation', 'is_validated', 'continuity_error'),
+    )
+    
+    @classmethod
+    def get_vehicle_continuity(cls, vehicle_id, start_date=None, end_date=None):
+        """Get vehicle tracking records in chronological order for continuity analysis"""
+        query = cls.query.filter_by(vehicle_id=vehicle_id)
+        
+        if start_date:
+            query = query.filter(cls.recorded_at >= start_date)
+        if end_date:
+            query = query.filter(cls.recorded_at <= end_date)
+            
+        return query.order_by(cls.recorded_at.asc()).all()
+    
+    @classmethod
+    def validate_continuity(cls, vehicle_id):
+        """Validate odometer reading continuity for a vehicle"""
+        records = cls.get_vehicle_continuity(vehicle_id)
+        errors = []
+        
+        for i in range(1, len(records)):
+            prev_record = records[i-1]
+            curr_record = records[i]
+            
+            # Check if odometer is increasing
+            if curr_record.odometer_reading < prev_record.odometer_reading:
+                errors.append(f"Odometer decreased: {prev_record.odometer_reading} -> {curr_record.odometer_reading} on {curr_record.recorded_at}")
+            
+            # Check for large gaps (more than 1000km in one duty)
+            distance_gap = curr_record.odometer_reading - prev_record.odometer_reading
+            if distance_gap > 1000:
+                errors.append(f"Large distance gap: {distance_gap}km between readings on {curr_record.recorded_at}")
+        
+        return errors
+    
+    @hybrid_property
+    def fuel_efficiency(self):
+        """Calculate fuel efficiency if CNG data is available"""
+        if self.distance_traveled and self.cng_quantity and self.cng_quantity > 0:
+            return round(self.distance_traveled / self.cng_quantity, 2)
+        return None
+    
+    def __repr__(self):
+        return f'<VehicleTracking Vehicle:{self.vehicle_id} Odometer:{self.odometer_reading}>'
+
 class SystemConfiguration(db.Model):
     __tablename__ = 'system_configurations'
     
