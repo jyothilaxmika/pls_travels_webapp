@@ -525,10 +525,31 @@ class Duty(db.Model):
     fuel_consumed = db.Column(db.Float, default=0.0)
     
     # Revenue breakdown (enhanced)
-    cash_collection = db.Column(db.Float, default=0.0)
+    cash_collection = db.Column(db.Float, default=0.0)  # CASH ON HAND
     digital_payments = db.Column(db.Float, default=0.0)
     card_payments = db.Column(db.Float, default=0.0)
     wallet_payments = db.Column(db.Float, default=0.0)
+    
+    # Uber/Rideshare specific fields
+    uber_trips = db.Column(db.Integer, default=0)  # UBER TRIPS
+    uber_collected = db.Column(db.Float, default=0.0)  # UBER COLLECTED
+    
+    # Payment methods
+    qr_payment = db.Column(db.Float, default=0.0)  # QR PAYMENT
+    
+    # Operator and company payments
+    operator_out = db.Column(db.Float, default=0.0)  # OPERATOR OUT
+    company_pay = db.Column(db.Float, default=0.0)  # COMPANY PAY
+    
+    # CNG related fields
+    start_cng = db.Column(db.Float, default=0.0)  # START CNG
+    end_cng = db.Column(db.Float, default=0.0)  # END CNG
+    cng_average = db.Column(db.Float, default=0.0)  # CNG AVERAGE
+    cng_point = db.Column(db.String(100))  # CNG POINT
+    
+    # Other tracking fields
+    pass_amount = db.Column(db.Float, default=0.0)  # PASS
+    insurance_amount = db.Column(db.Float, default=0.0)  # INSURANCE
     
     # Company expenses (enhanced)
     fuel_expense = db.Column(db.Float, default=0.0)
