@@ -285,8 +285,8 @@ def get_vehicle_last_duty(vehicle_id):
 def duty():
     driver = get_driver_profile()
 
-    if not driver or driver.status != DriverStatus.ACTIVE:
-        flash('Your driver profile is not active. Please contact admin.', 'error')
+    if not driver or driver.status not in [DriverStatus.ACTIVE, DriverStatus.PENDING]:
+        flash('Your driver profile has been rejected or suspended. Please contact admin.', 'error')
         return redirect(url_for('driver.dashboard'))
 
     # Check for active duty
@@ -313,8 +313,8 @@ def duty():
 def start_duty():
     driver = get_driver_profile()
 
-    if not driver or driver.status != DriverStatus.ACTIVE:
-        flash('Your driver profile is not active.', 'error')
+    if not driver or driver.status not in [DriverStatus.ACTIVE, DriverStatus.PENDING]:
+        flash('Your driver profile has been rejected or suspended. Please contact admin.', 'error')
         return redirect(url_for('driver.duty'))
 
     # Check if already has active duty
