@@ -349,7 +349,6 @@ class Vehicle(db.Model):
     __table_args__ = (
         Index('idx_vehicle_status_branch', 'status', 'branch_id'),
         Index('idx_vehicle_expiry_dates', 'insurance_expiry_date', 'fitness_expiry_date', 'permit_expiry_date'),
-        CheckConstraint('manufacturing_year >= 1990 AND manufacturing_year <= 2030'),
     )
     
     @hybrid_property
