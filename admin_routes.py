@@ -420,7 +420,8 @@ def add_vehicle():
             return redirect(url_for('admin.vehicles'))
         except Exception as e:
             db.session.rollback()
-            flash('Error adding vehicle. Please try again.', 'error')
+            print(f"Vehicle creation error: {str(e)}")  # Debug logging
+            flash(f'Error adding vehicle: {str(e)}', 'error')
             return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
     
     return render_template('admin/vehicle_form.html', form=form, title='Add Vehicle')
