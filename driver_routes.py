@@ -242,6 +242,43 @@ def profile():
     branches = Branch.query.filter_by(is_active=True).all()
     return render_template('driver/profile.html', driver=driver, branches=branches)
 
+@driver_bp.route('/api/vehicle-last-duty/<int:vehicle_id>')
+@login_required
+@driver_required
+def get_vehicle_last_duty(vehicle_id):
+    """API endpoint to get last duty values for a vehicle"""
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'error': 'Driver profile not found'}), 404
+    
+    # Verify vehicle belongs to driver's branch
+    vehicle = Vehicle.query.filter_by(
+        id=vehicle_id, 
+        branch_id=driver.branch_id,
+        is_available=True
+    ).first()
+    
+    if not vehicle:
+        return jsonify({'error': 'Vehicle not found or not available'}), 404
+    
+    # Get last duty values
+    last_duty_data = get_last_duty_values(driver.id, vehicle_id)
+    
+    return jsonify({
+        'success': True,
+        'vehicle_registration': vehicle.registration_number,
+        'last_odometer': last_duty_data['last_odometer'],
+        'vehicle_current_odometer': last_duty_data['vehicle_current_odometer'],
+        'suggested_start_odometer': last_duty_data['vehicle_current_odometer'] or last_duty_data['last_odometer'],
+        'last_duty_date': last_duty_data['last_duty_date'],
+        'last_end_cng': last_duty_data['last_end_cng'],
+        'most_common_cng_point': last_duty_data['most_common_cng_point'],
+        'continuity_check': {
+            'status': 'ok' if last_duty_data['vehicle_current_odometer'] else 'warning',
+            'message': 'Auto-filled from vehicle\'s last duty' if last_duty_data['vehicle_current_odometer'] else 'No previous duty found'
+        }
+    })
+
 @driver_bp.route('/duty')
 @login_required
 @driver_required

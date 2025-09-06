@@ -303,6 +303,30 @@
                     <input type="number" class="form-control" name="start_odometer" id="start_odometer" 
                            min="0" step="0.1" required>
                     <small class="text-muted" id="last-odometer-info">Enter the current odometer reading</small>
+                    <div class="mt-2" id="auto-fetch-info" style="display: none;">
+                        <div class="alert alert-info py-2 mb-0">
+                            <i class="fas fa-robot me-2"></i>
+                            <strong>Auto-fetched:</strong> <span id="auto-fetch-message"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3" id="cng-info-section" style="display: none;">
+                    <label class="form-label">CNG Information</label>
+                    <div class="card bg-light">
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Last CNG Level:</small>
+                                    <span id="last-cng-level" class="fw-bold">-</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Common CNG Point:</small>
+                                    <span id="common-cng-point" class="fw-bold">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Start Duty Photo -->
@@ -396,6 +420,78 @@ function setupPhotoPreview(inputId, previewDivId, previewImageId) {
 // Setup photo previews
 setupPhotoPreview('start_photo', 'start-photo-preview', 'start-preview-image');
 setupPhotoPreview('end_photo', 'photo-preview', 'preview-image');
+
+// Auto-fetch vehicle last duty data
+function setupVehicleAutoFetch() {
+    const vehicleSelect = document.getElementById('vehicle_id');
+    const startOdometerInput = document.getElementById('start_odometer');
+    const autoFetchInfo = document.getElementById('auto-fetch-info');
+    const autoFetchMessage = document.getElementById('auto-fetch-message');
+    const cngInfoSection = document.getElementById('cng-info-section');
+    const lastCngLevel = document.getElementById('last-cng-level');
+    const commonCngPoint = document.getElementById('common-cng-point');
+    
+    if (vehicleSelect && startOdometerInput) {
+        vehicleSelect.addEventListener('change', function() {
+            const vehicleId = this.value;
+            
+            if (vehicleId) {
+                // Show loading
+                autoFetchInfo.style.display = 'block';
+                autoFetchMessage.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Fetching vehicle data...';
+                
+                // Fetch last duty data for this vehicle
+                fetch(`/driver/api/vehicle-last-duty/${vehicleId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Auto-fill odometer reading
+                            if (data.suggested_start_odometer) {
+                                startOdometerInput.value = data.suggested_start_odometer;
+                                autoFetchMessage.innerHTML = `Odometer auto-filled: ${data.suggested_start_odometer} km from last duty`;
+                                
+                                // Set minimum value based on last reading
+                                startOdometerInput.setAttribute('min', data.suggested_start_odometer);
+                            } else {
+                                autoFetchMessage.innerHTML = 'No previous duty found for this vehicle';
+                            }
+                            
+                            // Show CNG information if available
+                            if (data.last_end_cng || data.most_common_cng_point) {
+                                lastCngLevel.textContent = data.last_end_cng ? `${data.last_end_cng} kg` : 'N/A';
+                                commonCngPoint.textContent = data.most_common_cng_point || 'N/A';
+                                cngInfoSection.style.display = 'block';
+                            } else {
+                                cngInfoSection.style.display = 'none';
+                            }
+                            
+                            // Show continuity status
+                            if (data.continuity_check) {
+                                if (data.continuity_check.status === 'warning') {
+                                    autoFetchMessage.innerHTML += `<br><small class="text-warning">${data.continuity_check.message}</small>`;
+                                }
+                            }
+                        } else {
+                            autoFetchMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error fetching vehicle data';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching vehicle data:', error);
+                        autoFetchMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error fetching vehicle data';
+                    });
+            } else {
+                // Reset fields when no vehicle selected
+                autoFetchInfo.style.display = 'none';
+                cngInfoSection.style.display = 'none';
+                startOdometerInput.value = '';
+                startOdometerInput.setAttribute('min', '0');
+            }
+        });
+    }
+}
+
+// Initialize auto-fetch functionality
+setupVehicleAutoFetch();
 
 // Live tripsheet calculation
 function calculateTripsheet() {
