@@ -3,6 +3,9 @@
 {% block title %}Driver Profile - PLS TRAVELS{% endblock %}
 
 {% block content %}
+<!-- Include Camera Capture Component -->
+{% include 'components/camera_capture.html' %}
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3><i class="fas fa-user me-2"></i>My Profile</h3>
@@ -78,41 +81,83 @@
                     </div>
                 </div>
                 
-                <!-- Document Upload Section -->
+                <!-- Document Capture Section -->
                 {% if not driver or driver.status in ['pending', 'rejected'] %}
                 <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="aadhar_photo" class="form-label">Aadhar Photo</label>
-                        <input type="file" class="form-control" name="aadhar_photo" id="aadhar_photo" accept="image/*">
-                        <small class="text-muted">Upload clear photo of Aadhar card</small>
+                    <!-- Aadhar Photo Capture -->
+                    <div class="col-md-4 mb-3" id="aadhar_photo_container">
+                        <label class="form-label">Aadhar Photo</label>
+                        <div class="camera-capture-container">
+                            <button type="button" class="btn btn-primary capture-photo-btn w-100" 
+                                    onclick="initCameraCapture('aadhar_photo', 'Capture Aadhar Photo')">
+                                <i class="fas fa-camera me-2"></i>Capture Aadhar Photo
+                            </button>
+                            <small class="d-block text-muted mt-2">Take a clear photo of your Aadhar card</small>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div class="photo-preview mt-3" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured Aadhar Photo">
+                            <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
+                        </div>
+                        
                         {% if driver and driver.aadhar_photo %}
                         <div class="mt-2">
+                            <p class="mb-1"><strong>Current Photo:</strong></p>
                             <img src="/uploads/{{ driver.aadhar_photo }}" class="img-fluid rounded" style="max-height: 100px;">
-                            <small class="d-block text-success">Current photo uploaded</small>
+                            <small class="d-block text-info">Previously uploaded</small>
                         </div>
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-4 mb-3">
-                        <label for="license_photo" class="form-label">License Photo</label>
-                        <input type="file" class="form-control" name="license_photo" id="license_photo" accept="image/*">
-                        <small class="text-muted">Upload clear photo of driving license</small>
+                    <!-- License Photo Capture -->
+                    <div class="col-md-4 mb-3" id="license_photo_container">
+                        <label class="form-label">License Photo</label>
+                        <div class="camera-capture-container">
+                            <button type="button" class="btn btn-primary capture-photo-btn w-100" 
+                                    onclick="initCameraCapture('license_photo', 'Capture License Photo')">
+                                <i class="fas fa-camera me-2"></i>Capture License Photo
+                            </button>
+                            <small class="d-block text-muted mt-2">Take a clear photo of your driving license</small>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div class="photo-preview mt-3" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured License Photo">
+                            <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
+                        </div>
+                        
                         {% if driver and driver.license_photo %}
                         <div class="mt-2">
+                            <p class="mb-1"><strong>Current Photo:</strong></p>
                             <img src="/uploads/{{ driver.license_photo }}" class="img-fluid rounded" style="max-height: 100px;">
-                            <small class="d-block text-success">Current photo uploaded</small>
+                            <small class="d-block text-info">Previously uploaded</small>
                         </div>
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-4 mb-3">
-                        <label for="profile_photo" class="form-label">Profile Photo</label>
-                        <input type="file" class="form-control" name="profile_photo" id="profile_photo" accept="image/*">
-                        <small class="text-muted">Upload your clear profile photo</small>
+                    <!-- Profile Photo Capture -->
+                    <div class="col-md-4 mb-3" id="profile_photo_container">
+                        <label class="form-label">Profile Photo</label>
+                        <div class="camera-capture-container">
+                            <button type="button" class="btn btn-primary capture-photo-btn w-100" 
+                                    onclick="initCameraCapture('profile_photo', 'Capture Profile Photo')">
+                                <i class="fas fa-camera me-2"></i>Capture Profile Photo
+                            </button>
+                            <small class="d-block text-muted mt-2">Take a clear photo of yourself</small>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div class="photo-preview mt-3" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured Profile Photo">
+                            <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
+                        </div>
+                        
                         {% if driver and driver.profile_photo %}
                         <div class="mt-2">
+                            <p class="mb-1"><strong>Current Photo:</strong></p>
                             <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded" style="max-height: 100px;">
-                            <small class="d-block text-success">Current photo uploaded</small>
+                            <small class="d-block text-info">Previously uploaded</small>
                         </div>
                         {% endif %}
                     </div>
