@@ -3,6 +3,9 @@
 {% block title %}Duty Management - PLS TRAVELS{% endblock %}
 
 {% block content %}
+<!-- Include Camera Capture Component -->
+{% include 'components/camera_capture.html' %}
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3><i class="fas fa-play-circle me-2"></i>Duty Management</h3>
@@ -248,17 +251,26 @@
                     </div>
                 </div>
                 
-                <!-- End Duty Photo -->
-                <div class="mb-3">
-                    <label for="end_photo" class="form-label">End Duty Photo *</label>
-                    <input type="file" class="form-control" name="end_photo" id="end_photo" 
-                           accept="image/*" capture="camera" required>
-                    <small class="text-muted">Take a photo to confirm duty completion</small>
-                </div>
-                
-                <!-- Photo Preview -->
-                <div id="photo-preview" class="mb-3" style="display: none;">
-                    <img id="preview-image" class="img-fluid rounded" style="max-height: 200px;">
+                <!-- End Duty Photo Capture -->
+                <div class="mb-3" id="end_photo_container">
+                    <label class="form-label">End Duty Photo *</label>
+                    <div class="camera-capture-container">
+                        <button type="button" class="btn btn-danger capture-photo-btn w-100" 
+                                onclick="initCameraCapture('end_photo', 'Capture End Duty Photo')">
+                            <i class="fas fa-camera me-2"></i>Capture End Duty Photo
+                        </button>
+                        <small class="d-block text-muted mt-2">
+                            <i class="fas fa-map-marker-alt me-1"></i>Take a photo to confirm duty completion - location & time will be recorded
+                        </small>
+                    </div>
+                    
+                    <!-- Photo Preview -->
+                    <div class="photo-preview mt-3" style="display: none;">
+                        <img class="img-fluid rounded" style="max-height: 200px; width: 100%;" alt="End Duty Photo">
+                        <small class="d-block text-success mt-1">
+                            <i class="fas fa-check-circle me-1"></i>Photo captured with GPS location & timestamp
+                        </small>
+                    </div>
                 </div>
                 
                 
@@ -329,17 +341,26 @@
                     </div>
                 </div>
                 
-                <!-- Start Duty Photo -->
-                <div class="mb-3">
-                    <label for="start_photo" class="form-label">Start Duty Photo *</label>
-                    <input type="file" class="form-control" name="start_photo" id="start_photo" 
-                           accept="image/*" capture="camera" required>
-                    <small class="text-muted">Take a photo with the vehicle to confirm duty start</small>
-                </div>
-                
-                <!-- Photo Preview -->
-                <div id="start-photo-preview" class="mb-3" style="display: none;">
-                    <img id="start-preview-image" class="img-fluid rounded" style="max-height: 200px;">
+                <!-- Start Duty Photo Capture -->
+                <div class="mb-3" id="start_photo_container">
+                    <label class="form-label">Start Duty Photo *</label>
+                    <div class="camera-capture-container">
+                        <button type="button" class="btn btn-success capture-photo-btn w-100" 
+                                onclick="initCameraCapture('start_photo', 'Capture Start Duty Photo')">
+                            <i class="fas fa-camera me-2"></i>Capture Start Duty Photo
+                        </button>
+                        <small class="d-block text-muted mt-2">
+                            <i class="fas fa-map-marker-alt me-1"></i>Take a photo with the vehicle - location & time will be recorded
+                        </small>
+                    </div>
+                    
+                    <!-- Photo Preview -->
+                    <div class="photo-preview mt-3" style="display: none;">
+                        <img class="img-fluid rounded" style="max-height: 200px; width: 100%;" alt="Start Duty Photo">
+                        <small class="d-block text-success mt-1">
+                            <i class="fas fa-check-circle me-1"></i>Photo captured with GPS location & timestamp
+                        </small>
+                    </div>
                 </div>
                 
                 <!-- Pre-duty Checklist -->
