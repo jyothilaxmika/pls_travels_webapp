@@ -22,7 +22,7 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     # Configure the database
-    database_url = os.environ.get("DATABASE_URL", "sqlite:///pls_travels.db")
+    database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
     
     # Configure for PostgreSQL production database
     if database_url.startswith("postgresql://"):
