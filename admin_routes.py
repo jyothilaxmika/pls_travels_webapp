@@ -406,31 +406,27 @@ def add_duty_scheme():
     form.branch_id.choices = [('0', 'Global')] + [(str(b.id), b.name) for b in branches]
     
     if form.validate_on_submit():
-        config = {}
-        
-        if form.scheme_type.data == 'fixed':
-            config = {'daily_amount': float(form.fixed_amount.data or 0)}
-        elif form.scheme_type.data == 'per_trip':
-            config = {'per_trip_amount': float(form.per_trip_amount.data or 0)}
-        elif form.scheme_type.data == 'slab':
-            config = {
-                'slabs': [
-                    {'min': 0, 'max': float(form.slab1_max.data or 0), 'percentage': float(form.slab1_percent.data or 0)},
-                    {'min': float(form.slab1_max.data or 0), 'max': float(form.slab2_max.data or 0), 'percentage': float(form.slab2_percent.data or 0)},
-                    {'min': float(form.slab2_max.data or 0), 'max': 999999, 'percentage': float(form.slab3_percent.data or 0)}
-                ]
-            }
-        elif form.scheme_type.data == 'mixed':
-            config = {
-                'base_amount': float(form.base_amount.data or 0),
-                'percentage': float(form.incentive_percent.data or 0)
-            }
+        # For the new 5 scheme types, store the configuration
+        config = {
+            'scheme_type': form.scheme_type.data,
+            'bmg_amount': float(form.bmg_amount.data or 0),
+            'fixed_amount': float(form.fixed_amount.data or 0),
+            'per_trip_amount': float(form.per_trip_amount.data or 0),
+            'base_amount': float(form.base_amount.data or 0),
+            'incentive_percent': float(form.incentive_percent.data or 0),
+            'slab1_max': float(form.slab1_max.data or 0),
+            'slab1_percent': float(form.slab1_percent.data or 0),
+            'slab2_max': float(form.slab2_max.data or 0),
+            'slab2_percent': float(form.slab2_percent.data or 0),
+            'slab3_percent': float(form.slab3_percent.data or 0)
+        }
         
         scheme = DutyScheme()
         scheme.name = form.name.data
         scheme.scheme_type = form.scheme_type.data
-        scheme.branch_id = form.branch_id.data if form.branch_id.data else None
-        scheme.bmg_amount = form.bmg_amount.data or 0.0
+        scheme.branch_id = form.branch_id.data if form.branch_id.data != '0' else None
+        scheme.minimum_guarantee = form.bmg_amount.data or 0.0
+        scheme.calculation_formula = form.calculation_formula.data or ''
         scheme.set_config(config)
         
         db.session.add(scheme)

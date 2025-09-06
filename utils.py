@@ -1,4 +1,6 @@
 import os
+import re
+import math
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
@@ -53,6 +55,71 @@ def calculate_earnings(duty_scheme, revenue, trip_count):
         'bmg_applied': round(bmg_applied, 2),
         'incentive': round(incentive, 2)
     }
+
+def calculate_salary_with_formula(duty, formula):
+    """
+    Calculate driver salary using editable formula with duty data
+    
+    Available variables:
+    - shift_date: duty.actual_start.date() if duty.actual_start else None
+    - vehicle_number: duty.vehicle.registration_number
+    - uber_trips: duty.uber_trips
+    - uber_collected: duty.uber_collected
+    - operator_out: duty.operator_out
+    - cng_average: duty.cng_average
+    - cng_point: duty.cng_point
+    - toll: duty.toll_expense
+    - qr_payment: duty.qr_payment
+    - company_pay: duty.company_pay
+    - advance: duty.advance_deduction
+    - cash_on_hand: duty.cash_collection
+    - pass_amount: duty.pass_amount
+    - insurance: duty.insurance_amount
+    - start_cng: duty.start_cng
+    - end_cng: duty.end_cng
+    """
+    if not formula or not duty:
+        return 0.0
+    
+    try:
+        # Create safe variable context
+        variables = {
+            'shift_date': duty.actual_start.date() if duty.actual_start else None,
+            'vehicle_number': duty.vehicle.registration_number if duty.vehicle else '',
+            'uber_trips': float(duty.uber_trips or 0),
+            'uber_collected': float(duty.uber_collected or 0),
+            'operator_out': float(duty.operator_out or 0),
+            'cng_average': float(duty.cng_average or 0),
+            'cng_point': duty.cng_point or '',
+            'toll': float(duty.toll_expense or 0),
+            'qr_payment': float(duty.qr_payment or 0),
+            'company_pay': float(duty.company_pay or 0),
+            'advance': float(duty.advance_deduction or 0),
+            'cash_on_hand': float(duty.cash_collection or 0),
+            'pass_amount': float(duty.pass_amount or 0),
+            'insurance': float(duty.insurance_amount or 0),
+            'start_cng': float(duty.start_cng or 0),
+            'end_cng': float(duty.end_cng or 0),
+            # Mathematical functions
+            'abs': abs,
+            'max': max,
+            'min': min,
+            'round': round,
+            'sum': sum,
+            'math': math
+        }
+        
+        # Sanitize formula (allow only safe operations)
+        safe_formula = re.sub(r'[^a-zA-Z0-9_+\-*/().= <>\s]', '', formula)
+        
+        # Evaluate formula safely
+        result = eval(safe_formula, {"__builtins__": {}}, variables)
+        return float(result) if result is not None else 0.0
+        
+    except Exception as e:
+        # Log error and return 0 for safety
+        print(f"Formula calculation error: {e}")
+        return 0.0
 
 def calculate_tripsheet(duty_data):
     """

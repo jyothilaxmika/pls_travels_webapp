@@ -75,10 +75,11 @@ class VehicleForm(FlaskForm):
 class DutySchemeForm(FlaskForm):
     name = StringField('Scheme Name', validators=[DataRequired()])
     scheme_type = SelectField('Scheme Type', choices=[
-        ('fixed', 'Fixed Amount'),
-        ('per_trip', 'Per Trip'),
-        ('slab', 'Slab Based'),
-        ('mixed', 'Mixed (BMG + Incentive)')
+        ('scheme_1', 'Scheme Type 1'),
+        ('scheme_2', 'Scheme Type 2'),
+        ('scheme_3', 'Scheme Type 3'),
+        ('scheme_4', 'Scheme Type 4'),
+        ('scheme_5', 'Scheme Type 5')
     ], validators=[DataRequired()])
     branch_id = SelectField('Branch', coerce=int, validators=[Optional()])
     bmg_amount = FloatField('BMG Amount', validators=[Optional(), NumberRange(min=0)])
@@ -99,6 +100,11 @@ class DutySchemeForm(FlaskForm):
     # Mixed scheme fields
     base_amount = FloatField('Base Amount', validators=[Optional()])
     incentive_percent = FloatField('Incentive Percentage', validators=[Optional()])
+    
+    # Editable calculation formula
+    calculation_formula = TextAreaField('Calculation Formula', 
+                                      description='Enter mathematical formula using field names like uber_trips, uber_collected, etc.',
+                                      validators=[Optional()])
 
 class DutyForm(FlaskForm):
     vehicle_id = SelectField('Select Vehicle', coerce=int, validators=[DataRequired()])
@@ -107,7 +113,34 @@ class DutyForm(FlaskForm):
 
 class EndDutyForm(FlaskForm):
     end_odometer = FloatField('Ending Odometer Reading', validators=[DataRequired(), NumberRange(min=0)])
-    revenue = FloatField('Total Revenue', validators=[DataRequired(), NumberRange(min=0)])
-    trip_count = IntegerField('Number of Trips', validators=[DataRequired(), NumberRange(min=0)])
-    fuel_amount = FloatField('Fuel Amount', validators=[Optional(), NumberRange(min=0)])
+    
+    # Basic trip data
+    total_trips = IntegerField('Total Trips', validators=[DataRequired(), NumberRange(min=0)])
+    
+    # Uber/Rideshare data
+    uber_trips = IntegerField('Uber Trips', validators=[Optional(), NumberRange(min=0)])
+    uber_collected = FloatField('Uber Collected', validators=[Optional(), NumberRange(min=0)])
+    
+    # Revenue collection methods
+    cash_collection = FloatField('Cash on Hand', validators=[Optional(), NumberRange(min=0)])
+    qr_payment = FloatField('QR Payment', validators=[Optional(), NumberRange(min=0)])
+    digital_payments = FloatField('Digital Payments', validators=[Optional(), NumberRange(min=0)])
+    
+    # Company and operator payments  
+    operator_out = FloatField('Operator Out', validators=[Optional(), NumberRange(min=0)])
+    company_pay = FloatField('Company Pay', validators=[Optional(), NumberRange(min=0)])
+    
+    # CNG tracking
+    start_cng = FloatField('Start CNG', validators=[Optional(), NumberRange(min=0)])
+    end_cng = FloatField('End CNG', validators=[Optional(), NumberRange(min=0)])
+    cng_average = FloatField('CNG Average', validators=[Optional(), NumberRange(min=0)])
+    cng_point = StringField('CNG Point', validators=[Optional(), Length(max=100)])
+    
+    # Expenses and deductions
+    toll_expense = FloatField('Toll', validators=[Optional(), NumberRange(min=0)])
+    advance_deduction = FloatField('Advance', validators=[Optional(), NumberRange(min=0)])
+    pass_amount = FloatField('Pass', validators=[Optional(), NumberRange(min=0)])
+    insurance_amount = FloatField('Insurance', validators=[Optional(), NumberRange(min=0)])
+    
+    # Photo verification
     end_photo = FileField('End Duty Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
