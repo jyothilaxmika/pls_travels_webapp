@@ -2,6 +2,15 @@
 
 PLS TRAVELS is a comprehensive multi-city driver and fleet management system built for transport companies. The system provides role-based access control with three user types: Admin (full system control), Manager (branch-specific operations), and Driver (mobile-first duty management portal). The application handles driver onboarding, vehicle management, duty tracking with flexible compensation schemes, earnings calculation, and comprehensive reporting across multiple city branches.
 
+# Recent Changes
+
+## September 6, 2025
+- **Database Migration**: Successfully migrated from SQLite to PostgreSQL using Neon managed database service
+- **Approval Flow Modification**: Updated driver approval workflow to allow PENDING status drivers to access duty management features
+  - Modified `driver_routes.py` to allow both ACTIVE and PENDING status drivers
+  - Updated duty management template to only restrict rejected/suspended/terminated drivers
+  - Fixed hybrid property issues with `start_time` and `end_time` attributes in models
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
