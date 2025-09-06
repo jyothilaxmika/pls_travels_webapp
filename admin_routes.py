@@ -17,6 +17,7 @@ admin_bp = Blueprint('admin', __name__)
 def create_default_vehicle_types():
     """Create default vehicle types if they don't exist"""
     default_types = [
+        {'name': 'CAB', 'category': 'Commercial', 'capacity_passengers': 4, 'fuel_type': 'CNG'},
         {'name': 'Taxi', 'category': 'Commercial', 'capacity_passengers': 4, 'fuel_type': 'CNG'},
         {'name': 'Auto Rickshaw', 'category': 'Commercial', 'capacity_passengers': 3, 'fuel_type': 'CNG'},
         {'name': 'Bus', 'category': 'Public', 'capacity_passengers': 40, 'fuel_type': 'Diesel'},
@@ -27,13 +28,12 @@ def create_default_vehicle_types():
     for vtype_data in default_types:
         existing = VehicleType.query.filter_by(name=vtype_data['name']).first()
         if not existing:
-            vtype = VehicleType(
-                name=vtype_data['name'],
-                category=vtype_data['category'],
-                capacity_passengers=vtype_data['capacity_passengers'],
-                fuel_type=vtype_data['fuel_type'],
-                is_active=True
-            )
+            vtype = VehicleType()
+            vtype.name = vtype_data['name']
+            vtype.category = vtype_data['category']
+            vtype.capacity_passengers = vtype_data['capacity_passengers']
+            vtype.fuel_type = vtype_data['fuel_type']
+            vtype.is_active = True
             db.session.add(vtype)
     
     try:
