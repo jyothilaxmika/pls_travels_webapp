@@ -165,6 +165,28 @@
                         </div>
                     </div>
                     
+                    <!-- Calculation Formula Section -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-calculator me-2"></i>Custom Calculation Formula</h6>
+                        </div>
+                        <div class="card-body">
+                            {{ form.calculation_formula.label(class="form-label") }}
+                            {{ form.calculation_formula(class="form-control", rows="4", placeholder="Example: (uber_collected + cash_on_hand - toll - advance) * 0.8") }}
+                            {% if form.calculation_formula.description %}
+                                <div class="form-text">{{ form.calculation_formula.description }}</div>
+                            {% endif %}
+                            
+                            <div class="alert alert-info mt-3">
+                                <small>
+                                    <strong>Available Variables:</strong><br>
+                                    uber_trips, uber_collected, operator_out, cng_average, toll, qr_payment, company_pay, advance, cash_on_hand, pass_amount, insurance, start_cng, end_cng<br>
+                                    <strong>Functions:</strong> max(), min(), abs(), round(), math functions
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Submit Button -->
                     <div class="row">
                         <div class="col-12">
@@ -191,9 +213,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hide all fields first
         schemeFields.forEach(field => field.style.display = 'none');
         
-        // Show relevant fields
+        // Show relevant fields based on scheme type
         const selectedType = schemeTypeSelect.value;
-        const targetField = document.getElementById(selectedType + '-fields');
+        
+        // Map new scheme types to field sets
+        const fieldMapping = {
+            'scheme_1': 'fixed',
+            'scheme_2': 'per-trip', 
+            'scheme_3': 'slab',
+            'scheme_4': 'mixed',
+            'scheme_5': 'mixed'  // Can be customized later
+        };
+        
+        const fieldToShow = fieldMapping[selectedType] || selectedType;
+        const targetField = document.getElementById(fieldToShow + '-fields');
         if (targetField) {
             targetField.style.display = 'block';
         }
