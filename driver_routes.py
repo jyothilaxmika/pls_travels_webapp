@@ -330,14 +330,34 @@ def start_duty():
     vehicle_id = request.form.get('vehicle_id')
     start_odometer = request.form.get('start_odometer', type=float)
 
-    # Auto-fill from last duty if not provided
-    if not start_odometer:
-        last_duty_data = get_last_duty_values(driver.id, int(vehicle_id) if vehicle_id else None)
-        if last_duty_data['last_odometer']:
-            start_odometer = last_duty_data['last_odometer']
-
     if not vehicle_id:
         flash('Please select a vehicle.', 'error')
+        return redirect(url_for('driver.duty'))
+
+    # Get last duty data for validation and auto-fill
+    last_duty_data = get_last_duty_values(driver.id, int(vehicle_id))
+    
+    # Validate odometer reading continuity
+    if start_odometer and last_duty_data['vehicle_current_odometer']:
+        # Check if start reading is less than vehicle's current odometer
+        if start_odometer < last_duty_data['vehicle_current_odometer']:
+            flash(f'Invalid odometer reading. Vehicle last reading was {last_duty_data["vehicle_current_odometer"]} km. New reading cannot be less than this.', 'error')
+            return redirect(url_for('driver.duty'))
+        
+        # Warning if reading differs significantly from expected
+        expected_reading = last_duty_data['vehicle_current_odometer']
+        if abs(start_odometer - expected_reading) > 50:  # More than 50 km difference
+            flash(f'Warning: Odometer reading differs significantly from expected value ({expected_reading} km). Please verify the reading is correct.', 'warning')
+    
+    # Auto-fill from last duty if not provided
+    if not start_odometer:
+        if last_duty_data['vehicle_current_odometer']:
+            start_odometer = last_duty_data['vehicle_current_odometer']
+        elif last_duty_data['last_odometer']:
+            start_odometer = last_duty_data['last_odometer']
+    
+    if not start_odometer:
+        flash('Please enter a valid starting odometer reading.', 'error')
         return redirect(url_for('driver.duty'))
 
     vehicle = Vehicle.query.filter(
