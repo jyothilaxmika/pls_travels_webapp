@@ -4,9 +4,97 @@ import math
 import json
 import base64
 from datetime import datetime
+from dataclasses import dataclass
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+@dataclass
+class DutyEntry:
+    """Driver duty entry for salary calculation"""
+    driver_name: str
+    car_number: str
+    scheme: int              # 1 = 24H Revenue Share, 2 = 12H Monthly
+    cash_collected: float = 0
+    qr_payment: float = 0
+    outside_cash: float = 0
+    start_cng: int = 0
+    end_cng: int = 0
+    pass_deduction: float = 0
+    days_worked: int = 0     # For Scheme 2
+    daily_rate: int = 0      # 2000/2500/3000/3500/4000 (for Scheme 2)
+
+class SalaryCalculator:
+    """Advanced salary calculator supporting multiple compensation schemes"""
+    INSURANCE = 90
+    CNG_RATE = 90
+    
+    # Daily rate mapping to monthly salary
+    MONTHLY_SALARY_MAP = {
+        2000: 18000,
+        2500: 21000,
+        3000: 24000,
+        3500: 27000,
+        4000: 30000,
+    }
+
+    def calculate(self, entry: DutyEntry):
+        """Calculate salary based on scheme type"""
+        if entry.scheme == 1:
+            return self._calculate_scheme1(entry)
+        elif entry.scheme == 2:
+            return self._calculate_scheme2(entry)
+        else:
+            raise ValueError("Invalid scheme. Use 1 or 2.")
+
+    def _calculate_scheme1(self, entry: DutyEntry):
+        """Scheme 1: 24H Revenue Share calculation"""
+        total_earnings = entry.cash_collected + entry.qr_payment + entry.outside_cash
+
+        # Driver share before deductions
+        dsbd = min(total_earnings, 4500) * 0.30 + max(total_earnings - 4500, 0) * 0.70
+
+        # CNG adjustment
+        cng_diff = entry.start_cng - entry.end_cng
+        cng_adjustment = cng_diff * self.CNG_RATE  # +ve = deduction, -ve = credit
+
+        # Deductions
+        deductions = self.INSURANCE + entry.pass_deduction + max(cng_adjustment, 0)
+
+        # Final driver salary
+        driver_salary = dsbd - deductions + (min(cng_adjustment, 0) * -1)
+
+        # Company share
+        company_share = total_earnings - dsbd
+
+        return {
+            "scheme": "Scheme 1 (24H Revenue Share)",
+            "driver_name": entry.driver_name,
+            "car_number": entry.car_number,
+            "total_earnings": total_earnings,
+            "driver_salary": round(driver_salary, 2),
+            "company_share": round(company_share, 2),
+            "cng_adjustment": cng_adjustment,
+            "deductions": deductions,
+            "dsbd": round(dsbd, 2)
+        }
+
+    def _calculate_scheme2(self, entry: DutyEntry):
+        """Scheme 2: 12H Monthly Salary calculation"""
+        monthly_salary = self.MONTHLY_SALARY_MAP.get(entry.daily_rate, 0)
+        per_day_salary = monthly_salary / 30
+        final_salary = per_day_salary * entry.days_worked
+
+        return {
+            "scheme": "Scheme 2 (12H Monthly Salary)",
+            "driver_name": entry.driver_name,
+            "car_number": entry.car_number,
+            "monthly_salary": monthly_salary,
+            "days_worked": entry.days_worked,
+            "per_day_salary": round(per_day_salary, 2),
+            "driver_salary": round(final_salary, 2),
+            "company_share": 0
+        }
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -123,6 +211,42 @@ def calculate_salary_with_formula(duty, formula):
         # Log error and return 0 for safety
         print(f"Formula calculation error: {e}")
         return 0.0
+
+def calculate_advanced_salary(duty_data, scheme_type=1, daily_rate=3000, days_worked=30):
+    """
+    Advanced salary calculation using the new scheme system
+    
+    Args:
+        duty_data: Duty object with financial data
+        scheme_type: 1 for Revenue Share, 2 for Monthly Salary
+        daily_rate: Daily rate for scheme 2 (2000, 2500, 3000, 3500, 4000)
+        days_worked: Number of days worked for scheme 2
+    
+    Returns:
+        Dictionary with comprehensive salary calculation
+    """
+    calculator = SalaryCalculator()
+    
+    # Extract data from duty object
+    driver_name = duty_data.driver.full_name if hasattr(duty_data, 'driver') and duty_data.driver else "Unknown"
+    car_number = duty_data.vehicle.registration_number if hasattr(duty_data, 'vehicle') and duty_data.vehicle else "Unknown"
+    
+    # Create duty entry
+    entry = DutyEntry(
+        driver_name=driver_name,
+        car_number=car_number,
+        scheme=scheme_type,
+        cash_collected=duty_data.cash_collection or 0,
+        qr_payment=duty_data.qr_payment or 0,
+        outside_cash=duty_data.digital_payments or 0,
+        start_cng=int(duty_data.start_cng or 0),
+        end_cng=int(duty_data.end_cng or 0),
+        pass_deduction=duty_data.penalty_deduction or 0,
+        days_worked=days_worked,
+        daily_rate=daily_rate
+    )
+    
+    return calculator.calculate(entry)
 
 def calculate_tripsheet(duty_data):
     """
