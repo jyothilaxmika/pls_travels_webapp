@@ -13,6 +13,10 @@ PLS TRAVELS is a comprehensive multi-city driver and fleet management system bui
   - Multiple mobile number support (up to 4 phone numbers per driver)
   - Enhanced driver profile with additional phone fields
   - Organized cloud storage infrastructure with fallback to local storage
+- **Authentication System**: Reverted to original username/password authentication system
+  - Removed Twilio OTP authentication due to service limitations
+  - Maintained secure password-based login with role-based access control
+  - Yellow-themed login interface with modern styling
 
 ## September 6, 2025
 - **Database Migration**: Successfully migrated from SQLite to PostgreSQL using Neon managed database service

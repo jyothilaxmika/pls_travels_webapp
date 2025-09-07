@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from models import User, Branch, db, AuditLog
-from forms import LoginForm, RegisterForm, OTPRequestForm, OTPVerifyForm
+from forms import LoginForm, RegisterForm
 import json
 
 auth_bp = Blueprint('auth', __name__)
@@ -23,148 +23,14 @@ def log_audit(action, entity_type=None, entity_id=None, details=None):
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # Redirect authenticated users to their dashboard
     if current_user.is_authenticated:
-        return redirect_to_dashboard()
-    
-    # Show OTP login form by default
-    return redirect(url_for('auth.otp_login'))
-
-@auth_bp.route('/otp-login', methods=['GET', 'POST'])
-def otp_login():
-    """OTP-based login using phone number"""
-    if current_user.is_authenticated:
-        return redirect_to_dashboard()
-    
-    form = OTPRequestForm()
-    if form.validate_on_submit():
-        phone_number = form.phone_number.data
-        
-        # Check if user exists with this phone number
-        from models import Driver, User
-        # First check primary phone in User model
-        user = User.query.filter_by(phone=phone_number).first()
-        driver = user.driver_profile if user else None
-        
-        if not driver:
-            # Check additional phone numbers in Driver model
-            drivers = Driver.query.all()
-            for d in drivers:
-                if phone_number in d.get_all_phones():
-                    driver = d
-                    break
-        
-        if not driver or not driver.user:
-            flash('No account found with this phone number.', 'error')
-            return render_template('auth/otp_login.html', form=form)
-        
-        # Check if user is active
-        if driver.user.status.name != 'ACTIVE':
-            flash('Your account is not active. Please contact administrator.', 'error')
-            return render_template('auth/otp_login.html', form=form)
-        
-        # Send OTP
-        from otp_service import send_otp_sms
-        result = send_otp_sms(phone_number)
-        
-        if result['success']:
-            flash(f'OTP sent to {phone_number}. Please check your messages.', 'success')
-            return redirect(url_for('auth.verify_otp', phone=phone_number))
+        from models import UserRole
+        if current_user.role == UserRole.ADMIN:
+            return redirect(url_for('admin.dashboard'))
+        elif current_user.role == UserRole.MANAGER:
+            return redirect(url_for('manager.dashboard'))
         else:
-            flash(result['message'], 'error')
-    
-    return render_template('auth/otp_login.html', form=form)
-
-@auth_bp.route('/verify-otp/<phone>', methods=['GET', 'POST'])
-def verify_otp(phone):
-    """Verify OTP code and complete login"""
-    if current_user.is_authenticated:
-        return redirect_to_dashboard()
-    
-    form = OTPVerifyForm()
-    form.phone_number.data = phone
-    
-    if form.validate_on_submit():
-        phone_number = form.phone_number.data
-        otp_code = form.otp_code.data
-        
-        # Verify OTP
-        from otp_service import verify_otp_code
-        result = verify_otp_code(phone_number, otp_code)
-        
-        if result['success']:
-            # Find user by phone number
-            from models import Driver, User
-            # First check primary phone in User model
-            user = User.query.filter_by(phone=phone_number).first()
-            driver = user.driver_profile if user else None
-            
-            if not driver:
-                # Check additional phone numbers in Driver model
-                drivers = Driver.query.all()
-                for d in drivers:
-                    if phone_number in d.get_all_phones():
-                        driver = d
-                        break
-            
-            if driver and driver.user:
-                # Login the user
-                login_user(driver.user, remember=form.remember_me.data)
-                
-                # Update last login
-                from datetime import datetime
-                driver.user.last_login = datetime.utcnow()
-                driver.user.login_count = (driver.user.login_count or 0) + 1
-                driver.user.failed_login_attempts = 0
-                db.session.commit()
-                
-                # Log successful login
-                log_audit('otp_login_success')
-                
-                flash(f'Welcome back, {driver.user.full_name}!', 'success')
-                return redirect_to_dashboard()
-            else:
-                flash('Account not found. Please contact administrator.', 'error')
-        else:
-            flash(result['message'], 'error')
-    
-    # Get OTP status for display
-    from otp_service import get_otp_status
-    otp_status = get_otp_status(phone)
-    
-    return render_template('auth/verify_otp.html', form=form, phone=phone, otp_status=otp_status)
-
-@auth_bp.route('/resend-otp/<phone>', methods=['POST'])
-def resend_otp(phone):
-    """Resend OTP code"""
-    if current_user.is_authenticated:
-        return redirect_to_dashboard()
-    
-    from otp_service import send_otp_sms
-    result = send_otp_sms(phone)
-    
-    if result['success']:
-        flash('New OTP sent successfully.', 'success')
-    else:
-        flash(result['message'], 'error')
-    
-    return redirect(url_for('auth.verify_otp', phone=phone))
-
-def redirect_to_dashboard():
-    """Helper function to redirect users to their role-specific dashboard"""
-    from models import UserRole
-    if current_user.role == UserRole.ADMIN:
-        return redirect(url_for('admin.dashboard'))
-    elif current_user.role == UserRole.MANAGER:
-        return redirect(url_for('manager.dashboard'))
-    else:
-        return redirect(url_for('driver.dashboard'))
-
-@auth_bp.route('/legacy-login', methods=['GET', 'POST'])
-def legacy_login():
-    """Legacy password-based login (kept for admin access)"""
-    if current_user.is_authenticated:
-        return redirect_to_dashboard()
+            return redirect(url_for('driver.dashboard'))
     
     form = LoginForm()
     if form.validate_on_submit():
@@ -181,10 +47,18 @@ def legacy_login():
             db.session.commit()
             
             # Log successful login
-            log_audit('legacy_login_success')
+            log_audit('login_success')
             
             flash(f'Welcome back, {user.username}!', 'success')
-            return redirect_to_dashboard()
+            
+            # Redirect based on role
+            from models import UserRole
+            if user.role == UserRole.ADMIN:
+                return redirect(url_for('admin.dashboard'))
+            elif user.role == UserRole.MANAGER:
+                return redirect(url_for('manager.dashboard'))
+            else:
+                return redirect(url_for('driver.dashboard'))
         else:
             # Increment failed attempts
             if user:
@@ -192,7 +66,7 @@ def legacy_login():
                 db.session.commit()
             flash('Invalid username or password.', 'error')
     
-    return render_template('auth/legacy_login.html', form=form)
+    return render_template('auth/login.html', form=form)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():

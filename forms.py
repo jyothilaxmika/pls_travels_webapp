@@ -1,29 +1,13 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, BooleanField, SelectField, FloatField, IntegerField, DateField, TextAreaField, HiddenField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, NumberRange, Regexp
+from wtforms import StringField, PasswordField, BooleanField, SelectField, FloatField, IntegerField, DateField, TextAreaField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, NumberRange
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
 
-class OTPRequestForm(FlaskForm):
-    """Form for requesting OTP via phone number"""
-    phone_number = StringField('Phone Number', validators=[
-        DataRequired(message='Phone number is required'),
-        Regexp(r'^(\+91|91)?[6-9]\d{9}$', message='Please enter a valid Indian mobile number')
-    ])
-    
-class OTPVerifyForm(FlaskForm):
-    """Form for verifying OTP code"""
-    phone_number = HiddenField('Phone Number', validators=[DataRequired()])
-    otp_code = StringField('OTP Code', validators=[
-        DataRequired(message='OTP code is required'),
-        Length(min=6, max=6, message='OTP code must be 6 digits'),
-        Regexp(r'^\d{6}$', message='OTP code must contain only digits')
-    ])
-    remember_me = BooleanField('Remember Me')
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=64)])
