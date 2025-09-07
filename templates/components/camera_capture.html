@@ -164,8 +164,8 @@ class CameraCapture {
             const constraints = {
                 video: {
                     facingMode: this.facingMode,
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
+                    width: { ideal: 1280, max: 1280 },
+                    height: { ideal: 720, max: 720 }
                 }
             };
 
@@ -277,18 +277,32 @@ class CameraCapture {
         const canvas = this.canvas;
         const ctx = this.ctx;
 
-        // Set canvas dimensions to match video
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        // Optimize image size - reduce dimensions if too large
+        const maxWidth = 800;
+        const maxHeight = 600;
+        
+        let { videoWidth, videoHeight } = video;
+        
+        // Calculate scaling factor to fit within max dimensions
+        const scaleX = maxWidth / videoWidth;
+        const scaleY = maxHeight / videoHeight;
+        const scale = Math.min(scaleX, scaleY, 1); // Don't upscale
+        
+        const finalWidth = videoWidth * scale;
+        const finalHeight = videoHeight * scale;
 
-        // Draw video frame to canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Set canvas dimensions 
+        canvas.width = finalWidth;
+        canvas.height = finalHeight;
+
+        // Draw and scale video frame to canvas
+        ctx.drawImage(video, 0, 0, finalWidth, finalHeight);
 
         // Add timestamp overlay
-        this.addTimestampOverlay(ctx, canvas.width, canvas.height);
+        this.addTimestampOverlay(ctx, finalWidth, finalHeight);
 
-        // Convert to base64
-        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        // Convert to base64 with higher compression
+        const dataURL = canvas.toDataURL('image/jpeg', 0.6);
 
         // Show review
         document.getElementById('captured-photo').src = dataURL;

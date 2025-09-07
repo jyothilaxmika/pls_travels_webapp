@@ -46,7 +46,7 @@ def create_app():
     
     # File upload configuration
     app.config["UPLOAD_FOLDER"] = "uploads"
-    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max file size
+    app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB max file size for camera captures
     
     # Initialize extensions
     db.init_app(app)
