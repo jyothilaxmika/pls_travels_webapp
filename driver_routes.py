@@ -158,10 +158,20 @@ def profile():
             driver.ifsc_code = request.form.get('ifsc_code')
             driver.account_holder_name = request.form.get('account_holder_name')
 
-            # Handle camera capture uploads
+            # Handle additional phone numbers
+            additional_phones = []
+            for i in range(1, 4):  # additional_phone_1, additional_phone_2, additional_phone_3
+                phone_field = f'additional_phone_{i}'
+                phone = request.form.get(phone_field, '').strip()
+                if phone:
+                    additional_phones.append(phone)
+            
+            driver.set_additional_phones(additional_phones)
+
+            # Enhanced file upload handling with cloud storage
             # Process Aadhar photo
             aadhar_filename, aadhar_metadata = process_camera_capture(
-                request.form, 'aadhar_photo', driver.user_id, 'aadhar'
+                request.form, 'aadhar_photo', driver.user_id, 'aadhar', use_cloud=True
             )
             if aadhar_filename:
                 driver.aadhar_document = aadhar_filename
@@ -169,14 +179,14 @@ def profile():
             # Fallback to traditional file upload if no camera capture
             elif 'aadhar_photo' in request.files:
                 file = request.files['aadhar_photo']
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
-                    file.save(os.path.join('uploads', filename))
-                    driver.aadhar_document = filename
+                if file:
+                    cloud_url = process_file_upload(file, driver.user_id, 'aadhar', use_cloud=True)
+                    if cloud_url:
+                        driver.aadhar_document = cloud_url
 
             # Process License photo
             license_filename, license_metadata = process_camera_capture(
-                request.form, 'license_photo', driver.user_id, 'license'
+                request.form, 'license_photo', driver.user_id, 'license', use_cloud=True
             )
             if license_filename:
                 driver.license_document = license_filename
@@ -184,14 +194,14 @@ def profile():
             # Fallback to traditional file upload if no camera capture
             elif 'license_photo' in request.files:
                 file = request.files['license_photo']
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
-                    file.save(os.path.join('uploads', filename))
-                    driver.license_document = filename
+                if file:
+                    cloud_url = process_file_upload(file, driver.user_id, 'license', use_cloud=True)
+                    if cloud_url:
+                        driver.license_document = cloud_url
 
             # Process Profile photo
             profile_filename, profile_metadata = process_camera_capture(
-                request.form, 'profile_photo', driver.user_id, 'profile'
+                request.form, 'profile_photo', driver.user_id, 'profile', use_cloud=True
             )
             if profile_filename:
                 driver.profile_photo = profile_filename
@@ -199,10 +209,10 @@ def profile():
             # Fallback to traditional file upload if no camera capture
             elif 'profile_photo' in request.files:
                 file = request.files['profile_photo']
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(f"profile_{driver.user_id}_{file.filename}")
-                    file.save(os.path.join('uploads', filename))
-                    driver.profile_photo = filename
+                if file:
+                    cloud_url = process_file_upload(file, driver.user_id, 'profile', use_cloud=True)
+                    if cloud_url:
+                        driver.profile_photo = cloud_url
 
             try:
                 db.session.add(driver)
@@ -231,11 +241,21 @@ def profile():
         driver.ifsc_code = request.form.get('ifsc_code', driver.ifsc_code)
         driver.account_holder_name = request.form.get('account_holder_name', driver.account_holder_name)
 
-        # Handle camera capture uploads if driver is not yet approved
+        # Handle additional phone numbers
+        additional_phones = []
+        for i in range(1, 4):  # additional_phone_1, additional_phone_2, additional_phone_3
+            phone_field = f'additional_phone_{i}'
+            phone = request.form.get(phone_field, '').strip()
+            if phone:
+                additional_phones.append(phone)
+        
+        driver.set_additional_phones(additional_phones)
+
+        # Enhanced file upload handling with cloud storage (only if driver is not yet approved)
         if driver.status in ['pending', 'rejected']:
             # Process Aadhar photo
             aadhar_filename, aadhar_metadata = process_camera_capture(
-                request.form, 'aadhar_photo', driver.user_id, 'aadhar'
+                request.form, 'aadhar_photo', driver.user_id, 'aadhar', use_cloud=True
             )
             if aadhar_filename:
                 driver.aadhar_document = aadhar_filename
@@ -243,14 +263,14 @@ def profile():
             # Fallback to traditional file upload if no camera capture
             elif 'aadhar_photo' in request.files:
                 file = request.files['aadhar_photo']
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(f"aadhar_{driver.user_id}_{file.filename}")
-                    file.save(os.path.join('uploads', filename))
-                    driver.aadhar_document = filename
+                if file:
+                    cloud_url = process_file_upload(file, driver.user_id, 'aadhar', use_cloud=True)
+                    if cloud_url:
+                        driver.aadhar_document = cloud_url
 
             # Process License photo
             license_filename, license_metadata = process_camera_capture(
-                request.form, 'license_photo', driver.user_id, 'license'
+                request.form, 'license_photo', driver.user_id, 'license', use_cloud=True
             )
             if license_filename:
                 driver.license_document = license_filename
@@ -258,14 +278,14 @@ def profile():
             # Fallback to traditional file upload if no camera capture
             elif 'license_photo' in request.files:
                 file = request.files['license_photo']
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(f"license_{driver.user_id}_{file.filename}")
-                    file.save(os.path.join('uploads', filename))
-                    driver.license_document = filename
+                if file:
+                    cloud_url = process_file_upload(file, driver.user_id, 'license', use_cloud=True)
+                    if cloud_url:
+                        driver.license_document = cloud_url
 
             # Process Profile photo
             profile_filename, profile_metadata = process_camera_capture(
-                request.form, 'profile_photo', driver.user_id, 'profile'
+                request.form, 'profile_photo', driver.user_id, 'profile', use_cloud=True
             )
             if profile_filename:
                 driver.profile_photo = profile_filename
@@ -273,10 +293,10 @@ def profile():
             # Fallback to traditional file upload if no camera capture
             elif 'profile_photo' in request.files:
                 file = request.files['profile_photo']
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(f"profile_{driver.user_id}_{file.filename}")
-                    file.save(os.path.join('uploads', filename))
-                    driver.profile_photo = filename
+                if file:
+                    cloud_url = process_file_upload(file, driver.user_id, 'profile', use_cloud=True)
+                    if cloud_url:
+                        driver.profile_photo = cloud_url
 
         try:
             db.session.commit()
