@@ -31,15 +31,41 @@
                                value="{{ driver.full_name if driver else '' }}" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="phone" class="form-label">Phone Number *</label>
+                        <label for="phone" class="form-label">Primary Phone *</label>
                         <input type="tel" class="form-control" name="phone" id="phone" 
-                               value="{{ driver.phone if driver else '' }}" required>
+                               value="{{ driver.user.phone if driver and driver.user else '' }}" required>
+                    </div>
+                </div>
+                
+                <!-- Additional Phone Numbers -->
+                <div class="row">
+                    <div class="col-md-12 mb-2">
+                        <h6 class="text-muted">Additional Contact Numbers <small>(Optional)</small></h6>
+                    </div>
+                    {% set additional_phones = driver.get_additional_phones() if driver else [] %}
+                    <div class="col-md-4 mb-3">
+                        <label for="additional_phone_1" class="form-label">Additional Phone 1</label>
+                        <input type="tel" class="form-control" name="additional_phone_1" id="additional_phone_1" 
+                               value="{{ additional_phones[0] if additional_phones|length > 0 else '' }}" 
+                               placeholder="Enter additional mobile number">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="additional_phone_2" class="form-label">Additional Phone 2</label>
+                        <input type="tel" class="form-control" name="additional_phone_2" id="additional_phone_2" 
+                               value="{{ additional_phones[1] if additional_phones|length > 1 else '' }}" 
+                               placeholder="Enter additional mobile number">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="additional_phone_3" class="form-label">Additional Phone 3</label>
+                        <input type="tel" class="form-control" name="additional_phone_3" id="additional_phone_3" 
+                               value="{{ additional_phones[2] if additional_phones|length > 2 else '' }}" 
+                               placeholder="Enter additional mobile number">
                     </div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="address" class="form-label">Address</label>
-                    <textarea class="form-control" name="address" id="address" rows="3">{{ driver.address if driver else '' }}</textarea>
+                    <textarea class="form-control" name="address" id="address" rows="3">{{ driver.current_address if driver else '' }}</textarea>
                 </div>
                 
                 {% if not driver %}
