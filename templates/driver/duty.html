@@ -166,13 +166,84 @@
                                            min="0" step="0.01" value="0">
                                 </div>
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="other_expenses" class="form-label">Other Expenses</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CNG Tracking Section -->
+                <div class="card bg-warning bg-opacity-10 border-warning mb-3">
+                    <div class="card-header bg-warning bg-opacity-25">
+                        <h6 class="mb-0"><i class="fas fa-gas-pump me-2"></i>CNG Level Tracking</h6>
+                        <small class="text-dark">Track CNG levels to calculate charges/payments (₹90 per bar)</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="start_cng" class="form-label">Start CNG Level (Bars) *</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="other_expenses" id="other_expenses" 
-                                           min="0" step="0.01" value="0">
+                                    <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
+                                    <select class="form-select" name="start_cng" id="start_cng" required>
+                                        <option value="">Select bars</option>
+                                        <option value="1">1 Bar (Empty)</option>
+                                        <option value="2">2 Bars</option>
+                                        <option value="3">3 Bars</option>
+                                        <option value="4">4 Bars</option>
+                                        <option value="5">5 Bars (Half)</option>
+                                        <option value="6">6 Bars</option>
+                                        <option value="7">7 Bars</option>
+                                        <option value="8">8 Bars</option>
+                                        <option value="9">9 Bars</option>
+                                        <option value="10">10 Bars (Full)</option>
+                                    </select>
+                                </div>
+                                <small class="text-muted">CNG level when starting duty</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="end_cng" class="form-label">End CNG Level (Bars) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
+                                    <select class="form-select" name="end_cng" id="end_cng" required>
+                                        <option value="">Select bars</option>
+                                        <option value="1">1 Bar (Empty)</option>
+                                        <option value="2">2 Bars</option>
+                                        <option value="3">3 Bars</option>
+                                        <option value="4">4 Bars</option>
+                                        <option value="5">5 Bars (Half)</option>
+                                        <option value="6">6 Bars</option>
+                                        <option value="7">7 Bars</option>
+                                        <option value="8">8 Bars</option>
+                                        <option value="9">9 Bars</option>
+                                        <option value="10">10 Bars (Full)</option>
+                                    </select>
+                                </div>
+                                <small class="text-muted">CNG level when ending duty</small>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="cng_point" class="form-label">CNG Station (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                    <input type="text" class="form-control" name="cng_point" id="cng_point" 
+                                           placeholder="Enter CNG station name" maxlength="100">
+                                </div>
+                                <small class="text-muted">Name/location of CNG station used</small>
+                            </div>
+                        </div>
+                        
+                        <!-- CNG Calculation Display -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-info d-none" id="cng-calculation-alert">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-calculator me-3 fs-4"></i>
+                                        <div>
+                                            <strong>CNG Level Change:</strong> <span id="cng-bar-difference">0</span> bars
+                                            <br>
+                                            <strong>Amount:</strong> <span id="cng-amount-display">₹0</span>
+                                            <span id="cng-payment-type"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -186,7 +257,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-3 mb-3">
+                                            <div class="col-md-3 mb-3">
                                 <label for="company_pay" class="form-label">Company Pay *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">₹</span>
@@ -580,6 +651,51 @@ function calculateTripsheet() {
     if (driverSalarySpan) driverSalarySpan.textContent = '₹' + driverSalary.toLocaleString('en-IN', {minimumFractionDigits: 2});
     if (companyProfitSpan) companyProfitSpan.textContent = '₹' + companyProfit.toLocaleString('en-IN', {minimumFractionDigits: 2});
 }
+
+// CNG Bar Calculation (₹90 per bar difference)
+function calculateCNGCharges() {
+    const startCng = parseInt(document.getElementById('start_cng')?.value) || 0;
+    const endCng = parseInt(document.getElementById('end_cng')?.value) || 0;
+    const cngCalculationAlert = document.getElementById('cng-calculation-alert');
+    const cngBarDifference = document.getElementById('cng-bar-difference');
+    const cngAmountDisplay = document.getElementById('cng-amount-display');
+    const cngPaymentType = document.getElementById('cng-payment-type');
+    
+    if (startCng > 0 && endCng > 0) {
+        const difference = endCng - startCng;
+        const amount = Math.abs(difference) * 90;
+        
+        cngBarDifference.textContent = Math.abs(difference);
+        cngAmountDisplay.textContent = '₹' + amount;
+        
+        if (difference < 0) {
+            // Driver consumed CNG - deduction
+            cngPaymentType.innerHTML = '<span class="text-danger"><i class="fas fa-arrow-down me-1"></i>(Deducted from driver)</span>';
+            cngCalculationAlert.className = 'alert alert-warning';
+        } else if (difference > 0) {
+            // Driver filled CNG - company pays
+            cngPaymentType.innerHTML = '<span class="text-success"><i class="fas fa-arrow-up me-1"></i>(Company pays driver)</span>';
+            cngCalculationAlert.className = 'alert alert-success';
+        } else {
+            // No change
+            cngPaymentType.innerHTML = '<span class="text-muted"><i class="fas fa-equals me-1"></i>(No charge/payment)</span>';
+            cngCalculationAlert.className = 'alert alert-info';
+        }
+        
+        cngCalculationAlert.classList.remove('d-none');
+    } else {
+        cngCalculationAlert.classList.add('d-none');
+    }
+}
+
+// Setup CNG calculation listeners
+const cngInputs = ['start_cng', 'end_cng'];
+cngInputs.forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.addEventListener('change', calculateCNGCharges);
+    }
+});
 
 // Setup live calculation listeners for all financial inputs
 const financialInputIds = [
