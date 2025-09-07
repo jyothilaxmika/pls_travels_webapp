@@ -625,11 +625,34 @@ def end_duty():
         end_tracking_record.longitude = active_duty.end_location_lng
         end_tracking_record.location_accuracy = active_duty.end_location_accuracy
         
-        # CNG/fuel tracking data
-        end_tracking_record.cng_point = request.form.get('cng_point')
-        end_tracking_record.cng_level = request.form.get('end_cng', type=float)
-        end_tracking_record.cng_cost = request.form.get('cng_cost', type=float)
-        end_tracking_record.cng_quantity = request.form.get('cng_quantity', type=float)
+        # CNG/fuel tracking data with bar calculation
+        start_cng_bars = request.form.get('start_cng', type=float)
+        end_cng_bars = request.form.get('end_cng', type=float)
+        cng_point = request.form.get('cng_point')
+        
+        # Store CNG data in duty record
+        active_duty.start_cng = start_cng_bars
+        active_duty.end_cng = end_cng_bars  
+        active_duty.cng_point = cng_point
+        
+        # Calculate CNG charges/payments (₹90 per bar)
+        cng_adjustment = 0.0
+        if start_cng_bars and end_cng_bars:
+            bar_difference = end_cng_bars - start_cng_bars
+            cng_adjustment = bar_difference * 90  # ₹90 per bar
+            
+            # Apply CNG adjustment to duty record
+            if cng_adjustment < 0:
+                # Driver consumed CNG - deduct from driver
+                active_duty.fuel_deduction = (active_duty.fuel_deduction or 0) + abs(cng_adjustment)
+            elif cng_adjustment > 0:
+                # Driver filled CNG - company pays driver
+                active_duty.bonus_payment = (active_duty.bonus_payment or 0) + cng_adjustment
+        
+        end_tracking_record.cng_point = cng_point
+        end_tracking_record.cng_level = end_cng_bars
+        end_tracking_record.cng_cost = cng_adjustment
+        end_tracking_record.cng_quantity = abs(bar_difference) if start_cng_bars and end_cng_bars else 0.0
         
         # Calculate distance traveled during this duty
         if end_odometer and active_duty.start_odometer:
