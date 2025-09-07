@@ -50,18 +50,18 @@
 
 /* Enhanced card styling */
 .card {
-    border: none;
+    border: 1px solid #dee2e6;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     transition: box-shadow 0.15s ease-in-out;
 }
 
 .card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
-    background-color: var(--bs-gray-50);
-    border-bottom: 1px solid var(--bs-gray-200);
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
     font-weight: 600;
 }
 
@@ -187,8 +187,8 @@ input[type="file"] {
 .table th {
     border-top: none;
     font-weight: 600;
-    color: var(--bs-gray-700);
-    background-color: var(--bs-gray-50);
+    color: #495057;
+    background-color: #f8f9fa;
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
@@ -258,7 +258,23 @@ input[type="file"] {
     }
 }
 
-/* Dark theme enhancements (already using dark theme) */
+/* Light theme enhancements */
+[data-bs-theme="light"] {
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #212529;
+}
+
+[data-bs-theme="light"] .card {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+}
+
+[data-bs-theme="light"] .table th {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+/* Dark theme support */
 [data-bs-theme="dark"] {
     --bs-body-bg: #1a1d20;
     --bs-body-color: #dee2e6;
@@ -272,6 +288,23 @@ input[type="file"] {
 [data-bs-theme="dark"] .table th {
     background-color: #404448;
     color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .navbar-light {
+    background-color: #343a40 !important;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .navbar-light .navbar-brand {
+    color: #ffffff;
+}
+
+[data-bs-theme="dark"] .navbar-light .nav-link {
+    color: rgba(255,255,255,.75);
+}
+
+[data-bs-theme="dark"] .navbar-light .nav-link:hover {
+    color: #ffffff;
 }
 
 /* Custom scrollbar for webkit browsers */
