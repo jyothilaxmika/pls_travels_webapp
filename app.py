@@ -79,6 +79,20 @@ def create_app():
                 return datetime.now().date()
         
         return MomentJS()
+    
+    # Add context processor for pending duties notifications
+    @app.context_processor
+    def inject_notifications():
+        from flask_login import current_user
+        from models import UserRole, DutyStatus, Duty
+        
+        if current_user.is_authenticated:
+            pending_duties_count = 0
+            if current_user.role == UserRole.ADMIN:
+                pending_duties_count = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
+            
+            return dict(pending_duties_count=pending_duties_count)
+        return dict(pending_duties_count=0)
 
     # Register blueprints
     from auth import auth_bp
