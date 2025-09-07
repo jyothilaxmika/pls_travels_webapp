@@ -124,49 +124,25 @@ def send_otp_sms(phone_number):
         db.session.add(otp_record)
         db.session.commit()
         
-        # Check if we're in development mode (for Twilio trial limitations)
-        import os
-        test_mode = os.environ.get('OTP_TEST_MODE', 'false').lower() == 'true'
-        
-        if test_mode:
-            # Development mode - show OTP in response for testing
-            logger.info(f"TEST MODE: OTP for {normalized_phone} is: {otp_code}")
-            return {
-                'success': True,
-                'message': f'TEST MODE: Your OTP code is {otp_code}',
-                'test_otp': otp_code,
-                'expires_in_minutes': OTP_EXPIRY_MINUTES
-            }
-        
         # Send SMS using Twilio
         if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER:
-            try:
-                client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-                
-                message_body = f"Your PLS TRAVELS login code is: {otp_code}\n\nThis code expires in {OTP_EXPIRY_MINUTES} minutes. Do not share this code with anyone."
-                
-                message = client.messages.create(
-                    body=message_body,
-                    from_=TWILIO_PHONE_NUMBER,
-                    to=normalized_phone
-                )
-                
-                logger.info(f"SMS sent successfully to {normalized_phone}, Message SID: {message.sid}")
-                
-                return {
-                    'success': True,
-                    'message': f'OTP sent to {normalized_phone}',
-                    'expires_in_minutes': OTP_EXPIRY_MINUTES
-                }
-            except Exception as twilio_error:
-                # If SMS fails, fall back to test mode for development
-                logger.warning(f"SMS failed, falling back to test mode: {str(twilio_error)}")
-                return {
-                    'success': True,
-                    'message': f'SMS failed - TEST MODE: Your OTP code is {otp_code}',
-                    'test_otp': otp_code,
-                    'expires_in_minutes': OTP_EXPIRY_MINUTES
-                }
+            client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+            
+            message_body = f"Your PLS TRAVELS login code is: {otp_code}\n\nThis code expires in {OTP_EXPIRY_MINUTES} minutes. Do not share this code with anyone."
+            
+            message = client.messages.create(
+                body=message_body,
+                from_=TWILIO_PHONE_NUMBER,
+                to=normalized_phone
+            )
+            
+            logger.info(f"SMS sent successfully to {normalized_phone}, Message SID: {message.sid}")
+            
+            return {
+                'success': True,
+                'message': f'OTP sent to {normalized_phone}',
+                'expires_in_minutes': OTP_EXPIRY_MINUTES
+            }
         else:
             logger.error("Twilio credentials not configured")
             return {
