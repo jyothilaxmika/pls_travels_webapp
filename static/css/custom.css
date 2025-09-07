@@ -6,10 +6,11 @@
     --pls-secondary: #000000;
     --pls-success: #ffd700;
     --pls-warning: #ffd700;
-    --pls-danger: #000000;
+    --pls-danger: #dc143c;
     --pls-info: #ffd700;
     --pls-light: #ffffff;
     --pls-dark: #000000;
+    --pls-accent: #dc143c;
     --pls-text-dark: #000000;
     --pls-text-light: #ffffff;
 }
@@ -75,6 +76,21 @@
 .badge {
     font-weight: 500;
     padding: 0.375em 0.75em;
+}
+
+.badge-danger {
+    background-color: var(--pls-accent);
+    color: var(--pls-text-light);
+}
+
+.badge-warning {
+    background-color: var(--pls-primary);
+    color: var(--pls-text-dark);
+}
+
+.badge-success {
+    background-color: var(--pls-primary);
+    color: var(--pls-text-dark);
 }
 
 /* Photo preview styling */
@@ -174,6 +190,22 @@ input[type="file"] {
     overflow: hidden;
 }
 
+.metric-card-danger {
+    background: linear-gradient(135deg, var(--pls-accent) 0%, #b91c3c 100%);
+    color: var(--pls-text-light);
+    border: 2px solid var(--pls-secondary);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.metric-card-warning {
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
+    color: var(--pls-text-dark);
+    border: 2px solid var(--pls-secondary);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
 .metric-card .card-body {
     position: relative;
 }
@@ -206,6 +238,36 @@ input[type="file"] {
 .navbar-brand {
     font-weight: 700;
     font-size: 1.5rem;
+}
+
+/* Red accent elements */
+.text-danger {
+    color: var(--pls-accent) !important;
+}
+
+.bg-danger {
+    background-color: var(--pls-accent) !important;
+}
+
+.border-danger {
+    border-color: var(--pls-accent) !important;
+}
+
+/* Progress bar with red accent */
+.progress-bar-danger {
+    background-color: var(--pls-accent);
+}
+
+/* Red accent hover effects */
+.btn-outline-danger {
+    color: var(--pls-accent);
+    border-color: var(--pls-accent);
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--pls-accent);
+    border-color: var(--pls-accent);
+    color: var(--pls-text-light);
 }
 
 /* Footer spacing */
@@ -334,7 +396,39 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .alert-danger {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(220, 20, 60, 0.1);
+    border-color: var(--pls-accent);
+    color: var(--pls-accent);
+}
+
+[data-bs-theme="light"] .alert-info {
+    background-color: rgba(255, 215, 0, 0.1);
+    border-color: var(--pls-primary);
+    color: var(--pls-text-dark);
+}
+
+[data-bs-theme="light"] .btn-danger {
+    background-color: var(--pls-accent);
+    border-color: var(--pls-accent);
+    color: var(--pls-text-light);
+    border-width: 2px;
+}
+
+[data-bs-theme="light"] .btn-danger:hover {
+    background-color: #b91c3c;
+    border-color: #b91c3c;
+    color: var(--pls-text-light);
+}
+
+[data-bs-theme="light"] .btn-warning {
+    background-color: var(--pls-primary);
+    border-color: var(--pls-secondary);
+    color: var(--pls-text-dark);
+    border-width: 2px;
+}
+
+[data-bs-theme="light"] .btn-warning:hover {
+    background-color: #e6c200;
     border-color: var(--pls-secondary);
     color: var(--pls-text-dark);
 }
@@ -405,6 +499,31 @@ input[type="file"] {
     background-color: #f0f0f0;
     border-color: #f0f0f0;
     color: var(--pls-text-dark);
+}
+
+[data-bs-theme="dark"] .btn-danger {
+    background-color: var(--pls-accent);
+    border-color: var(--pls-accent);
+    color: var(--pls-text-light);
+    border-width: 2px;
+}
+
+[data-bs-theme="dark"] .btn-danger:hover {
+    background-color: #b91c3c;
+    border-color: #b91c3c;
+    color: var(--pls-text-light);
+}
+
+[data-bs-theme="dark"] .alert-danger {
+    background-color: rgba(220, 20, 60, 0.2);
+    border-color: var(--pls-accent);
+    color: var(--pls-accent);
+}
+
+[data-bs-theme="dark"] .alert-success {
+    background-color: rgba(255, 215, 0, 0.2);
+    border-color: var(--pls-primary);
+    color: var(--pls-primary);
 }
 
 /* Custom scrollbar for webkit browsers */
@@ -526,8 +645,8 @@ input[type="file"] {
 
 /* Enhanced error states */
 .is-invalid {
-    border-color: var(--pls-secondary);
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23000000'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6.4.4.4-.4M6 8.5V6.5'/%3e%3c/svg%3e");
+    border-color: var(--pls-accent);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc143c'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6.4.4.4-.4M6 8.5V6.5'/%3e%3c/svg%3e");
 }
 
 .is-valid {
