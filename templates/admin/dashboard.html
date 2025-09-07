@@ -77,6 +77,85 @@
     </div>
 </div>
 
+<!-- Additional Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.pending_duties') }}" class="text-decoration-none">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ pending_duties }}</h4>
+                            <p class="mb-0">Pending Approvals</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                    {% if pending_duties > 0 %}
+                    <div class="progress mt-2" style="height: 4px;">
+                        <div class="progress-bar bg-light" role="progressbar" style="width: 100%"></div>
+                    </div>
+                    <small class="text-light">Click to review</small>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-dark text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ moment().format('dddd') }}</h4>
+                        <p class="mb-0">{{ moment().format('MMM DD, YYYY') }}</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <!-- Quick Actions -->
+        <div class="card bg-light">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{{ url_for('admin.pending_duties') }}" class="btn btn-outline-danger btn-sm w-100">
+                            <i class="fas fa-clock me-1"></i>Review Duties
+                            {% if pending_duties > 0 %}
+                            <span class="badge bg-danger ms-1">{{ pending_duties }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('admin.drivers') }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-users me-1"></i>Manage Drivers
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('admin.vehicles') }}" class="btn btn-outline-success btn-sm w-100">
+                            <i class="fas fa-car me-1"></i>Fleet Management
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('admin.duties') }}" class="btn btn-outline-info btn-sm w-100">
+                            <i class="fas fa-list me-1"></i>All Duties
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Revenue Overview -->
 <div class="row mb-4">
     <div class="col-md-8">

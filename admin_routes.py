@@ -88,6 +88,9 @@ def dashboard():
         Duty.status == DutyStatus.ACTIVE
     ).count()
     
+    # Pending duties awaiting approval
+    pending_duties = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
+    
     # Revenue statistics
     revenue_stats = db.session.query(
         Branch.name,
@@ -105,6 +108,7 @@ def dashboard():
                          total_vehicles=total_vehicles,
                          total_branches=total_branches,
                          active_duties=active_duties,
+                         pending_duties=pending_duties,
                          revenue_stats=revenue_stats,
                          recent_activities=recent_activities)
 
@@ -927,3 +931,104 @@ def uber_reset_sync(record_type, record_id):
         flash(f'Error resetting sync status: {str(e)}', 'error')
     
     return redirect(url_for('admin.uber_sync_status'))
+
+
+# Duty Approval Routes
+@admin_bp.route('/duties/pending')
+@login_required
+@admin_required
+def pending_duties():
+    """View duties pending approval"""
+    page = request.args.get('page', 1, type=int)
+    branch_filter = request.args.get('branch', '', type=int)
+    date_filter = request.args.get('date', '')
+    
+    query = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL)
+    
+    if branch_filter:
+        query = query.filter(Duty.branch_id == branch_filter)
+    
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(func.date(Duty.actual_end) == filter_date)
+        except ValueError:
+            pass
+    
+    duties = query.order_by(desc(Duty.submitted_at)).paginate(page=page, per_page=20, error_out=False)
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    return render_template('admin/pending_duties.html', 
+                         duties=duties, 
+                         branches=branches,
+                         branch_filter=branch_filter,
+                         date_filter=date_filter)
+
+@admin_bp.route('/duties/<int:duty_id>/approve', methods=['POST'])
+@login_required
+@admin_required
+def approve_duty(duty_id):
+    """Approve a duty submission"""
+    duty = Duty.query.get_or_404(duty_id)
+    
+    if duty.status != DutyStatus.PENDING_APPROVAL:
+        flash('Duty is not pending approval.', 'error')
+        return redirect(url_for('admin.pending_duties'))
+    
+    # Approve the duty
+    duty.status = DutyStatus.COMPLETED
+    duty.reviewed_by = current_user.id
+    duty.reviewed_at = datetime.utcnow()
+    duty.approved_at = datetime.utcnow()
+    
+    # Update driver earnings only after approval
+    if duty.driver and duty.driver_earnings:
+        duty.driver.total_earnings += duty.driver_earnings
+    
+    db.session.commit()
+    
+    log_audit('approve_duty', 'duty', duty_id,
+             {'duty_id': duty_id, 'driver': duty.driver.full_name if duty.driver else 'Unknown',
+              'earnings': duty.driver_earnings})
+    
+    flash(f'Duty approved for {duty.driver.full_name if duty.driver else "Unknown"}. Earnings: ₹{duty.driver_earnings:.2f}', 'success')
+    return redirect(url_for('admin.pending_duties'))
+
+@admin_bp.route('/duties/<int:duty_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_duty(duty_id):
+    """Reject a duty submission"""
+    duty = Duty.query.get_or_404(duty_id)
+    
+    if duty.status != DutyStatus.PENDING_APPROVAL:
+        flash('Duty is not pending approval.', 'error')
+        return redirect(url_for('admin.pending_duties'))
+    
+    rejection_reason = request.form.get('rejection_reason', '').strip()
+    if not rejection_reason:
+        flash('Please provide a reason for rejection.', 'error')
+        return redirect(url_for('admin.pending_duties'))
+    
+    # Reject the duty
+    duty.status = DutyStatus.REJECTED
+    duty.reviewed_by = current_user.id
+    duty.reviewed_at = datetime.utcnow()
+    duty.rejection_reason = rejection_reason
+    
+    # Make vehicle available again since duty is rejected
+    if duty.vehicle:
+        duty.vehicle.is_available = True
+    
+    # Reset driver's current vehicle
+    if duty.driver:
+        duty.driver.current_vehicle_id = None
+    
+    db.session.commit()
+    
+    log_audit('reject_duty', 'duty', duty_id,
+             {'duty_id': duty_id, 'driver': duty.driver.full_name if duty.driver else 'Unknown',
+              'reason': rejection_reason})
+    
+    flash(f'Duty rejected for {duty.driver.full_name if duty.driver else "Unknown"}. Reason: {rejection_reason}', 'warning')
+    return redirect(url_for('admin.pending_duties'))
