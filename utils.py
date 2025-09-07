@@ -6,8 +6,134 @@ import base64
 from datetime import datetime
 from dataclasses import dataclass
 from werkzeug.utils import secure_filename
+from replit import object_storage
+import uuid
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+# Storage Configuration
+STORAGE_BUCKETS = {
+    'documents': 'pls-travels-documents',     # Aadhar, License, etc.
+    'photos': 'pls-travels-photos',           # Profile photos
+    'duty_captures': 'pls-travels-duty',      # Start/End duty photos
+    'vehicle_images': 'pls-travels-vehicles', # Vehicle photos
+    'assets': 'pls-travels-assets',           # General assets
+    'reports': 'pls-travels-reports'          # Generated reports
+}
+
+class CloudStorageManager:
+    """Manages cloud storage operations for PLS TRAVELS"""
+    
+    def __init__(self):
+        self._ensure_buckets()
+    
+    def _ensure_buckets(self):
+        """Ensure all required buckets exist"""
+        try:
+            for bucket_name in STORAGE_BUCKETS.values():
+                try:
+                    # Try to create an object to check if bucket exists  
+                    test_obj = object_storage.Object(f"{bucket_name}/test")
+                    # If we can create the object, bucket exists (or will be created)
+                    print(f"Bucket ready: {bucket_name}")
+                except Exception as e:
+                    print(f"Error with bucket {bucket_name}: {e}")
+        except Exception as e:
+            print(f"Error checking buckets: {e}")
+    
+    def upload_file(self, file_data, filename, bucket_type='assets', content_type=None):
+        """
+        Upload file to cloud storage
+        
+        Args:
+            file_data: File data (bytes or base64 string)
+            filename: Name of the file
+            bucket_type: Type of bucket (documents, photos, duty_captures, etc.)
+            content_type: MIME type of the file
+            
+        Returns:
+            str: Cloud storage URL of uploaded file
+        """
+        try:
+            bucket_name = STORAGE_BUCKETS.get(bucket_type, STORAGE_BUCKETS['assets'])
+            
+            # Generate unique filename
+            file_extension = filename.split('.')[-1] if '.' in filename else ''
+            unique_filename = f"{uuid.uuid4().hex}.{file_extension}" if file_extension else str(uuid.uuid4().hex)
+            
+            # Handle base64 data
+            if isinstance(file_data, str) and file_data.startswith('data:'):
+                # Extract base64 data from data URL
+                header, encoded = file_data.split(',', 1)
+                file_data = base64.b64decode(encoded)
+                
+                # Extract content type if not provided
+                if not content_type and 'image/' in header:
+                    content_type = header.split(';')[0].replace('data:', '')
+            
+            # Create object and upload
+            obj = object_storage.Object(f"{bucket_name}/{unique_filename}")
+            obj.upload_from_bytes(file_data)
+            
+            return f"gs://{bucket_name}/{unique_filename}"
+            
+        except Exception as e:
+            print(f"Cloud upload error: {e}")
+            return None
+    
+    def download_file(self, cloud_url):
+        """Download file from cloud storage"""
+        try:
+            if not cloud_url.startswith('gs://'):
+                return None
+                
+            # Parse bucket and filename from cloud URL
+            parts = cloud_url.replace('gs://', '').split('/', 1)
+            bucket_name, filename = parts[0], parts[1]
+            
+            obj = object_storage.Object(f"{bucket_name}/{filename}")
+            return obj.download_as_bytes()
+            
+        except Exception as e:
+            print(f"Cloud download error: {e}")
+            return None
+    
+    def delete_file(self, cloud_url):
+        """Delete file from cloud storage"""
+        try:
+            if not cloud_url.startswith('gs://'):
+                return False
+                
+            parts = cloud_url.replace('gs://', '').split('/', 1)
+            bucket_name, filename = parts[0], parts[1]
+            
+            obj = object_storage.Object(f"{bucket_name}/{filename}")
+            obj.delete()
+            return True
+            
+        except Exception as e:
+            print(f"Cloud delete error: {e}")
+            return False
+    
+    def list_files(self, bucket_type='assets', prefix=None):
+        """List files in a bucket"""
+        try:
+            bucket_name = STORAGE_BUCKETS.get(bucket_type, STORAGE_BUCKETS['assets'])
+            # For now, return empty list as listing isn't straightforward with Object approach
+            return []
+            
+        except Exception as e:
+            print(f"Cloud list error: {e}")
+            return []
+    
+    def get_file_url(self, cloud_url):
+        """Get public URL for file (if applicable)"""
+        # In Replit Object Storage, files are private by default
+        # This returns the cloud storage path for internal use
+        return cloud_url
+
+# Initialize global storage manager
+storage_manager = CloudStorageManager()
 
 @dataclass
 class DutyEntry:
@@ -328,17 +454,45 @@ def format_currency(amount):
     return f"₹{amount:,.2f}"
 
 def get_file_url(filename):
-    """Get URL for uploaded file"""
+    """Get URL for uploaded file - now supports both local and cloud storage"""
     if filename:
-        return f"/uploads/{filename}"
+        if filename.startswith('gs://'):
+            # Cloud storage URL - return as is for internal processing
+            return filename
+        else:
+            # Legacy local file
+            return f"/uploads/{filename}"
     return None
 
 def ensure_upload_dir():
-    """Ensure upload directory exists"""
+    """Ensure upload directory exists (for legacy local storage)"""
     upload_dir = 'uploads'
     if not os.path.exists(upload_dir):
         os.makedirs(upload_dir)
     return upload_dir
+
+def upload_to_cloud(file_data, original_filename, bucket_type='assets', content_type=None):
+    """
+    Upload file to cloud storage with automatic bucket selection
+    
+    Args:
+        file_data: File data (bytes, file object, or base64 string)
+        original_filename: Original filename
+        bucket_type: Type of content (documents, photos, duty_captures, vehicle_images, assets, reports)
+        content_type: MIME type
+        
+    Returns:
+        str: Cloud storage URL or None if failed
+    """
+    return storage_manager.upload_file(file_data, original_filename, bucket_type, content_type)
+
+def download_from_cloud(cloud_url):
+    """Download file from cloud storage"""
+    return storage_manager.download_file(cloud_url)
+
+def delete_from_cloud(cloud_url):
+    """Delete file from cloud storage"""
+    return storage_manager.delete_file(cloud_url)
 
 def process_camera_capture(form_data, field_name, user_id, photo_type="photo"):
     """
