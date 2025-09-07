@@ -1148,6 +1148,45 @@ class UberIntegrationSettings(db.Model):
     def __repr__(self):
         return f'<UberIntegrationSettings enabled:{self.is_enabled}>'
 
+class OTPCode(db.Model):
+    """Model for storing OTP codes for authentication"""
+    __tablename__ = 'otp_codes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    phone_number = db.Column(db.String(20), nullable=False, index=True)
+    otp_code = db.Column(db.String(6), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    is_used = db.Column(db.Boolean, default=False, nullable=False)
+    attempt_count = db.Column(db.Integer, default=0, nullable=False)
+    
+    # Audit fields
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    used_at = db.Column(db.DateTime)
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.String(500))
+    
+    def is_expired(self):
+        """Check if OTP has expired"""
+        return datetime.utcnow() > self.expires_at
+    
+    def is_valid(self):
+        """Check if OTP is valid (not used and not expired)"""
+        return not self.is_used and not self.is_expired()
+    
+    def increment_attempt(self):
+        """Increment the attempt count"""
+        self.attempt_count += 1
+        db.session.commit()
+    
+    def mark_as_used(self):
+        """Mark OTP as used"""
+        self.is_used = True
+        self.used_at = datetime.utcnow()
+        db.session.commit()
+    
+    def __repr__(self):
+        return f'<OTPCode {self.phone_number} expires at {self.expires_at}>'
+
 # Create all indexes
 def create_performance_indexes():
     """Create additional performance indexes"""
