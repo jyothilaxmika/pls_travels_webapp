@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -212,6 +212,13 @@ def create_app():
     def login_redirect():
         from flask import redirect, url_for
         return redirect(url_for('auth.login'))
+    
+    # Route to serve uploaded files
+    @app.route('/uploads/<filename>')
+    def uploaded_file(filename):
+        """Serve uploaded files from the uploads directory"""
+        upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
+        return send_from_directory(upload_folder, filename)
 
     return app
 

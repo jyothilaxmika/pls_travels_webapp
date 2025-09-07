@@ -4,6 +4,16 @@ PLS TRAVELS is a comprehensive multi-city driver and fleet management system bui
 
 # Recent Changes
 
+## September 7, 2025
+- **Enhanced File Upload System**: Comprehensive file upload functionality with multiple options
+  - Added dual upload methods: camera capture OR traditional file upload
+  - Support for multiple file formats: JPG, PNG, PDF for documents
+  - File preview functionality shows selected files before upload
+  - Added route to serve uploaded files from `/uploads` path to fix photo display
+  - Multiple mobile number support (up to 4 phone numbers per driver)
+  - Enhanced driver profile with additional phone fields
+  - Organized cloud storage infrastructure with fallback to local storage
+
 ## September 6, 2025
 - **Database Migration**: Successfully migrated from SQLite to PostgreSQL using Neon managed database service
 - **Approval Flow Modification**: Updated driver approval workflow to allow PENDING status drivers to access duty management features
