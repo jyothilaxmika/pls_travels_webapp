@@ -494,7 +494,62 @@ def delete_from_cloud(cloud_url):
     """Delete file from cloud storage"""
     return storage_manager.delete_file(cloud_url)
 
-def process_camera_capture(form_data, field_name, user_id, photo_type="photo"):
+def process_file_upload(file, user_id, photo_type="photo", use_cloud=True):
+    """
+    Process traditional file upload with optional cloud storage
+    
+    Args:
+        file: Flask file object from request.files
+        user_id: User ID for filename generation
+        photo_type: Type of photo for filename (e.g., 'aadhar', 'license', 'profile')
+        use_cloud: Whether to use cloud storage (default: True)
+    
+    Returns:
+        str: Cloud URL or local filename if successful, None if failed
+    """
+    try:
+        if not file or not allowed_file(file.filename):
+            return None
+            
+        # Read file data
+        file_data = file.read()
+        if not file_data:
+            return None
+            
+        # Determine bucket type based on photo type
+        bucket_map = {
+            'aadhar': 'documents',
+            'license': 'documents', 
+            'profile': 'photos',
+            'duty_start': 'duty_captures',
+            'duty_end': 'duty_captures',
+            'vehicle': 'vehicle_images'
+        }
+        bucket_type = bucket_map.get(photo_type, 'assets')
+        
+        if use_cloud:
+            # Try cloud upload first
+            cloud_url = upload_to_cloud(file_data, file.filename, bucket_type)
+            if cloud_url:
+                return cloud_url
+        
+        # Fallback to local storage
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = secure_filename(f"{photo_type}_{user_id}_{timestamp}_{file.filename}")
+        
+        upload_dir = ensure_upload_dir()
+        file_path = os.path.join(upload_dir, filename)
+        
+        with open(file_path, 'wb') as f:
+            f.write(file_data)
+            
+        return filename
+        
+    except Exception as e:
+        print(f"Error processing file upload for {photo_type}: {e}")
+        return None
+
+def process_camera_capture(form_data, field_name, user_id, photo_type="photo", use_cloud=True):
     """
     Process camera capture data (base64 image + metadata) and save to file
     
@@ -503,9 +558,10 @@ def process_camera_capture(form_data, field_name, user_id, photo_type="photo"):
         field_name: Name of the photo field (e.g., 'aadhar_photo', 'start_photo')
         user_id: User ID for filename generation
         photo_type: Type of photo for filename (e.g., 'aadhar', 'license', 'profile', 'duty_start', 'duty_end')
+        use_cloud: Whether to use cloud storage (default: True)
     
     Returns:
-        tuple: (filename, metadata) or (None, None) if no data
+        tuple: (filename_or_cloud_url, metadata) or (None, None) if no data
     """
     data_key = f"{field_name}_data"
     metadata_key = f"{field_name}_metadata"
@@ -547,13 +603,34 @@ def process_camera_capture(form_data, field_name, user_id, photo_type="photo"):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = secure_filename(f"{photo_type}_{user_id}_{timestamp}.{ext}")
         
-        # Ensure upload directory exists
-        upload_dir = ensure_upload_dir()
-        file_path = os.path.join(upload_dir, filename)
+        # Determine bucket type based on photo type
+        bucket_map = {
+            'aadhar': 'documents',
+            'license': 'documents', 
+            'profile': 'photos',
+            'duty_start': 'duty_captures',
+            'duty_end': 'duty_captures',
+            'vehicle': 'vehicle_images'
+        }
+        bucket_type = bucket_map.get(photo_type, 'assets')
         
-        # Save image file
-        with open(file_path, 'wb') as f:
-            f.write(image_bytes)
+        result_path = None
+        
+        if use_cloud:
+            # Try cloud upload first
+            cloud_url = upload_to_cloud(image_bytes, filename, bucket_type)
+            if cloud_url:
+                result_path = cloud_url
+        
+        if not result_path:
+            # Fallback to local storage
+            upload_dir = ensure_upload_dir()
+            file_path = os.path.join(upload_dir, filename)
+            
+            # Save image file
+            with open(file_path, 'wb') as f:
+                f.write(image_bytes)
+            result_path = filename
         
         # Save metadata as separate JSON file if metadata exists
         if metadata:
@@ -567,7 +644,7 @@ def process_camera_capture(form_data, field_name, user_id, photo_type="photo"):
             with open(metadata_path, 'w') as f:
                 json.dump(metadata, f, indent=2)
         
-        return filename, metadata
+        return result_path, metadata
         
     except Exception as e:
         print(f"Error processing camera capture for {field_name}: {e}")

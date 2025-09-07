@@ -9,7 +9,7 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
                    Penalty, Asset, AuditLog, VehicleTracking, db,
                    DriverStatus, VehicleStatus, DutyStatus)
 from forms import DriverProfileForm, DutyForm
-from utils import allowed_file, calculate_earnings, calculate_advanced_salary, process_camera_capture
+from utils import allowed_file, calculate_earnings, calculate_advanced_salary, process_camera_capture, process_file_upload
 from auth import log_audit
 
 driver_bp = Blueprint('driver', __name__)

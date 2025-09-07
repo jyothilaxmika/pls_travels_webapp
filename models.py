@@ -191,6 +191,9 @@ class Driver(db.Model):
     emergency_contact_name = db.Column(db.String(100))
     emergency_contact_phone = db.Column(db.String(20))
     
+    # Multiple contact numbers (stored as JSON array)
+    additional_phones = db.Column(db.Text)  # JSON string of phone numbers
+    
     # Address
     current_address = db.Column(db.Text)
     permanent_address = db.Column(db.Text)
@@ -257,6 +260,37 @@ class Driver(db.Model):
     duties = db.relationship('Duty', backref='driver', lazy=True)
     current_vehicle = db.relationship('Vehicle', foreign_keys=[current_vehicle_id])
     approver = db.relationship('User', foreign_keys=[approved_by], post_update=True)
+    
+    def get_additional_phones(self):
+        """Get list of additional phone numbers"""
+        if self.additional_phones:
+            try:
+                import json
+                return json.loads(self.additional_phones)
+            except json.JSONDecodeError:
+                return []
+        return []
+    
+    def set_additional_phones(self, phone_list):
+        """Set additional phone numbers from list"""
+        if phone_list:
+            # Filter out empty strings
+            filtered_phones = [phone.strip() for phone in phone_list if phone and phone.strip()]
+            if filtered_phones:
+                import json
+                self.additional_phones = json.dumps(filtered_phones)
+            else:
+                self.additional_phones = None
+        else:
+            self.additional_phones = None
+    
+    def get_all_phones(self):
+        """Get all phone numbers (primary + additional)"""
+        phones = []
+        if hasattr(self, 'user') and self.user and self.user.phone:
+            phones.append(self.user.phone)
+        phones.extend(self.get_additional_phones())
+        return phones
     
     # Indexes
     __table_args__ = (

@@ -31,7 +31,10 @@ class DriverForm(FlaskForm):
 
 class DriverProfileForm(FlaskForm):
     full_name = StringField('Full Name', validators=[DataRequired()])
-    phone = StringField('Phone', validators=[DataRequired()])
+    phone = StringField('Primary Phone', validators=[DataRequired()])
+    additional_phone_1 = StringField('Additional Phone 1')
+    additional_phone_2 = StringField('Additional Phone 2') 
+    additional_phone_3 = StringField('Additional Phone 3')
     address = TextAreaField('Address')
     aadhar_number = StringField('Aadhar Number', validators=[DataRequired()])
     license_number = StringField('License Number', validators=[DataRequired()])
@@ -40,8 +43,8 @@ class DriverProfileForm(FlaskForm):
     ifsc_code = StringField('IFSC Code')
     account_holder_name = StringField('Account Holder Name')
     
-    aadhar_photo = FileField('Aadhar Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
-    license_photo = FileField('License Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
+    aadhar_photo = FileField('Aadhar Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    license_photo = FileField('License Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
     profile_photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
 
 class VehicleAssignmentForm(FlaskForm):
