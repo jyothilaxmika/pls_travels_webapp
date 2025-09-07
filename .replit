@@ -37,4 +37,4 @@ externalPort = 80
 integrations = ["python_database==1.0.0"]
 
 [objectStorage]
-defaultBucketID = "replit-objstore-65984266-623e-43b0-a660-93a441e8fc09"
+defaultBucketID = "replit-objstore-ae36c9eb-f667-46f6-8ecf-b8e8b6fde62c"
