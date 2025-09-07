@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -82,16 +82,21 @@ def create_app():
 
     # Register blueprints
     from auth import auth_bp
-    from google_auth import google_auth
+    from replit_auth import make_replit_blueprint
     from admin_routes import admin_bp
     from manager_routes import manager_bp
     from driver_routes import driver_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(google_auth)
+    app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(manager_bp, url_prefix='/manager')
     app.register_blueprint(driver_bp, url_prefix='/driver')
+    
+    # Make session permanent
+    @app.before_request
+    def make_session_permanent():
+        session.permanent = True
 
     # Create tables
     with app.app_context():
