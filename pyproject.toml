@@ -21,4 +21,5 @@ dependencies = [
     "schedule>=1.2.2",
     "twilio>=9.8.0",
     "replit>=4.1.2",
+    "oauthlib>=3.3.1",
 ]
