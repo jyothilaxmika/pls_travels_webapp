@@ -64,19 +64,21 @@ def get_last_duty_values(driver_id, vehicle_id=None):
             most_common_cng_point = cng_usage[0]
 
     if last_duty:
+        vehicle = Vehicle.query.get(vehicle_id) if vehicle_id else None
         return {
             'last_odometer': last_duty.end_odometer,
             'last_duty_date': last_duty.actual_end.strftime('%Y-%m-%d %H:%M') if last_duty.actual_end else None,
             'last_end_cng': last_duty.end_cng,
             'most_common_cng_point': most_common_cng_point,
-            'vehicle_current_odometer': Vehicle.query.get(vehicle_id).current_odometer if vehicle_id else None
+            'vehicle_current_odometer': vehicle.current_odometer if vehicle else None
         }
+    vehicle = Vehicle.query.get(vehicle_id) if vehicle_id else None
     return {
-        'last_odometer': Vehicle.query.get(vehicle_id).current_odometer if vehicle_id else None,
+        'last_odometer': vehicle.current_odometer if vehicle else None,
         'last_duty_date': None,
         'last_end_cng': None,
         'most_common_cng_point': most_common_cng_point,
-        'vehicle_current_odometer': Vehicle.query.get(vehicle_id).current_odometer if vehicle_id else None
+        'vehicle_current_odometer': vehicle.current_odometer if vehicle else None
     }
 
 @driver_bp.route('/dashboard')
@@ -457,17 +459,12 @@ def start_duty():
             duty.start_photo = filename
 
     # Handle start location and timestamp data
-    duty.start_latitude = request.form.get('start_latitude', type=float)
-    duty.start_longitude = request.form.get('start_longitude', type=float)
+    duty.start_location_lat = request.form.get('start_latitude', type=float)
+    duty.start_location_lng = request.form.get('start_longitude', type=float)
     duty.start_location_accuracy = request.form.get('start_location_accuracy', type=float)
 
-    # Parse timestamp if provided
-    timestamp_str = request.form.get('start_photo_timestamp')
-    if timestamp_str:
-        try:
-            duty.start_photo_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-        except ValueError:
-            duty.start_photo_timestamp = datetime.utcnow()
+    # Note: Photo timestamp metadata is handled in process_camera_capture function
+    # No need to set separate timestamp fields as they don't exist in the model
 
     # Mark vehicle as not available
     vehicle.is_available = False
@@ -551,7 +548,7 @@ def end_duty():
     active_duty.status = DutyStatus.COMPLETED
 
     if end_odometer and active_duty.start_odometer:
-        active_duty.distance_km = end_odometer - active_duty.start_odometer
+        active_duty.total_distance = end_odometer - active_duty.start_odometer
 
     # Handle end photo camera capture
     end_photo_filename, end_photo_metadata = process_camera_capture(
@@ -568,18 +565,10 @@ def end_duty():
             file.save(os.path.join('uploads', filename))
             active_duty.end_photo = filename
 
-    # Handle end location and timestamp data
-    active_duty.end_latitude = request.form.get('end_latitude', type=float)
-    active_duty.end_longitude = request.form.get('end_longitude', type=float)
+    # Handle end location data
+    active_duty.end_location_lat = request.form.get('end_latitude', type=float)
+    active_duty.end_location_lng = request.form.get('end_longitude', type=float)
     active_duty.end_location_accuracy = request.form.get('end_location_accuracy', type=float)
-
-    # Parse timestamp if provided
-    timestamp_str = request.form.get('end_photo_timestamp')
-    if timestamp_str:
-        try:
-            active_duty.end_photo_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-        except ValueError:
-            active_duty.end_photo_timestamp = datetime.utcnow()
 
     # Calculate comprehensive tripsheet
     from utils import calculate_tripsheet
