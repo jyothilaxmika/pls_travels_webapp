@@ -139,17 +139,17 @@ def calculate_tripsheet(duty_data):
         # Convert Duty object to dictionary
         data = {
             'company_pay': duty_data.company_pay or 0,
-            'cash_collected': duty_data.cash_collected or 0,
+            'cash_collected': duty_data.cash_collection or 0,
             'qr_payment': duty_data.qr_payment or 0,
-            'outside_cash': duty_data.outside_cash or 0,
-            'operator_bill': duty_data.operator_bill or 0,
-            'toll': duty_data.toll or 0,
-            'petrol_expenses': duty_data.petrol_expenses or 0,
-            'gas_expenses': duty_data.gas_expenses or 0,
-            'other_expenses': duty_data.other_expenses or 0,
-            'advance': duty_data.advance or 0,
-            'driver_expenses': duty_data.driver_expenses or 0,
-            'pass_deduction': duty_data.pass_deduction or 0,
+            'outside_cash': duty_data.digital_payments or 0,
+            'operator_bill': duty_data.operator_out or 0,
+            'toll': duty_data.toll_expense or 0,
+            'petrol_expenses': duty_data.fuel_expense or 0,
+            'gas_expenses': duty_data.other_expenses or 0,
+            'other_expenses': duty_data.maintenance_expense or 0,
+            'advance': duty_data.advance_deduction or 0,
+            'driver_expenses': duty_data.fuel_deduction or 0,
+            'pass_deduction': duty_data.penalty_deduction or 0,
         }
     else:
         data = duty_data

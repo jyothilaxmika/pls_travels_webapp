@@ -18,16 +18,54 @@
     --pls-gray-dark: #495057;
 }
 
-/* Mobile-first responsive design enhancements */
-@media (max-width: 768px) {
+/* Comprehensive responsive design for mobile and desktop */
+@media (max-width: 576px) {
     .container-fluid {
-        padding-left: 10px;
-        padding-right: 10px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    
+    .card {
+        margin-bottom: 0.75rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        border-radius: 12px;
+    }
+    
+    .btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-lg {
+        padding: 0.8rem 1.2rem;
+        font-size: 1.1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .container-fluid {
+        padding-left: 12px;
+        padding-right: 12px;
     }
     
     .card {
         margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
     }
     
     .btn-lg {
@@ -35,27 +73,94 @@
         font-size: 1.1rem;
     }
     
+    .row > .col, .row > [class*="col-"] {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .container-fluid {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    
+    .card {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+    
+    .btn {
+        transition: all 0.2s ease;
+    }
+    
+    .metric-card {
+        cursor: pointer;
+    }
+}
+    
     /* Mobile-optimized tables */
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
     .table-responsive table.table-mobile {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
     
     .table-responsive table.table-mobile th,
     .table-responsive table.table-mobile td {
-        padding: 0.5rem 0.25rem;
+        padding: 0.4rem 0.2rem;
+        white-space: nowrap;
     }
     
-    /* Hide desktop-only columns on mobile */
+    /* Progressive disclosure for mobile */
     .d-md-table-cell {
         display: none !important;
     }
     
+    .d-lg-table-cell {
+        display: none !important;
+    }
+    
+    /* Show more columns on tablet */
     @media (min-width: 768px) {
         .d-md-table-cell {
             display: table-cell !important;
         }
     }
-}
+    
+    /* Show all columns on desktop */
+    @media (min-width: 992px) {
+        .d-lg-table-cell {
+            display: table-cell !important;
+        }
+    }
+    
+    /* Responsive form layouts */
+    @media (max-width: 576px) {
+        .form-row .col {
+            margin-bottom: 0.75rem;
+        }
+        
+        .input-group {
+            flex-direction: column;
+        }
+        
+        .input-group .form-control {
+            border-radius: 0.375rem !important;
+            margin-bottom: 0.5rem;
+        }
+        
+        .input-group .btn {
+            border-radius: 0.375rem !important;
+        }
+    }
 
 /* Enhanced card styling */
 .card {
@@ -139,16 +244,35 @@
     transition: width 0.6s ease;
 }
 
-/* Chart containers */
+/* Responsive chart containers */
 .chart-container {
     position: relative;
-    height: 300px;
+    height: 350px;
     margin: 1rem 0;
+    background: #fafbfc;
+    border-radius: 8px;
+    padding: 1rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 576px) {
     .chart-container {
-        height: 200px;
+        height: 180px;
+        padding: 0.5rem;
+        margin: 0.5rem 0;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .chart-container {
+        height: 220px;
+        padding: 0.75rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .chart-container {
+        height: 400px;
+        padding: 1.5rem;
     }
 }
 
@@ -196,18 +320,42 @@ input[type="file"] {
     to { transform: rotate(360deg); }
 }
 
-/* Alert positioning for mobile */
+/* Responsive alert positioning */
 #duty-alerts {
     max-width: 90%;
     right: 5% !important;
+    z-index: 1050;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 576px) {
     #duty-alerts {
-        top: 10px !important;
-        right: 10px !important;
-        left: 10px !important;
+        top: 8px !important;
+        right: 8px !important;
+        left: 8px !important;
         max-width: none;
+    }
+    
+    .alert {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    #duty-alerts {
+        top: 12px !important;
+        right: 12px !important;
+        left: 12px !important;
+        max-width: none;
+    }
+}
+
+@media (min-width: 1200px) {
+    #duty-alerts {
+        max-width: 400px;
+        right: 2rem !important;
+        top: 1rem !important;
     }
 }
 
@@ -273,22 +421,100 @@ input[type="file"] {
     transform: translate(30px, -30px);
 }
 
-/* Enhanced table styling */
+/* Enhanced responsive table styling */
 .table th {
     border-top: none;
     font-weight: 600;
     color: var(--pls-text-dark);
     background-color: var(--pls-primary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Mobile-friendly table scrolling */
+@media (max-width: 768px) {
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #dee2e6;
+    }
+    
+    .table thead th {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.3rem;
+    }
+    
+    .table tbody td {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.3rem;
+        vertical-align: middle;
+    }
+    
+    /* Card-based table alternative for mobile */
+    .table-cards {
+        display: none;
+    }
+    
+    .table-cards.mobile-only {
+        display: block;
+    }
+    
+    .table-cards .card {
+        margin-bottom: 0.75rem;
+        border-left: 4px solid var(--pls-primary);
+    }
+}
+
+@media (min-width: 769px) {
+    .table-cards.mobile-only {
+        display: none;
+    }
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
     background-color: rgba(255, 193, 7, 0.08);
 }
 
-/* Navigation enhancements */
+/* Responsive navigation enhancements */
 .navbar-brand {
     font-weight: 700;
     font-size: 1.5rem;
+}
+
+/* Mobile navigation improvements */
+@media (max-width: 991px) {
+    .navbar-nav {
+        padding-top: 0.5rem;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.6rem 1rem;
+        margin: 0.2rem 0;
+        border-radius: 6px;
+        text-align: center;
+    }
+    
+    .navbar-collapse {
+        background-color: rgba(255, 255, 255, 0.95);
+        margin: 0.5rem -1rem -1rem;
+        padding: 1rem;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+}
+
+/* Desktop navigation */
+@media (min-width: 992px) {
+    .navbar-nav .nav-link {
+        margin: 0 0.2rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    
+    .navbar-nav .nav-link:hover {
+        transform: translateY(-1px);
+    }
 }
 
 /* Professional button outline variants */
@@ -637,14 +863,30 @@ input[type="file"] {
     box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
 }
 
-/* Responsive typography */
+/* Comprehensive responsive typography */
 @media (max-width: 576px) {
-    h1 { font-size: 1.75rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
-    h4 { font-size: 1.1rem; }
-    h5 { font-size: 1rem; }
-    h6 { font-size: 0.9rem; }
+    h1 { font-size: 1.6rem; line-height: 1.3; margin-bottom: 0.75rem; }
+    h2 { font-size: 1.4rem; line-height: 1.3; margin-bottom: 0.6rem; }
+    h3 { font-size: 1.2rem; line-height: 1.4; margin-bottom: 0.5rem; }
+    h4 { font-size: 1.1rem; line-height: 1.4; margin-bottom: 0.5rem; }
+    h5 { font-size: 1rem; line-height: 1.4; margin-bottom: 0.4rem; }
+    h6 { font-size: 0.9rem; line-height: 1.4; margin-bottom: 0.4rem; }
+    
+    p, .text-body { font-size: 0.9rem; line-height: 1.5; }
+    .small, small { font-size: 0.8rem; }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.6rem; }
+    h3 { font-size: 1.3rem; }
+    h4 { font-size: 1.15rem; }
+}
+
+@media (min-width: 1200px) {
+    h1 { font-size: 2.2rem; }
+    h2 { font-size: 1.9rem; }
+    h3 { font-size: 1.6rem; }
 }
 
 /* Animation for page transitions */
@@ -731,7 +973,7 @@ input[type="file"] {
     border-radius: 0.2rem;
 }
 
-/* Compact design elements */
+/* Responsive design elements */
 .badge-sm {
     font-size: 0.65em;
     padding: 0.25em 0.4em;
@@ -748,6 +990,71 @@ input[type="file"] {
 
 .card-compact .card-body {
     padding: 0.75rem;
+}
+
+/* Responsive grid utilities */
+@media (max-width: 576px) {
+    .col-sm-6, .col-md-4, .col-lg-3 {
+        margin-bottom: 1rem;
+    }
+    
+    .row.no-gutters > .col {
+        padding: 0.25rem;
+    }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        min-height: 44px;
+        padding: 0.7rem 1rem;
+    }
+    
+    .form-control, .form-select {
+        min-height: 44px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .nav-link {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .metric-card {
+        transition: none;
+    }
+    
+    .metric-card:active {
+        transform: scale(0.98);
+    }
+}
+
+/* High-DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .card {
+        border-width: 0.5px;
+    }
+    
+    .table {
+        border-width: 0.5px;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .container-fluid {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    .card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .chart-container {
+        height: 150px;
+    }
 }
 
 /* Professional color scheme overrides */
