@@ -527,24 +527,24 @@ def end_duty():
     fuel_amount = request.form.get('fuel_amount', type=float, default=0.0)
 
     # Comprehensive financial data
-    active_duty.cash_collected = request.form.get('cash_collected', type=float, default=0.0)
+    active_duty.cash_collection = request.form.get('cash_collected', type=float, default=0.0)
     active_duty.qr_payment = request.form.get('qr_payment', type=float, default=0.0)
-    active_duty.outside_cash = request.form.get('outside_cash', type=float, default=0.0)
-    active_duty.operator_bill = request.form.get('operator_bill', type=float, default=0.0)
-    active_duty.toll = request.form.get('toll', type=float, default=0.0)
-    active_duty.petrol_expenses = request.form.get('petrol_expenses', type=float, default=0.0)
-    active_duty.gas_expenses = request.form.get('gas_expenses', type=float, default=0.0)
-    active_duty.other_expenses = request.form.get('other_expenses', type=float, default=0.0)
+    active_duty.digital_payments = request.form.get('outside_cash', type=float, default=0.0)
+    active_duty.operator_out = request.form.get('operator_bill', type=float, default=0.0)
+    active_duty.toll_expense = request.form.get('toll', type=float, default=0.0)
+    active_duty.fuel_expense = request.form.get('petrol_expenses', type=float, default=0.0)
+    active_duty.other_expenses = request.form.get('gas_expenses', type=float, default=0.0)
+    active_duty.maintenance_expense = request.form.get('other_expenses', type=float, default=0.0)
     active_duty.company_pay = request.form.get('company_pay', type=float, default=0.0)
-    active_duty.advance = request.form.get('advance', type=float, default=0.0)
-    active_duty.driver_expenses = request.form.get('driver_expenses', type=float, default=0.0)
-    active_duty.pass_deduction = request.form.get('pass_deduction', type=float, default=0.0)
+    active_duty.advance_deduction = request.form.get('advance', type=float, default=0.0)
+    active_duty.fuel_deduction = request.form.get('driver_expenses', type=float, default=0.0)
+    active_duty.penalty_deduction = request.form.get('pass_deduction', type=float, default=0.0)
 
     # Update basic duty info
     active_duty.actual_end = datetime.utcnow()
     active_duty.end_odometer = end_odometer
-    active_duty.trip_count = trip_count
-    active_duty.fuel_amount = fuel_amount
+    active_duty.total_trips = trip_count
+    active_duty.fuel_consumed = fuel_amount
     active_duty.status = DutyStatus.COMPLETED
 
     if end_odometer and active_duty.start_odometer:
@@ -575,11 +575,10 @@ def end_duty():
     tripsheet_result = calculate_tripsheet(active_duty)
 
     # Update all calculated fields
-    active_duty.revenue = tripsheet_result['company_earnings']
+    active_duty.gross_revenue = tripsheet_result['company_earnings']
     active_duty.driver_earnings = tripsheet_result['driver_salary']
-    active_duty.company_expenses = tripsheet_result['company_expenses']
     active_duty.company_profit = tripsheet_result['company_profit']
-    active_duty.incentive = tripsheet_result['incentive']
+    active_duty.incentive_payment = tripsheet_result['incentive']
 
     # Update driver total earnings
     driver.total_earnings += active_duty.driver_earnings
@@ -618,7 +617,7 @@ def end_duty():
     db.session.commit()
 
     log_audit('end_duty', 'duty', active_duty.id,
-             {'revenue': active_duty.revenue, 'earnings': active_duty.driver_earnings})
+             {'revenue': active_duty.gross_revenue, 'earnings': active_duty.driver_earnings})
 
     flash(f'Duty completed! You earned ₹{active_duty.driver_earnings:.2f}', 'success')
     return redirect(url_for('driver.earnings'))
