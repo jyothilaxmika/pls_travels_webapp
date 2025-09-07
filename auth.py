@@ -41,15 +41,18 @@ def otp_login():
         phone_number = form.phone_number.data
         
         # Check if user exists with this phone number
-        from models import Driver
-        driver = Driver.query.filter_by(phone=phone_number).first()
+        from models import Driver, User
+        # First check primary phone in User model
+        user = User.query.filter_by(phone=phone_number).first()
+        driver = user.driver_profile if user else None
+        
         if not driver:
-            # Check additional phone fields
-            driver = Driver.query.filter(
-                (Driver.additional_phone_1 == phone_number) |
-                (Driver.additional_phone_2 == phone_number) |
-                (Driver.additional_phone_3 == phone_number)
-            ).first()
+            # Check additional phone numbers in Driver model
+            drivers = Driver.query.all()
+            for d in drivers:
+                if phone_number in d.get_all_phones():
+                    driver = d
+                    break
         
         if not driver or not driver.user:
             flash('No account found with this phone number.', 'error')
@@ -91,15 +94,18 @@ def verify_otp(phone):
         
         if result['success']:
             # Find user by phone number
-            from models import Driver
-            driver = Driver.query.filter_by(phone=phone_number).first()
+            from models import Driver, User
+            # First check primary phone in User model
+            user = User.query.filter_by(phone=phone_number).first()
+            driver = user.driver_profile if user else None
+            
             if not driver:
-                # Check additional phone fields
-                driver = Driver.query.filter(
-                    (Driver.additional_phone_1 == phone_number) |
-                    (Driver.additional_phone_2 == phone_number) |
-                    (Driver.additional_phone_3 == phone_number)
-                ).first()
+                # Check additional phone numbers in Driver model
+                drivers = Driver.query.all()
+                for d in drivers:
+                    if phone_number in d.get_all_phones():
+                        driver = d
+                        break
             
             if driver and driver.user:
                 # Login the user
