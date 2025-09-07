@@ -2,16 +2,16 @@
 
 /* Override Bootstrap theme variables when needed */
 :root {
-    --pls-primary: #4a90e2;
-    --pls-secondary: #5a6c7d;
-    --pls-success: #2ecc71;
-    --pls-warning: #f1c40f;
-    --pls-danger: #e67e22;
+    --pls-primary: #ffc107;
+    --pls-secondary: #6c757d;
+    --pls-success: #28a745;
+    --pls-warning: #fd7e14;
+    --pls-danger: #dc3545;
     --pls-info: #17a2b8;
     --pls-light: #ffffff;
     --pls-dark: #343a40;
-    --pls-accent: #9b59b6;
-    --pls-text-dark: #2c3e50;
+    --pls-accent: #6f42c1;
+    --pls-text-dark: #343a40;
     --pls-text-light: #ffffff;
     --pls-gray-light: #f8f9fa;
     --pls-gray-medium: #6c757d;
@@ -89,7 +89,7 @@
 
 .badge-warning {
     background-color: var(--pls-warning);
-    color: var(--pls-text-dark);
+    color: var(--pls-text-light);
 }
 
 .badge-success {
@@ -104,7 +104,7 @@
 
 .badge-primary {
     background-color: var(--pls-primary);
-    color: var(--pls-text-light);
+    color: var(--pls-text-dark);
 }
 
 .badge-secondary {
@@ -155,12 +155,12 @@
 /* Enhanced form controls */
 .form-control:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
 }
 
 .form-select:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
 }
 
 /* File input styling */
@@ -213,18 +213,18 @@ input[type="file"] {
 
 /* Dashboard metric cards */
 .metric-card {
-    background: linear-gradient(135deg, var(--pls-primary) 0%, #357abd 100%);
-    color: var(--pls-text-light);
+    background: linear-gradient(135deg, var(--pls-primary) 0%, #e0a800 100%);
+    color: var(--pls-text-dark);
     border: none;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.25);
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.35);
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
 }
 
 .metric-card-danger {
@@ -243,18 +243,18 @@ input[type="file"] {
 }
 
 .metric-card-warning {
-    background: linear-gradient(135deg, var(--pls-warning) 0%, #f39c12 100%);
-    color: var(--pls-text-dark);
+    background: linear-gradient(135deg, var(--pls-warning) 0%, #e8650e 100%);
+    color: var(--pls-text-light);
     border: none;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(241, 196, 15, 0.25);
+    box-shadow: 0 6px 20px rgba(253, 126, 20, 0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metric-card-warning:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(241, 196, 15, 0.35);
+    box-shadow: 0 8px 25px rgba(253, 126, 20, 0.4);
 }
 
 .metric-card .card-body {
@@ -282,7 +282,7 @@ input[type="file"] {
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
-    background-color: rgba(74, 144, 226, 0.04);
+    background-color: rgba(255, 193, 7, 0.08);
 }
 
 /* Navigation enhancements */
@@ -403,37 +403,40 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .navbar {
-    background: linear-gradient(135deg, var(--pls-primary) 0%, #357abd 100%) !important;
+    background: linear-gradient(135deg, var(--pls-primary) 0%, #e0a800 100%) !important;
     border-bottom: none;
-    box-shadow: 0 2px 12px rgba(74, 144, 226, 0.2);
+    box-shadow: 0 2px 12px rgba(255, 193, 7, 0.3);
 }
 
 [data-bs-theme="light"] .navbar-brand {
-    color: var(--pls-text-light) !important;
+    color: var(--pls-text-dark) !important;
     font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
 [data-bs-theme="light"] .nav-link {
-    color: rgba(255,255,255,0.85) !important;
+    color: rgba(52, 58, 64, 0.8) !important;
 }
 
 [data-bs-theme="light"] .nav-link:hover {
-    color: var(--pls-text-light) !important;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--pls-text-dark) !important;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
 }
 
 [data-bs-theme="light"] .btn-primary {
     background-color: var(--pls-primary);
     border-color: var(--pls-primary);
-    color: var(--pls-text-light);
+    color: var(--pls-text-dark);
+    font-weight: 600;
 }
 
 [data-bs-theme="light"] .btn-primary:hover {
-    background-color: #357abd;
-    border-color: #357abd;
-    color: var(--pls-text-light);
+    background-color: #e0a800;
+    border-color: #e0a800;
+    color: var(--pls-text-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
 }
 
 [data-bs-theme="light"] .btn-secondary {
@@ -486,21 +489,21 @@ input[type="file"] {
 [data-bs-theme="light"] .btn-warning {
     background-color: var(--pls-warning);
     border-color: var(--pls-warning);
-    color: var(--pls-text-dark);
+    color: var(--pls-text-light);
 }
 
 [data-bs-theme="light"] .btn-warning:hover {
-    background-color: #f39c12;
-    border-color: #f39c12;
-    color: var(--pls-text-dark);
+    background-color: #e8650e;
+    border-color: #e8650e;
+    color: var(--pls-text-light);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(241, 196, 15, 0.3);
+    box-shadow: 0 4px 8px rgba(253, 126, 20, 0.4);
 }
 
 [data-bs-theme="light"] .alert-warning {
-    background-color: rgba(241, 196, 15, 0.1);
+    background-color: rgba(253, 126, 20, 0.1);
     border-color: var(--pls-warning);
-    color: #f39c12;
+    color: #e8650e;
     border-left: 4px solid var(--pls-warning);
 }
 
@@ -631,7 +634,7 @@ input[type="file"] {
 }
 
 .form-check-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
 }
 
 /* Responsive typography */
@@ -757,7 +760,7 @@ input[type="file"] {
 }
 
 .text-primary {
-    color: var(--pls-primary) !important;
+    color: #b8860b !important;
 }
 
 .text-warning {
@@ -786,6 +789,11 @@ input[type="file"] {
 .bg-warning {
     background-color: var(--pls-warning) !important;
     color: var(--pls-text-light) !important;
+}
+
+.bg-primary {
+    background-color: var(--pls-primary) !important;
+    color: var(--pls-text-dark) !important;
 }
 
 .bg-danger {
