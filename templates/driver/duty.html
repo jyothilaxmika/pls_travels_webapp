@@ -253,7 +253,7 @@
                 
                 <!-- End Duty Photo Capture -->
                 <div class="mb-3" id="end_photo_container">
-                    <label class="form-label">End Duty Photo *</label>
+                    <label class="form-label">End Duty Photo (Optional)</label>
                     <div class="camera-capture-container">
                         <button type="button" class="btn btn-danger capture-photo-btn w-100" 
                                 onclick="initCameraCapture('end_photo', 'Capture End Duty Photo')">
@@ -274,7 +274,7 @@
                 </div>
                 
                 
-                <button type="submit" class="btn btn-danger btn-lg w-100" onclick="return confirm('Are you sure you want to end this duty?')">
+                <button type="submit" class="btn btn-danger btn-lg w-100" id="end-duty-btn" onclick="return validateEndDutyForm()">
                     <i class="fas fa-stop-circle me-2"></i>End Duty
                 </button>
             </form>
@@ -513,6 +513,40 @@ function setupVehicleAutoFetch() {
 
 // Initialize auto-fetch functionality
 setupVehicleAutoFetch();
+
+// Validate end duty form with helpful messages
+function validateEndDutyForm() {
+    const requiredFields = [
+        { id: 'end_odometer', name: 'Ending Odometer Reading' },
+        { id: 'trip_count', name: 'Number of Trips' },
+        { id: 'cash_collected', name: 'Cash Collected' },
+        { id: 'operator_bill', name: 'Operator Bill' },
+        { id: 'petrol_expenses', name: 'Petrol Expenses' }
+    ];
+    
+    let missingFields = [];
+    
+    for (let field of requiredFields) {
+        const element = document.getElementById(field.id);
+        if (!element) continue;
+        
+        const value = element.value.trim();
+        
+        if (!value || value === '') {
+            element.classList.add('is-invalid');
+            missingFields.push(field.name);
+        } else {
+            element.classList.remove('is-invalid');
+        }
+    }
+    
+    if (missingFields.length > 0) {
+        alert('Please fill in the following required fields:\n\n• ' + missingFields.join('\n• '));
+        return false;
+    }
+    
+    return confirm('Are you sure you want to end this duty?');
+}
 
 // Live tripsheet calculation
 function calculateTripsheet() {
