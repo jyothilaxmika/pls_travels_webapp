@@ -566,7 +566,8 @@ def end_duty():
         active_duty.end_odometer = end_odometer
         active_duty.total_trips = trip_count
         active_duty.fuel_consumed = fuel_amount
-        active_duty.status = DutyStatus.COMPLETED
+        active_duty.status = DutyStatus.PENDING_APPROVAL
+        active_duty.submitted_at = datetime.utcnow()
 
         if end_odometer and active_duty.start_odometer:
             active_duty.total_distance = end_odometer - active_duty.start_odometer
@@ -640,7 +641,7 @@ def end_duty():
         log_audit('end_duty', 'duty', active_duty.id,
                  {'revenue': active_duty.gross_revenue, 'earnings': active_duty.driver_earnings})
 
-        flash(f'Duty completed! You earned ₹{active_duty.driver_earnings:.2f}', 'success')
+        flash(f'Duty submitted for approval! Expected earnings: ₹{active_duty.driver_earnings:.2f}. Please wait for admin approval.', 'info')
         return redirect(url_for('driver.earnings'))
     
     except Exception as e:

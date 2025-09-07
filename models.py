@@ -35,7 +35,9 @@ class VehicleStatus(Enum):
 class DutyStatus(Enum):
     SCHEDULED = 'scheduled'
     ACTIVE = 'active'
+    PENDING_APPROVAL = 'pending_approval'
     COMPLETED = 'completed'
+    REJECTED = 'rejected'
     CANCELLED = 'cancelled'
     PAUSED = 'paused'
 
@@ -599,6 +601,7 @@ class Duty(db.Model):
     reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     reviewed_at = db.Column(db.DateTime)
     approved_at = db.Column(db.DateTime)
+    rejection_reason = db.Column(db.Text)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
