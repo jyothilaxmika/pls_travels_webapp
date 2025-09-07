@@ -505,122 +505,133 @@ def start_duty():
 @login_required
 @driver_required
 def end_duty():
-    driver = get_driver_profile()
+    try:
+        driver = get_driver_profile()
 
-    if not driver:
-        flash('Driver profile not found.', 'error')
+        if not driver:
+            flash('Driver profile not found.', 'error')
+            return redirect(url_for('driver.duty'))
+
+        # Get active duty
+        active_duty = Duty.query.filter(
+            Duty.driver_id == driver.id,
+            Duty.status == DutyStatus.ACTIVE
+        ).first()
+
+        if not active_duty:
+            flash('No active duty found.', 'error')
+            return redirect(url_for('driver.duty'))
+
+        # Get financial data from form
+        end_odometer = request.form.get('end_odometer', type=float)
+        trip_count = request.form.get('trip_count', type=int, default=0)
+        fuel_amount = request.form.get('fuel_amount', type=float, default=0.0)
+
+        # Comprehensive financial data
+        active_duty.cash_collection = request.form.get('cash_collected', type=float, default=0.0)
+        active_duty.qr_payment = request.form.get('qr_payment', type=float, default=0.0)
+        active_duty.digital_payments = request.form.get('outside_cash', type=float, default=0.0)
+        active_duty.operator_out = request.form.get('operator_bill', type=float, default=0.0)
+        active_duty.toll_expense = request.form.get('toll', type=float, default=0.0)
+        active_duty.fuel_expense = request.form.get('petrol_expenses', type=float, default=0.0)
+        active_duty.other_expenses = request.form.get('gas_expenses', type=float, default=0.0)
+        active_duty.maintenance_expense = request.form.get('other_expenses', type=float, default=0.0)
+        active_duty.company_pay = request.form.get('company_pay', type=float, default=0.0)
+        active_duty.advance_deduction = request.form.get('advance', type=float, default=0.0)
+        active_duty.fuel_deduction = request.form.get('driver_expenses', type=float, default=0.0)
+        active_duty.penalty_deduction = request.form.get('pass_deduction', type=float, default=0.0)
+
+        # Update basic duty info
+        active_duty.actual_end = datetime.utcnow()
+        active_duty.end_odometer = end_odometer
+        active_duty.total_trips = trip_count
+        active_duty.fuel_consumed = fuel_amount
+        active_duty.status = DutyStatus.COMPLETED
+
+        if end_odometer and active_duty.start_odometer:
+            active_duty.total_distance = end_odometer - active_duty.start_odometer
+
+        # Handle end photo camera capture
+        end_photo_filename, end_photo_metadata = process_camera_capture(
+            request.form, 'end_photo', driver.id, 'duty_end'
+        )
+        if end_photo_filename:
+            active_duty.end_photo = end_photo_filename
+        
+        # Fallback to traditional file upload if no camera capture
+        elif 'end_photo' in request.files:
+            file = request.files['end_photo']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(f"duty_end_{driver.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+                file.save(os.path.join('uploads', filename))
+                active_duty.end_photo = filename
+
+        # Handle end location data
+        active_duty.end_location_lat = request.form.get('end_latitude', type=float)
+        active_duty.end_location_lng = request.form.get('end_longitude', type=float)
+        active_duty.end_location_accuracy = request.form.get('end_location_accuracy', type=float)
+
+        # Calculate comprehensive tripsheet
+        from utils import calculate_tripsheet
+        tripsheet_result = calculate_tripsheet(active_duty)
+
+        # Update all calculated fields
+        active_duty.gross_revenue = tripsheet_result['company_earnings']
+        active_duty.driver_earnings = tripsheet_result['driver_salary']
+        active_duty.company_profit = tripsheet_result['company_profit']
+        active_duty.incentive_payment = tripsheet_result['incentive']
+
+        # Update driver total earnings
+        driver.total_earnings += active_duty.driver_earnings
+
+        # Make vehicle available and update current odometer
+        if active_duty.vehicle:
+            active_duty.vehicle.is_available = True
+            active_duty.vehicle.current_odometer = end_odometer or active_duty.vehicle.current_odometer
+
+        driver.current_vehicle_id = None
+        
+        # Create vehicle tracking record for duty end
+        end_tracking_record = VehicleTracking()
+        end_tracking_record.vehicle_id = active_duty.vehicle_id
+        end_tracking_record.duty_id = active_duty.id
+        end_tracking_record.driver_id = driver.id
+        end_tracking_record.recorded_at = active_duty.actual_end or datetime.utcnow()
+        end_tracking_record.odometer_reading = end_odometer or 0.0
+        end_tracking_record.odometer_type = 'end'
+        end_tracking_record.source = 'duty'
+        end_tracking_record.latitude = active_duty.end_location_lat
+        end_tracking_record.longitude = active_duty.end_location_lng
+        end_tracking_record.location_accuracy = active_duty.end_location_accuracy
+        
+        # CNG/fuel tracking data
+        end_tracking_record.cng_point = request.form.get('cng_point')
+        end_tracking_record.cng_level = request.form.get('end_cng', type=float)
+        end_tracking_record.cng_cost = request.form.get('cng_cost', type=float)
+        end_tracking_record.cng_quantity = request.form.get('cng_quantity', type=float)
+        
+        # Calculate distance traveled during this duty
+        if end_odometer and active_duty.start_odometer:
+            end_tracking_record.distance_traveled = max(0, end_odometer - active_duty.start_odometer)
+        
+        db.session.add(end_tracking_record)
+        db.session.commit()
+
+        log_audit('end_duty', 'duty', active_duty.id,
+                 {'revenue': active_duty.gross_revenue, 'earnings': active_duty.driver_earnings})
+
+        flash(f'Duty completed! You earned ₹{active_duty.driver_earnings:.2f}', 'success')
+        return redirect(url_for('driver.earnings'))
+    
+    except Exception as e:
+        import traceback
+        error_message = str(e)
+        print(f"ERROR in end_duty: {error_message}")
+        print("Full traceback:")
+        traceback.print_exc()
+        db.session.rollback()
+        flash(f'Debug Error: {error_message}', 'error')
         return redirect(url_for('driver.duty'))
-
-    # Get active duty
-    active_duty = Duty.query.filter(
-        Duty.driver_id == driver.id,
-        Duty.status == DutyStatus.ACTIVE
-    ).first()
-
-    if not active_duty:
-        flash('No active duty found.', 'error')
-        return redirect(url_for('driver.duty'))
-
-    # Get financial data from form
-    end_odometer = request.form.get('end_odometer', type=float)
-    trip_count = request.form.get('trip_count', type=int, default=0)
-    fuel_amount = request.form.get('fuel_amount', type=float, default=0.0)
-
-    # Comprehensive financial data
-    active_duty.cash_collection = request.form.get('cash_collected', type=float, default=0.0)
-    active_duty.qr_payment = request.form.get('qr_payment', type=float, default=0.0)
-    active_duty.digital_payments = request.form.get('outside_cash', type=float, default=0.0)
-    active_duty.operator_out = request.form.get('operator_bill', type=float, default=0.0)
-    active_duty.toll_expense = request.form.get('toll', type=float, default=0.0)
-    active_duty.fuel_expense = request.form.get('petrol_expenses', type=float, default=0.0)
-    active_duty.other_expenses = request.form.get('gas_expenses', type=float, default=0.0)
-    active_duty.maintenance_expense = request.form.get('other_expenses', type=float, default=0.0)
-    active_duty.company_pay = request.form.get('company_pay', type=float, default=0.0)
-    active_duty.advance_deduction = request.form.get('advance', type=float, default=0.0)
-    active_duty.fuel_deduction = request.form.get('driver_expenses', type=float, default=0.0)
-    active_duty.penalty_deduction = request.form.get('pass_deduction', type=float, default=0.0)
-
-    # Update basic duty info
-    active_duty.actual_end = datetime.utcnow()
-    active_duty.end_odometer = end_odometer
-    active_duty.total_trips = trip_count
-    active_duty.fuel_consumed = fuel_amount
-    active_duty.status = DutyStatus.COMPLETED
-
-    if end_odometer and active_duty.start_odometer:
-        active_duty.total_distance = end_odometer - active_duty.start_odometer
-
-    # Handle end photo camera capture
-    end_photo_filename, end_photo_metadata = process_camera_capture(
-        request.form, 'end_photo', driver.id, 'duty_end'
-    )
-    if end_photo_filename:
-        active_duty.end_photo = end_photo_filename
-    
-    # Fallback to traditional file upload if no camera capture
-    elif 'end_photo' in request.files:
-        file = request.files['end_photo']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(f"duty_end_{driver.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
-            file.save(os.path.join('uploads', filename))
-            active_duty.end_photo = filename
-
-    # Handle end location data
-    active_duty.end_location_lat = request.form.get('end_latitude', type=float)
-    active_duty.end_location_lng = request.form.get('end_longitude', type=float)
-    active_duty.end_location_accuracy = request.form.get('end_location_accuracy', type=float)
-
-    # Calculate comprehensive tripsheet
-    from utils import calculate_tripsheet
-    tripsheet_result = calculate_tripsheet(active_duty)
-
-    # Update all calculated fields
-    active_duty.gross_revenue = tripsheet_result['company_earnings']
-    active_duty.driver_earnings = tripsheet_result['driver_salary']
-    active_duty.company_profit = tripsheet_result['company_profit']
-    active_duty.incentive_payment = tripsheet_result['incentive']
-
-    # Update driver total earnings
-    driver.total_earnings += active_duty.driver_earnings
-
-    # Make vehicle available and update current odometer
-    if active_duty.vehicle:
-        active_duty.vehicle.is_available = True
-        active_duty.vehicle.current_odometer = end_odometer or active_duty.vehicle.current_odometer
-
-    driver.current_vehicle_id = None
-    
-    # Create vehicle tracking record for duty end
-    end_tracking_record = VehicleTracking()
-    end_tracking_record.vehicle_id = active_duty.vehicle_id
-    end_tracking_record.duty_id = active_duty.id
-    end_tracking_record.driver_id = driver.id
-    end_tracking_record.recorded_at = active_duty.actual_end or datetime.utcnow()
-    end_tracking_record.odometer_reading = end_odometer or 0.0
-    end_tracking_record.odometer_type = 'end'
-    end_tracking_record.source = 'duty'
-    end_tracking_record.latitude = active_duty.end_location_lat
-    end_tracking_record.longitude = active_duty.end_location_lng
-    end_tracking_record.location_accuracy = active_duty.end_location_accuracy
-    
-    # CNG/fuel tracking data
-    end_tracking_record.cng_point = request.form.get('cng_point')
-    end_tracking_record.cng_level = request.form.get('end_cng', type=float)
-    end_tracking_record.cng_cost = request.form.get('cng_cost', type=float)
-    end_tracking_record.cng_quantity = request.form.get('cng_quantity', type=float)
-    
-    # Calculate distance traveled during this duty
-    if end_odometer and active_duty.start_odometer:
-        end_tracking_record.distance_traveled = max(0, end_odometer - active_duty.start_odometer)
-    
-    db.session.add(end_tracking_record)
-    db.session.commit()
-
-    log_audit('end_duty', 'duty', active_duty.id,
-             {'revenue': active_duty.gross_revenue, 'earnings': active_duty.driver_earnings})
-
-    flash(f'Duty completed! You earned ₹{active_duty.driver_earnings:.2f}', 'success')
-    return redirect(url_for('driver.earnings'))
 
 
 @driver_bp.route('/duty/last-values/<int:vehicle_id>')
