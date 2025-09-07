@@ -34,7 +34,7 @@ localPort = 5000
 externalPort = 80
 
 [agent]
-integrations = ["twilio_send_message==1.0.0", "flask_google_oauth==1.0.0", "python_database==1.0.0"]
+integrations = ["twilio_send_message==1.0.0", "python_database==1.0.0", "flask_google_oauth==1.0.0", "python_log_in_with_replit==1.0.0"]
 
 [objectStorage]
 defaultBucketID = "replit-objstore-ae36c9eb-f667-46f6-8ecf-b8e8b6fde62c"
