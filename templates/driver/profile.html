@@ -110,15 +110,28 @@
                 <!-- Document Capture Section -->
                 {% if not driver or driver.status in ['pending', 'rejected'] %}
                 <div class="row">
-                    <!-- Aadhar Photo Capture -->
+                    <!-- Aadhar Photo Upload -->
                     <div class="col-md-4 mb-3" id="aadhar_photo_container">
-                        <label class="form-label">Aadhar Photo</label>
-                        <div class="camera-capture-container">
+                        <label class="form-label">Aadhar Photo *</label>
+                        
+                        <!-- Camera Capture Option -->
+                        <div class="camera-capture-container mb-2">
                             <button type="button" class="btn btn-primary capture-photo-btn w-100" 
                                     onclick="initCameraCapture('aadhar_photo', 'Capture Aadhar Photo')">
                                 <i class="fas fa-camera me-2"></i>Capture Aadhar Photo
                             </button>
-                            <small class="d-block text-muted mt-2">Take a clear photo of your Aadhar card</small>
+                        </div>
+                        
+                        <!-- OR separator -->
+                        <div class="text-center mb-2">
+                            <small class="text-muted">OR</small>
+                        </div>
+                        
+                        <!-- File Upload Option -->
+                        <div class="file-upload-container">
+                            <input type="file" class="form-control" name="aadhar_photo" accept="image/*,.pdf" 
+                                   onchange="previewFile(this, 'aadhar_preview')">
+                            <small class="d-block text-muted mt-1">Upload Aadhar card (JPG, PNG, PDF)</small>
                         </div>
                         
                         <!-- Photo Preview -->
@@ -127,24 +140,48 @@
                             <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
                         </div>
                         
-                        {% if driver and driver.aadhar_photo %}
+                        <!-- File Preview -->
+                        <div class="file-preview mt-2" id="aadhar_preview" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 100px;" alt="Aadhar Preview">
+                            <small class="d-block text-success mt-1">File selected for upload</small>
+                        </div>
+                        
+                        {% if driver and driver.aadhar_document %}
                         <div class="mt-2">
-                            <p class="mb-1"><strong>Current Photo:</strong></p>
-                            <img src="/uploads/{{ driver.aadhar_photo }}" class="img-fluid rounded" style="max-height: 100px;">
-                            <small class="d-block text-info">Previously uploaded</small>
+                            <p class="mb-1"><strong>Current Document:</strong></p>
+                            {% if driver.aadhar_document.startswith('gs://') %}
+                                <small class="d-block text-info">Stored in cloud storage</small>
+                                <i class="fas fa-cloud text-primary"></i> Cloud stored document
+                            {% else %}
+                                <img src="/uploads/{{ driver.aadhar_document }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
+                                <small class="d-block text-info">Previously uploaded</small>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
                     
-                    <!-- License Photo Capture -->
+                    <!-- License Photo Upload -->
                     <div class="col-md-4 mb-3" id="license_photo_container">
-                        <label class="form-label">License Photo</label>
-                        <div class="camera-capture-container">
+                        <label class="form-label">License Photo *</label>
+                        
+                        <!-- Camera Capture Option -->
+                        <div class="camera-capture-container mb-2">
                             <button type="button" class="btn btn-primary capture-photo-btn w-100" 
                                     onclick="initCameraCapture('license_photo', 'Capture License Photo')">
                                 <i class="fas fa-camera me-2"></i>Capture License Photo
                             </button>
-                            <small class="d-block text-muted mt-2">Take a clear photo of your driving license</small>
+                        </div>
+                        
+                        <!-- OR separator -->
+                        <div class="text-center mb-2">
+                            <small class="text-muted">OR</small>
+                        </div>
+                        
+                        <!-- File Upload Option -->
+                        <div class="file-upload-container">
+                            <input type="file" class="form-control" name="license_photo" accept="image/*,.pdf" 
+                                   onchange="previewFile(this, 'license_preview')">
+                            <small class="d-block text-muted mt-1">Upload driving license (JPG, PNG, PDF)</small>
                         </div>
                         
                         <!-- Photo Preview -->
@@ -153,24 +190,48 @@
                             <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
                         </div>
                         
-                        {% if driver and driver.license_photo %}
+                        <!-- File Preview -->
+                        <div class="file-preview mt-2" id="license_preview" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 100px;" alt="License Preview">
+                            <small class="d-block text-success mt-1">File selected for upload</small>
+                        </div>
+                        
+                        {% if driver and driver.license_document %}
                         <div class="mt-2">
-                            <p class="mb-1"><strong>Current Photo:</strong></p>
-                            <img src="/uploads/{{ driver.license_photo }}" class="img-fluid rounded" style="max-height: 100px;">
-                            <small class="d-block text-info">Previously uploaded</small>
+                            <p class="mb-1"><strong>Current Document:</strong></p>
+                            {% if driver.license_document.startswith('gs://') %}
+                                <small class="d-block text-info">Stored in cloud storage</small>
+                                <i class="fas fa-cloud text-primary"></i> Cloud stored document
+                            {% else %}
+                                <img src="/uploads/{{ driver.license_document }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
+                                <small class="d-block text-info">Previously uploaded</small>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
                     
-                    <!-- Profile Photo Capture -->
+                    <!-- Profile Photo Upload -->
                     <div class="col-md-4 mb-3" id="profile_photo_container">
-                        <label class="form-label">Profile Photo</label>
-                        <div class="camera-capture-container">
+                        <label class="form-label">Profile Photo *</label>
+                        
+                        <!-- Camera Capture Option -->
+                        <div class="camera-capture-container mb-2">
                             <button type="button" class="btn btn-primary capture-photo-btn w-100" 
                                     onclick="initCameraCapture('profile_photo', 'Capture Profile Photo')">
                                 <i class="fas fa-camera me-2"></i>Capture Profile Photo
                             </button>
-                            <small class="d-block text-muted mt-2">Take a clear photo of yourself</small>
+                        </div>
+                        
+                        <!-- OR separator -->
+                        <div class="text-center mb-2">
+                            <small class="text-muted">OR</small>
+                        </div>
+                        
+                        <!-- File Upload Option -->
+                        <div class="file-upload-container">
+                            <input type="file" class="form-control" name="profile_photo" accept="image/*" 
+                                   onchange="previewFile(this, 'profile_preview')">
+                            <small class="d-block text-muted mt-1">Upload your profile photo (JPG, PNG)</small>
                         </div>
                         
                         <!-- Photo Preview -->
@@ -179,11 +240,22 @@
                             <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
                         </div>
                         
+                        <!-- File Preview -->
+                        <div class="file-preview mt-2" id="profile_preview" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 100px;" alt="Profile Preview">
+                            <small class="d-block text-success mt-1">File selected for upload</small>
+                        </div>
+                        
                         {% if driver and driver.profile_photo %}
                         <div class="mt-2">
                             <p class="mb-1"><strong>Current Photo:</strong></p>
-                            <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded" style="max-height: 100px;">
-                            <small class="d-block text-info">Previously uploaded</small>
+                            {% if driver.profile_photo.startswith('gs://') %}
+                                <small class="d-block text-info">Stored in cloud storage</small>
+                                <i class="fas fa-cloud text-primary"></i> Cloud stored photo
+                            {% else %}
+                                <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded" style="max-height: 100px;">
+                                <small class="d-block text-info">Previously uploaded</small>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>

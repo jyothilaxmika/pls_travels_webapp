@@ -43,7 +43,7 @@ class CloudStorageManager:
     
     def upload_file(self, file_data, filename, bucket_type='assets', content_type=None):
         """
-        Upload file to cloud storage
+        Upload file to cloud storage (currently disabled due to API limitations)
         
         Args:
             file_data: File data (bytes or base64 string)
@@ -52,30 +52,34 @@ class CloudStorageManager:
             content_type: MIME type of the file
             
         Returns:
-            str: Cloud storage URL of uploaded file
+            str: Cloud storage URL of uploaded file (None for now)
         """
         try:
-            bucket_name = STORAGE_BUCKETS.get(bucket_type, STORAGE_BUCKETS['assets'])
+            # Commenting out cloud storage for now due to API method limitations
+            print(f"Cloud storage upload requested for {filename} in {bucket_type} bucket")
+            return None  # Fallback to local storage
             
-            # Generate unique filename
-            file_extension = filename.split('.')[-1] if '.' in filename else ''
-            unique_filename = f"{uuid.uuid4().hex}.{file_extension}" if file_extension else str(uuid.uuid4().hex)
-            
-            # Handle base64 data
-            if isinstance(file_data, str) and file_data.startswith('data:'):
-                # Extract base64 data from data URL
-                header, encoded = file_data.split(',', 1)
-                file_data = base64.b64decode(encoded)
-                
-                # Extract content type if not provided
-                if not content_type and 'image/' in header:
-                    content_type = header.split(';')[0].replace('data:', '')
-            
-            # Create object and upload
-            obj = object_storage.Object(f"{bucket_name}/{unique_filename}")
-            obj.upload_from_bytes(file_data)
-            
-            return f"gs://{bucket_name}/{unique_filename}"
+            # bucket_name = STORAGE_BUCKETS.get(bucket_type, STORAGE_BUCKETS['assets'])
+            # 
+            # # Generate unique filename
+            # file_extension = filename.split('.')[-1] if '.' in filename else ''
+            # unique_filename = f"{uuid.uuid4().hex}.{file_extension}" if file_extension else str(uuid.uuid4().hex)
+            # 
+            # # Handle base64 data
+            # if isinstance(file_data, str) and file_data.startswith('data:'):
+            #     # Extract base64 data from data URL
+            #     header, encoded = file_data.split(',', 1)
+            #     file_data = base64.b64decode(encoded)
+            #     
+            #     # Extract content type if not provided
+            #     if not content_type and 'image/' in header:
+            #         content_type = header.split(';')[0].replace('data:', '')
+            # 
+            # # Create object and upload using write method
+            # obj = object_storage.Object(f"{bucket_name}/{unique_filename}")
+            # obj.write(file_data)
+            # 
+            # return f"gs://{bucket_name}/{unique_filename}"
             
         except Exception as e:
             print(f"Cloud upload error: {e}")
@@ -92,7 +96,7 @@ class CloudStorageManager:
             bucket_name, filename = parts[0], parts[1]
             
             obj = object_storage.Object(f"{bucket_name}/{filename}")
-            return obj.download_as_bytes()
+            return obj.read()
             
         except Exception as e:
             print(f"Cloud download error: {e}")
@@ -527,13 +531,7 @@ def process_file_upload(file, user_id, photo_type="photo", use_cloud=True):
         }
         bucket_type = bucket_map.get(photo_type, 'assets')
         
-        if use_cloud:
-            # Try cloud upload first
-            cloud_url = upload_to_cloud(file_data, file.filename, bucket_type)
-            if cloud_url:
-                return cloud_url
-        
-        # Fallback to local storage
+        # Use local storage for now due to cloud API limitations  
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = secure_filename(f"{photo_type}_{user_id}_{timestamp}_{file.filename}")
         
@@ -544,6 +542,15 @@ def process_file_upload(file, user_id, photo_type="photo", use_cloud=True):
             f.write(file_data)
             
         return filename
+        
+        # Optional: Try cloud storage as backup (commented out for now)
+        # if use_cloud:
+        #     try:
+        #         cloud_url = upload_to_cloud(file_data, file.filename, bucket_type)
+        #         if cloud_url:
+        #             return cloud_url
+        #     except Exception as e:
+        #         print(f"Cloud backup failed: {e}")
         
     except Exception as e:
         print(f"Error processing file upload for {photo_type}: {e}")
@@ -616,21 +623,23 @@ def process_camera_capture(form_data, field_name, user_id, photo_type="photo", u
         
         result_path = None
         
-        if use_cloud:
-            # Try cloud upload first
-            cloud_url = upload_to_cloud(image_bytes, filename, bucket_type)
-            if cloud_url:
-                result_path = cloud_url
+        # Always use local storage for now due to cloud API limitations
+        upload_dir = ensure_upload_dir()
+        file_path = os.path.join(upload_dir, filename)
         
-        if not result_path:
-            # Fallback to local storage
-            upload_dir = ensure_upload_dir()
-            file_path = os.path.join(upload_dir, filename)
-            
-            # Save image file
-            with open(file_path, 'wb') as f:
-                f.write(image_bytes)
-            result_path = filename
+        # Save image file
+        with open(file_path, 'wb') as f:
+            f.write(image_bytes)
+        result_path = filename
+        
+        # Optional: Try cloud storage as backup (commented out for now)
+        # if use_cloud:
+        #     try:
+        #         cloud_url = upload_to_cloud(image_bytes, filename, bucket_type)
+        #         if cloud_url:
+        #             result_path = cloud_url
+        #     except Exception as e:
+        #         print(f"Cloud backup failed: {e}")
         
         # Save metadata as separate JSON file if metadata exists
         if metadata:
