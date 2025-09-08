@@ -251,7 +251,7 @@
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <p class="small text-muted mb-2">Start Photo</p>
-                                    <img src="{{ url_for('serve_file', filename=duty.start_photo) }}" 
+                                    <img src="{{ url_for('uploaded_file', filename=duty.start_photo) }}" 
                                          class="img-fluid rounded border" style="max-height: 200px;">
                                 </div>
                             </div>
@@ -260,7 +260,7 @@
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <p class="small text-muted mb-2">End Photo</p>
-                                    <img src="{{ url_for('serve_file', filename=duty.end_photo) }}" 
+                                    <img src="{{ url_for('uploaded_file', filename=duty.end_photo) }}" 
                                          class="img-fluid rounded border" style="max-height: 200px;">
                                 </div>
                             </div>
