@@ -1,0 +1,528 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Smart Recommendations Dashboard{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.recommendation-card {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    transition: all 0.3s ease;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+}
+
+.score-badge {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: #000;
+    font-weight: bold;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.analytics-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.analytics-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.performance-bar {
+    background: #e9ecef;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.performance-fill {
+    background: linear-gradient(90deg, #ffc107, #ffb300);
+    height: 100%;
+    transition: width 0.8s ease;
+}
+
+.strategy-btn {
+    background: #fff;
+    border: 2px solid #ffc107;
+    color: #ffc107;
+    transition: all 0.3s ease;
+}
+
+.strategy-btn:hover, .strategy-btn.active {
+    background: #ffc107;
+    color: #000;
+}
+
+.recommendation-reasoning {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.recommendation-item {
+    padding: 15px;
+    margin: 10px 0;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #ffc107;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: #000;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1><i class="fas fa-brain"></i> Smart Duty Assignment Recommendations</h1>
+    <p class="mb-0">AI-powered recommendations for optimal driver-vehicle assignments based on performance, compatibility, and availability analysis.</p>
+</div>
+
+<!-- Strategy Selection & Controls -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card analytics-card">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-cogs"></i> Recommendation Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <label for="branchSelect" class="form-label">Branch Filter</label>
+                        <select id="branchSelect" class="form-select">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                            <option value="{{ branch.id }}">{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="shiftSelect" class="form-label">Shift Type</label>
+                        <select id="shiftSelect" class="form-select">
+                            <option value="full_day">Full Day</option>
+                            <option value="morning">Morning</option>
+                            <option value="evening">Evening</option>
+                            <option value="night">Night</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Strategy</label>
+                        <div class="btn-group d-block" role="group">
+                            <button type="button" class="btn strategy-btn active" data-strategy="balanced">Balanced</button>
+                            <button type="button" class="btn strategy-btn" data-strategy="performance">Performance</button>
+                            <button type="button" class="btn strategy-btn" data-strategy="availability">Availability</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button id="generateRecommendations" class="btn btn-warning btn-lg">
+                            <i class="fas fa-magic"></i> Generate Smart Recommendations
+                        </button>
+                        <button id="refreshAnalytics" class="btn btn-outline-warning ms-2">
+                            <i class="fas fa-sync-alt"></i> Refresh Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card analytics-card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-chart-line"></i> Quick Stats</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-warning">{{ total_drivers }}</h3>
+                        <small>Active Drivers</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-warning">{{ total_vehicles }}</h3>
+                        <small>Available Vehicles</small>
+                    </div>
+                </div>
+                <hr>
+                <div id="quickAnalytics">
+                    <small class="text-muted">Click "Refresh Analytics" to load detailed stats</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="loading-spinner">
+    <div class="spinner-border text-warning" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Generating intelligent recommendations...</p>
+</div>
+
+<!-- Recommendations Results -->
+<div id="recommendationsContainer" style="display: none;">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card analytics-card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-trophy"></i> Top Recommendations</h5>
+                    <span id="recommendationsCount" class="badge bg-light text-dark">0 recommendations</span>
+                </div>
+                <div class="card-body" id="recommendationsList">
+                    <!-- Recommendations will be populated here -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card analytics-card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-chart-pie"></i> Score Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="scoreChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Dashboard -->
+<div class="row mt-4" id="analyticsContainer" style="display: none;">
+    <div class="col-md-6">
+        <div class="card analytics-card">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-users"></i> Driver Performance Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div id="driverPerformanceList">
+                    <!-- Driver performance will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card analytics-card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-car"></i> Vehicle Utilization</h5>
+            </div>
+            <div class="card-body">
+                <div id="vehicleUtilizationList">
+                    <!-- Vehicle utilization will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons for Top Recommendations -->
+<div class="row mt-4" id="actionButtonsContainer" style="display: none;">
+    <div class="col-12">
+        <div class="card analytics-card">
+            <div class="card-body text-center">
+                <h6>Quick Actions</h6>
+                <button id="createAssignmentsBtn" class="btn btn-success btn-lg me-3">
+                    <i class="fas fa-plus"></i> Create Top 5 Assignments
+                </button>
+                <button id="exportRecommendationsBtn" class="btn btn-outline-primary me-3">
+                    <i class="fas fa-download"></i> Export Recommendations
+                </button>
+                <a href="{{ url_for('admin.schedule_duty_assignments') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-calendar"></i> Go to Assignment Scheduler
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRecommendations = [];
+let currentStrategy = 'balanced';
+let scoreChart = null;
+
+$(document).ready(function() {
+    // Strategy button handling
+    $('.strategy-btn').click(function() {
+        $('.strategy-btn').removeClass('active');
+        $(this).addClass('active');
+        currentStrategy = $(this).data('strategy');
+    });
+
+    // Generate recommendations
+    $('#generateRecommendations').click(function() {
+        generateRecommendations();
+    });
+
+    // Refresh analytics
+    $('#refreshAnalytics').click(function() {
+        loadAnalytics();
+    });
+
+    // Load initial analytics
+    loadAnalytics();
+});
+
+function generateRecommendations() {
+    const branchId = $('#branchSelect').val();
+    const shiftType = $('#shiftSelect').val();
+    const limit = 10;
+
+    $('#loadingSpinner').show();
+    $('#recommendationsContainer, #actionButtonsContainer').hide();
+
+    const params = new URLSearchParams({
+        strategy: currentStrategy,
+        shift_type: shiftType,
+        limit: limit
+    });
+    
+    if (branchId) {
+        params.append('branch_id', branchId);
+    }
+
+    fetch(`/admin/api/recommendations/driver-vehicle?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            $('#loadingSpinner').hide();
+            
+            if (data.success) {
+                currentRecommendations = data.recommendations;
+                displayRecommendations(data.recommendations);
+                createScoreChart(data.recommendations);
+                $('#recommendationsContainer, #actionButtonsContainer').show();
+                $('#recommendationsCount').text(`${data.recommendations.length} recommendations`);
+            } else {
+                showAlert('Error generating recommendations: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            $('#loadingSpinner').hide();
+            console.error('Error:', error);
+            showAlert('Error generating recommendations. Please try again.', 'error');
+        });
+}
+
+function displayRecommendations(recommendations) {
+    const container = $('#recommendationsList');
+    container.empty();
+
+    if (recommendations.length === 0) {
+        container.html('<p class="text-muted">No recommendations found for the selected criteria.</p>');
+        return;
+    }
+
+    recommendations.forEach((rec, index) => {
+        const reasoningText = rec.reasoning.slice(0, 3).join(', ');
+        
+        const html = `
+            <div class="recommendation-item" data-driver-id="${rec.driver_id}" data-vehicle-id="${rec.vehicle_id}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="mb-1">
+                            <span class="badge bg-warning text-dark me-2">#${index + 1}</span>
+                            ${rec.driver_name} (${rec.driver_employee_id})
+                        </h6>
+                        <small class="text-muted">→ ${rec.vehicle_registration} (${rec.vehicle_type})</small>
+                    </div>
+                    <span class="score-badge">${rec.total_score}%</span>
+                </div>
+                
+                <div class="row mb-2">
+                    <div class="col-md-2">
+                        <small>Performance: ${rec.performance_score}%</small>
+                        <div class="performance-bar">
+                            <div class="performance-fill" style="width: ${rec.performance_score}%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <small>Compatibility: ${rec.compatibility_score}%</small>
+                        <div class="performance-bar">
+                            <div class="performance-fill" style="width: ${rec.compatibility_score}%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <small>Availability: ${rec.availability_score}%</small>
+                        <div class="performance-bar">
+                            <div class="performance-fill" style="width: ${rec.availability_score}%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <small>Experience: ${rec.experience_score}%</small>
+                        <div class="performance-bar">
+                            <div class="performance-fill" style="width: ${rec.experience_score}%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-sm btn-success create-assignment-btn" 
+                                data-driver-id="${rec.driver_id}" 
+                                data-vehicle-id="${rec.vehicle_id}">
+                            <i class="fas fa-plus"></i> Create Assignment
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="recommendation-reasoning">
+                    <i class="fas fa-info-circle"></i> ${reasoningText}
+                </div>
+            </div>
+        `;
+        
+        container.append(html);
+    });
+
+    // Handle individual assignment creation
+    $('.create-assignment-btn').click(function() {
+        const driverId = $(this).data('driver-id');
+        const vehicleId = $(this).data('vehicle-id');
+        createSingleAssignment(driverId, vehicleId);
+    });
+}
+
+function createScoreChart(recommendations) {
+    const ctx = document.getElementById('scoreChart').getContext('2d');
+    
+    if (scoreChart) {
+        scoreChart.destroy();
+    }
+
+    const scores = recommendations.map(r => r.total_score);
+    const labels = ['90-100%', '80-89%', '70-79%', '60-69%', '<60%'];
+    const ranges = [0, 0, 0, 0, 0];
+
+    scores.forEach(score => {
+        if (score >= 90) ranges[0]++;
+        else if (score >= 80) ranges[1]++;
+        else if (score >= 70) ranges[2]++;
+        else if (score >= 60) ranges[3]++;
+        else ranges[4]++;
+    });
+
+    scoreChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: ranges,
+                backgroundColor: [
+                    '#28a745',
+                    '#ffc107',
+                    '#fd7e14',
+                    '#dc3545',
+                    '#6c757d'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function loadAnalytics() {
+    const branchId = $('#branchSelect').val();
+    const params = new URLSearchParams();
+    
+    if (branchId) {
+        params.append('branch_id', branchId);
+    }
+
+    fetch(`/admin/api/recommendations/analytics?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayAnalytics(data.analytics);
+                $('#analyticsContainer').show();
+            } else {
+                showAlert('Error loading analytics: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error loading analytics. Please try again.', 'error');
+        });
+}
+
+function displayAnalytics(analytics) {
+    // Update quick analytics
+    $('#quickAnalytics').html(`
+        <small>Avg Performance: ${(analytics.performance_scores.reduce((a, b) => a + b.performance_score, 0) / analytics.performance_scores.length).toFixed(1)}%</small>
+    `);
+
+    // Display driver performance
+    const driverContainer = $('#driverPerformanceList');
+    driverContainer.empty();
+    
+    analytics.performance_scores.slice(0, 5).forEach(driver => {
+        driverContainer.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>${driver.driver_name}</strong><br>
+                    <small class="text-muted">Rating: ${driver.rating}/5 | Trips: ${driver.total_trips}</small>
+                </div>
+                <span class="badge bg-warning text-dark">${driver.performance_score.toFixed(1)}%</span>
+            </div>
+        `);
+    });
+
+    // Display vehicle utilization
+    const vehicleContainer = $('#vehicleUtilizationList');
+    vehicleContainer.empty();
+    
+    analytics.vehicle_utilization.slice(0, 5).forEach(vehicle => {
+        vehicleContainer.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>${vehicle.registration}</strong><br>
+                    <small class="text-muted">${vehicle.vehicle_type}</small>
+                </div>
+                <span class="badge ${vehicle.recent_duties > 10 ? 'bg-success' : vehicle.recent_duties > 5 ? 'bg-warning text-dark' : 'bg-danger'}">${vehicle.recent_duties} duties</span>
+            </div>
+        `);
+    });
+}
+
+function createSingleAssignment(driverId, vehicleId) {
+    // Redirect to assignment scheduler with pre-filled data
+    window.location.href = `/admin/schedule-duty-assignments?driver_id=${driverId}&vehicle_id=${vehicleId}`;
+}
+
+function showAlert(message, type) {
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    $('main > .container-fluid').prepend(alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        $('.alert').alert('close');
+    }, 5000);
+}
+</script>
+{% endblock %}
