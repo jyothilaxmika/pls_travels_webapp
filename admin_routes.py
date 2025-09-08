@@ -250,7 +250,7 @@ def view_driver(driver_id):
         month_key = duty.created_at.strftime('%Y-%m')
         monthly_stats[month_key]['duties'] += 1
         monthly_stats[month_key]['earnings'] += duty.driver_earnings or 0
-        monthly_stats[month_key]['trips'] += duty.trip_count or 0
+        monthly_stats[month_key]['trips'] += duty.total_trips or 0
     
     return render_template('admin/driver_details.html', 
                          driver=driver, 

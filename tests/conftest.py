@@ -4,8 +4,34 @@ Pytest configuration and fixtures for PLS TRAVELS application testing
 
 import pytest
 from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
-from playwright_config import PLAYWRIGHT_CONFIG, TEST_USERS, TEST_ROUTES
 import os
+
+# Test configuration inline
+PLAYWRIGHT_CONFIG = {
+    'base_url': 'http://localhost:5000',
+    'timeout': 60000,
+    'headless': True,
+    'browser': 'chromium'
+}
+
+TEST_USERS = {
+    'admin': {'username': 'admin', 'password': 'admin123', 'role': 'ADMIN'},
+    'manager': {'username': 'manager', 'password': 'manager123', 'role': 'MANAGER'},
+    'driver': {'username': 'driver1', 'password': 'driver123', 'role': 'DRIVER'}
+}
+
+TEST_ROUTES = {
+    'login': '/auth/login',
+    'admin_dashboard': '/admin',
+    'admin_drivers': '/admin/drivers',
+    'admin_storage': '/admin/storage',
+    'admin_documents': '/admin/documents',
+    'admin_duty_photos': '/admin/duty-photos',
+    'driver_dashboard': '/driver',
+    'driver_profile': '/driver/profile',
+    'driver_duty': '/driver/duty',
+    'driver_earnings': '/driver/earnings'
+}
 
 
 @pytest.fixture(scope="session")
