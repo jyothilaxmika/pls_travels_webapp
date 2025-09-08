@@ -240,7 +240,22 @@ def calculate_earnings(duty_scheme, revenue, trip_count):
     bmg_applied = 0
     incentive = 0
     
-    if duty_scheme.scheme_type == 'fixed':
+    if duty_scheme.scheme_type == 'daily_payout':
+        # Scheme 1: Daily salary payout - immediate payment after each duty
+        daily_base = config.get('daily_base_amount', 0)
+        daily_incentive_rate = config.get('daily_incentive_percent', 0) / 100
+        incentive = revenue * daily_incentive_rate
+        earnings = daily_base + incentive
+        
+    elif duty_scheme.scheme_type == 'monthly_payout':
+        # Scheme 2: Monthly payout - accumulated earnings paid monthly
+        # For now, calculate as if daily but mark for monthly accumulation
+        monthly_base_daily = config.get('monthly_base_salary', 0) / 30  # Monthly to daily
+        monthly_incentive_rate = config.get('monthly_incentive_percent', 0) / 100
+        incentive = revenue * monthly_incentive_rate
+        earnings = monthly_base_daily + incentive
+    
+    elif duty_scheme.scheme_type == 'fixed':
         earnings = config.get('daily_amount', 0)
     
     elif duty_scheme.scheme_type == 'per_trip':

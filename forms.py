@@ -145,12 +145,12 @@ class VehicleForm(FlaskForm):
 
 class DutySchemeForm(FlaskForm):
     name = StringField('Scheme Name', validators=[DataRequired()])
-    scheme_type = SelectField('Scheme Type', choices=[
-        ('scheme_1', 'Scheme Type 1'),
-        ('scheme_2', 'Scheme Type 2'),
-        ('scheme_3', 'Scheme Type 3'),
-        ('scheme_4', 'Scheme Type 4'),
-        ('scheme_5', 'Scheme Type 5')
+    scheme_type = SelectField('Payout Scheme', choices=[
+        ('daily_payout', 'Daily Salary Payout - Immediate payment after each duty'),
+        ('monthly_payout', 'Monthly Payout - Accumulated earnings paid monthly'),
+        ('scheme_3', 'Custom Scheme 3'),
+        ('scheme_4', 'Custom Scheme 4'),
+        ('scheme_5', 'Custom Scheme 5')
     ], validators=[DataRequired()])
     branch_id = SelectField('Branch', coerce=str, validators=[Optional()])
     bmg_amount = FloatField('BMG Amount', validators=[Optional(), NumberRange(min=0)])
@@ -171,6 +171,22 @@ class DutySchemeForm(FlaskForm):
     # Mixed scheme fields
     base_amount = FloatField('Base Amount', validators=[Optional()])
     incentive_percent = FloatField('Incentive Percentage', validators=[Optional()])
+    
+    # Payout frequency configuration
+    payout_frequency = SelectField('Payout Frequency', choices=[
+        ('immediate', 'Immediate - After each duty completion'),
+        ('daily', 'Daily - At end of each day'),
+        ('weekly', 'Weekly - Every Friday'),
+        ('monthly', 'Monthly - Last day of month')
+    ], default='immediate', validators=[Optional()])
+    
+    # Monthly payout specific fields
+    monthly_base_salary = FloatField('Monthly Base Salary', validators=[Optional(), NumberRange(min=0)])
+    monthly_incentive_percent = FloatField('Monthly Incentive Percentage', validators=[Optional(), NumberRange(min=0, max=100)])
+    
+    # Daily payout specific fields
+    daily_base_amount = FloatField('Daily Base Amount', validators=[Optional(), NumberRange(min=0)])
+    daily_incentive_percent = FloatField('Daily Incentive Percentage', validators=[Optional(), NumberRange(min=0, max=100)])
     
     # Editable calculation formula
     calculation_formula = TextAreaField('Calculation Formula', 

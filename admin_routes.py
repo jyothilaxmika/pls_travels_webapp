@@ -616,10 +616,21 @@ def add_duty_scheme():
     form.branch_id.choices = [('', 'Global')] + [(str(b.id), b.name) for b in branches]
     
     if form.validate_on_submit():
-        # For the new 5 scheme types, store the configuration
+        # Configuration for payout schemes
         config = {
             'scheme_type': form.scheme_type.data,
             'bmg_amount': float(form.bmg_amount.data or 0),
+            'payout_frequency': form.payout_frequency.data or 'immediate',
+            
+            # Daily payout scheme configuration
+            'daily_base_amount': float(form.daily_base_amount.data or 0),
+            'daily_incentive_percent': float(form.daily_incentive_percent.data or 0),
+            
+            # Monthly payout scheme configuration  
+            'monthly_base_salary': float(form.monthly_base_salary.data or 0),
+            'monthly_incentive_percent': float(form.monthly_incentive_percent.data or 0),
+            
+            # Legacy scheme configurations
             'fixed_amount': float(form.fixed_amount.data or 0),
             'per_trip_amount': float(form.per_trip_amount.data or 0),
             'base_amount': float(form.base_amount.data or 0),
