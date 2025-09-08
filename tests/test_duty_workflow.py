@@ -4,7 +4,7 @@ Duty Start/End Workflow Tests
 
 import pytest
 from playwright.sync_api import Page, expect
-from playwright_config import TEST_ROUTES
+from .conftest import TEST_ROUTES
 
 
 class TestDutyWorkflow:
@@ -15,7 +15,7 @@ class TestDutyWorkflow:
     def test_complete_duty_cycle(self, driver_page: Page, test_files):
         """Test complete duty cycle from start to end"""
         driver_page.goto(TEST_ROUTES['driver_duty'])
-        page.wait_for_load_state('networkidle')
+        driver_page.wait_for_load_state('networkidle')
         
         # Check if we can start a duty
         if driver_page.locator('button:has-text("Start Duty")').count() > 0:
@@ -159,7 +159,7 @@ class TestDutyAdminApproval:
     def test_admin_duty_approval(self, admin_page: Page):
         """Test admin approving pending duties"""
         admin_page.goto('/admin/duties')
-        page.wait_for_load_state('networkidle')
+        admin_page.wait_for_load_state('networkidle')
         
         # Look for pending duties
         if admin_page.locator('tr:has(.status:has-text("PENDING"))').count() > 0:

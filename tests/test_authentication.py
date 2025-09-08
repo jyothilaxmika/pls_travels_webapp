@@ -4,7 +4,10 @@ Authentication and Role-based Access Control Tests
 
 import pytest
 from playwright.sync_api import Page, expect
-from .conftest import TEST_USERS, TEST_ROUTES
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+from conftest import TEST_USERS, TEST_ROUTES
 
 
 class TestAuthentication:

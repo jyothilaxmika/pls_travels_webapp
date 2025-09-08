@@ -4,7 +4,7 @@ Financial Workflow and Salary Calculation Tests
 
 import pytest
 from playwright.sync_api import Page, expect
-from playwright_config import TEST_ROUTES
+from .conftest import TEST_ROUTES
 
 
 class TestSalaryCalculation:
