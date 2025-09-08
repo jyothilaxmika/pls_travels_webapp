@@ -372,10 +372,17 @@ def duty():
         Vehicle.is_available == True
     ).all()
 
+    # Available duty schemes (global and branch-specific)
+    available_schemes = DutyScheme.query.filter(
+        DutyScheme.is_active == True,
+        (DutyScheme.branch_id == driver.branch_id) | (DutyScheme.branch_id.is_(None))
+    ).order_by(DutyScheme.is_default.desc(), DutyScheme.name).all()
+
     return render_template('driver/duty.html',
                          driver=driver,
                          active_duty=active_duty,
-                         available_vehicles=available_vehicles)
+                         available_vehicles=available_vehicles,
+                         available_schemes=available_schemes)
 
 @driver_bp.route('/duty/start', methods=['POST'])
 @login_required
@@ -398,10 +405,15 @@ def start_duty():
         return redirect(url_for('driver.duty'))
 
     vehicle_id = request.form.get('vehicle_id')
+    duty_scheme_id = request.form.get('duty_scheme_id', type=int)
     start_odometer = request.form.get('start_odometer', type=float)
 
     if not vehicle_id:
         flash('Please select a vehicle.', 'error')
+        return redirect(url_for('driver.duty'))
+    
+    if not duty_scheme_id:
+        flash('Please select a duty scheme for salary calculation.', 'error')
         return redirect(url_for('driver.duty'))
 
     # Get last duty data for validation and auto-fill
@@ -440,25 +452,19 @@ def start_duty():
         flash('Selected vehicle is not available.', 'error')
         return redirect(url_for('driver.duty'))
 
-    # Get default duty scheme for branch
-    duty_scheme = DutyScheme.query.filter(
-        DutyScheme.branch_id == driver.branch_id,
-        DutyScheme.is_active == True
-    ).first()
-
+    # Get the selected duty scheme
+    duty_scheme = DutyScheme.query.filter_by(id=duty_scheme_id, is_active=True).first()
+    
     if not duty_scheme:
-        # Get global scheme
-        duty_scheme = DutyScheme.query.filter(
-            DutyScheme.branch_id.is_(None),
-            DutyScheme.is_active == True
-        ).first()
+        flash('Invalid duty scheme selected.', 'error')
+        return redirect(url_for('driver.duty'))
 
     # Create new duty
     duty = Duty()
     duty.driver_id = driver.id
     duty.vehicle_id = vehicle.id
     duty.branch_id = driver.branch_id
-    duty.duty_scheme_id = duty_scheme.id if duty_scheme else None
+    duty.duty_scheme_id = duty_scheme.id
     duty.actual_start = datetime.utcnow()
     duty.start_odometer = start_odometer or 0.0
     duty.status = DutyStatus.ACTIVE

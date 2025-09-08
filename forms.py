@@ -179,6 +179,7 @@ class DutySchemeForm(FlaskForm):
 
 class DutyForm(FlaskForm):
     vehicle_id = SelectField('Select Vehicle', coerce=int, validators=[DataRequired()])
+    duty_scheme_id = SelectField('Duty Scheme (for salary calculation)', coerce=int, validators=[DataRequired()])
     start_odometer = FloatField('Starting Odometer Reading', validators=[DataRequired(), NumberRange(min=0)])
     start_photo = FileField('Start Duty Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
 
