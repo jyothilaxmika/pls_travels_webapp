@@ -392,6 +392,195 @@
             </div>
         </div>
     </form>
+
+    <!-- Uploaded Documents Section -->
+    {% if driver and (driver.aadhar_document or driver.license_document or driver.profile_photo) %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-folder-open me-2"></i>Uploaded Documents</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% if driver.aadhar_document %}
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <h6 class="text-muted">Aadhar Document</h6>
+                        <img src="/uploads/{{ driver.aadhar_document }}" class="img-fluid rounded border" 
+                             style="max-height: 200px; width: 100%; object-fit: cover;" alt="Aadhar Document">
+                        <p class="mt-2 text-success"><i class="fas fa-check-circle me-1"></i>Uploaded</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if driver.license_document %}
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <h6 class="text-muted">License Document</h6>
+                        <img src="/uploads/{{ driver.license_document }}" class="img-fluid rounded border" 
+                             style="max-height: 200px; width: 100%; object-fit: cover;" alt="License Document">
+                        <p class="mt-2 text-success"><i class="fas fa-check-circle me-1"></i>Uploaded</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if driver.profile_photo %}
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <h6 class="text-muted">Profile Photo</h6>
+                        <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded border" 
+                             style="max-height: 200px; width: 100%; object-fit: cover;" alt="Profile Photo">
+                        <p class="mt-2 text-success"><i class="fas fa-check-circle me-1"></i>Uploaded</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Financial Summary Section -->
+    {% if driver %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-wallet me-2"></i>Financial Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h4 class="mb-0">₹{{ "%.2f"|format(total_earnings) }}</h4>
+                            <small>Total Earnings</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h4 class="mb-0">₹{{ "%.2f"|format(total_advances) }}</h4>
+                            <small>Total Advances</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h4 class="mb-0">₹{{ "%.2f"|format(total_deductions) }}</h4>
+                            <small>Total Deductions</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h4 class="mb-0">₹{{ "%.2f"|format(total_earnings - total_deductions) }}</h4>
+                            <small>Net Earnings</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Financial Transactions -->
+    {% if driver and recent_transactions %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Recent Financial Transactions</h6>
+            <span class="badge bg-secondary">{{ recent_transactions|length }} transactions</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Date</th>
+                            <th>Vehicle</th>
+                            <th>Advance</th>
+                            <th>Fuel Deduction</th>
+                            <th>Penalty</th>
+                            <th>Total Deduction</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                        <tr>
+                            <td>{{ transaction.start_time.strftime('%d/%m/%Y') if transaction.start_time else 'N/A' }}</td>
+                            <td>{{ transaction.vehicle.registration_number if transaction.vehicle else 'N/A' }}</td>
+                            <td class="text-warning">₹{{ "%.2f"|format(transaction.advance_deduction) }}</td>
+                            <td class="text-danger">₹{{ "%.2f"|format(transaction.fuel_deduction) }}</td>
+                            <td class="text-danger">₹{{ "%.2f"|format(transaction.penalty_deduction) }}</td>
+                            <td class="text-danger fw-bold">₹{{ "%.2f"|format(transaction.advance_deduction + transaction.fuel_deduction + transaction.penalty_deduction) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- All Duties History -->
+    {% if driver and all_duties %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-history me-2"></i>Duty History</h6>
+            <span class="badge bg-primary">{{ all_duties|length }} duties</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Date</th>
+                            <th>Vehicle</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Distance</th>
+                            <th>Trips</th>
+                            <th>Revenue</th>
+                            <th>Earnings</th>
+                            <th>Duty Scheme</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for duty in all_duties %}
+                        <tr>
+                            <td>{{ duty.start_time.strftime('%d/%m/%Y') if duty.start_time else 'N/A' }}</td>
+                            <td>{{ duty.vehicle.registration_number if duty.vehicle else 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if duty.status.value == 'completed' else 'warning' if duty.status.value == 'active' else 'secondary' }}">
+                                    {{ duty.status.value.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if duty.start_time and duty.actual_end %}
+                                    {% set duration = (duty.actual_end - duty.start_time).total_seconds() / 3600 %}
+                                    {{ "%.1f"|format(duration) }}h
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ duty.total_distance if duty.total_distance else 0 }} km</td>
+                            <td>{{ duty.total_trips if duty.total_trips else 0 }}</td>
+                            <td class="text-success">₹{{ "%.2f"|format(duty.total_revenue) if duty.total_revenue else 0 }}</td>
+                            <td class="text-primary fw-bold">₹{{ "%.2f"|format(duty.driver_earnings) if duty.driver_earnings else 0 }}</td>
+                            <td>
+                                {% if duty.duty_scheme %}
+                                    <small class="text-muted">{{ duty.duty_scheme.name }}</small>
+                                {% else %}
+                                    <small class="text-muted">No scheme</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     
     <!-- Help Section -->
     <div class="card border-info">
