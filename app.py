@@ -78,6 +78,10 @@ def create_app():
         """Get current time in IST timezone"""
         return datetime.now(IST)
     
+    def get_ist_time_naive():
+        """Get current IST time as naive datetime for database storage"""
+        return datetime.now(IST).replace(tzinfo=None)
+    
     def convert_to_ist(dt):
         """Convert datetime to IST timezone"""
         if dt is None:
@@ -91,6 +95,7 @@ def create_app():
     app.jinja_env.globals['datetime'] = datetime
     app.jinja_env.globals['timedelta'] = timedelta
     app.jinja_env.globals['get_ist_time'] = get_ist_time
+    app.jinja_env.globals['get_ist_time_naive'] = get_ist_time_naive
     app.jinja_env.globals['convert_to_ist'] = convert_to_ist
     
     @app.template_global()
@@ -111,6 +116,8 @@ def create_app():
                     'MMMM DD, YYYY': self.dt.strftime('%B %d, %Y'),
                     'MMM DD, YYYY': self.dt.strftime('%b %d, %Y'), 
                     'YYYY-MM-DD': self.dt.strftime('%Y-%m-%d'),
+                    'YYYY-MM-DD HH:mm:ss': self.dt.strftime('%Y-%m-%d %H:%M:%S'),
+                    'HH:mm:ss': self.dt.strftime('%H:%M:%S'),
                     'HH:mm': self.dt.strftime('%H:%M'),
                     'DD MMM': self.dt.strftime('%d %b'),
                 }
