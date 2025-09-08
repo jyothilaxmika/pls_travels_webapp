@@ -111,8 +111,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Start Date <span class="text-danger">*</span></label>
-                            <input type="date" id="start_date" name="start_date" class="form-control" 
-                                   min="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+                            <input type="date" id="start_date" name="start_date" class="form-control" required>
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -412,8 +411,8 @@ function downloadAssignmentReport() {
 
 // Set default start date to today
 document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('start_date').value = today;
+    document.getElementById('start_date').value = '{{ today }}';
+    document.getElementById('start_date').min = '{{ today }}';
 });
 </script>
 

@@ -881,7 +881,8 @@ def schedule_duty_assignments():
                          drivers=active_drivers,
                          vehicles=available_vehicles,
                          recent_assignments=recent_assignments,
-                         stats=stats)
+                         stats=stats,
+                         today=datetime.now().strftime('%Y-%m-%d'))
 
 @admin_bp.route('/assignments')
 @login_required
