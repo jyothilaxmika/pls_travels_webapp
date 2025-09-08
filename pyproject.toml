@@ -28,4 +28,5 @@ dependencies = [
     "pytest>=8.4.2",
     "cryptography>=45.0.7",
     "playwright>=1.55.0",
+    "pytz>=2025.2",
 ]
