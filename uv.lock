@@ -1373,6 +1373,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "celery" },
+    { name = "cryptography" },
     { name = "email-validator" },
     { name = "flask" },
     { name = "flask-dance" },
@@ -1381,6 +1382,7 @@ dependencies = [
     { name = "flask-wtf" },
     { name = "gunicorn" },
     { name = "oauthlib" },
+    { name = "playwright" },
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
     { name = "pytest" },
@@ -1399,6 +1401,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "celery", specifier = ">=5.5.3" },
+    { name = "cryptography", specifier = ">=45.0.7" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "flask", specifier = ">=3.1.2" },
     { name = "flask-dance", specifier = ">=7.1.0" },
@@ -1407,6 +1410,7 @@ requires-dist = [
     { name = "flask-wtf", specifier = ">=1.2.2" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "oauthlib", specifier = ">=3.3.1" },
+    { name = "playwright", specifier = ">=1.55.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pytest", specifier = ">=8.4.2" },

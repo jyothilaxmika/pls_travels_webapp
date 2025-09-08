@@ -26,4 +26,6 @@ dependencies = [
     "pyjwt>=2.10.1",
     "pytest-playwright>=0.7.1",
     "pytest>=8.4.2",
+    "cryptography>=45.0.7",
+    "playwright>=1.55.0",
 ]

@@ -1,8 +1,10 @@
 import jwt
 import os
 import uuid
+import requests
 from functools import wraps
 from urllib.parse import urlencode
+from datetime import datetime, timedelta
 
 from flask import g, session, redirect, request, render_template, url_for, flash
 from flask_dance.consumer import (
@@ -19,6 +21,56 @@ from werkzeug.local import LocalProxy
 from flask import current_app
 from models import OAuth, User, UserRole, UserStatus, AuditLog
 import json
+try:
+    from jwt import PyJWKClient
+except ImportError:
+    # Fallback for older PyJWT versions
+    PyJWKClient = None
+
+def verify_jwt_token(token, issuer_url):
+    """Verify JWT token signature using OIDC provider's public keys"""
+    try:
+        if PyJWKClient is not None:
+            # Use PyJWKClient for proper verification (preferred method)
+            jwks_uri = f"{issuer_url}/.well-known/jwks.json"
+            jwks_client = PyJWKClient(jwks_uri)
+            
+            # Get signing key
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+            
+            # Verify and decode token with full verification
+            decoded_token = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["RS256"],
+                audience=os.environ.get('REPL_ID'),
+                issuer=issuer_url
+            )
+            
+            return decoded_token
+        else:
+            # PyJWKClient not available - implement basic verification
+            # This still verifies more than the original unsafe code
+            decoded_token = jwt.decode(
+                token,
+                options={
+                    "verify_signature": False,  # We'll verify other claims
+                    "verify_aud": True,
+                    "verify_iss": True,
+                    "verify_exp": True,
+                    "verify_nbf": True,
+                    "verify_iat": True
+                },
+                audience=os.environ.get('REPL_ID'),
+                issuer=issuer_url
+            )
+            
+            current_app.logger.warning("JWT signature verification skipped due to missing PyJWKClient. Consider upgrading PyJWT.")
+            return decoded_token
+        
+    except Exception as e:
+        current_app.logger.error(f"JWT verification failed: {str(e)}")
+        return None
 
 def log_audit(action, entity_type=None, entity_id=None, details=None):
     """Helper function to log audit events"""
@@ -172,8 +224,15 @@ def save_user(user_claims):
 @oauth_authorized.connect
 def logged_in(blueprint, token):
     from app import db
-    user_claims = jwt.decode(token['id_token'],
-                             options={"verify_signature": False})
+    
+    # Verify JWT token signature for security
+    issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
+    user_claims = verify_jwt_token(token['id_token'], issuer_url)
+    
+    if not user_claims:
+        flash("Authentication failed. Please try again.", "error")
+        return redirect(url_for('auth.login'))
+    
     user = save_user(user_claims)
     
     # Check if user is active
@@ -219,6 +278,7 @@ def require_login(f):
 
         expires_in = replit.token.get('expires_in', 0)
         if expires_in < 0:
+            issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
             refresh_token_url = issuer_url + "/token"
             try:
                 token = replit.refresh_token(token_url=refresh_token_url,
