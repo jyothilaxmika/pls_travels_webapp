@@ -490,7 +490,7 @@ def start_duty():
 
     # Handle start photo camera capture
     start_photo_filename, start_photo_metadata = process_camera_capture(
-        request.form, 'start_photo', driver.id, 'duty_start', use_cloud=True
+        request.form, 'start_photo', driver.id, 'duty_start'
     )
     if start_photo_filename:
         duty.start_photo = start_photo_filename
