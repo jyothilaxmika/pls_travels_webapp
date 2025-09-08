@@ -229,6 +229,23 @@ def profile():
 
         return render_template('driver/profile.html', driver=None, branches=branches)
 
+    # Fetch additional data for profile display
+    # Get all duties with details
+    all_duties = Duty.query.filter_by(driver_id=driver.id).order_by(desc(Duty.start_time)).all()
+    
+    # Calculate financial summary
+    total_earnings = db.session.query(func.sum(Duty.driver_earnings)).filter_by(driver_id=driver.id).scalar() or 0
+    total_advances = db.session.query(func.sum(Duty.advance_deduction)).filter_by(driver_id=driver.id).scalar() or 0
+    total_deductions = db.session.query(
+        func.sum(Duty.advance_deduction + Duty.fuel_deduction + Duty.penalty_deduction)
+    ).filter_by(driver_id=driver.id).scalar() or 0
+    
+    # Recent financial transactions (from duties)
+    recent_transactions = Duty.query.filter(
+        Duty.driver_id == driver.id,
+        (Duty.advance_deduction > 0) | (Duty.fuel_deduction > 0) | (Duty.penalty_deduction > 0)
+    ).order_by(desc(Duty.start_time)).limit(10).all()
+
     # Update existing profile
     if request.method == 'POST':
         driver.full_name = request.form.get('full_name', driver.full_name)
@@ -310,7 +327,14 @@ def profile():
             flash('Error updating profile. Please try again.', 'error')
 
     branches = Branch.query.filter_by(is_active=True).all()
-    return render_template('driver/profile.html', driver=driver, branches=branches)
+    return render_template('driver/profile.html', 
+                         driver=driver, 
+                         branches=branches,
+                         all_duties=all_duties,
+                         total_earnings=total_earnings,
+                         total_advances=total_advances,
+                         total_deductions=total_deductions,
+                         recent_transactions=recent_transactions)
 
 @driver_bp.route('/api/vehicle-last-duty/<int:vehicle_id>')
 @login_required
