@@ -33,6 +33,7 @@ except ImportError:
     def create_recurring_assignments(base_assignment_data, pattern, until_date, assigned_by_user_id):
         return {'success': False, 'created_count': 0, 'errors': ['Function not available']}
 from auth import log_audit
+from recommendation_engine import recommendation_engine
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -883,6 +884,171 @@ def schedule_duty_assignments():
                          recent_assignments=recent_assignments,
                          stats=stats,
                          today=datetime.now().strftime('%Y-%m-%d'))
+
+# Smart Recommendation Engine API Endpoints
+@admin_bp.route('/api/recommendations/driver-vehicle', methods=['GET'])
+@login_required
+@admin_required
+def get_driver_vehicle_recommendations():
+    """Get smart recommendations for driver-vehicle assignments"""
+    branch_id = request.args.get('branch_id', type=int)
+    shift_type = request.args.get('shift_type', 'full_day')
+    strategy = request.args.get('strategy', 'balanced')
+    limit = request.args.get('limit', 10, type=int)
+    
+    try:
+        recommendations = recommendation_engine.get_recommendations(
+            branch_id=branch_id,
+            shift_type=shift_type,
+            strategy=strategy,
+            limit=limit
+        )
+        
+        # Convert to JSON-serializable format
+        result = []
+        for rec in recommendations:
+            driver = Driver.query.get(rec.driver_id)
+            vehicle = Vehicle.query.get(rec.vehicle_id)
+            
+            result.append({
+                'driver_id': rec.driver_id,
+                'driver_name': driver.full_name if driver else 'Unknown',
+                'driver_employee_id': driver.employee_id if driver else None,
+                'vehicle_id': rec.vehicle_id,
+                'vehicle_registration': vehicle.registration_number if vehicle else 'Unknown',
+                'vehicle_type': vehicle.vehicle_type.name if vehicle and vehicle.vehicle_type else 'Unknown',
+                'total_score': rec.total_score,
+                'performance_score': rec.performance_score,
+                'compatibility_score': rec.compatibility_score,
+                'availability_score': rec.availability_score,
+                'experience_score': rec.experience_score,
+                'location_score': rec.location_score,
+                'reasoning': rec.reasoning
+            })
+        
+        return jsonify({
+            'success': True,
+            'recommendations': result,
+            'total_count': len(result)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error generating recommendations: {str(e)}'
+        })
+
+@admin_bp.route('/api/recommendations/driver/<int:vehicle_id>', methods=['GET'])
+@login_required 
+@admin_required
+def get_driver_recommendations_for_vehicle(vehicle_id):
+    """Get best driver recommendations for a specific vehicle"""
+    limit = request.args.get('limit', 5, type=int)
+    
+    try:
+        recommendations = recommendation_engine.get_driver_recommendations(vehicle_id, limit)
+        
+        result = []
+        for rec in recommendations:
+            driver = Driver.query.get(rec.driver_id)
+            
+            result.append({
+                'driver_id': rec.driver_id,
+                'driver_name': driver.full_name if driver else 'Unknown',
+                'driver_employee_id': driver.employee_id if driver else None,
+                'total_score': rec.total_score,
+                'performance_score': rec.performance_score,
+                'compatibility_score': rec.compatibility_score,
+                'reasoning': rec.reasoning[:3]  # Top 3 reasons
+            })
+        
+        return jsonify({
+            'success': True,
+            'vehicle_id': vehicle_id,
+            'recommendations': result
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting driver recommendations: {str(e)}'
+        })
+
+@admin_bp.route('/api/recommendations/vehicle/<int:driver_id>', methods=['GET'])
+@login_required
+@admin_required 
+def get_vehicle_recommendations_for_driver(driver_id):
+    """Get best vehicle recommendations for a specific driver"""
+    limit = request.args.get('limit', 5, type=int)
+    
+    try:
+        recommendations = recommendation_engine.get_vehicle_recommendations(driver_id, limit)
+        
+        result = []
+        for rec in recommendations:
+            vehicle = Vehicle.query.get(rec.vehicle_id)
+            
+            result.append({
+                'vehicle_id': rec.vehicle_id,
+                'vehicle_registration': vehicle.registration_number if vehicle else 'Unknown',
+                'vehicle_type': vehicle.vehicle_type.name if vehicle and vehicle.vehicle_type else 'Unknown',
+                'fuel_type': vehicle.fuel_type if vehicle else 'Unknown',
+                'total_score': rec.total_score,
+                'performance_score': rec.performance_score,
+                'compatibility_score': rec.compatibility_score,
+                'reasoning': rec.reasoning[:3]  # Top 3 reasons
+            })
+        
+        return jsonify({
+            'success': True,
+            'driver_id': driver_id,
+            'recommendations': result
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting vehicle recommendations: {str(e)}'
+        })
+
+@admin_bp.route('/api/recommendations/analytics', methods=['GET'])
+@login_required
+@admin_required
+def get_recommendation_analytics():
+    """Get analytics summary for recommendation engine"""
+    branch_id = request.args.get('branch_id', type=int)
+    
+    try:
+        analytics = recommendation_engine.get_analytics_summary(branch_id)
+        return jsonify({
+            'success': True,
+            'analytics': analytics
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting analytics: {str(e)}'
+        })
+
+@admin_bp.route('/recommendations-dashboard')
+@login_required
+@admin_required
+def recommendations_dashboard():
+    """Smart Recommendations Dashboard"""
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    # Get some quick stats
+    total_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).count()
+    total_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).count()
+    
+    # Get top performing drivers
+    top_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).order_by(desc(Driver.rating_average)).limit(10).all()
+    
+    return render_template('admin/recommendations_dashboard.html',
+                         branches=branches,
+                         total_drivers=total_drivers,
+                         total_vehicles=total_vehicles,
+                         top_drivers=top_drivers)
 
 @admin_bp.route('/assignments')
 @login_required
