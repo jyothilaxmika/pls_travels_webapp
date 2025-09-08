@@ -150,67 +150,9 @@ function captureLocationAndTimestamp(file, input) {
     timestampField.value = timestamp;
     input.parentNode.appendChild(timestampField);
     
-    // Show location capture status (non-blocking)
-    showLocationStatus(input.parentNode, '📍 Getting location...', 'info');
-    
-    // Get GPS location with fast settings (runs in background)
-    if (navigator.geolocation) {
-        const options = {
-            enableHighAccuracy: false,  // Faster, network-based location
-            timeout: 3000,              // Reduced to 3 seconds
-            maximumAge: 300000          // 5 minutes cache for faster subsequent calls
-        };
-        
-        // Run location capture asynchronously (non-blocking)
-        setTimeout(() => {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-                    
-                    // Store location data
-                    const latField = document.createElement('input');
-                    latField.type = 'hidden';
-                    latField.name = `${inputType}_latitude`;
-                    latField.value = lat;
-                    input.parentNode.appendChild(latField);
-                    
-                    const lngField = document.createElement('input');
-                    lngField.type = 'hidden';
-                    lngField.name = `${inputType}_longitude`;
-                    lngField.value = lng;
-                    input.parentNode.appendChild(lngField);
-                    
-                    const accField = document.createElement('input');
-                    accField.type = 'hidden';
-                    accField.name = `${inputType}_location_accuracy`;
-                    accField.value = accuracy;
-                    input.parentNode.appendChild(accField);
-                    
-                    showLocationStatus(input.parentNode, `📍 Located (±${accuracy.toFixed(0)}m)`, 'success');
-                },
-                function(error) {
-                    let errorMsg = '📍 Location optional';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMsg = '📍 Permission denied (photo saved)';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMsg = '📍 Unavailable (photo saved)';
-                            break;
-                        case error.TIMEOUT:
-                            errorMsg = '📍 Timeout (photo saved)';
-                            break;
-                    }
-                    showLocationStatus(input.parentNode, errorMsg, 'info');
-                },
-                options
-            );
-        }, 100); // Small delay to prevent blocking photo preview
-    } else {
-        showLocationStatus(input.parentNode, '📍 GPS not available (photo saved)', 'info');
-    }
+    // Location capture removed per user request
+    // Just show that photo was captured successfully
+    showLocationStatus(input.parentNode, '📸 Photo captured', 'success');
 }
 
 function showLocationStatus(container, message, type = 'info') {

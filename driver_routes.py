@@ -507,10 +507,10 @@ def start_duty():
             file.save(os.path.join('uploads', filename))
             duty.start_photo = filename
 
-    # Handle start location and timestamp data
-    duty.start_location_lat = request.form.get('start_latitude', type=float)
-    duty.start_location_lng = request.form.get('start_longitude', type=float)
-    duty.start_location_accuracy = request.form.get('start_location_accuracy', type=float)
+    # Location data removed per user request
+    duty.start_location_lat = None
+    duty.start_location_lng = None
+    duty.start_location_accuracy = None
 
     # Note: Photo timestamp metadata is handled in process_camera_capture function
     # No need to set separate timestamp fields as they don't exist in the model
@@ -532,9 +532,9 @@ def start_duty():
     tracking_record.odometer_reading = start_odometer or 0.0
     tracking_record.odometer_type = 'start'
     tracking_record.source = 'duty'
-    tracking_record.latitude = duty.start_location_lat
-    tracking_record.longitude = duty.start_location_lng
-    tracking_record.location_accuracy = duty.start_location_accuracy
+    tracking_record.latitude = None
+    tracking_record.longitude = None
+    tracking_record.location_accuracy = None
     
     # Calculate distance from previous record
     last_tracking = VehicleTracking.query.filter_by(vehicle_id=vehicle.id).order_by(VehicleTracking.recorded_at.desc()).first()
@@ -616,10 +616,10 @@ def end_duty():
                 file.save(os.path.join('uploads', filename))
                 active_duty.end_photo = filename
 
-        # Handle end location data
-        active_duty.end_location_lat = request.form.get('end_latitude', type=float)
-        active_duty.end_location_lng = request.form.get('end_longitude', type=float)
-        active_duty.end_location_accuracy = request.form.get('end_location_accuracy', type=float)
+        # Location data removed per user request
+        active_duty.end_location_lat = None
+        active_duty.end_location_lng = None
+        active_duty.end_location_accuracy = None
 
         # Calculate comprehensive tripsheet
         tripsheet_result = utils_main.calculate_tripsheet(active_duty)
@@ -649,9 +649,9 @@ def end_duty():
         end_tracking_record.odometer_reading = end_odometer or 0.0
         end_tracking_record.odometer_type = 'end'
         end_tracking_record.source = 'duty'
-        end_tracking_record.latitude = active_duty.end_location_lat
-        end_tracking_record.longitude = active_duty.end_location_lng
-        end_tracking_record.location_accuracy = active_duty.end_location_accuracy
+        end_tracking_record.latitude = None
+        end_tracking_record.longitude = None
+        end_tracking_record.location_accuracy = None
         
         # CNG/fuel tracking data with bar calculation
         start_cng_bars = request.form.get('start_cng', type=float)
@@ -751,8 +751,8 @@ def earnings():
     # Calculate totals
     total_earnings = sum(duty.driver_earnings or 0 for duty in duties)
     total_revenue = sum(duty.revenue or 0 for duty in duties)
-    total_bmg = sum(duty.bmg_applied or 0 for duty in duties)
-    total_incentive = sum(duty.incentive or 0 for duty in duties)
+    total_bmg = 0  # BMG applied data not stored in Duty model
+    total_incentive = sum(duty.incentive_payment or 0 for duty in duties)
 
     # Get penalties in date range
     penalties = Penalty.query.filter(
