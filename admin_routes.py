@@ -648,6 +648,8 @@ def add_duty_scheme():
         scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != '' else None
         scheme.minimum_guarantee = form.bmg_amount.data or 0.0
         scheme.calculation_formula = form.calculation_formula.data or ''
+        scheme.effective_from = form.effective_from.data or date.today()
+        scheme.effective_until = form.effective_until.data
         scheme.set_config(config)
         
         db.session.add(scheme)

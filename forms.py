@@ -188,6 +188,10 @@ class DutySchemeForm(FlaskForm):
     daily_base_amount = FloatField('Daily Base Amount', validators=[Optional(), NumberRange(min=0)])
     daily_incentive_percent = FloatField('Daily Incentive Percentage', validators=[Optional(), NumberRange(min=0, max=100)])
     
+    # Effective dates
+    effective_from = DateField('Effective From', default=date.today, validators=[DataRequired()])
+    effective_until = DateField('Effective Until', validators=[Optional()])
+    
     # Editable calculation formula
     calculation_formula = TextAreaField('Calculation Formula', 
                                       description='Enter mathematical formula using field names like uber_trips, uber_collected, etc.',
