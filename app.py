@@ -70,6 +70,9 @@ def create_app():
     # Add template functions
     from datetime import datetime
     
+    # Make datetime available in templates
+    app.jinja_env.globals['datetime'] = datetime
+    
     @app.template_global()
     def moment():
         class MomentJS:
