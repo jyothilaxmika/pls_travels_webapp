@@ -782,6 +782,107 @@ def complete_resignation(resignation_id):
     
     return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
 
+@admin_bp.route('/schedule-duty-assignments', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def schedule_duty_assignments():
+    """Enhanced duty assignment scheduling interface"""
+    if request.method == 'POST':
+        # Handle assignment creation
+        driver_id = request.form.get('driver_id', type=int)
+        vehicle_id = request.form.get('vehicle_id', type=int)
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        shift_type = request.form.get('shift_type', 'full_day')
+        assignment_type = request.form.get('assignment_type', 'regular')
+        
+        if not all([driver_id, vehicle_id, start_date]):
+            return jsonify({'success': False, 'message': 'Missing required fields'})
+        
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+            
+            # Check for conflicts
+            conflicts = check_assignment_conflicts(driver_id, vehicle_id, start_date, end_date, shift_type)
+            
+            if conflicts['driver_conflict'] or conflicts['vehicle_conflict']:
+                return jsonify({
+                    'success': False, 
+                    'message': 'Assignment conflicts detected',
+                    'conflicts': {
+                        'driver': conflicts['driver_conflict'].id if conflicts['driver_conflict'] else None,
+                        'vehicle': conflicts['vehicle_conflict'].id if conflicts['vehicle_conflict'] else None
+                    }
+                })
+            
+            # Create assignment
+            assignment = VehicleAssignment()
+            assignment.driver_id = driver_id
+            assignment.vehicle_id = vehicle_id
+            assignment.start_date = start_date
+            assignment.end_date = end_date
+            assignment.shift_type = shift_type
+            assignment.assignment_type = assignment_type
+            assignment.priority = 2  # Medium priority by default
+            assignment.assigned_by = current_user.id
+            
+            # Set status based on start date
+            if start_date <= datetime.now().date():
+                assignment.status = AssignmentStatus.ACTIVE
+                # Update driver's current vehicle
+                driver = Driver.query.get(driver_id)
+                if driver:
+                    driver.current_vehicle_id = vehicle_id
+            else:
+                assignment.status = AssignmentStatus.SCHEDULED
+            
+            db.session.add(assignment)
+            db.session.commit()
+            
+            log_audit('create_duty_assignment', 'assignment', assignment.id,
+                     {'driver': assignment.assignment_driver.full_name,
+                      'vehicle': assignment.assignment_vehicle.registration_number,
+                      'start_date': str(start_date),
+                      'shift_type': shift_type})
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Duty assignment created successfully',
+                'assignment_id': assignment.id
+            })
+            
+        except ValueError as e:
+            return jsonify({'success': False, 'message': 'Invalid date format'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+    
+    # Get data for the interface
+    branches = Branch.query.filter_by(is_active=True).all()
+    active_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).join(Branch).all()
+    available_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).join(Branch).all()
+    
+    # Get recent assignments for display
+    recent_assignments = VehicleAssignment.query.filter(
+        VehicleAssignment.start_date >= datetime.now().date() - timedelta(days=7)
+    ).order_by(desc(VehicleAssignment.start_date)).limit(20).all()
+    
+    # Get assignment statistics
+    stats = {
+        'active_assignments': VehicleAssignment.query.filter_by(status=AssignmentStatus.ACTIVE).count(),
+        'scheduled_assignments': VehicleAssignment.query.filter_by(status=AssignmentStatus.SCHEDULED).count(),
+        'available_drivers': len([d for d in active_drivers if not d.current_vehicle_id]),
+        'available_vehicles': len(available_vehicles)
+    }
+    
+    return render_template('admin/schedule_duty_assignments.html',
+                         branches=branches,
+                         drivers=active_drivers,
+                         vehicles=available_vehicles,
+                         recent_assignments=recent_assignments,
+                         stats=stats)
+
 @admin_bp.route('/assignments')
 @login_required
 @admin_required

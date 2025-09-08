@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule Duty Assignments - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-calendar-plus me-2 text-warning"></i>Schedule Duty Assignments</h2>
+        <p class="text-muted">Assign vehicles to drivers for duty schedules</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.assignments') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-list me-1"></i>View All Assignments
+        </a>
+        <a href="{{ url_for('admin.schedule_assignments') }}" class="btn btn-outline-info">
+            <i class="fas fa-calendar-alt me-1"></i>Advanced Scheduling
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success bg-opacity-25">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h4 class="mb-1">{{ stats.active_assignments }}</h4>
+                <p class="mb-0">Active Assignments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-warning bg-opacity-25">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h4 class="mb-1">{{ stats.scheduled_assignments }}</h4>
+                <p class="mb-0">Scheduled Assignments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-info bg-opacity-25">
+            <div class="card-body text-center">
+                <i class="fas fa-user-check fa-2x text-info mb-2"></i>
+                <h4 class="mb-1">{{ stats.available_drivers }}</h4>
+                <p class="mb-0">Available Drivers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-primary bg-opacity-25">
+            <div class="card-body text-center">
+                <i class="fas fa-car fa-2x text-primary mb-2"></i>
+                <h4 class="mb-1">{{ stats.available_vehicles }}</h4>
+                <p class="mb-0">Available Vehicles</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Scheduling Interface -->
+<div class="row">
+    <!-- Assignment Form -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Create New Assignment
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="assignmentForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Driver <span class="text-danger">*</span></label>
+                            <select id="driver_id" name="driver_id" class="form-select" required>
+                                <option value="">Select Driver</option>
+                                {% for driver in drivers %}
+                                <option value="{{ driver.id }}" 
+                                        data-branch="{{ driver.branch.name }}"
+                                        data-phone="{{ driver.phone_number }}"
+                                        data-status="{{ driver.status.value }}"
+                                        data-current-vehicle="{{ driver.current_vehicle_id or '' }}">
+                                    {{ driver.full_name }} ({{ driver.employee_id }}) - {{ driver.branch.name }}
+                                    {% if driver.current_vehicle_id %}[Assigned]{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div id="driver-info" class="mt-2 small text-muted"></div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Vehicle <span class="text-danger">*</span></label>
+                            <select id="vehicle_id" name="vehicle_id" class="form-select" required>
+                                <option value="">Select Vehicle</option>
+                                {% for vehicle in vehicles %}
+                                <option value="{{ vehicle.id }}"
+                                        data-branch="{{ vehicle.branch.name }}"
+                                        data-type="{{ vehicle.vehicle_type.name }}"
+                                        data-model="{{ vehicle.model or '' }}"
+                                        data-fuel="{{ vehicle.fuel_type }}"
+                                        data-available="{{ vehicle.is_available }}">
+                                    {{ vehicle.registration_number }} - {{ vehicle.model or vehicle.vehicle_type.name }} ({{ vehicle.branch.name }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div id="vehicle-info" class="mt-2 small text-muted"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" id="start_date" name="start_date" class="form-control" 
+                                   min="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" id="end_date" name="end_date" class="form-control">
+                            <small class="text-muted">Leave empty for ongoing assignment</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Shift Type</label>
+                            <select id="shift_type" name="shift_type" class="form-select">
+                                <option value="full_day">Full Day (24 Hours)</option>
+                                <option value="morning">Morning Shift (6AM-2PM)</option>
+                                <option value="evening">Evening Shift (2PM-10PM)</option>
+                                <option value="night">Night Shift (10PM-6AM)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Assignment Type</label>
+                            <select id="assignment_type" name="assignment_type" class="form-select">
+                                <option value="regular">Regular Assignment</option>
+                                <option value="temporary">Temporary Assignment</option>
+                                <option value="replacement">Replacement Assignment</option>
+                                <option value="training">Training Assignment</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Conflict Alert -->
+                    <div id="conflict-alert" class="alert alert-danger d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="conflict-message"></span>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="text-center">
+                        <button type="button" id="checkConflicts" class="btn btn-outline-warning me-2">
+                            <i class="fas fa-search me-1"></i>Check Conflicts
+                        </button>
+                        <button type="submit" id="createAssignment" class="btn btn-warning">
+                            <i class="fas fa-plus me-1"></i>Create Assignment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Assignments -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Recent Assignments
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_assignments %}
+                <div class="assignment-list" style="max-height: 400px; overflow-y: auto;">
+                    {% for assignment in recent_assignments %}
+                    <div class="assignment-item border-bottom pb-2 mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ assignment.assignment_driver.full_name }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-car me-1"></i>{{ assignment.assignment_vehicle.registration_number }}
+                                    <br>
+                                    <i class="fas fa-calendar me-1"></i>{{ assignment.start_date.strftime('%Y-%m-%d') }}
+                                    {% if assignment.end_date %} to {{ assignment.end_date.strftime('%Y-%m-%d') }}{% endif %}
+                                    <br>
+                                    <i class="fas fa-clock me-1"></i>{{ assignment.shift_type.replace('_', ' ').title() }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                {% if assignment.status.value == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif assignment.status.value == 'scheduled' %}
+                                    <span class="badge bg-warning">Scheduled</span>
+                                {% elif assignment.status.value == 'completed' %}
+                                    <span class="badge bg-secondary">Completed</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ assignment.assignment_type.title() }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No recent assignments found</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100 mb-2" onclick="assignAvailableDriversToVehicles()">
+                            <i class="fas fa-magic me-1"></i>Auto-Assign Available
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-success w-100 mb-2" onclick="showBulkAssignmentModal()">
+                            <i class="fas fa-layer-group me-1"></i>Bulk Assignment
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-warning w-100 mb-2" onclick="showTemplateModal()">
+                            <i class="fas fa-template me-1"></i>Use Template
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-info w-100 mb-2" onclick="downloadAssignmentReport()">
+                            <i class="fas fa-download me-1"></i>Export Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form submission and conflict checking
+document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    createAssignment();
+});
+
+document.getElementById('checkConflicts').addEventListener('click', function() {
+    checkConflicts();
+});
+
+// Driver selection change handler
+document.getElementById('driver_id').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const infoDiv = document.getElementById('driver-info');
+    
+    if (selectedOption.value) {
+        const branch = selectedOption.dataset.branch;
+        const phone = selectedOption.dataset.phone;
+        const status = selectedOption.dataset.status;
+        const currentVehicle = selectedOption.dataset.currentVehicle;
+        
+        let info = `Branch: ${branch} | Phone: ${phone} | Status: ${status.toUpperCase()}`;
+        if (currentVehicle) {
+            info += ' | Currently assigned to vehicle';
+        }
+        infoDiv.innerHTML = info;
+        infoDiv.className = currentVehicle ? 'mt-2 small text-warning' : 'mt-2 small text-muted';
+    } else {
+        infoDiv.innerHTML = '';
+    }
+});
+
+// Vehicle selection change handler
+document.getElementById('vehicle_id').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const infoDiv = document.getElementById('vehicle-info');
+    
+    if (selectedOption.value) {
+        const branch = selectedOption.dataset.branch;
+        const type = selectedOption.dataset.type;
+        const model = selectedOption.dataset.model;
+        const fuel = selectedOption.dataset.fuel;
+        
+        let info = `Branch: ${branch} | Type: ${type}`;
+        if (model) info += ` | Model: ${model}`;
+        info += ` | Fuel: ${fuel}`;
+        
+        infoDiv.innerHTML = info;
+        infoDiv.className = 'mt-2 small text-muted';
+    } else {
+        infoDiv.innerHTML = '';
+    }
+});
+
+function checkConflicts() {
+    const formData = new FormData(document.getElementById('assignmentForm'));
+    const data = Object.fromEntries(formData);
+    
+    if (!data.driver_id || !data.vehicle_id || !data.start_date) {
+        showAlert('Please fill in driver, vehicle, and start date fields.', 'warning');
+        return;
+    }
+    
+    fetch('/admin/assignments/conflicts', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertDiv = document.getElementById('conflict-alert');
+        const messageSpan = document.getElementById('conflict-message');
+        
+        if (data.has_conflicts) {
+            let message = 'Conflicts detected: ';
+            if (data.driver_conflict) message += 'Driver already assigned';
+            if (data.vehicle_conflict) message += 'Vehicle already assigned';
+            
+            messageSpan.textContent = message;
+            alertDiv.classList.remove('d-none');
+        } else {
+            alertDiv.classList.add('d-none');
+            showAlert('No conflicts found! Ready to create assignment.', 'success');
+        }
+    })
+    .catch(error => {
+        console.error('Error checking conflicts:', error);
+        showAlert('Error checking conflicts', 'error');
+    });
+}
+
+function createAssignment() {
+    const formData = new FormData(document.getElementById('assignmentForm'));
+    
+    fetch('/admin/schedule-duty-assignments', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            document.getElementById('assignmentForm').reset();
+            document.getElementById('conflict-alert').classList.add('d-none');
+            // Reload page to refresh recent assignments
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating assignment:', error);
+        showAlert('Error creating assignment', 'error');
+    });
+}
+
+function showAlert(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : type === 'warning' ? 'alert-warning' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Quick action functions
+function assignAvailableDriversToVehicles() {
+    showAlert('Auto-assignment feature coming soon!', 'info');
+}
+
+function showBulkAssignmentModal() {
+    window.location.href = '/admin/assignments/schedule';
+}
+
+function showTemplateModal() {
+    window.location.href = '/admin/assignment-templates';
+}
+
+function downloadAssignmentReport() {
+    showAlert('Export functionality coming soon!', 'info');
+}
+
+// Set default start date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').value = today;
+});
+</script>
+
+<style>
+.assignment-item:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    color: #212529;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+</style>
+{% endblock %}
