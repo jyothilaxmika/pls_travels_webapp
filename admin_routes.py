@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from functools import wraps
 import os
+import math
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
@@ -413,10 +414,14 @@ def add_manual_transaction():
         return jsonify({'success': False, 'message': 'Missing required fields'})
     
     try:
-        # Prevent NaN injection vulnerability
-        if amount.lower().strip() in ['nan', 'inf', '-inf', '+inf']:
-            return jsonify({'success': False, 'message': 'Invalid amount value'})
+        # Convert to float first to catch any conversion errors
         amount = float(amount)
+        # Prevent NaN/infinity injection - ensure only finite numbers are accepted
+        if not (isinstance(amount, (int, float)) and math.isfinite(amount)):
+            return jsonify({'success': False, 'message': 'Invalid amount value'})
+        # Additional check: ensure amount is not zero for financial transactions
+        if amount == 0:
+            return jsonify({'success': False, 'message': 'Transaction amount cannot be zero'})
         if transaction_date:
             trans_date = datetime.strptime(transaction_date, '%Y-%m-%d').date()
         else:
