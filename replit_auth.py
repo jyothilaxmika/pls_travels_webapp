@@ -49,24 +49,10 @@ def verify_jwt_token(token, issuer_url):
             
             return decoded_token
         else:
-            # PyJWKClient not available - implement basic verification
-            # This still verifies more than the original unsafe code
-            decoded_token = jwt.decode(
-                token,
-                options={
-                    "verify_signature": False,  # We'll verify other claims
-                    "verify_aud": True,
-                    "verify_iss": True,
-                    "verify_exp": True,
-                    "verify_nbf": True,
-                    "verify_iat": True
-                },
-                audience=os.environ.get('REPL_ID'),
-                issuer=issuer_url
-            )
-            
-            current_app.logger.warning("JWT signature verification skipped due to missing PyJWKClient. Consider upgrading PyJWT.")
-            return decoded_token
+            # PyJWKClient not available - fail securely instead of bypassing signature verification
+            current_app.logger.error("PyJWKClient is required for secure JWT verification but is not available.")
+            current_app.logger.error("Install PyJWT with cryptography support: pip install 'PyJWT[crypto]'")
+            return None
         
     except Exception as e:
         current_app.logger.error(f"JWT verification failed: {str(e)}")
