@@ -84,6 +84,29 @@
                                 <i class="fas fa-chart-bar me-1"></i>Reports
                             </a>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="storageDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-database me-1"></i>Storage
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('storage.storage_dashboard') }}">
+                                    <i class="fas fa-database me-2"></i>Storage Overview
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('storage.document_manager') }}">
+                                    <i class="fas fa-file-alt me-2"></i>Document Manager
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('storage.duty_photo_manager') }}">
+                                    <i class="fas fa-camera me-2"></i>Duty Photos
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/storage/gallery/documents">
+                                    <i class="fas fa-images me-2"></i>Documents Gallery
+                                </a></li>
+                                <li><a class="dropdown-item" href="/storage/gallery/photos">
+                                    <i class="fas fa-images me-2"></i>Photos Gallery
+                                </a></li>
+                            </ul>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.uber_integration') }}">
                                 <i class="fab fa-uber me-1"></i>Uber Integration
