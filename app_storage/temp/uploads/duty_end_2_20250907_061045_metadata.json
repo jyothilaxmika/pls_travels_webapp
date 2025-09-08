@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-09-07T06:09:36.117Z",
+  "location": {
+    "latitude": 10.827947,
+    "longitude": 78.677491,
+    "accuracy": 25,
+    "timestamp": "2025-09-07T06:09:36.324Z"
+  },
+  "device_info": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+    "facing_mode": "environment"
+  },
+  "processed_at": "2025-09-07T06:10:45.039108",
+  "filename": "duty_end_2_20250907_061045.jpg"
+}

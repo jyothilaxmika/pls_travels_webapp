@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Storage Management - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-database me-2"></i>Storage Management</h2>
+    <div>
+        <button class="btn btn-outline-warning" onclick="cleanupStorage()">
+            <i class="fas fa-broom me-2"></i>Cleanup Old Files
+        </button>
+        <button class="btn btn-outline-info" onclick="migrateFiles()">
+            <i class="fas fa-arrows-alt me-2"></i>Migrate Legacy Files
+        </button>
+    </div>
+</div>
+
+<!-- Storage Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">
+                    <i class="fas fa-files-o fa-2x"></i>
+                </h5>
+                <h3 class="text-primary">{{ stats.total_files }}</h3>
+                <p class="card-text">Total Files</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">
+                    <i class="fas fa-database fa-2x"></i>
+                </h5>
+                <h3 class="text-success">{{ stats.total_size_formatted }}</h3>
+                <p class="card-text">Total Storage</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">
+                    <i class="fas fa-id-card fa-2x"></i>
+                </h5>
+                <h3 class="text-info">{{ stats.categories.documents.files }}</h3>
+                <p class="card-text">Documents</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning">
+                    <i class="fas fa-camera fa-2x"></i>
+                </h5>
+                <h3 class="text-warning">{{ stats.categories.captures.files }}</h3>
+                <p class="card-text">Captures</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Storage Categories -->
+<div class="row">
+    {% for category_name, category_data in stats.categories.items() %}
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    {% if category_name == 'documents' %}
+                        <i class="fas fa-file-alt me-2"></i>Documents
+                    {% elif category_name == 'photos' %}
+                        <i class="fas fa-images me-2"></i>Photos
+                    {% elif category_name == 'captures' %}
+                        <i class="fas fa-camera-retro me-2"></i>Camera Captures
+                    {% else %}
+                        <i class="fas fa-folder me-2"></i>{{ category_name.title() }}
+                    {% endif %}
+                    <span class="badge bg-secondary ms-2">{{ category_data.files }} files</span>
+                    <span class="badge bg-info ms-1">{{ category_data.size_formatted }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if category_data.subcategories %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th class="text-end">Files</th>
+                                    <th class="text-end">Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subcat_name, subcat_data in category_data.subcategories.items() %}
+                                <tr>
+                                    <td>
+                                        {% if subcat_name == 'aadhar' %}
+                                            <i class="fas fa-id-card text-info me-1"></i>Aadhar Cards
+                                        {% elif subcat_name == 'license' %}
+                                            <i class="fas fa-id-badge text-warning me-1"></i>Licenses
+                                        {% elif subcat_name == 'profile' %}
+                                            <i class="fas fa-user-circle text-primary me-1"></i>Profile Photos
+                                        {% elif subcat_name == 'duty_start' %}
+                                            <i class="fas fa-play-circle text-success me-1"></i>Duty Start
+                                        {% elif subcat_name == 'duty_end' %}
+                                            <i class="fas fa-stop-circle text-danger me-1"></i>Duty End
+                                        {% else %}
+                                            <i class="fas fa-folder-o me-1"></i>{{ subcat_name.replace('_', ' ').title() }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-light text-dark">{{ subcat_data.files }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <small class="text-muted">{{ subcat_data.size_formatted }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No subcategories</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Storage Structure -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-sitemap me-2"></i>Storage Organization
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">Document Storage</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-folder me-2 text-warning"></i>documents/</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>identity/ - Aadhar & License documents</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>financial/ - Bank & Insurance documents</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>legal/ - Contracts & agreements</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-success">Photo Storage</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-folder me-2 text-warning"></i>photos/</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>profiles/ - Driver profile photos</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>vehicles/ - Vehicle photos</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>duty/ - Duty start/end photos</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>maintenance/ - Maintenance photos</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6 class="text-info">Camera Captures</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-folder me-2 text-warning"></i>captures/</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>identity/ - Camera-captured documents</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>profiles/ - Camera-captured profiles</li>
+                    <li class="ms-3"><i class="fas fa-folder me-2"></i>duty/ - Real-time duty captures</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-secondary">Assets & Metadata</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-folder me-2 text-warning"></i>assets/ - Reports & exports</li>
+                    <li><i class="fas fa-folder me-2 text-warning"></i>metadata/ - File information</li>
+                    <li><i class="fas fa-folder me-2 text-warning"></i>temp/ - Temporary processing</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function cleanupStorage() {
+    if (confirm('This will delete temporary files older than 7 days. Continue?')) {
+        fetch('/admin/storage/cleanup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({hours: 168}) // 7 days
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Storage cleanup completed successfully', 'success');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showAlert('Cleanup failed: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Cleanup failed: ' + error.message, 'danger');
+        });
+    }
+}
+
+function migrateFiles() {
+    if (confirm('This will migrate files from the old uploads directory. Continue?')) {
+        fetch('/admin/storage/migrate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('File migration completed successfully', 'success');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showAlert('Migration failed: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Migration failed: ' + error.message, 'danger');
+        });
+    }
+}
+
+function showAlert(message, type) {
+    const alertContainer = document.querySelector('.container.my-4');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.insertBefore(alertDiv, alertContainer.firstChild);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

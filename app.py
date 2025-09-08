@@ -135,12 +135,14 @@ def create_app():
     from admin_routes import admin_bp
     from manager_routes import manager_bp
     from driver_routes import driver_bp
+    from storage_routes import storage_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(manager_bp, url_prefix='/manager')
     app.register_blueprint(driver_bp, url_prefix='/driver')
+    app.register_blueprint(storage_bp)
     
     # Make session permanent
     @app.before_request
