@@ -13,6 +13,14 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils import allowed_file, calculate_earnings
 import json
+import pytz
+
+# IST timezone helper for database operations
+def get_ist_time_naive():
+    """Get current IST time as naive datetime for database storage"""
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.now(ist).replace(tzinfo=None)
+
 # Import scheduling functions after initial imports
 try:
     from utils.scheduling import (check_assignment_conflicts, generate_assignment_suggestions,
@@ -179,7 +187,7 @@ def approve_driver(driver_id):
     driver = Driver.query.get_or_404(driver_id)
     driver.status = DriverStatus.ACTIVE
     driver.approved_by = current_user.id
-    driver.approved_at = datetime.utcnow()
+    driver.approved_at = get_ist_time_naive()
     
     # Activate user account
     driver.user.active = True
@@ -199,7 +207,7 @@ def reject_driver(driver_id):
     driver = Driver.query.get_or_404(driver_id)
     driver.status = DriverStatus.REJECTED
     driver.approved_by = current_user.id
-    driver.approved_at = datetime.utcnow()
+    driver.approved_at = get_ist_time_naive()
     
     db.session.commit()
     
