@@ -10,7 +10,10 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
                    DriverStatus, VehicleStatus, DutyStatus, ResignationRequest, ResignationStatus)
 from forms import DriverProfileForm, DutyForm
 from utils import allowed_file, calculate_earnings, calculate_advanced_salary, process_file_upload
-import utils
+import importlib.util
+spec = importlib.util.spec_from_file_location("utils_main", "utils.py")
+utils_main = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(utils_main)
 from auth import log_audit
 
 driver_bp = Blueprint('driver', __name__)
@@ -490,8 +493,8 @@ def start_duty():
     duty.status = DutyStatus.ACTIVE
 
     # Handle start photo camera capture
-    start_photo_filename, start_photo_metadata = utils.process_camera_capture(
-        request.form, 'start_photo', driver.id, photo_type='duty_start'
+    start_photo_filename, start_photo_metadata = utils_main.process_camera_capture(
+        request.form, 'start_photo', driver.id, 'duty_start'
     )
     if start_photo_filename:
         duty.start_photo = start_photo_filename
@@ -599,8 +602,8 @@ def end_duty():
             active_duty.total_distance = end_odometer - active_duty.start_odometer
 
         # Handle end photo camera capture
-        end_photo_filename, end_photo_metadata = utils.process_camera_capture(
-            request.form, 'end_photo', driver.id, photo_type='duty_end'
+        end_photo_filename, end_photo_metadata = utils_main.process_camera_capture(
+            request.form, 'end_photo', driver.id, 'duty_end'
         )
         if end_photo_filename:
             active_duty.end_photo = end_photo_filename
