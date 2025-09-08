@@ -115,7 +115,16 @@ function createPhotoPreview(file, input) {
 
 function removePhoto(button, inputId) {
     const input = document.getElementById(inputId);
+    if (!input) {
+        console.error('Input element not found:', inputId);
+        return;
+    }
+    
     const previewContainer = button.closest('.photo-preview');
+    if (!previewContainer) {
+        console.error('Preview container not found');
+        return;
+    }
     
     input.value = '';
     previewContainer.remove();
