@@ -49,7 +49,20 @@ function initCameraCapture(inputId, title = 'Capture Photo') {
         }
     }
     
-    // Strategy 5: Find any visible image input as fallback
+    // Strategy 5: For duty photos, create temporary input if needed
+    if (!input && (inputId === 'start_photo' || inputId === 'end_photo')) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'camera';
+        input.style.display = 'none';
+        input.id = inputId;
+        input.name = inputId;
+        document.body.appendChild(input);
+        searchMethod = 'created temporary camera input';
+    }
+    
+    // Strategy 6: Find any visible image input as fallback
     if (!input) {
         const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]:not([style*="display: none"])');
         if (imageInputs.length > 0) {
