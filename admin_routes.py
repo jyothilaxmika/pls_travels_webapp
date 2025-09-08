@@ -253,6 +253,246 @@ def view_driver(driver_id):
                          completed_duties=len(completed_duties),
                          monthly_stats=dict(monthly_stats))
 
+# Document Management Routes
+@admin_bp.route('/drivers/documents/add', methods=['POST'])
+@login_required
+@admin_required
+def add_driver_document():
+    """Add a new document for a driver"""
+    driver_id = request.form.get('driver_id')
+    document_type = request.form.get('document_type')
+    document_number = request.form.get('document_number')
+    notes = request.form.get('notes')
+    
+    if not driver_id or not document_type:
+        return jsonify({'success': False, 'message': 'Missing required fields'})
+    
+    driver = Driver.query.get_or_404(driver_id)
+    
+    # Handle file upload
+    if 'document_file' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'})
+    
+    file = request.files['document_file']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No file selected'})
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"{driver_id}_{document_type}_{timestamp}_{filename}"
+        
+        upload_folder = os.path.join(os.getcwd(), 'uploads')
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        file_path = os.path.join(upload_folder, filename)
+        file.save(file_path)
+        
+        # Update driver document fields
+        if document_type == 'aadhar':
+            driver.aadhar_document = filename
+            if document_number:
+                driver.aadhar_number = document_number
+        elif document_type == 'license':
+            driver.license_document = filename
+            if document_number:
+                driver.license_number = document_number
+        elif document_type == 'profile':
+            driver.profile_photo = filename
+        
+        try:
+            db.session.commit()
+            log_audit('add_driver_document', 'driver', driver_id,
+                     {'document_type': document_type, 'filename': filename})
+            return jsonify({'success': True, 'message': 'Document added successfully'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+    
+    return jsonify({'success': False, 'message': 'Invalid file type'})
+
+@admin_bp.route('/drivers/<int:driver_id>/documents/<document_type>', methods=['DELETE'])
+@login_required
+@admin_required
+def delete_driver_document(driver_id, document_type):
+    """Delete a driver's document"""
+    driver = Driver.query.get_or_404(driver_id)
+    
+    # Remove file and update database
+    filename = None
+    if document_type == 'aadhar':
+        filename = driver.aadhar_document
+        driver.aadhar_document = None
+        driver.aadhar_verified = False
+        driver.aadhar_verified_at = None
+    elif document_type == 'license':
+        filename = driver.license_document
+        driver.license_document = None
+        driver.license_verified = False
+        driver.license_verified_at = None
+    elif document_type == 'profile':
+        filename = driver.profile_photo
+        driver.profile_photo = None
+    
+    # Delete physical file
+    if filename:
+        file_path = os.path.join(os.getcwd(), 'uploads', filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    
+    try:
+        db.session.commit()
+        log_audit('delete_driver_document', 'driver', driver_id,
+                 {'document_type': document_type, 'filename': filename})
+        return jsonify({'success': True, 'message': 'Document deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+@admin_bp.route('/drivers/<int:driver_id>/documents/<document_type>/verify', methods=['POST'])
+@login_required
+@admin_required
+def verify_driver_document(driver_id, document_type):
+    """Mark a driver's document as verified"""
+    driver = Driver.query.get_or_404(driver_id)
+    
+    if document_type == 'aadhar':
+        driver.aadhar_verified = True
+        driver.aadhar_verified_at = datetime.utcnow()
+    elif document_type == 'license':
+        driver.license_verified = True
+        driver.license_verified_at = datetime.utcnow()
+    
+    try:
+        db.session.commit()
+        log_audit('verify_driver_document', 'driver', driver_id,
+                 {'document_type': document_type, 'verified_by': current_user.username})
+        return jsonify({'success': True, 'message': 'Document verified successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+@admin_bp.route('/drivers/<int:driver_id>/documents/<document_type>/unverify', methods=['POST'])
+@login_required
+@admin_required
+def unverify_driver_document(driver_id, document_type):
+    """Mark a driver's document as unverified"""
+    driver = Driver.query.get_or_404(driver_id)
+    
+    if document_type == 'aadhar':
+        driver.aadhar_verified = False
+        driver.aadhar_verified_at = None
+    elif document_type == 'license':
+        driver.license_verified = False
+        driver.license_verified_at = None
+    
+    try:
+        db.session.commit()
+        log_audit('unverify_driver_document', 'driver', driver_id,
+                 {'document_type': document_type, 'unverified_by': current_user.username})
+        return jsonify({'success': True, 'message': 'Document marked as unverified'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+# Financial Transaction Management Routes
+@admin_bp.route('/transactions/add', methods=['POST'])
+@login_required
+@admin_required
+def add_manual_transaction():
+    """Add a manual financial transaction for a driver"""
+    driver_id = request.form.get('driver_id')
+    transaction_type = request.form.get('transaction_type')
+    amount = request.form.get('amount')
+    description = request.form.get('description')
+    reference = request.form.get('reference')
+    transaction_date = request.form.get('transaction_date')
+    
+    if not all([driver_id, transaction_type, amount, description]):
+        return jsonify({'success': False, 'message': 'Missing required fields'})
+    
+    try:
+        amount = float(amount)
+        if transaction_date:
+            trans_date = datetime.strptime(transaction_date, '%Y-%m-%d').date()
+        else:
+            trans_date = datetime.now().date()
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid amount or date format'})
+    
+    driver = Driver.query.get_or_404(driver_id)
+    
+    # Create manual transaction record based on type
+    if transaction_type == 'penalty':
+        penalty = Penalty()
+        penalty.driver_id = driver_id
+        penalty.amount = amount
+        penalty.reason = description
+        penalty.applied_by = current_user.id
+        penalty.applied_at = datetime.combine(trans_date, datetime.min.time())
+        penalty.reference_number = reference
+        db.session.add(penalty)
+        
+        # Update driver totals
+        driver.total_penalties = (driver.total_penalties or 0) + amount
+        
+    else:
+        # For other transaction types, we'll need a generic Transaction model
+        # For now, create penalty-like records with different types
+        penalty = Penalty()
+        penalty.driver_id = driver_id
+        if transaction_type in ['advance', 'deduction']:
+            penalty.amount = amount  # Debit
+        else:
+            penalty.amount = -amount  # Credit (bonus, reimbursement)
+        penalty.reason = f"{transaction_type.upper()}: {description}"
+        penalty.applied_by = current_user.id
+        penalty.applied_at = datetime.combine(trans_date, datetime.min.time())
+        penalty.reference_number = reference
+        db.session.add(penalty)
+        
+        # Update driver totals
+        if transaction_type in ['advance', 'deduction']:
+            driver.total_penalties = (driver.total_penalties or 0) + amount
+        else:
+            driver.total_earnings = (driver.total_earnings or 0) + amount
+    
+    try:
+        db.session.commit()
+        log_audit('add_manual_transaction', 'driver', driver_id,
+                 {'type': transaction_type, 'amount': amount, 'description': description})
+        return jsonify({'success': True, 'message': 'Transaction added successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+@admin_bp.route('/transactions/<transaction_type>/<int:transaction_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def remove_transaction(transaction_type, transaction_id):
+    """Remove a financial transaction"""
+    if transaction_type == 'penalty':
+        transaction = Penalty.query.get_or_404(transaction_id)
+        driver = Driver.query.get(transaction.driver_id)
+        
+        # Update driver totals
+        if driver:
+            driver.total_penalties = max(0, (driver.total_penalties or 0) - transaction.amount)
+        
+        db.session.delete(transaction)
+    elif transaction_type == 'duty':
+        # Don't allow deletion of duty earnings - return error
+        return jsonify({'success': False, 'message': 'Cannot delete duty earnings. Edit the duty instead.'})
+    
+    try:
+        db.session.commit()
+        log_audit('remove_transaction', transaction_type, transaction_id,
+                 {'removed_by': current_user.username})
+        return jsonify({'success': True, 'message': 'Transaction removed successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
 @admin_bp.route('/assignments')
 @login_required
 @admin_required
