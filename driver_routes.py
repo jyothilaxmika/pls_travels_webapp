@@ -30,19 +30,6 @@ def get_driver_profile():
         return current_user.driver_profile
     return None
 
-def generate_employee_id():
-    """Generate unique employee ID for driver"""
-    import random
-    import string
-    
-    while True:
-        # Generate format: EMP + 6 digit number
-        employee_id = f"EMP{random.randint(100000, 999999)}"
-        
-        # Check if it already exists
-        existing = Driver.query.filter_by(employee_id=employee_id).first()
-        if not existing:
-            return employee_id
 
 def get_last_duty_values(driver_id, vehicle_id=None):
     """Get odometer values and CNG point from the last completed duty"""
@@ -143,8 +130,16 @@ def profile():
             # Create new driver profile
             driver = Driver()
             driver.user_id = current_user.id
-            driver.employee_id = generate_employee_id()  # Generate unique employee ID
-            driver.full_name = request.form.get('full_name') or ''
+            
+            # Generate unique employee ID - ensure it's not None
+            from utils import generate_employee_id
+            employee_id = generate_employee_id()
+            if not employee_id:
+                flash('Error generating employee ID. Please try again.', 'error')
+                return render_template('driver/profile.html', driver=None, branches=branches)
+            
+            driver.employee_id = employee_id
+            driver.full_name = request.form.get('full_name') or current_user.email
             # Phone is stored in User model
             if request.form.get('phone'):
                 current_user.phone = request.form.get('phone')

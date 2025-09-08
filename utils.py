@@ -11,6 +11,20 @@ import uuid
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
+def generate_employee_id():
+    """Generate unique employee ID for driver"""
+    import random
+    from models import Driver
+    
+    while True:
+        # Generate format: EMP + 6 digit number
+        employee_id = f"EMP{random.randint(100000, 999999)}"
+        
+        # Check if it already exists
+        existing = Driver.query.filter_by(employee_id=employee_id).first()
+        if not existing:
+            return employee_id
+
 # Storage Configuration
 STORAGE_BUCKETS = {
     'documents': 'pls-travels-documents',     # Aadhar, License, etc.

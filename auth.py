@@ -102,6 +102,9 @@ def register():
         if user.role == UserRole.DRIVER:
             driver = Driver()
             driver.user_id = user.id
+            # Generate unique employee ID
+            from utils import generate_employee_id
+            driver.employee_id = generate_employee_id()
             driver.full_name = form.full_name.data
             # Note: Only set fields that exist in the Driver model
             # Phone and address fields will be handled separately if needed
