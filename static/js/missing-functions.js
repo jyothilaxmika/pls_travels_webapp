@@ -5,10 +5,18 @@
 function initCameraCapture(inputId, title = 'Capture Photo') {
     console.log('initCameraCapture called for:', inputId);
     
-    const input = document.getElementById(inputId);
+    // Try to find input by ID first, then by name attribute
+    let input = document.getElementById(inputId);
+    if (!input) {
+        input = document.querySelector(`input[name="${inputId}"]`);
+    }
+    if (!input) {
+        input = document.querySelector(`input[type="file"][accept*="image"]`);
+        console.warn('Using fallback: found first image input instead of specific field:', inputId);
+    }
     if (!input) {
         console.error('Input element not found:', inputId);
-        showAlert('Photo input field not found', 'danger');
+        showAlert('Photo input field not found. Please use the file upload option instead.', 'warning');
         return;
     }
 
