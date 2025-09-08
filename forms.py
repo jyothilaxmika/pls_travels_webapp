@@ -79,12 +79,53 @@ class VehicleAssignmentForm(FlaskForm):
     start_date = DateField('Start Date', validators=[DataRequired()])
     end_date = DateField('End Date', validators=[Optional()])
     shift_type = SelectField('Shift Type', choices=[
+        ('full_day', 'Full Day (24 Hours)'),
+        ('morning', 'Morning Shift (6AM-2PM)'),
+        ('evening', 'Evening Shift (2PM-10PM)'),
+        ('night', 'Night Shift (10PM-6AM)')
+    ], default='full_day')
+    assignment_type = SelectField('Assignment Type', choices=[
+        ('regular', 'Regular Assignment'),
+        ('temporary', 'Temporary Assignment'),
+        ('replacement', 'Replacement Assignment'),
+        ('training', 'Training Assignment')
+    ], default='regular')
+    priority = SelectField('Priority', choices=[
+        (1, 'High Priority'),
+        (2, 'Medium Priority'),
+        (3, 'Low Priority')
+    ], coerce=int, default=2)
+    assignment_notes = TextAreaField('Notes')
+    
+class ScheduledAssignmentForm(FlaskForm):
+    # Multiple assignment scheduling
+    assignments_data = TextAreaField('Assignments JSON', validators=[Optional()])
+    bulk_start_date = DateField('Bulk Start Date', validators=[DataRequired()])
+    bulk_end_date = DateField('Bulk End Date', validators=[Optional()])
+    bulk_shift_type = SelectField('Default Shift Type', choices=[
+        ('full_day', 'Full Day (24 Hours)'),
+        ('morning', 'Morning Shift (6AM-2PM)'),
+        ('evening', 'Evening Shift (2PM-10PM)'),
+        ('night', 'Night Shift (10PM-6AM)')
+    ], default='full_day')
+    recurring_pattern = SelectField('Recurring Pattern', choices=[
+        ('', 'No Recurrence'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly')
+    ], default='')
+    recurring_until = DateField('Recurring Until', validators=[Optional()])
+    
+class QuickAssignmentForm(FlaskForm):
+    date_range = StringField('Date Range', validators=[DataRequired()])
+    drivers = StringField('Driver IDs', validators=[DataRequired()])
+    vehicles = StringField('Vehicle IDs', validators=[DataRequired()])
+    shift_type = SelectField('Shift Type', choices=[
         ('full_day', 'Full Day'),
         ('morning', 'Morning Shift'),
         ('evening', 'Evening Shift'),
         ('night', 'Night Shift')
     ], default='full_day')
-    assignment_notes = TextAreaField('Notes')
 
 class VehicleForm(FlaskForm):
     registration_number = StringField('Registration Number', validators=[DataRequired(), Length(min=3, max=20)])

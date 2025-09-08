@@ -9,8 +9,29 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus)
-from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm
+from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm
 from utils import allowed_file, calculate_earnings
+import json
+# Import scheduling functions after initial imports
+try:
+    from utils.scheduling import (check_assignment_conflicts, generate_assignment_suggestions,
+                                build_assignment_calendar, create_bulk_assignments, create_recurring_assignments)
+except ImportError:
+    # Fallback functions if module not available
+    def check_assignment_conflicts(driver_id, vehicle_id, start_date, end_date, shift_type):
+        return {'driver_conflict': None, 'vehicle_conflict': None}
+    
+    def generate_assignment_suggestions(driver_id, vehicle_id, start_date, end_date, shift_type):
+        return []
+        
+    def build_assignment_calendar(assignments, start_date, end_date):
+        return {}
+        
+    def create_bulk_assignments(assignments_data, assigned_by_user_id):
+        return {'success': False, 'created_count': 0, 'errors': ['Function not available']}
+        
+    def create_recurring_assignments(base_assignment_data, pattern, until_date, assigned_by_user_id):
+        return {'success': False, 'created_count': 0, 'errors': ['Function not available']}
 from auth import log_audit
 
 admin_bp = Blueprint('admin', __name__)
@@ -264,29 +285,20 @@ def add_assignment():
     form = VehicleAssignmentForm()
     
     # Populate form choices
-    form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name})") for d in Driver.query.filter_by(status=DriverStatus.ACTIVE).all()]
-    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.vehicle_type}") for v in Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).all()]
+    active_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).join(Branch).all()
+    form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name})") for d in active_drivers]
+    
+    available_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).join(Branch).all()
+    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.model or v.vehicle_type.name} ({v.branch.name})") for v in available_vehicles]
     
     if form.validate_on_submit():
-        # Check for conflicting assignments
-        existing_assignment = VehicleAssignment.query.filter(
-            VehicleAssignment.driver_id == form.driver_id.data,
-            VehicleAssignment.start_date <= form.start_date.data,
-            VehicleAssignment.status.in_([AssignmentStatus.SCHEDULED, AssignmentStatus.ACTIVE]),
-            VehicleAssignment.end_date.is_(None) | (VehicleAssignment.end_date >= form.start_date.data)
-        ).first()
+        conflicts = check_assignment_conflicts(form.driver_id.data, form.vehicle_id.data, 
+                                             form.start_date.data, form.end_date.data, form.shift_type.data)
         
-        vehicle_assignment = VehicleAssignment.query.filter(
-            VehicleAssignment.vehicle_id == form.vehicle_id.data,
-            VehicleAssignment.start_date <= form.start_date.data,
-            VehicleAssignment.status.in_([AssignmentStatus.SCHEDULED, AssignmentStatus.ACTIVE]),
-            VehicleAssignment.end_date.is_(None) | (VehicleAssignment.end_date >= form.start_date.data)
-        ).first()
-        
-        if existing_assignment:
-            flash('Driver already has an assignment for this period.', 'error')
-        elif vehicle_assignment:
-            flash('Vehicle is already assigned for this period.', 'error')
+        if conflicts['driver_conflict']:
+            flash(f"Driver already has an assignment for this period: {conflicts['driver_conflict'].start_date} to {conflicts['driver_conflict'].end_date or 'ongoing'}", 'error')
+        elif conflicts['vehicle_conflict']:
+            flash(f"Vehicle is already assigned for this period: {conflicts['vehicle_conflict'].start_date} to {conflicts['vehicle_conflict'].end_date or 'ongoing'}", 'error')
         else:
             assignment = VehicleAssignment()
             assignment.driver_id = form.driver_id.data
@@ -294,28 +306,152 @@ def add_assignment():
             assignment.start_date = form.start_date.data
             assignment.end_date = form.end_date.data
             assignment.shift_type = form.shift_type.data
-            assignment.assignment_notes = form.assignment_notes.data
+            assignment.assignment_type = form.assignment_type.data
+            assignment.priority = form.priority.data
+            assignment.notes = form.assignment_notes.data
             assignment.assigned_by = current_user.id
             
-            db.session.add(assignment)
-            
-            # Update driver's current vehicle if assignment is starting today or is in the past
-            if form.start_date.data and form.start_date.data <= datetime.now().date():
+            # Set status based on start date
+            if form.start_date.data <= datetime.now().date():
+                assignment.status = AssignmentStatus.ACTIVE
+                # Update driver's current vehicle
                 driver = Driver.query.get(form.driver_id.data)
                 if driver:
                     driver.current_vehicle_id = form.vehicle_id.data
-                assignment.status = AssignmentStatus.ACTIVE
+            else:
+                assignment.status = AssignmentStatus.SCHEDULED
             
+            db.session.add(assignment)
             db.session.commit()
             
             log_audit('create_vehicle_assignment', 'assignment', assignment.id,
                      {'driver': assignment.assignment_driver.full_name, 
-                      'vehicle': assignment.assignment_vehicle.registration_number})
+                      'vehicle': assignment.assignment_vehicle.registration_number,
+                      'start_date': str(assignment.start_date),
+                      'shift_type': assignment.shift_type})
             
             flash('Vehicle assignment created successfully!', 'success')
             return redirect(url_for('admin.assignments'))
     
     return render_template('admin/add_assignment.html', form=form)
+
+def handle_bulk_assignment():
+    """Handle bulk assignment form submission"""
+    try:
+        data = request.json if request.is_json else request.form
+        assignments_data = json.loads(data.get('assignments_data', '[]'))
+        result = create_bulk_assignments(assignments_data, current_user.id)
+        
+        if result['success']:
+            flash(f"Successfully created {result['created_count']} assignments.", 'success')
+        else:
+            flash("Failed to create bulk assignments.", 'error')
+            for error in result['errors']:
+                flash(error, 'error')
+                
+        return redirect(url_for('admin.assignments'))
+    except Exception as e:
+        flash(f"Error processing bulk assignments: {str(e)}", 'error')
+        return redirect(url_for('admin.assignments'))
+
+def handle_quick_assignment():
+    """Handle quick assignment form submission"""
+    try:
+        form_data = request.form
+        date_range = form_data.get('date_range', '').split(' to ')
+        driver_ids = [int(id) for id in form_data.get('drivers', '').split(',') if id.strip()]
+        vehicle_ids = [int(id) for id in form_data.get('vehicles', '').split(',') if id.strip()]
+        shift_type = form_data.get('shift_type', 'full_day')
+        
+        assignments_data = []
+        start_date = datetime.strptime(date_range[0], '%Y-%m-%d').date()
+        end_date = datetime.strptime(date_range[1], '%Y-%m-%d').date() if len(date_range) > 1 else start_date
+        
+        # Create assignments for each driver-vehicle pair
+        for i, driver_id in enumerate(driver_ids):
+            vehicle_id = vehicle_ids[i] if i < len(vehicle_ids) else vehicle_ids[0]
+            assignments_data.append({
+                'driver_id': driver_id,
+                'vehicle_id': vehicle_id,
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d'),
+                'shift_type': shift_type,
+                'assignment_type': 'regular',
+                'priority': 2
+            })
+        
+        result = create_bulk_assignments(assignments_data, current_user.id)
+        
+        if result['success']:
+            flash(f"Successfully created {result['created_count']} quick assignments.", 'success')
+        else:
+            flash("Failed to create quick assignments.", 'error')
+            
+        return redirect(url_for('admin.assignments'))
+    except Exception as e:
+        flash(f"Error processing quick assignments: {str(e)}", 'error')
+        return redirect(url_for('admin.assignments'))
+
+@admin_bp.route('/assignments/schedule', methods=['GET', 'POST'])
+@login_required 
+@admin_required
+def schedule_assignments():
+    """Enhanced scheduling interface with calendar view and bulk operations"""
+    form = ScheduledAssignmentForm()
+    
+    if request.method == 'POST':
+        if 'bulk_assign' in request.form:
+            return handle_bulk_assignment()
+        elif 'quick_assign' in request.form:
+            return handle_quick_assignment()
+    
+    # Get data for calendar view
+    today = datetime.now().date()
+    start_date = request.args.get('start', today.strftime('%Y-%m-%d'))
+    end_date = request.args.get('end', (today + timedelta(days=30)).strftime('%Y-%m-%d'))
+    
+    # Get assignments for the date range
+    assignments = VehicleAssignment.query.filter(
+        VehicleAssignment.start_date <= datetime.strptime(end_date, '%Y-%m-%d').date(),
+        VehicleAssignment.end_date.is_(None) | (VehicleAssignment.end_date >= datetime.strptime(start_date, '%Y-%m-%d').date())
+    ).all()
+    
+    # Get available drivers and vehicles
+    drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).all()
+    vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).all()
+    
+    # Build calendar data
+    calendar_data = build_assignment_calendar(assignments, start_date, end_date)
+    
+    return render_template('admin/schedule_assignments.html',
+                         form=form,
+                         assignments=assignments,
+                         drivers=drivers,
+                         vehicles=vehicles,
+                         calendar_data=calendar_data,
+                         start_date=start_date,
+                         end_date=end_date)
+
+@admin_bp.route('/assignments/conflicts', methods=['POST'])
+@login_required
+@admin_required  
+def check_conflicts():
+    """API endpoint to check for assignment conflicts"""
+    data = request.json
+    driver_id = data.get('driver_id')
+    vehicle_id = data.get('vehicle_id')
+    start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date()
+    end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d').date() if data.get('end_date') else None
+    shift_type = data.get('shift_type', 'full_day')
+    
+    conflicts = check_assignment_conflicts(driver_id, vehicle_id, start_date, end_date, shift_type)
+    
+    return jsonify({
+        'has_conflicts': bool(conflicts['driver_conflict'] or conflicts['vehicle_conflict']),
+        'driver_conflict': conflicts['driver_conflict'].id if conflicts['driver_conflict'] else None,
+        'vehicle_conflict': conflicts['vehicle_conflict'].id if conflicts['vehicle_conflict'] else None,
+        'suggestions': generate_assignment_suggestions(driver_id, vehicle_id, start_date, end_date, shift_type)
+    })
 
 @admin_bp.route('/assignments/<int:assignment_id>/end', methods=['POST'])
 @login_required

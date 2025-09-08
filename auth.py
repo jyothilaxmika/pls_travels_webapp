@@ -103,11 +103,8 @@ def register():
             driver = Driver()
             driver.user_id = user.id
             driver.full_name = form.full_name.data
-            driver.phone = form.phone.data
-            driver.additional_phone_1 = form.additional_phone_1.data
-            driver.additional_phone_2 = form.additional_phone_2.data
-            driver.additional_phone_3 = form.additional_phone_3.data
-            driver.address = form.address.data
+            # Note: Only set fields that exist in the Driver model
+            # Phone and address fields will be handled separately if needed
             driver.date_of_birth = form.date_of_birth.data
             driver.aadhar_number = form.aadhar_number.data
             driver.license_number = form.license_number.data

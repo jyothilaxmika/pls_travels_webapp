@@ -1,0 +1,423 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Schedule Assignments - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-calendar-alt me-2"></i>Advanced Assignment Scheduling</h2>
+    <div>
+        <a href="{{ url_for('admin.assignments') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-2"></i>View All Assignments
+        </a>
+        <a href="{{ url_for('admin.add_assignment') }}" class="btn btn-warning">
+            <i class="fas fa-plus me-2"></i>Single Assignment
+        </a>
+    </div>
+</div>
+
+<!-- Calendar View -->
+<div class="card mb-4">
+    <div class="card-header bg-warning bg-opacity-25">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar me-2"></i>Assignment Calendar
+        </h5>
+    </div>
+    <div class="card-body">
+        <div id="calendar-container">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" id="calendar-start" class="form-control" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" id="calendar-end" class="form-control" value="{{ end_date }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-warning mt-4" onclick="refreshCalendar()">
+                        <i class="fas fa-refresh me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div id="assignment-calendar" class="table-responsive">
+                <!-- Calendar grid will be generated here -->
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Calendar View:</strong> Shows assignments for the selected date range.
+                    Click dates to see detailed assignments.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Assignment Panel -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Assignment
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="quick-assignment-form">
+                    <input type="hidden" name="quick_assign" value="1">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <input type="text" id="quick-date-range" name="date_range" class="form-control" 
+                               placeholder="Select date range" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Drivers</label>
+                        <select multiple class="form-select" id="quick-drivers" name="drivers" size="4">
+                            {% for driver in drivers %}
+                            <option value="{{ driver.id }}">{{ driver.full_name }} ({{ driver.branch.name }})</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Hold Ctrl/Cmd to select multiple drivers</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Vehicles</label>
+                        <select multiple class="form-select" id="quick-vehicles" name="vehicles" size="4">
+                            {% for vehicle in vehicles %}
+                            <option value="{{ vehicle.id }}">{{ vehicle.registration_number }} - {{ vehicle.model or vehicle.vehicle_type.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Hold Ctrl/Cmd to select multiple vehicles</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Shift Type</label>
+                        <select name="shift_type" class="form-select">
+                            <option value="full_day">Full Day (24 Hours)</option>
+                            <option value="morning">Morning Shift (6AM-2PM)</option>
+                            <option value="evening">Evening Shift (2PM-10PM)</option>
+                            <option value="night">Night Shift (10PM-6AM)</option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn btn-warning w-100" onclick="submitQuickAssignment()">
+                        <i class="fas fa-bolt me-2"></i>Create Quick Assignments
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-layer-group me-2"></i>Bulk Assignment
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="bulk-assignment-form">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="bulk_assign" value="1">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Assignment Data (JSON)</label>
+                        <textarea name="assignments_data" id="bulk-assignments-data" class="form-control" rows="8"
+                                  placeholder="Paste JSON data or use the builder below">[]</textarea>
+                        <small class="text-muted">JSON format: [{"driver_id": 1, "vehicle_id": 1, "start_date": "2024-01-01", "shift_type": "full_day"}]</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openAssignmentBuilder()">
+                            <i class="fas fa-tools me-2"></i>Assignment Builder
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="validateBulkData()">
+                            <i class="fas fa-check me-2"></i>Validate Data
+                        </button>
+                    </div>
+                    
+                    <button type="button" class="btn btn-warning w-100" onclick="submitBulkAssignment()">
+                        <i class="fas fa-layer-group me-2"></i>Create Bulk Assignments
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conflict Detection Modal -->
+<div class="modal fade" id="conflictModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Assignment Conflicts Detected
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="conflict-details"></div>
+                <div id="conflict-suggestions"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="forceCreateAssignment()">Force Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assignment Builder Modal -->
+<div class="modal fade" id="builderModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tools me-2"></i>Assignment Builder
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="assignment-builder">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Use this tool to visually build your bulk assignments. Select drivers, vehicles, and date ranges.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Available Drivers</h6>
+                            <div id="builder-drivers" class="border p-2" style="height: 200px; overflow-y: auto;">
+                                {% for driver in drivers %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ driver.id }}" id="builder-driver-{{ driver.id }}">
+                                    <label class="form-check-label" for="builder-driver-{{ driver.id }}">
+                                        {{ driver.full_name }} ({{ driver.branch.name }})
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6>Available Vehicles</h6>
+                            <div id="builder-vehicles" class="border p-2" style="height: 200px; overflow-y: auto;">
+                                {% for vehicle in vehicles %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ vehicle.id }}" id="builder-vehicle-{{ vehicle.id }}">
+                                    <label class="form-check-label" for="builder-vehicle-{{ vehicle.id }}">
+                                        {{ vehicle.registration_number }} - {{ vehicle.model or vehicle.vehicle_type.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6>Assignment Settings</h6>
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">Start Date</label>
+                                <input type="date" id="builder-start-date" class="form-control form-control-sm">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">End Date</label>
+                                <input type="date" id="builder-end-date" class="form-control form-control-sm">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label form-label-sm">Shift Type</label>
+                                <select id="builder-shift-type" class="form-select form-select-sm">
+                                    <option value="full_day">Full Day</option>
+                                    <option value="morning">Morning Shift</option>
+                                    <option value="evening">Evening Shift</option>
+                                    <option value="night">Night Shift</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-warning" onclick="generateAssignments()">
+                            <i class="fas fa-magic me-2"></i>Generate Assignments
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearBuilder()">
+                            <i class="fas fa-trash me-2"></i>Clear
+                        </button>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6>Generated Assignments Preview</h6>
+                        <div id="builder-preview" class="border p-2" style="height: 150px; overflow-y: auto;">
+                            <em class="text-muted">No assignments generated yet</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="useGeneratedAssignments()">Use Assignments</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let generatedAssignments = [];
+
+function refreshCalendar() {
+    const startDate = document.getElementById('calendar-start').value;
+    const endDate = document.getElementById('calendar-end').value;
+    
+    if (startDate && endDate) {
+        window.location.href = `{{ url_for('admin.schedule_assignments') }}?start=${startDate}&end=${endDate}`;
+    }
+}
+
+function submitQuickAssignment() {
+    const form = document.getElementById('quick-assignment-form');
+    const selectedDrivers = Array.from(document.getElementById('quick-drivers').selectedOptions).map(opt => opt.value);
+    const selectedVehicles = Array.from(document.getElementById('quick-vehicles').selectedOptions).map(opt => opt.value);
+    
+    if (selectedDrivers.length === 0 || selectedVehicles.length === 0) {
+        alert('Please select at least one driver and one vehicle.');
+        return;
+    }
+    
+    // Set the drivers and vehicles as comma-separated values
+    const driversInput = document.createElement('input');
+    driversInput.type = 'hidden';
+    driversInput.name = 'drivers';
+    driversInput.value = selectedDrivers.join(',');
+    form.appendChild(driversInput);
+    
+    const vehiclesInput = document.createElement('input');
+    vehiclesInput.type = 'hidden';
+    vehiclesInput.name = 'vehicles';
+    vehiclesInput.value = selectedVehicles.join(',');
+    form.appendChild(vehiclesInput);
+    
+    form.submit();
+}
+
+function submitBulkAssignment() {
+    const assignmentsData = document.getElementById('bulk-assignments-data').value;
+    
+    try {
+        const assignments = JSON.parse(assignmentsData);
+        if (!Array.isArray(assignments) || assignments.length === 0) {
+            alert('Please provide valid assignment data.');
+            return;
+        }
+        
+        document.getElementById('bulk-assignment-form').submit();
+    } catch (e) {
+        alert('Invalid JSON format. Please check your assignment data.');
+    }
+}
+
+function validateBulkData() {
+    const assignmentsData = document.getElementById('bulk-assignments-data').value;
+    
+    try {
+        const assignments = JSON.parse(assignmentsData);
+        
+        if (!Array.isArray(assignments)) {
+            alert('Data must be an array of assignments.');
+            return;
+        }
+        
+        let valid = true;
+        let errors = [];
+        
+        assignments.forEach((assignment, index) => {
+            if (!assignment.driver_id || !assignment.vehicle_id || !assignment.start_date) {
+                errors.push(`Assignment ${index + 1}: Missing required fields (driver_id, vehicle_id, start_date)`);
+                valid = false;
+            }
+        });
+        
+        if (valid) {
+            alert(`✓ Valid data format! Found ${assignments.length} assignments.`);
+        } else {
+            alert('❌ Validation errors:\n' + errors.join('\n'));
+        }
+    } catch (e) {
+        alert('❌ Invalid JSON format.');
+    }
+}
+
+function openAssignmentBuilder() {
+    const modal = new bootstrap.Modal(document.getElementById('builderModal'));
+    modal.show();
+}
+
+function generateAssignments() {
+    const selectedDrivers = Array.from(document.querySelectorAll('#builder-drivers input:checked')).map(cb => cb.value);
+    const selectedVehicles = Array.from(document.querySelectorAll('#builder-vehicles input:checked')).map(cb => cb.value);
+    const startDate = document.getElementById('builder-start-date').value;
+    const endDate = document.getElementById('builder-end-date').value;
+    const shiftType = document.getElementById('builder-shift-type').value;
+    
+    if (selectedDrivers.length === 0 || selectedVehicles.length === 0 || !startDate) {
+        alert('Please select drivers, vehicles, and at least a start date.');
+        return;
+    }
+    
+    generatedAssignments = [];
+    
+    // Create assignments by pairing drivers with vehicles
+    selectedDrivers.forEach((driverId, index) => {
+        const vehicleId = selectedVehicles[index % selectedVehicles.length]; // Cycle through vehicles
+        
+        generatedAssignments.push({
+            driver_id: parseInt(driverId),
+            vehicle_id: parseInt(vehicleId),
+            start_date: startDate,
+            end_date: endDate || null,
+            shift_type: shiftType,
+            assignment_type: 'regular',
+            priority: 2
+        });
+    });
+    
+    // Display preview
+    const preview = document.getElementById('builder-preview');
+    preview.innerHTML = generatedAssignments.map((assignment, index) => 
+        `<div class="mb-1">
+            <small><strong>Assignment ${index + 1}:</strong> Driver ${assignment.driver_id} → Vehicle ${assignment.vehicle_id} 
+            (${assignment.start_date} to ${assignment.end_date || 'ongoing'}) - ${assignment.shift_type}</small>
+        </div>`
+    ).join('');
+}
+
+function clearBuilder() {
+    document.querySelectorAll('#builder-drivers input, #builder-vehicles input').forEach(cb => cb.checked = false);
+    document.getElementById('builder-start-date').value = '';
+    document.getElementById('builder-end-date').value = '';
+    document.getElementById('builder-shift-type').value = 'full_day';
+    document.getElementById('builder-preview').innerHTML = '<em class="text-muted">No assignments generated yet</em>';
+    generatedAssignments = [];
+}
+
+function useGeneratedAssignments() {
+    if (generatedAssignments.length === 0) {
+        alert('No assignments generated yet.');
+        return;
+    }
+    
+    document.getElementById('bulk-assignments-data').value = JSON.stringify(generatedAssignments, null, 2);
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('builderModal'));
+    modal.hide();
+    
+    alert(`✓ ${generatedAssignments.length} assignments added to bulk data. Review and submit when ready.`);
+}
+
+// Initialize date inputs with today's date
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('builder-start-date').value = today;
+});
+</script>
+{% endblock %}
