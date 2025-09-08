@@ -413,6 +413,9 @@ def add_manual_transaction():
         return jsonify({'success': False, 'message': 'Missing required fields'})
     
     try:
+        # Prevent NaN injection vulnerability
+        if amount.lower().strip() in ['nan', 'inf', '-inf', '+inf']:
+            return jsonify({'success': False, 'message': 'Invalid amount value'})
         amount = float(amount)
         if transaction_date:
             trans_date = datetime.strptime(transaction_date, '%Y-%m-%d').date()
