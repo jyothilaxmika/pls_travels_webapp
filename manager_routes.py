@@ -2,6 +2,13 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from functools import wraps
 from datetime import datetime, timedelta
+import pytz
+
+# IST timezone helper for database operations
+def get_ist_time_naive():
+    """Get current IST time as naive datetime for database storage"""
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.now(ist).replace(tzinfo=None)
 from sqlalchemy import func, desc, and_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, db,
@@ -124,7 +131,7 @@ def approve_driver(driver_id):
     
     driver.status = DriverStatus.ACTIVE
     driver.approved_by = current_user.id
-    driver.approved_at = datetime.utcnow()
+    driver.approved_at = get_ist_time_naive()
     
     # Activate user account
     driver.user.active = True
@@ -154,7 +161,7 @@ def reject_driver(driver_id):
     
     driver.status = 'rejected'
     driver.approved_by = current_user.id
-    driver.approved_at = datetime.utcnow()
+    driver.approved_at = get_ist_time_naive()
     
     db.session.commit()
     

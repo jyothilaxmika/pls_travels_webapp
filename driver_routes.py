@@ -4,6 +4,13 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 import os
 from datetime import datetime, timedelta
+import pytz
+
+# IST timezone helper for database operations
+def get_ist_time_naive():
+    """Get current IST time as naive datetime for database storage"""
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.now(ist).replace(tzinfo=None)
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleTracking, db,
@@ -485,7 +492,7 @@ def start_duty():
     duty.vehicle_id = vehicle.id
     duty.branch_id = driver.branch_id
     duty.duty_scheme_id = duty_scheme.id
-    duty.actual_start = datetime.utcnow()
+    duty.actual_start = get_ist_time_naive()
     duty.start_odometer = start_odometer or 0.0
     duty.status = DutyStatus.ACTIVE
 
@@ -500,7 +507,7 @@ def start_duty():
     elif 'start_photo' in request.files:
         file = request.files['start_photo']
         if file and allowed_file(file.filename):
-            filename = secure_filename(f"duty_start_{duty.driver_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+            filename = secure_filename(f"duty_start_{duty.driver_id}_{get_ist_time_naive().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
             file.save(os.path.join('uploads', filename))
             duty.start_photo = filename
 
@@ -525,7 +532,7 @@ def start_duty():
     tracking_record.vehicle_id = vehicle.id
     tracking_record.duty_id = duty.id
     tracking_record.driver_id = driver.id
-    tracking_record.recorded_at = duty.actual_start or datetime.utcnow()
+    tracking_record.recorded_at = duty.actual_start or get_ist_time_naive()
     tracking_record.odometer_reading = start_odometer or 0.0
     tracking_record.odometer_type = 'start'
     tracking_record.source = 'duty'
@@ -588,12 +595,12 @@ def end_duty():
         active_duty.penalty_deduction = request.form.get('pass_deduction', type=float, default=0.0)
 
         # Update basic duty info
-        active_duty.actual_end = datetime.utcnow()
+        active_duty.actual_end = get_ist_time_naive()
         active_duty.end_odometer = end_odometer
         active_duty.total_trips = trip_count
         active_duty.fuel_consumed = fuel_amount
         active_duty.status = DutyStatus.PENDING_APPROVAL
-        active_duty.submitted_at = datetime.utcnow()
+        active_duty.submitted_at = get_ist_time_naive()
 
         if end_odometer and active_duty.start_odometer:
             active_duty.total_distance = end_odometer - active_duty.start_odometer
@@ -609,7 +616,7 @@ def end_duty():
         elif 'end_photo' in request.files:
             file = request.files['end_photo']
             if file and allowed_file(file.filename):
-                filename = secure_filename(f"duty_end_{driver.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+                filename = secure_filename(f"duty_end_{driver.id}_{get_ist_time_naive().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
                 file.save(os.path.join('uploads', filename))
                 active_duty.end_photo = filename
 
@@ -642,7 +649,7 @@ def end_duty():
         end_tracking_record.vehicle_id = active_duty.vehicle_id
         end_tracking_record.duty_id = active_duty.id
         end_tracking_record.driver_id = driver.id
-        end_tracking_record.recorded_at = active_duty.actual_end or datetime.utcnow()
+        end_tracking_record.recorded_at = active_duty.actual_end or get_ist_time_naive()
         end_tracking_record.odometer_reading = end_odometer or 0.0
         end_tracking_record.odometer_type = 'end'
         end_tracking_record.source = 'duty'
