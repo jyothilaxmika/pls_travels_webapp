@@ -30,11 +30,18 @@ def create_app():
         database_url = database_url.replace('.us-east-2', '-pooler.us-east-2')
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_size": 5,
-            "pool_recycle": 300,
+            "pool_size": 3,
+            "pool_recycle": 120,  # Recycle connections more frequently
             "pool_pre_ping": True,
-            "pool_timeout": 30,
-            "max_overflow": 10
+            "pool_timeout": 20,
+            "max_overflow": 5,
+            "connect_args": {
+                "sslmode": "require",
+                "connect_timeout": 10,
+                "keepalives_idle": 600,
+                "keepalives_interval": 30,
+                "keepalives_count": 3
+            }
         }
     else:
         # Fallback to SQLite for local development
