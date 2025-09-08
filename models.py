@@ -274,7 +274,6 @@ class Driver(db.Model):
         """Get list of additional phone numbers"""
         if self.additional_phones:
             try:
-                import json
                 return json.loads(self.additional_phones)
             except json.JSONDecodeError:
                 return []
@@ -286,7 +285,6 @@ class Driver(db.Model):
             # Filter out empty strings
             filtered_phones = [phone.strip() for phone in phone_list if phone and phone.strip()]
             if filtered_phones:
-                import json
                 self.additional_phones = json.dumps(filtered_phones)
             else:
                 self.additional_phones = None
@@ -296,7 +294,7 @@ class Driver(db.Model):
     def get_all_phones(self):
         """Get all phone numbers (primary + additional)"""
         phones = []
-        if hasattr(self, 'user') and self.user and self.user.phone:
+        if self.user and self.user.phone:
             phones.append(self.user.phone)
         phones.extend(self.get_additional_phones())
         return phones

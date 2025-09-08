@@ -110,7 +110,7 @@ class CloudStorageManager:
             bucket_name, filename = parts[0], parts[1]
             
             obj = object_storage.Object(f"{bucket_name}/{filename}")
-            return obj.read()
+            return obj.read()  # type: ignore
             
         except Exception as e:
             print(f"Cloud download error: {e}")
@@ -126,7 +126,7 @@ class CloudStorageManager:
             bucket_name, filename = parts[0], parts[1]
             
             obj = object_storage.Object(f"{bucket_name}/{filename}")
-            obj.delete()
+            obj.delete()  # type: ignore
             return True
             
         except Exception as e:
