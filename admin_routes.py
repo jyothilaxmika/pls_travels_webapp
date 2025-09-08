@@ -38,6 +38,18 @@ from recommendation_engine import recommendation_engine
 
 admin_bp = Blueprint('admin', __name__)
 
+def safe_float_conversion(value, default=0.0):
+    """Safely convert a value to float, preventing NaN injection"""
+    if value is None:
+        return default
+    try:
+        result = float(value)
+        if not math.isfinite(result):
+            return default
+        return result
+    except (ValueError, TypeError):
+        return default
+
 def create_default_vehicle_types():
     """Create default vehicle types if they don't exist"""
     default_types = [
@@ -1508,27 +1520,27 @@ def add_duty_scheme():
         # Configuration for payout schemes
         config = {
             'scheme_type': form.scheme_type.data,
-            'bmg_amount': float(form.bmg_amount.data or 0),
+            'bmg_amount': safe_float_conversion(form.bmg_amount.data, 0),
             'payout_frequency': form.payout_frequency.data or 'immediate',
             
             # Daily payout scheme configuration
-            'daily_base_amount': float(form.daily_base_amount.data or 0),
-            'daily_incentive_percent': float(form.daily_incentive_percent.data or 0),
+            'daily_base_amount': safe_float_conversion(form.daily_base_amount.data, 0),
+            'daily_incentive_percent': safe_float_conversion(form.daily_incentive_percent.data, 0),
             
             # Monthly payout scheme configuration  
-            'monthly_base_salary': float(form.monthly_base_salary.data or 0),
-            'monthly_incentive_percent': float(form.monthly_incentive_percent.data or 0),
+            'monthly_base_salary': safe_float_conversion(form.monthly_base_salary.data, 0),
+            'monthly_incentive_percent': safe_float_conversion(form.monthly_incentive_percent.data, 0),
             
             # Legacy scheme configurations
-            'fixed_amount': float(form.fixed_amount.data or 0),
-            'per_trip_amount': float(form.per_trip_amount.data or 0),
-            'base_amount': float(form.base_amount.data or 0),
-            'incentive_percent': float(form.incentive_percent.data or 0),
-            'slab1_max': float(form.slab1_max.data or 0),
-            'slab1_percent': float(form.slab1_percent.data or 0),
-            'slab2_max': float(form.slab2_max.data or 0),
-            'slab2_percent': float(form.slab2_percent.data or 0),
-            'slab3_percent': float(form.slab3_percent.data or 0)
+            'fixed_amount': safe_float_conversion(form.fixed_amount.data, 0),
+            'per_trip_amount': safe_float_conversion(form.per_trip_amount.data, 0),
+            'base_amount': safe_float_conversion(form.base_amount.data, 0),
+            'incentive_percent': safe_float_conversion(form.incentive_percent.data, 0),
+            'slab1_max': safe_float_conversion(form.slab1_max.data, 0),
+            'slab1_percent': safe_float_conversion(form.slab1_percent.data, 0),
+            'slab2_max': safe_float_conversion(form.slab2_max.data, 0),
+            'slab2_percent': safe_float_conversion(form.slab2_percent.data, 0),
+            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0)
         }
         
         scheme = DutyScheme()
