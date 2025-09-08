@@ -41,12 +41,82 @@
                         </div>
                         
                         <div class="col-md-6">
+                            {{ form.payout_frequency.label(class="form-label") }}
+                            {{ form.payout_frequency(class="form-select") }}
+                            <small class="text-muted">When drivers receive their payments</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
                             {{ form.bmg_amount.label(class="form-label") }}
                             {{ form.bmg_amount(class="form-control") }}
                             <small class="text-muted">Business Minimum Guarantee (optional)</small>
                         </div>
                     </div>
                     
+                    <!-- Daily Payout Scheme Fields -->
+                    <div id="daily-payout-fields" class="scheme-fields" style="display: none;">
+                        <div class="card bg-warning bg-opacity-10 border-warning mb-4">
+                            <div class="card-header bg-warning bg-opacity-25">
+                                <h6><i class="fas fa-calendar-day me-2"></i>Daily Salary Payout Configuration</h6>
+                                <small class="text-muted">Immediate payment after each duty completion</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.daily_base_amount.label(class="form-label") }}
+                                        {{ form.daily_base_amount(class="form-control") }}
+                                        <small class="text-muted">Fixed base amount paid daily</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.daily_incentive_percent.label(class="form-label") }}
+                                        {{ form.daily_incentive_percent(class="form-control") }}
+                                        <small class="text-muted">% of daily revenue as incentive</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info mt-3">
+                                    <small>
+                                        <strong>Example:</strong> Base ₹800 + 15% incentive<br>
+                                        For ₹3000 daily revenue: ₹800 + (₹3000 × 15%) = ₹800 + ₹450 = ₹1,250 paid immediately
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Payout Scheme Fields -->
+                    <div id="monthly-payout-fields" class="scheme-fields" style="display: none;">
+                        <div class="card bg-primary bg-opacity-10 border-primary mb-4">
+                            <div class="card-header bg-primary bg-opacity-25">
+                                <h6><i class="fas fa-calendar-alt me-2"></i>Monthly Payout Configuration</h6>
+                                <small class="text-muted">Accumulated earnings paid at month end</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.monthly_base_salary.label(class="form-label") }}
+                                        {{ form.monthly_base_salary(class="form-control") }}
+                                        <small class="text-muted">Monthly base salary (pro-rated daily)</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.monthly_incentive_percent.label(class="form-label") }}
+                                        {{ form.monthly_incentive_percent(class="form-control") }}
+                                        <small class="text-muted">% of monthly revenue as incentive</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info mt-3">
+                                    <small>
+                                        <strong>Example:</strong> Base ₹25,000/month + 12% incentive<br>
+                                        For ₹90,000 monthly revenue: ₹25,000 + (₹90,000 × 12%) = ₹35,800 paid at month end
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Fixed Scheme Fields -->
                     <div id="fixed-fields" class="scheme-fields" style="display: none;">
                         <div class="card bg-light mb-4">
@@ -216,16 +286,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show relevant fields based on scheme type
         const selectedType = schemeTypeSelect.value;
         
-        // Map new scheme types to field sets
+        // Map payout scheme types to field sets
         const fieldMapping = {
-            'scheme_1': 'fixed',
-            'scheme_2': 'per-trip', 
+            'daily_payout': 'daily-payout',
+            'monthly_payout': 'monthly-payout',
             'scheme_3': 'slab',
             'scheme_4': 'mixed',
-            'scheme_5': 'mixed'  // Can be customized later
+            'scheme_5': 'fixed'
         };
         
-        const fieldToShow = fieldMapping[selectedType] || selectedType;
+        const fieldToShow = fieldMapping[selectedType] || 'fixed';
         const targetField = document.getElementById(fieldToShow + '-fields');
         if (targetField) {
             targetField.style.display = 'block';
