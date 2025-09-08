@@ -5,6 +5,21 @@ import io
 from werkzeug.utils import secure_filename
 from datetime import datetime
 
+# Import the generate_employee_id function from utils.py
+def generate_employee_id():
+    """Generate unique employee ID for driver"""
+    import random
+    from models import Driver
+    
+    while True:
+        # Generate format: EMP + 6 digit number
+        employee_id = f"EMP{random.randint(100000, 999999)}"
+        
+        # Check if it already exists
+        existing = Driver.query.filter_by(employee_id=employee_id).first()
+        if not existing:
+            return employee_id
+
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
