@@ -247,21 +247,23 @@
                     <div class="col-12">
                         <h6 class="text-info">Photos</h6>
                         <div class="row">
-                            {% if duty.start_photo %}
+                            {% if duty.start_photo and duty.start_photo.strip() %}
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <p class="small text-muted mb-2">Start Photo</p>
                                     <img src="{{ url_for('uploaded_file', filename=duty.start_photo) }}" 
-                                         class="img-fluid rounded border" style="max-height: 200px;">
+                                         class="img-fluid rounded border" style="max-height: 200px;"
+                                         onerror="this.style.display='none';">
                                 </div>
                             </div>
                             {% endif %}
-                            {% if duty.end_photo %}
+                            {% if duty.end_photo and duty.end_photo.strip() %}
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <p class="small text-muted mb-2">End Photo</p>
                                     <img src="{{ url_for('uploaded_file', filename=duty.end_photo) }}" 
-                                         class="img-fluid rounded border" style="max-height: 200px;">
+                                         class="img-fluid rounded border" style="max-height: 200px;"
+                                         onerror="this.style.display='none';">
                                 </div>
                             </div>
                             {% endif %}
