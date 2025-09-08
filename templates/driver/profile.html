@@ -393,46 +393,198 @@
         </div>
     </form>
 
-    <!-- Uploaded Documents Section -->
+    <!-- Enhanced Document Showcase -->
     {% if driver and (driver.aadhar_document or driver.license_document or driver.profile_photo) %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h6 class="mb-0"><i class="fas fa-folder-open me-2"></i>Uploaded Documents</h6>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-id-card-alt me-2"></i>Document Showcase</h6>
+                <span class="badge bg-light text-primary">
+                    {{ [driver.aadhar_document, driver.license_document, driver.profile_photo] | select | list | length }} Documents
+                </span>
+            </div>
         </div>
         <div class="card-body">
             <div class="row">
+                <!-- Aadhar Document Card -->
                 {% if driver.aadhar_document %}
-                <div class="col-md-4 mb-3">
-                    <div class="text-center">
-                        <h6 class="text-muted">Aadhar Document</h6>
-                        <img src="/uploads/{{ driver.aadhar_document }}" class="img-fluid rounded border" 
-                             style="max-height: 200px; width: 100%; object-fit: cover;" alt="Aadhar Document">
-                        <p class="mt-2 text-success"><i class="fas fa-check-circle me-1"></i>Uploaded</p>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 border-success document-card">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 text-success"><i class="fas fa-id-card me-2"></i>Aadhar Card</h6>
+                                <span class="badge bg-{{ 'success' if driver.aadhar_verified else 'warning' }}">
+                                    {{ 'Verified' if driver.aadhar_verified else 'Pending' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="document-preview position-relative">
+                                <img src="/uploads/{{ driver.aadhar_document }}" 
+                                     class="img-fluid rounded document-thumbnail cursor-pointer" 
+                                     style="width: 100%; height: 180px; object-fit: cover;"
+                                     alt="Aadhar Document"
+                                     onclick="showDocumentModal('{{ driver.aadhar_document }}', 'Aadhar Card', 'aadhar')">
+                                <div class="document-overlay">
+                                    <button class="btn btn-primary btn-sm" 
+                                            onclick="showDocumentModal('{{ driver.aadhar_document }}', 'Aadhar Card', 'aadhar')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <a href="/uploads/{{ driver.aadhar_document }}" 
+                                       class="btn btn-success btn-sm ms-1" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <small class="text-muted">
+                                <div><strong>Number:</strong> {{ driver.aadhar_number or 'Not provided' }}</div>
+                                {% if driver.aadhar_verified_at %}
+                                <div><strong>Verified:</strong> {{ driver.aadhar_verified_at.strftime('%d/%m/%Y') }}</div>
+                                {% endif %}
+                                <div><strong>Status:</strong> 
+                                    <span class="text-{{ 'success' if driver.aadhar_verified else 'warning' }}">
+                                        {{ 'Verified' if driver.aadhar_verified else 'Under Review' }}
+                                    </span>
+                                </div>
+                            </small>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
                 
+                <!-- License Document Card -->
                 {% if driver.license_document %}
-                <div class="col-md-4 mb-3">
-                    <div class="text-center">
-                        <h6 class="text-muted">License Document</h6>
-                        <img src="/uploads/{{ driver.license_document }}" class="img-fluid rounded border" 
-                             style="max-height: 200px; width: 100%; object-fit: cover;" alt="License Document">
-                        <p class="mt-2 text-success"><i class="fas fa-check-circle me-1"></i>Uploaded</p>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 border-info document-card">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 text-info"><i class="fas fa-car me-2"></i>Driving License</h6>
+                                <span class="badge bg-{{ 'success' if driver.license_verified else 'warning' }}">
+                                    {{ 'Verified' if driver.license_verified else 'Pending' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="document-preview position-relative">
+                                <img src="/uploads/{{ driver.license_document }}" 
+                                     class="img-fluid rounded document-thumbnail cursor-pointer" 
+                                     style="width: 100%; height: 180px; object-fit: cover;"
+                                     alt="License Document"
+                                     onclick="showDocumentModal('{{ driver.license_document }}', 'Driving License', 'license')">
+                                <div class="document-overlay">
+                                    <button class="btn btn-primary btn-sm" 
+                                            onclick="showDocumentModal('{{ driver.license_document }}', 'Driving License', 'license')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <a href="/uploads/{{ driver.license_document }}" 
+                                       class="btn btn-success btn-sm ms-1" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <small class="text-muted">
+                                <div><strong>Number:</strong> {{ driver.license_number or 'Not provided' }}</div>
+                                <div><strong>Type:</strong> {{ driver.license_type or 'LMV' }}</div>
+                                {% if driver.license_expiry %}
+                                <div><strong>Expires:</strong> 
+                                    <span class="text-{{ 'danger' if driver.license_expiry < moment().date() else 'success' }}">
+                                        {{ driver.license_expiry.strftime('%d/%m/%Y') }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                                {% if driver.license_verified_at %}
+                                <div><strong>Verified:</strong> {{ driver.license_verified_at.strftime('%d/%m/%Y') }}</div>
+                                {% endif %}
+                            </small>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
                 
+                <!-- Profile Photo Card -->
                 {% if driver.profile_photo %}
-                <div class="col-md-4 mb-3">
-                    <div class="text-center">
-                        <h6 class="text-muted">Profile Photo</h6>
-                        <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded border" 
-                             style="max-height: 200px; width: 100%; object-fit: cover;" alt="Profile Photo">
-                        <p class="mt-2 text-success"><i class="fas fa-check-circle me-1"></i>Uploaded</p>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 border-secondary document-card">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 text-secondary"><i class="fas fa-user-circle me-2"></i>Profile Photo</h6>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="document-preview position-relative">
+                                <img src="/uploads/{{ driver.profile_photo }}" 
+                                     class="img-fluid rounded document-thumbnail cursor-pointer" 
+                                     style="width: 100%; height: 180px; object-fit: cover;"
+                                     alt="Profile Photo"
+                                     onclick="showDocumentModal('{{ driver.profile_photo }}', 'Profile Photo', 'profile')">
+                                <div class="document-overlay">
+                                    <button class="btn btn-primary btn-sm" 
+                                            onclick="showDocumentModal('{{ driver.profile_photo }}', 'Profile Photo', 'profile')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <a href="/uploads/{{ driver.profile_photo }}" 
+                                       class="btn btn-success btn-sm ms-1" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <small class="text-muted">
+                                <div><strong>Purpose:</strong> Profile & Authentication</div>
+                                <div><strong>Format:</strong> High Resolution Image</div>
+                                {% if driver.updated_at %}
+                                <div><strong>Updated:</strong> {{ driver.updated_at.strftime('%d/%m/%Y') }}</div>
+                                {% endif %}
+                            </small>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
+            </div>
+            
+            <!-- Document Status Summary -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Document Status</h6>
+                        <div class="row">
+                            {% if driver.aadhar_document %}
+                            <div class="col-md-4">
+                                <i class="fas fa-id-card text-success me-2"></i>
+                                <strong>Aadhar:</strong> 
+                                <span class="text-{{ 'success' if driver.aadhar_verified else 'warning' }}">
+                                    {{ 'Verified ✓' if driver.aadhar_verified else 'Under Review ⏳' }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if driver.license_document %}
+                            <div class="col-md-4">
+                                <i class="fas fa-car text-info me-2"></i>
+                                <strong>License:</strong> 
+                                <span class="text-{{ 'success' if driver.license_verified else 'warning' }}">
+                                    {{ 'Verified ✓' if driver.license_verified else 'Under Review ⏳' }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if driver.profile_photo %}
+                            <div class="col-md-4">
+                                <i class="fas fa-user-circle text-secondary me-2"></i>
+                                <strong>Profile:</strong> <span class="text-success">Active ✓</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <hr class="my-2">
+                        <small class="text-muted">
+                            Documents are reviewed by admin within 24-48 hours. Verified documents cannot be changed without admin approval.
+                        </small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -640,5 +792,121 @@ function setupFilePreview(inputId, previewId) {
 setupFilePreview('aadhar_photo', 'aadhar_preview');
 setupFilePreview('license_photo', 'license_preview');
 setupFilePreview('profile_photo', 'profile_preview');
+
+// Document showcase enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to document cards
+    const documentCards = document.querySelectorAll('.document-card');
+    documentCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+
+// Document viewer modal function
+function showDocumentModal(documentPath, title, type) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('documentModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'documentModal';
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="documentModalTitle">Document Viewer</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img id="documentModalImage" class="img-fluid rounded" style="max-height: 70vh;">
+                    </div>
+                    <div class="modal-footer">
+                        <div class="d-flex justify-content-between w-100">
+                            <div>
+                                <span class="badge bg-primary" id="documentType"></span>
+                            </div>
+                            <div>
+                                <a id="documentDownload" class="btn btn-success" download>
+                                    <i class="fas fa-download me-2"></i>Download
+                                </a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Update modal content
+    document.getElementById('documentModalTitle').textContent = title;
+    document.getElementById('documentModalImage').src = '/uploads/' + documentPath;
+    document.getElementById('documentDownload').href = '/uploads/' + documentPath;
+    document.getElementById('documentType').textContent = type.toUpperCase() + ' DOCUMENT';
+    
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
 </script>
+
+<style>
+.document-card {
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+
+.document-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.document-preview {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.document-thumbnail {
+    transition: transform 0.3s ease;
+}
+
+.document-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.document-preview:hover .document-overlay {
+    opacity: 1;
+}
+
+.document-preview:hover .document-thumbnail {
+    transform: scale(1.05);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+</style>
+
 {% endblock %}
