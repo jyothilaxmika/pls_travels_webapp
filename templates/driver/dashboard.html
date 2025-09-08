@@ -161,13 +161,19 @@
     
     <!-- Financial Actions -->
     <div class="row mb-4">
-        <div class="col-6">
+        <div class="col-4">
             <a href="{{ url_for('driver.financial_ledger') }}" class="btn btn-outline-info w-100 py-3">
                 <i class="fas fa-book fa-2x d-block mb-2"></i>
                 <small>Ledger</small>
             </a>
         </div>
-        <div class="col-6">
+        <div class="col-4">
+            <a href="{{ url_for('driver.resignation_status') }}" class="btn btn-outline-warning w-100 py-3">
+                <i class="fas fa-user-times fa-2x d-block mb-2"></i>
+                <small>Resignation</small>
+            </a>
+        </div>
+        <div class="col-4">
             <a href="{{ url_for('driver.profile') }}" class="btn btn-outline-secondary w-100 py-3">
                 <i class="fas fa-user fa-2x d-block mb-2"></i>
                 <small>Profile</small>

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleTracking, db,
-                   DriverStatus, VehicleStatus, DutyStatus)
+                   DriverStatus, VehicleStatus, DutyStatus, ResignationRequest, ResignationStatus)
 from forms import DriverProfileForm, DutyForm
 from utils import allowed_file, calculate_earnings, calculate_advanced_salary, process_camera_capture, process_file_upload
 from auth import log_audit
@@ -986,3 +986,119 @@ def earnings_chart():
         'labels': days,
         'data': earnings
     })
+
+# Resignation Management Routes
+@driver_bp.route('/resign', methods=['GET', 'POST'])
+@login_required
+@driver_required
+def resign():
+    """Submit resignation request"""
+    driver = get_driver_profile()
+    
+    if not driver:
+        flash('Driver profile not found.', 'error')
+        return redirect(url_for('driver.profile'))
+    
+    # Check if driver already has a pending or approved resignation
+    existing_resignation = ResignationRequest.query.filter_by(
+        driver_id=driver.id
+    ).filter(
+        ResignationRequest.status.in_([ResignationStatus.PENDING, ResignationStatus.APPROVED])
+    ).first()
+    
+    if existing_resignation:
+        flash('You already have a pending resignation request.', 'warning')
+        return redirect(url_for('driver.resignation_status'))
+    
+    if request.method == 'POST':
+        reason = request.form.get('reason')
+        detailed_reason = request.form.get('detailed_reason')
+        preferred_last_working_date = request.form.get('preferred_last_working_date')
+        
+        if not all([reason, preferred_last_working_date]):
+            flash('Please provide all required information.', 'error')
+            return render_template('driver/resign.html', driver=driver)
+        
+        try:
+            preferred_date = datetime.strptime(preferred_last_working_date, '%Y-%m-%d').date()
+            
+            # Ensure preferred date is at least 30 days from today
+            min_date = datetime.now().date() + timedelta(days=30)
+            if preferred_date < min_date:
+                flash('Preferred last working date must be at least 30 days from today.', 'error')
+                return render_template('driver/resign.html', driver=driver)
+            
+            # Create resignation request
+            resignation_request = ResignationRequest()
+            resignation_request.driver_id = driver.id
+            resignation_request.reason = reason
+            resignation_request.detailed_reason = detailed_reason
+            resignation_request.preferred_last_working_date = preferred_date
+            resignation_request.status = ResignationStatus.PENDING
+            
+            db.session.add(resignation_request)
+            db.session.commit()
+            
+            log_audit('submit_resignation', 'resignation', resignation_request.id,
+                     {'driver_name': driver.full_name, 'reason': reason})
+            
+            flash('Your resignation request has been submitted successfully. HR will review and respond within 3-5 business days.', 'success')
+            return redirect(url_for('driver.resignation_status'))
+            
+        except ValueError:
+            flash('Invalid date format.', 'error')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error submitting resignation request. Please try again.', 'error')
+    
+    return render_template('driver/resign.html', driver=driver)
+
+@driver_bp.route('/resignation-status')
+@login_required
+@driver_required
+def resignation_status():
+    """View resignation request status"""
+    driver = get_driver_profile()
+    
+    if not driver:
+        flash('Driver profile not found.', 'error')
+        return redirect(url_for('driver.profile'))
+    
+    # Get all resignation requests for this driver
+    resignation_requests = ResignationRequest.query.filter_by(
+        driver_id=driver.id
+    ).order_by(desc(ResignationRequest.submitted_at)).all()
+    
+    return render_template('driver/resignation_status.html', 
+                         driver=driver, 
+                         resignation_requests=resignation_requests)
+
+@driver_bp.route('/cancel-resignation/<int:request_id>', methods=['POST'])
+@login_required
+@driver_required
+def cancel_resignation(request_id):
+    """Cancel a pending resignation request"""
+    driver = get_driver_profile()
+    
+    if not driver:
+        flash('Driver profile not found.', 'error')
+        return redirect(url_for('driver.profile'))
+    
+    resignation_request = ResignationRequest.query.filter_by(
+        id=request_id,
+        driver_id=driver.id,
+        status=ResignationStatus.PENDING
+    ).first()
+    
+    if not resignation_request:
+        flash('Resignation request not found or cannot be cancelled.', 'error')
+        return redirect(url_for('driver.resignation_status'))
+    
+    resignation_request.status = ResignationStatus.CANCELLED
+    db.session.commit()
+    
+    log_audit('cancel_resignation', 'resignation', resignation_request.id,
+             {'driver_name': driver.full_name})
+    
+    flash('Your resignation request has been cancelled.', 'info')
+    return redirect(url_for('driver.resignation_status'))

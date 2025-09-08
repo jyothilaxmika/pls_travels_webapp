@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Resignation Status - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3><i class="fas fa-clipboard-list me-2 text-warning"></i>Resignation Status</h3>
+                    <p class="text-muted">Track your resignation request status and timeline</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('driver.dashboard') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    {% if not resignation_requests or resignation_requests[0].status.value not in ['pending', 'approved'] %}
+                    <a href="{{ url_for('driver.resign') }}" class="btn btn-warning">
+                        <i class="fas fa-plus me-1"></i>New Resignation Request
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if resignation_requests %}
+                {% for request in resignation_requests %}
+                <!-- Resignation Request Card -->
+                <div class="card mb-4">
+                    <div class="card-header {% if request.status.value == 'pending' %}bg-warning{% elif request.status.value == 'approved' %}bg-success{% elif request.status.value == 'rejected' %}bg-danger{% elif request.status.value == 'completed' %}bg-info{% else %}bg-secondary{% endif %} text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user-times me-2"></i>
+                                Resignation Request #{{ request.id }}
+                            </h5>
+                            <div>
+                                {% if request.status.value == 'pending' %}
+                                    <span class="badge bg-light text-dark">PENDING REVIEW</span>
+                                {% elif request.status.value == 'approved' %}
+                                    <span class="badge bg-light text-dark">APPROVED - NOTICE PERIOD</span>
+                                {% elif request.status.value == 'rejected' %}
+                                    <span class="badge bg-light text-dark">REJECTED</span>
+                                {% elif request.status.value == 'completed' %}
+                                    <span class="badge bg-light text-dark">COMPLETED</span>
+                                {% elif request.status.value == 'cancelled' %}
+                                    <span class="badge bg-light text-dark">CANCELLED</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Request Details</h6>
+                                <table class="table table-borderless table-sm">
+                                    <tr>
+                                        <td><strong>Submitted Date:</strong></td>
+                                        <td>{{ request.submitted_at.strftime('%Y-%m-%d %H:%M') if request.submitted_at else 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Reason:</strong></td>
+                                        <td>{{ request.reason }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Preferred Last Date:</strong></td>
+                                        <td>{{ request.preferred_last_working_date.strftime('%Y-%m-%d') if request.preferred_last_working_date else 'N/A' }}</td>
+                                    </tr>
+                                    {% if request.actual_last_working_date %}
+                                    <tr>
+                                        <td><strong>Actual Last Date:</strong></td>
+                                        <td>{{ request.actual_last_working_date.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Status Information</h6>
+                                <table class="table table-borderless table-sm">
+                                    {% if request.reviewed_at %}
+                                    <tr>
+                                        <td><strong>Reviewed Date:</strong></td>
+                                        <td>{{ request.reviewed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if request.notice_period_start and request.status.value == 'approved' %}
+                                    <tr>
+                                        <td><strong>Notice Period:</strong></td>
+                                        <td>{{ request.notice_period_start.strftime('%Y-%m-%d') }} to {{ request.notice_period_end.strftime('%Y-%m-%d') if request.notice_period_end else 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Days Remaining:</strong></td>
+                                        <td>
+                                            {% if request.days_remaining_in_notice is not none %}
+                                                {% if request.days_remaining_in_notice > 0 %}
+                                                    <span class="badge bg-warning">{{ request.days_remaining_in_notice }} days</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Notice period completed</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-secondary">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if request.final_settlement_amount %}
+                                    <tr>
+                                        <td><strong>Settlement Amount:</strong></td>
+                                        <td class="text-success">₹{{ "{:,.2f}".format(request.final_settlement_amount) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+
+                        {% if request.detailed_reason %}
+                        <div class="mt-3">
+                            <h6>Detailed Reason</h6>
+                            <p class="text-muted">{{ request.detailed_reason }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if request.admin_comments %}
+                        <div class="mt-3">
+                            <h6>Admin Comments</h6>
+                            <div class="alert alert-info">
+                                <i class="fas fa-comment me-2"></i>{{ request.admin_comments }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if request.rejection_reason and request.status.value == 'rejected' %}
+                        <div class="mt-3">
+                            <h6>Rejection Reason</h6>
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>{{ request.rejection_reason }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="mt-3">
+                            {% if request.status.value == 'pending' %}
+                            <form method="POST" action="{{ url_for('driver.cancel_resignation', request_id=request.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                        onclick="return confirm('Are you sure you want to cancel this resignation request?')">
+                                    <i class="fas fa-times me-1"></i>Cancel Request
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if request.status.value == 'approved' and request.is_notice_period_active %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>Notice Period Active:</strong> You are currently serving your notice period. 
+                                Please ensure all handover processes are completed before your last working day.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- No Resignation Requests -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h4>No Resignation Requests</h4>
+                        <p class="text-muted">You haven't submitted any resignation requests yet.</p>
+                        <a href="{{ url_for('driver.resign') }}" class="btn btn-warning">
+                            <i class="fas fa-plus me-2"></i>Submit Resignation Request
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.table td {
+    padding: 0.25rem 0.5rem;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+</style>
+{% endblock %}

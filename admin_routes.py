@@ -8,7 +8,7 @@ from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus)
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils import allowed_file, calculate_earnings
 import json
@@ -569,6 +569,218 @@ def unblock_driver(driver_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+# Resignation Management Routes
+@admin_bp.route('/resignations')
+@login_required
+@admin_required
+def resignations():
+    """View all resignation requests"""
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status', '')
+    branch_filter = request.args.get('branch', '', type=int)
+    
+    query = ResignationRequest.query.join(Driver).join(Branch)
+    
+    if status_filter:
+        query = query.filter(ResignationRequest.status == status_filter)
+    
+    if branch_filter:
+        query = query.filter(Driver.branch_id == branch_filter)
+    
+    resignations = query.order_by(desc(ResignationRequest.submitted_at)).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    # Get summary statistics
+    stats = {
+        'pending': ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).count(),
+        'approved': ResignationRequest.query.filter_by(status=ResignationStatus.APPROVED).count(),
+        'in_notice': ResignationRequest.query.filter(
+            ResignationRequest.status == ResignationStatus.APPROVED,
+            ResignationRequest.notice_period_start <= datetime.now().date(),
+            ResignationRequest.notice_period_end >= datetime.now().date()
+        ).count(),
+        'completed': ResignationRequest.query.filter_by(status=ResignationStatus.COMPLETED).count()
+    }
+    
+    return render_template('admin/resignations.html',
+                         resignations=resignations,
+                         branches=branches,
+                         status_filter=status_filter,
+                         branch_filter=branch_filter,
+                         stats=stats)
+
+@admin_bp.route('/resignations/<int:resignation_id>')
+@login_required
+@admin_required
+def view_resignation(resignation_id):
+    """View resignation request details"""
+    resignation = ResignationRequest.query.get_or_404(resignation_id)
+    
+    # Get driver's current assignments and assets
+    active_assignments = VehicleAssignment.query.filter_by(
+        driver_id=resignation.driver_id,
+        status=AssignmentStatus.ACTIVE
+    ).all()
+    
+    assigned_assets = Asset.query.filter_by(
+        driver_id=resignation.driver_id,
+        status='assigned'
+    ).all()
+    
+    # Get financial summary
+    total_earnings = sum(duty.driver_earnings or 0 for duty in resignation.driver.duties)
+    total_penalties = sum(penalty.amount or 0 for penalty in resignation.driver.penalties)
+    net_amount = total_earnings - total_penalties
+    
+    return render_template('admin/resignation_details.html',
+                         resignation=resignation,
+                         active_assignments=active_assignments,
+                         assigned_assets=assigned_assets,
+                         financial_summary={
+                             'total_earnings': total_earnings,
+                             'total_penalties': total_penalties,
+                             'net_amount': net_amount
+                         })
+
+@admin_bp.route('/resignations/<int:resignation_id>/approve', methods=['POST'])
+@login_required
+@admin_required
+def approve_resignation(resignation_id):
+    """Approve resignation request and start 30-day notice period"""
+    resignation = ResignationRequest.query.get_or_404(resignation_id)
+    
+    if resignation.status != ResignationStatus.PENDING:
+        flash('This resignation request has already been processed.', 'error')
+        return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
+    
+    admin_comments = request.form.get('admin_comments', '')
+    waive_notice = request.form.get('waive_notice') == 'on'
+    waiver_reason = request.form.get('waiver_reason', '')
+    
+    # Calculate notice period dates
+    notice_start = datetime.now().date()
+    if waive_notice:
+        notice_end = notice_start  # Immediate termination
+        resignation.is_notice_period_waived = True
+        resignation.waiver_reason = waiver_reason
+    else:
+        notice_end = notice_start + timedelta(days=30)
+    
+    # Update resignation request
+    resignation.status = ResignationStatus.APPROVED
+    resignation.reviewed_by = current_user.id
+    resignation.reviewed_at = datetime.utcnow()
+    resignation.approved_at = datetime.utcnow()
+    resignation.admin_comments = admin_comments
+    resignation.notice_period_start = notice_start
+    resignation.notice_period_end = notice_end
+    resignation.actual_last_working_date = resignation.preferred_last_working_date
+    
+    try:
+        db.session.commit()
+        log_audit('approve_resignation', 'resignation', resignation_id,
+                 {'driver_name': resignation.driver.full_name, 'notice_waived': waive_notice})
+        
+        flash(f'Resignation approved. Driver must complete {"notice period waived" if waive_notice else "30-day notice period"}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error approving resignation. Please try again.', 'error')
+    
+    return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
+
+@admin_bp.route('/resignations/<int:resignation_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_resignation(resignation_id):
+    """Reject resignation request"""
+    resignation = ResignationRequest.query.get_or_404(resignation_id)
+    
+    if resignation.status != ResignationStatus.PENDING:
+        flash('This resignation request has already been processed.', 'error')
+        return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
+    
+    rejection_reason = request.form.get('rejection_reason', '')
+    admin_comments = request.form.get('admin_comments', '')
+    
+    if not rejection_reason:
+        flash('Please provide a reason for rejection.', 'error')
+        return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
+    
+    # Update resignation request
+    resignation.status = ResignationStatus.REJECTED
+    resignation.reviewed_by = current_user.id
+    resignation.reviewed_at = datetime.utcnow()
+    resignation.rejection_reason = rejection_reason
+    resignation.admin_comments = admin_comments
+    
+    try:
+        db.session.commit()
+        log_audit('reject_resignation', 'resignation', resignation_id,
+                 {'driver_name': resignation.driver.full_name, 'reason': rejection_reason})
+        
+        flash('Resignation request has been rejected.', 'info')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error rejecting resignation. Please try again.', 'error')
+    
+    return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
+
+@admin_bp.route('/resignations/<int:resignation_id>/complete', methods=['POST'])
+@login_required
+@admin_required
+def complete_resignation(resignation_id):
+    """Complete resignation process after notice period"""
+    resignation = ResignationRequest.query.get_or_404(resignation_id)
+    
+    if resignation.status != ResignationStatus.APPROVED:
+        flash('This resignation is not in approved status.', 'error')
+        return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
+    
+    if not resignation.can_be_completed:
+        flash('Notice period is still active. Cannot complete resignation yet.', 'error')
+        return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
+    
+    # Update resignation to completed
+    resignation.status = ResignationStatus.COMPLETED
+    resignation.completed_at = datetime.utcnow()
+    
+    # Update driver status to terminated
+    driver = resignation.driver
+    driver.status = DriverStatus.TERMINATED
+    
+    # Complete active assignments
+    VehicleAssignment.query.filter_by(
+        driver_id=driver.id,
+        status=AssignmentStatus.ACTIVE
+    ).update({
+        'status': AssignmentStatus.COMPLETED,
+        'end_date': datetime.now().date()
+    })
+    
+    # Complete active duties
+    Duty.query.filter_by(
+        driver_id=driver.id,
+        status=DutyStatus.ACTIVE
+    ).update({
+        'status': DutyStatus.COMPLETED,
+        'end_time': datetime.utcnow()
+    })
+    
+    try:
+        db.session.commit()
+        log_audit('complete_resignation', 'resignation', resignation_id,
+                 {'driver_name': driver.full_name})
+        
+        flash('Resignation completed successfully. Driver status updated to terminated.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error completing resignation. Please try again.', 'error')
+    
+    return redirect(url_for('admin.view_resignation', resignation_id=resignation_id))
 
 @admin_bp.route('/assignments')
 @login_required

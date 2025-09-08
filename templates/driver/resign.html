@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Resignation - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3><i class="fas fa-user-times me-2 text-warning"></i>Submit Resignation Request</h3>
+                    <p class="text-muted">Request to resign from your position at PLS TRAVELS</p>
+                </div>
+                <a href="{{ url_for('driver.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Important Notice -->
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Important Notice:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>Once approved, you must complete a 30-day notice period</li>
+                    <li>All company documents, vehicle, and assets must be returned</li>
+                    <li>Final settlement will be processed after completing the notice period</li>
+                    <li>This request cannot be undone once approved by HR</li>
+                </ul>
+            </div>
+
+            <!-- Resignation Form -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-form me-2"></i>Resignation Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Driver Name</label>
+                                    <input type="text" class="form-control" value="{{ driver.full_name }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Employee ID</label>
+                                    <input type="text" class="form-control" value="{{ driver.employee_id }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Reason for Resignation <span class="text-danger">*</span></label>
+                            <select name="reason" class="form-select" required>
+                                <option value="">Select a reason</option>
+                                <option value="Personal reasons">Personal reasons</option>
+                                <option value="Better opportunity">Better opportunity</option>
+                                <option value="Health issues">Health issues</option>
+                                <option value="Family commitments">Family commitments</option>
+                                <option value="Relocation">Relocation</option>
+                                <option value="Career change">Career change</option>
+                                <option value="Retirement">Retirement</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Detailed Explanation</label>
+                            <textarea name="detailed_reason" class="form-control" rows="4" 
+                                    placeholder="Please provide additional details about your resignation reason..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Preferred Last Working Date <span class="text-danger">*</span></label>
+                            <input type="date" name="preferred_last_working_date" class="form-control" 
+                                   min="{{ (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d') }}" required>
+                            <small class="text-muted">Minimum 30 days notice period required</small>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Terms and Conditions</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms1" required>
+                                    <label class="form-check-label" for="terms1">
+                                        I understand that I must complete a 30-day notice period after approval
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms2" required>
+                                    <label class="form-check-label" for="terms2">
+                                        I will return all company property, documents, and vehicle in good condition
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms3" required>
+                                    <label class="form-check-label" for="terms3">
+                                        I understand that final settlement will be processed only after completing all formalities
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-warning btn-lg me-3">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Resignation Request
+                            </button>
+                            <a href="{{ url_for('driver.dashboard') }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.form-check-input:checked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    color: #212529;
+}
+</style>
+{% endblock %}

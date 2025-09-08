@@ -53,6 +53,13 @@ class PaymentStatus(Enum):
     FAILED = 'failed'
     CANCELLED = 'cancelled'
 
+class ResignationStatus(Enum):
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+
 # Association tables with additional metadata
 manager_branches = db.Table('manager_branches',
     db.Column('id', db.Integer, primary_key=True),
@@ -866,6 +873,87 @@ class Penalty(db.Model):
     duty = db.relationship('Duty', backref='penalties')
     applier = db.relationship('User', foreign_keys=[applied_by])
     approver = db.relationship('User', foreign_keys=[approved_by])
+
+class ResignationRequest(db.Model):
+    __tablename__ = 'resignation_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False, index=True)
+    
+    # Resignation details
+    reason = db.Column(db.String(500), nullable=False)
+    detailed_reason = db.Column(db.Text)
+    preferred_last_working_date = db.Column(db.Date, nullable=False)
+    actual_last_working_date = db.Column(db.Date)  # Set when approved
+    
+    # Document handover
+    handover_notes = db.Column(db.Text)
+    documents_returned = db.Column(db.Boolean, default=False)
+    vehicle_returned = db.Column(db.Boolean, default=False)
+    assets_returned = db.Column(db.Boolean, default=False)
+    
+    # 30-day notice period tracking
+    notice_period_start = db.Column(db.Date)  # When admin approves
+    notice_period_end = db.Column(db.Date)    # 30 days from start
+    is_notice_period_waived = db.Column(db.Boolean, default=False)
+    waiver_reason = db.Column(db.Text)
+    
+    # Financial settlement
+    final_settlement_amount = db.Column(db.Float)
+    pending_dues = db.Column(db.Float, default=0.0)
+    settlement_notes = db.Column(db.Text)
+    
+    # Status and workflow
+    status = db.Column(db.Enum(ResignationStatus), nullable=False, default=ResignationStatus.PENDING, index=True)
+    
+    # Admin actions
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_at = db.Column(db.DateTime)
+    admin_comments = db.Column(db.Text)
+    rejection_reason = db.Column(db.Text)
+    
+    # Timestamps
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    approved_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    
+    # Relationships
+    driver = db.relationship('Driver', backref='resignation_requests')
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+    
+    # Constraints
+    __table_args__ = (
+        Index('idx_resignation_status_date', 'status', 'submitted_at'),
+        CheckConstraint('actual_last_working_date IS NULL OR actual_last_working_date >= preferred_last_working_date'),
+        CheckConstraint('notice_period_end IS NULL OR notice_period_end >= notice_period_start'),
+    )
+    
+    def __repr__(self):
+        return f'<ResignationRequest {self.driver.full_name if self.driver else "Unknown"} - {self.status.value}>'
+    
+    @hybrid_property
+    def is_notice_period_active(self):
+        if not self.notice_period_start or not self.notice_period_end:
+            return False
+        today = date.today()
+        return self.notice_period_start <= today <= self.notice_period_end
+    
+    @hybrid_property
+    def days_remaining_in_notice(self):
+        if not self.notice_period_end:
+            return None
+        today = date.today()
+        return max(0, (self.notice_period_end - today).days)
+    
+    @hybrid_property
+    def can_be_completed(self):
+        if self.status != ResignationStatus.APPROVED:
+            return False
+        if self.is_notice_period_waived:
+            return True
+        return self.notice_period_end and date.today() >= self.notice_period_end
 
 class Asset(db.Model):
     __tablename__ = 'assets'
