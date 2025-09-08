@@ -777,6 +777,187 @@ def earnings():
                          start_date=start_date,
                          end_date=end_date)
 
+
+@driver_bp.route('/ledger')
+@login_required
+@driver_required
+def financial_ledger():
+    driver = get_driver_profile()
+    
+    if not driver:
+        flash('Driver profile not found.', 'error')
+        return redirect(url_for('driver.profile'))
+    
+    # Date range filter with default to last 3 months
+    start_date = request.args.get('start_date', (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d'))
+    end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+    transaction_type = request.args.get('type', 'all')  # all, earnings, deductions, advances
+    
+    try:
+        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        start_date_obj = (datetime.now() - timedelta(days=90)).date()
+        end_date_obj = datetime.now().date()
+    
+    # Get all duties in date range
+    duties = Duty.query.filter(
+        Duty.driver_id == driver.id,
+        func.date(Duty.start_time) >= start_date_obj,
+        func.date(Duty.start_time) <= end_date_obj
+    ).order_by(Duty.start_time).all()
+    
+    # Get penalties in date range
+    penalties = Penalty.query.filter(
+        Penalty.driver_id == driver.id,
+        func.date(Penalty.applied_at) >= start_date_obj,
+        func.date(Penalty.applied_at) <= end_date_obj
+    ).order_by(Penalty.applied_at).all()
+    
+    # Create comprehensive transaction ledger
+    transactions = []
+    running_balance = 0.0
+    
+    # Process all duties to create detailed transactions
+    for duty in duties:
+        duty_date = duty.start_time.date() if duty.start_time else datetime.now().date()
+        
+        # Earnings transactions
+        if duty.driver_earnings and duty.driver_earnings > 0:
+            running_balance += duty.driver_earnings
+            transactions.append({
+                'date': duty_date,
+                'time': duty.start_time.strftime('%H:%M') if duty.start_time else '',
+                'type': 'EARNINGS',
+                'description': f'Duty Earnings - {duty.vehicle.registration_number if duty.vehicle else "N/A"}',
+                'reference': f'DUTY-{duty.id}',
+                'debit': 0,
+                'credit': duty.driver_earnings,
+                'balance': running_balance,
+                'details': {
+                    'company_pay': duty.company_pay or 0,
+                    'incentive': (duty.cash_collection or 0) - (duty.operator_out or 0) if (duty.cash_collection or 0) > (duty.operator_out or 0) else 0,
+                    'total_revenue': duty.total_revenue or 0,
+                    'duty_id': duty.id
+                }
+            })
+        
+        # Advance deductions
+        if duty.advance_deduction and duty.advance_deduction > 0:
+            running_balance -= duty.advance_deduction
+            transactions.append({
+                'date': duty_date,
+                'time': duty.start_time.strftime('%H:%M') if duty.start_time else '',
+                'type': 'ADVANCE',
+                'description': f'Advance Deduction - {duty.vehicle.registration_number if duty.vehicle else "N/A"}',
+                'reference': f'ADV-{duty.id}',
+                'debit': duty.advance_deduction,
+                'credit': 0,
+                'balance': running_balance,
+                'details': {
+                    'duty_id': duty.id,
+                    'amount': duty.advance_deduction
+                }
+            })
+        
+        # Fuel deductions
+        if duty.fuel_deduction and duty.fuel_deduction > 0:
+            running_balance -= duty.fuel_deduction
+            transactions.append({
+                'date': duty_date,
+                'time': duty.start_time.strftime('%H:%M') if duty.start_time else '',
+                'type': 'FUEL_DEDUCTION',
+                'description': f'Fuel Deduction - {duty.vehicle.registration_number if duty.vehicle else "N/A"}',
+                'reference': f'FUEL-{duty.id}',
+                'debit': duty.fuel_deduction,
+                'credit': 0,
+                'balance': running_balance,
+                'details': {
+                    'duty_id': duty.id,
+                    'amount': duty.fuel_deduction
+                }
+            })
+        
+        # Penalty deductions
+        if duty.penalty_deduction and duty.penalty_deduction > 0:
+            running_balance -= duty.penalty_deduction
+            transactions.append({
+                'date': duty_date,
+                'time': duty.start_time.strftime('%H:%M') if duty.start_time else '',
+                'type': 'PENALTY',
+                'description': f'Penalty Deduction - {duty.vehicle.registration_number if duty.vehicle else "N/A"}',
+                'reference': f'PEN-{duty.id}',
+                'debit': duty.penalty_deduction,
+                'credit': 0,
+                'balance': running_balance,
+                'details': {
+                    'duty_id': duty.id,
+                    'amount': duty.penalty_deduction
+                }
+            })
+    
+    # Add penalty transactions
+    for penalty in penalties:
+        penalty_date = penalty.applied_at.date() if penalty.applied_at else datetime.now().date()
+        running_balance -= penalty.amount
+        transactions.append({
+            'date': penalty_date,
+            'time': penalty.applied_at.strftime('%H:%M') if penalty.applied_at else '',
+            'type': 'PENALTY',
+            'description': f'Penalty - {penalty.reason}',
+            'reference': f'PENALTY-{penalty.id}',
+            'debit': penalty.amount,
+            'credit': 0,
+            'balance': running_balance,
+            'details': {
+                'penalty_id': penalty.id,
+                'reason': penalty.reason,
+                'amount': penalty.amount
+            }
+        })
+    
+    # Sort transactions by date and time
+    transactions.sort(key=lambda x: (x['date'], x['time']))
+    
+    # Recalculate running balance in chronological order
+    balance = 0.0
+    for transaction in transactions:
+        balance += transaction['credit'] - transaction['debit']
+        transaction['balance'] = balance
+    
+    # Apply transaction type filter
+    if transaction_type != 'all':
+        if transaction_type == 'earnings':
+            transactions = [t for t in transactions if t['type'] == 'EARNINGS']
+        elif transaction_type == 'deductions':
+            transactions = [t for t in transactions if t['type'] in ['FUEL_DEDUCTION', 'PENALTY']]
+        elif transaction_type == 'advances':
+            transactions = [t for t in transactions if t['type'] == 'ADVANCE']
+    
+    # Calculate summary statistics
+    total_credits = sum(t['credit'] for t in transactions)
+    total_debits = sum(t['debit'] for t in transactions)
+    net_amount = total_credits - total_debits
+    
+    # Transaction type counts
+    transaction_counts = {
+        'earnings': len([t for t in transactions if t['type'] == 'EARNINGS']),
+        'advances': len([t for t in transactions if t['type'] == 'ADVANCE']),
+        'deductions': len([t for t in transactions if t['type'] in ['FUEL_DEDUCTION', 'PENALTY']]),
+        'penalties': len([t for t in transactions if t['type'] == 'PENALTY'])
+    }
+    
+    return render_template('driver/ledger.html',
+                         driver=driver,
+                         transactions=transactions,
+                         total_credits=total_credits,
+                         total_debits=total_debits,
+                         net_amount=net_amount,
+                         transaction_counts=transaction_counts,
+                         start_date=start_date,
+                         end_date=end_date,
+                         transaction_type=transaction_type)
+
 @driver_bp.route('/api/earnings-chart')
 @login_required
 @driver_required
