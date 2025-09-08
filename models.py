@@ -270,6 +270,8 @@ class Driver(db.Model):
     current_vehicle = db.relationship('Vehicle', foreign_keys=[current_vehicle_id])
     approver = db.relationship('User', foreign_keys=[approved_by], post_update=True)
     
+    # Note: user relationship is defined in User model as driver_profile
+    
     def get_additional_phones(self):
         """Get list of additional phone numbers"""
         if self.additional_phones:
@@ -294,7 +296,8 @@ class Driver(db.Model):
     def get_all_phones(self):
         """Get all phone numbers (primary + additional)"""
         phones = []
-        if self.user and self.user.phone:
+        # Use backref 'user' which is properly defined in the User model
+        if hasattr(self, 'user') and self.user and self.user.phone:
             phones.append(self.user.phone)
         phones.extend(self.get_additional_phones())
         return phones
@@ -323,7 +326,7 @@ class VehicleType(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    vehicles = db.relationship('Vehicle', backref='vehicle_type_info', lazy=True)
+    vehicles = db.relationship('Vehicle', backref='vehicle_type_info', lazy=True, overlaps="vehicle_instances,vehicle_type_obj")
 
 class Vehicle(db.Model):
     __tablename__ = 'vehicles'
@@ -398,7 +401,7 @@ class Vehicle(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    vehicle_type_obj = db.relationship('VehicleType', backref='vehicle_instances', lazy=True)
+    vehicle_type_obj = db.relationship('VehicleType', backref=db.backref('vehicle_instances', overlaps="vehicles,vehicle_type_info"), lazy=True, overlaps="vehicle_type_info,vehicles")
     duties = db.relationship('Duty', backref='vehicle', lazy=True)
     maintenance_records = db.relationship('MaintenanceRecord', backref='vehicle', lazy=True)
     
