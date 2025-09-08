@@ -490,7 +490,7 @@ def start_duty():
 
     # Handle start photo camera capture
     start_photo_filename, start_photo_metadata = process_camera_capture(
-        request.form, 'start_photo', driver.id, 'duty_start'
+        request.form, 'start_photo', driver.id, photo_type='duty_start'
     )
     if start_photo_filename:
         duty.start_photo = start_photo_filename
@@ -599,7 +599,7 @@ def end_duty():
 
         # Handle end photo camera capture
         end_photo_filename, end_photo_metadata = process_camera_capture(
-            request.form, 'end_photo', driver.id, 'duty_end'
+            request.form, 'end_photo', driver.id, photo_type='duty_end'
         )
         if end_photo_filename:
             active_duty.end_photo = end_photo_filename
