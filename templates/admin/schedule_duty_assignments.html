@@ -72,7 +72,12 @@
                 <form id="assignmentForm">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Driver <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">Driver <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-sm btn-outline-warning" id="getDriverRecommendations" style="display: none;">
+                                    <i class="fas fa-magic"></i> Get Recommendations
+                                </button>
+                            </div>
                             <select id="driver_id" name="driver_id" class="form-select" required>
                                 <option value="">Select Driver</option>
                                 {% for driver in drivers %}
@@ -87,10 +92,16 @@
                                 {% endfor %}
                             </select>
                             <div id="driver-info" class="mt-2 small text-muted"></div>
+                            <div id="driverRecommendations" class="mt-2" style="display: none;"></div>
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Vehicle <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">Vehicle <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-sm btn-outline-warning" id="getVehicleRecommendations" style="display: none;">
+                                    <i class="fas fa-magic"></i> Get Recommendations
+                                </button>
+                            </div>
                             <select id="vehicle_id" name="vehicle_id" class="form-select" required>
                                 <option value="">Select Vehicle</option>
                                 {% for vehicle in vehicles %}
@@ -105,6 +116,7 @@
                                 {% endfor %}
                             </select>
                             <div id="vehicle-info" class="mt-2 small text-muted"></div>
+                            <div id="vehicleRecommendations" class="mt-2" style="display: none;"></div>
                         </div>
                     </div>
                     
@@ -263,29 +275,8 @@ document.getElementById('checkConflicts').addEventListener('click', function() {
     checkConflicts();
 });
 
-// Driver selection change handler
-document.getElementById('driver_id').addEventListener('change', function() {
-    const selectedOption = this.options[this.selectedIndex];
-    const infoDiv = document.getElementById('driver-info');
-    
-    if (selectedOption.value) {
-        const branch = selectedOption.dataset.branch;
-        const phone = selectedOption.dataset.phone;
-        const status = selectedOption.dataset.status;
-        const currentVehicle = selectedOption.dataset.currentVehicle;
-        
-        let info = `Branch: ${branch} | Phone: ${phone} | Status: ${status.toUpperCase()}`;
-        if (currentVehicle) {
-            info += ' | Currently assigned to vehicle';
-        }
-        infoDiv.innerHTML = info;
-        infoDiv.className = currentVehicle ? 'mt-2 small text-warning' : 'mt-2 small text-muted';
-    } else {
-        infoDiv.innerHTML = '';
-    }
-});
 
-// Vehicle selection change handler
+// Vehicle selection change handler with recommendations  
 document.getElementById('vehicle_id').addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
     const infoDiv = document.getElementById('vehicle-info');
@@ -302,10 +293,207 @@ document.getElementById('vehicle_id').addEventListener('change', function() {
         
         infoDiv.innerHTML = info;
         infoDiv.className = 'mt-2 small text-muted';
+        
+        // Show driver recommendations button
+        document.getElementById('getDriverRecommendations').style.display = 'block';
+        // Clear any existing recommendations
+        document.getElementById('driverRecommendations').style.display = 'none';
     } else {
         infoDiv.innerHTML = '';
+        document.getElementById('getDriverRecommendations').style.display = 'none';
     }
+    
+    updateRecommendationButtons();
 });
+
+// Driver selection change handler with recommendations
+document.getElementById('driver_id').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const infoDiv = document.getElementById('driver-info');
+    
+    if (selectedOption.value) {
+        const branch = selectedOption.dataset.branch;
+        const phone = selectedOption.dataset.phone;
+        const status = selectedOption.dataset.status;
+        const currentVehicle = selectedOption.dataset.currentVehicle;
+        
+        let info = `Branch: ${branch} | Phone: ${phone} | Status: ${status.toUpperCase()}`;
+        if (currentVehicle) {
+            info += ' | Currently assigned to vehicle';
+        }
+        infoDiv.innerHTML = info;
+        infoDiv.className = currentVehicle ? 'mt-2 small text-warning' : 'mt-2 small text-muted';
+        
+        // Show vehicle recommendations button
+        document.getElementById('getVehicleRecommendations').style.display = 'block';
+        // Clear any existing recommendations
+        document.getElementById('vehicleRecommendations').style.display = 'none';
+    } else {
+        infoDiv.innerHTML = '';
+        document.getElementById('getVehicleRecommendations').style.display = 'none';
+    }
+    
+    updateRecommendationButtons();
+});
+
+// Get driver recommendations for selected vehicle
+document.getElementById('getDriverRecommendations').addEventListener('click', function() {
+    const vehicleId = document.getElementById('vehicle_id').value;
+    if (!vehicleId) {
+        showAlert('Please select a vehicle first.', 'warning');
+        return;
+    }
+    
+    fetchDriverRecommendations(vehicleId);
+});
+
+// Get vehicle recommendations for selected driver  
+document.getElementById('getVehicleRecommendations').addEventListener('click', function() {
+    const driverId = document.getElementById('driver_id').value;
+    if (!driverId) {
+        showAlert('Please select a driver first.', 'warning');
+        return;
+    }
+    
+    fetchVehicleRecommendations(driverId);
+});
+
+function updateRecommendationButtons() {
+    const driverId = document.getElementById('driver_id').value;
+    const vehicleId = document.getElementById('vehicle_id').value;
+    
+    // Show appropriate recommendation buttons
+    if (vehicleId && !driverId) {
+        document.getElementById('getDriverRecommendations').style.display = 'block';
+        document.getElementById('getVehicleRecommendations').style.display = 'none';
+    } else if (driverId && !vehicleId) {
+        document.getElementById('getVehicleRecommendations').style.display = 'block'; 
+        document.getElementById('getDriverRecommendations').style.display = 'none';
+    } else {
+        document.getElementById('getDriverRecommendations').style.display = 'none';
+        document.getElementById('getVehicleRecommendations').style.display = 'none';
+    }
+}
+
+function fetchDriverRecommendations(vehicleId) {
+    fetch(`/admin/api/recommendations/driver/${vehicleId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayDriverRecommendations(data.recommendations);
+            } else {
+                showAlert('Error getting driver recommendations: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error fetching recommendations. Please try again.', 'error');
+        });
+}
+
+function fetchVehicleRecommendations(driverId) {
+    fetch(`/admin/api/recommendations/vehicle/${driverId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayVehicleRecommendations(data.recommendations);
+            } else {
+                showAlert('Error getting vehicle recommendations: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error fetching recommendations. Please try again.', 'error');
+        });
+}
+
+function displayDriverRecommendations(recommendations) {
+    const container = document.getElementById('driverRecommendations');
+    container.innerHTML = '';
+    
+    if (recommendations.length === 0) {
+        container.innerHTML = '<div class="alert alert-info small">No driver recommendations found.</div>';
+        container.style.display = 'block';
+        return;
+    }
+    
+    const html = `
+        <div class="alert alert-warning small">
+            <strong><i class="fas fa-magic"></i> Smart Recommendations:</strong>
+            <div class="mt-2">
+                ${recommendations.slice(0, 3).map(rec => `
+                    <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
+                        <div>
+                            <strong>${rec.driver_name}</strong> (${rec.driver_employee_id})
+                            <br><small class="text-muted">${rec.reasoning.join(', ')}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-warning text-dark">${rec.total_score}%</span>
+                            <button class="btn btn-xs btn-success ms-1" onclick="selectRecommendedDriver(${rec.driver_id})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    container.style.display = 'block';
+}
+
+function displayVehicleRecommendations(recommendations) {
+    const container = document.getElementById('vehicleRecommendations');
+    container.innerHTML = '';
+    
+    if (recommendations.length === 0) {
+        container.innerHTML = '<div class="alert alert-info small">No vehicle recommendations found.</div>';
+        container.style.display = 'block';
+        return;
+    }
+    
+    const html = `
+        <div class="alert alert-warning small">
+            <strong><i class="fas fa-magic"></i> Smart Recommendations:</strong>
+            <div class="mt-2">
+                ${recommendations.slice(0, 3).map(rec => `
+                    <div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
+                        <div>
+                            <strong>${rec.vehicle_registration}</strong> (${rec.vehicle_type})
+                            <br><small class="text-muted">${rec.reasoning.join(', ')}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-warning text-dark">${rec.total_score}%</span>
+                            <button class="btn btn-xs btn-success ms-1" onclick="selectRecommendedVehicle(${rec.vehicle_id})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    container.style.display = 'block';
+}
+
+function selectRecommendedDriver(driverId) {
+    document.getElementById('driver_id').value = driverId;
+    // Trigger change event to update driver info
+    document.getElementById('driver_id').dispatchEvent(new Event('change'));
+    showAlert('Driver selected from recommendation!', 'success');
+    document.getElementById('driverRecommendations').style.display = 'none';
+}
+
+function selectRecommendedVehicle(vehicleId) {
+    document.getElementById('vehicle_id').value = vehicleId;
+    // Trigger change event to update vehicle info
+    document.getElementById('vehicle_id').dispatchEvent(new Event('change'));
+    showAlert('Vehicle selected from recommendation!', 'success');
+    document.getElementById('vehicleRecommendations').style.display = 'none';
+}
 
 function checkConflicts() {
     const formData = new FormData(document.getElementById('assignmentForm'));
