@@ -622,8 +622,7 @@ def end_duty():
         active_duty.end_location_accuracy = request.form.get('end_location_accuracy', type=float)
 
         # Calculate comprehensive tripsheet
-        from utils import calculate_tripsheet
-        tripsheet_result = calculate_tripsheet(active_duty)
+        tripsheet_result = utils_main.calculate_tripsheet(active_duty)
 
         # Update all calculated fields
         active_duty.gross_revenue = tripsheet_result['company_earnings']
