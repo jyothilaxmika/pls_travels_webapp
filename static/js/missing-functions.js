@@ -5,20 +5,67 @@
 function initCameraCapture(inputId, title = 'Capture Photo') {
     console.log('initCameraCapture called for:', inputId);
     
-    // Try to find input by ID first, then by name attribute
-    let input = document.getElementById(inputId);
+    // Try multiple strategies to find the input field
+    let input = null;
+    let searchMethod = '';
+    
+    // Strategy 1: Find by ID
+    input = document.getElementById(inputId);
+    if (input) {
+        searchMethod = 'by ID';
+    }
+    
+    // Strategy 2: Find by name attribute
     if (!input) {
         input = document.querySelector(`input[name="${inputId}"]`);
+        if (input) {
+            searchMethod = 'by name attribute';
+        }
     }
+    
+    // Strategy 3: Find by name attribute with variations
     if (!input) {
-        input = document.querySelector(`input[type="file"][accept*="image"]`);
-        console.warn('Using fallback: found first image input instead of specific field:', inputId);
+        const variations = [`${inputId}_file`, `${inputId}_input`, inputId.replace('_photo', '')];
+        for (const variation of variations) {
+            input = document.querySelector(`input[name="${variation}"]`);
+            if (input) {
+                searchMethod = `by name variation "${variation}"`;
+                break;
+            }
+        }
     }
+    
+    // Strategy 4: Find in the same container as the button clicked
     if (!input) {
-        console.error('Input element not found:', inputId);
-        showAlert('Photo input field not found. Please use the file upload option instead.', 'warning');
+        const clickedButton = event?.target;
+        if (clickedButton) {
+            const container = clickedButton.closest('.card-body, .form-group, .mb-3, .col-md-4');
+            if (container) {
+                input = container.querySelector('input[type="file"]');
+                if (input) {
+                    searchMethod = 'in button container';
+                }
+            }
+        }
+    }
+    
+    // Strategy 5: Find any visible image input as fallback
+    if (!input) {
+        const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]:not([style*="display: none"])');
+        if (imageInputs.length > 0) {
+            input = imageInputs[0];
+            searchMethod = 'first visible image input (fallback)';
+        }
+    }
+    
+    if (!input) {
+        console.error('Input element not found after all search strategies for:', inputId);
+        console.log('Available file inputs:', document.querySelectorAll('input[type="file"]'));
+        showAlert('Photo input field not found. Please use the file upload option below instead.', 'info');
         return;
     }
+    
+    console.log(`Found input ${searchMethod}:`, input);
 
     // Check if browser supports getUserMedia
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
