@@ -89,23 +89,63 @@ def register():
         user.username = form.username.data
         user.email = form.email.data
         user.password_hash = generate_password_hash(form.password.data) if form.password.data else ''
+        
         # Convert string role to UserRole enum
-        from models import UserRole
+        from models import UserRole, Driver, DriverStatus
         role_str = form.role.data if form.role.data else 'driver'
         user.role = UserRole.ADMIN if role_str == 'admin' else UserRole.MANAGER if role_str == 'manager' else UserRole.DRIVER
         
         db.session.add(user)
         db.session.flush()  # Get user ID
         
+        # If registering as driver, create driver profile
+        if user.role == UserRole.DRIVER:
+            driver = Driver()
+            driver.user_id = user.id
+            driver.full_name = form.full_name.data
+            driver.phone = form.phone.data
+            driver.additional_phone_1 = form.additional_phone_1.data
+            driver.additional_phone_2 = form.additional_phone_2.data
+            driver.additional_phone_3 = form.additional_phone_3.data
+            driver.address = form.address.data
+            driver.date_of_birth = form.date_of_birth.data
+            driver.aadhar_number = form.aadhar_number.data
+            driver.license_number = form.license_number.data
+            driver.bank_name = form.bank_name.data
+            driver.account_number = form.account_number.data
+            driver.ifsc_code = form.ifsc_code.data
+            driver.account_holder_name = form.account_holder_name.data
+            driver.branch_id = form.branch.data
+            driver.status = DriverStatus.PENDING  # Default to pending approval
+            
+            # Handle file uploads
+            from utils import process_file_upload
+            if form.aadhar_photo.data:
+                aadhar_url = process_file_upload(form.aadhar_photo.data, user.id, 'aadhar', use_cloud=True)
+                if aadhar_url:
+                    driver.aadhar_document = aadhar_url
+            
+            if form.license_photo.data:
+                license_url = process_file_upload(form.license_photo.data, user.id, 'license', use_cloud=True)
+                if license_url:
+                    driver.license_document = license_url
+                    
+            if form.profile_photo.data:
+                profile_url = process_file_upload(form.profile_photo.data, user.id, 'profile', use_cloud=True)
+                if profile_url:
+                    driver.profile_photo = profile_url
+            
+            db.session.add(driver)
+        
         # If registering as manager, assign branch
-        if user.role == UserRole.MANAGER and form.branch.data:
+        elif user.role == UserRole.MANAGER and form.branch.data:
             branch = Branch.query.get(form.branch.data)
             if branch:
                 user.managed_branches.append(branch)
         
         db.session.commit()
         
-        flash('Registration successful! Please wait for admin approval.', 'success')
+        flash('Registration successful! Your profile has been submitted for admin approval.', 'success')
         return redirect(url_for('auth.login'))
     
     return render_template('auth/register.html', form=form)

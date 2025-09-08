@@ -10,11 +10,36 @@ class LoginForm(FlaskForm):
 
 
 class RegisterForm(FlaskForm):
+    # Account Credentials
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=64)])
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     role = SelectField('Role', choices=[('driver', 'Driver'), ('manager', 'Manager')], default='driver')
+    
+    # Driver Profile Information (for drivers only)
+    full_name = StringField('Full Name', validators=[Optional()])
+    phone = StringField('Primary Phone', validators=[Optional()])
+    additional_phone_1 = StringField('Additional Phone 1', validators=[Optional()])
+    additional_phone_2 = StringField('Additional Phone 2', validators=[Optional()])
+    additional_phone_3 = StringField('Additional Phone 3', validators=[Optional()])
+    address = TextAreaField('Address', validators=[Optional()])
+    date_of_birth = DateField('Date of Birth', validators=[Optional()])
+    aadhar_number = StringField('Aadhar Number', validators=[Optional()])
+    license_number = StringField('License Number', validators=[Optional()])
+    
+    # Bank Details
+    bank_name = StringField('Bank Name', validators=[Optional()])
+    account_number = StringField('Account Number', validators=[Optional()])
+    ifsc_code = StringField('IFSC Code', validators=[Optional()])
+    account_holder_name = StringField('Account Holder Name', validators=[Optional()])
+    
+    # Document Uploads
+    aadhar_photo = FileField('Aadhar Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    license_photo = FileField('License Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    profile_photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
+    
+    # Branch Selection
     branch = SelectField('Branch', coerce=int, validators=[Optional()])
 
 class DriverForm(FlaskForm):

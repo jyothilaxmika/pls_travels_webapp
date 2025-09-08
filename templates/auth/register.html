@@ -1,92 +1,257 @@
 {% extends "base.html" %}
+{% include 'components/camera_capture.html' %}
 
 {% block title %}Register - PLS TRAVELS{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
+    <div class="col-md-10 col-lg-8">
         <div class="card shadow">
             <div class="card-body p-4">
                 <div class="text-center mb-4">
-                    <i class="fas fa-user-plus fa-2x text-primary mb-3"></i>
+                    <i class="fas fa-user-plus fa-2x text-warning mb-3"></i>
                     <h3>Create Account</h3>
                     <p class="text-muted">Join PLS TRAVELS team</p>
                 </div>
 
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            {{ form.username.label(class="form-label") }}
-                            {{ form.username(class="form-control") }}
-                            {% if form.username.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.username.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+                    <!-- Account Credentials Section -->
+                    <div class="card bg-warning bg-opacity-10 border-warning mb-4">
+                        <div class="card-header bg-warning bg-opacity-25">
+                            <h5 class="mb-0">
+                                <i class="fas fa-key me-2"></i>Account Credentials
+                            </h5>
                         </div>
-
-                        <div class="col-md-6 mb-3">
-                            {{ form.email.label(class="form-label") }}
-                            {{ form.email(class="form-control") }}
-                            {% if form.email.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.email.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.username.label(class="form-label") }}
+                                    {{ form.username(class="form-control") }}
+                                    {% if form.username.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.username.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
+
+                                <div class="col-md-6 mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control") }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.email.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.password.label(class="form-label") }}
+                                    {{ form.password(class="form-control") }}
+                                    {% if form.password.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.password.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    {{ form.password2.label(class="form-label") }}
+                                    {{ form.password2(class="form-control") }}
+                                    {% if form.password2.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.password2.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.role.label(class="form-label") }}
+                                    {{ form.role(class="form-select", id="role-select") }}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    {{ form.branch.label(class="form-label") }}
+                                    {{ form.branch(class="form-select", id="branch-select") }}
+                                    <small class="text-muted">Select your work location</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            {{ form.password.label(class="form-label") }}
-                            {{ form.password(class="form-control") }}
-                            {% if form.password.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.password.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
+                    <!-- Driver Profile Section (hidden for managers) -->
+                    <div id="driver-sections">
+                        <!-- Personal Information -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user me-2"></i>Personal Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.full_name.label(class="form-label") }}
+                                        {{ form.full_name(class="form-control", required=True) }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.date_of_birth.label(class="form-label") }}
+                                        {{ form.date_of_birth(class="form-control") }}
+                                    </div>
                                 </div>
-                            {% endif %}
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.phone.label(class="form-label") }}
+                                        {{ form.phone(class="form-control", required=True) }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.additional_phone_1.label(class="form-label") }}
+                                        {{ form.additional_phone_1(class="form-control") }}
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.additional_phone_2.label(class="form-label") }}
+                                        {{ form.additional_phone_2(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.additional_phone_3.label(class="form-label") }}
+                                        {{ form.additional_phone_3(class="form-control") }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.address.label(class="form-label") }}
+                                    {{ form.address(class="form-control", rows="3") }}
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            {{ form.password2.label(class="form-label") }}
-                            {{ form.password2(class="form-control") }}
-                            {% if form.password2.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.password2.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
+                        <!-- License & Identification -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-id-card me-2"></i>License & Identification
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.aadhar_number.label(class="form-label") }}
+                                        {{ form.aadhar_number(class="form-control", required=True) }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.license_number.label(class="form-label") }}
+                                        {{ form.license_number(class="form-control", required=True) }}
+                                    </div>
                                 </div>
-                            {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Bank Details -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-university me-2"></i>Bank Details
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.bank_name.label(class="form-label") }}
+                                        {{ form.bank_name(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.account_holder_name.label(class="form-label") }}
+                                        {{ form.account_holder_name(class="form-control") }}
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.account_number.label(class="form-label") }}
+                                        {{ form.account_number(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.ifsc_code.label(class="form-label") }}
+                                        {{ form.ifsc_code(class="form-control") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Document Uploads -->
+                        <div class="card bg-warning bg-opacity-10 border-warning mb-4">
+                            <div class="card-header bg-warning bg-opacity-25">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-camera me-2"></i>Document Uploads
+                                </h5>
+                                <small class="text-dark">Optional - You can upload these later from your profile</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">{{ form.aadhar_photo.label.text }}</label>
+                                        <div class="camera-capture-container">
+                                            <button type="button" class="btn btn-warning capture-photo-btn w-100" 
+                                                    onclick="initCameraCapture('aadhar_photo', 'Capture Aadhar Document')">
+                                                <i class="fas fa-camera me-2"></i>Take Aadhar Photo
+                                            </button>
+                                            <small class="d-block text-muted mt-1">Or upload file below</small>
+                                        </div>
+                                        {{ form.aadhar_photo(class="form-control mt-2", accept="image/*,.pdf") }}
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">{{ form.license_photo.label.text }}</label>
+                                        <div class="camera-capture-container">
+                                            <button type="button" class="btn btn-warning capture-photo-btn w-100" 
+                                                    onclick="initCameraCapture('license_photo', 'Capture License')">
+                                                <i class="fas fa-camera me-2"></i>Take License Photo
+                                            </button>
+                                            <small class="d-block text-muted mt-1">Or upload file below</small>
+                                        </div>
+                                        {{ form.license_photo(class="form-control mt-2", accept="image/*,.pdf") }}
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">{{ form.profile_photo.label.text }}</label>
+                                        <div class="camera-capture-container">
+                                            <button type="button" class="btn btn-warning capture-photo-btn w-100" 
+                                                    onclick="initCameraCapture('profile_photo', 'Capture Profile Photo')">
+                                                <i class="fas fa-camera me-2"></i>Take Profile Photo
+                                            </button>
+                                            <small class="d-block text-muted mt-1">Or upload file below</small>
+                                        </div>
+                                        {{ form.profile_photo(class="form-control mt-2", accept="image/*") }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            {{ form.role.label(class="form-label") }}
-                            {{ form.role(class="form-select", id="role-select") }}
-                        </div>
-
-                        <div class="col-md-6 mb-3" id="branch-field" style="display: none;">
-                            {{ form.branch.label(class="form-label") }}
-                            {{ form.branch(class="form-select") }}
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 mb-3">
-                        <i class="fas fa-user-plus me-2"></i>Register
+                    <button type="submit" class="btn btn-warning w-100 mb-3 py-3">
+                        <i class="fas fa-user-plus me-2"></i>Complete Registration
                     </button>
                 </form>
 
                 <div class="text-center">
-                    <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+                    <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}" class="text-warning">Login here</a></p>
                 </div>
             </div>
         </div>
@@ -95,12 +260,33 @@
 
 <script>
 document.getElementById('role-select').addEventListener('change', function() {
-    const branchField = document.getElementById('branch-field');
-    if (this.value === 'manager') {
-        branchField.style.display = 'block';
+    const driverSections = document.getElementById('driver-sections');
+    const branchSelect = document.getElementById('branch-select');
+    
+    if (this.value === 'driver') {
+        driverSections.style.display = 'block';
+        branchSelect.required = true;
+        
+        // Make driver fields required
+        document.getElementById('full_name').required = true;
+        document.getElementById('phone').required = true;
+        document.getElementById('aadhar_number').required = true;
+        document.getElementById('license_number').required = true;
     } else {
-        branchField.style.display = 'none';
+        driverSections.style.display = 'none';
+        branchSelect.required = false;
+        
+        // Remove required from driver fields
+        document.getElementById('full_name').required = false;
+        document.getElementById('phone').required = false;
+        document.getElementById('aadhar_number').required = false;
+        document.getElementById('license_number').required = false;
     }
+});
+
+// Initialize page based on selected role
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('role-select').dispatchEvent(new Event('change'));
 });
 </script>
 {% endblock %}
