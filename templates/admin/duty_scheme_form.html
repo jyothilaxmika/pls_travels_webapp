@@ -55,6 +55,19 @@
                         </div>
                     </div>
                     
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.effective_from.label(class="form-label") }}
+                            {{ form.effective_from(class="form-control") }}
+                            <small class="text-muted">When this scheme becomes active</small>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.effective_until.label(class="form-label") }}
+                            {{ form.effective_until(class="form-control") }}
+                            <small class="text-muted">Optional end date for scheme validity</small>
+                        </div>
+                    </div>
+                    
                     <!-- Daily Payout Scheme Fields -->
                     <div id="daily-payout-fields" class="scheme-fields" style="display: none;">
                         <div class="card bg-warning bg-opacity-10 border-warning mb-4">
