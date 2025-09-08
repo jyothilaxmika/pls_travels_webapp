@@ -68,10 +68,11 @@ def create_app():
         return User.query.get(int(user_id))
     
     # Add template functions
-    from datetime import datetime
+    from datetime import datetime, timedelta
     
-    # Make datetime available in templates
+    # Make datetime and timedelta available in templates
     app.jinja_env.globals['datetime'] = datetime
+    app.jinja_env.globals['timedelta'] = timedelta
     
     @app.template_global()
     def moment():
