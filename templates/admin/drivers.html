@@ -67,6 +67,10 @@
                                 <span class="badge bg-warning">Pending</span>
                             {% elif driver.status == 'rejected' %}
                                 <span class="badge bg-danger">Rejected</span>
+                            {% elif driver.status == 'suspended' %}
+                                <span class="badge bg-danger">Blocked</span>
+                            {% elif driver.status == 'terminated' %}
+                                <span class="badge bg-dark">Terminated</span>
                             {% else %}
                                 <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
                             {% endif %}
@@ -91,6 +95,14 @@
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </form>
+                                {% elif driver.status == 'active' %}
+                                <button type="button" class="btn btn-xs btn-warning" onclick="quickBlockDriver({{ driver.id }}, '{{ driver.full_name }}')" title="Block Driver">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% elif driver.status == 'suspended' %}
+                                <button type="button" class="btn btn-xs btn-success" onclick="quickUnblockDriver({{ driver.id }})" title="Unblock Driver">
+                                    <i class="fas fa-unlock"></i>
+                                </button>
                                 {% endif %}
                             </div>
                         </td>
@@ -229,4 +241,64 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Quick Block/Unblock Functions for Drivers List
+function quickBlockDriver(driverId, driverName) {
+    const reason = prompt(`Block driver: ${driverName}\n\nPlease enter a reason for blocking:`);
+    
+    if (reason === null) {
+        return; // User cancelled
+    }
+    
+    if (reason.trim() === '') {
+        alert('Please provide a reason for blocking the driver');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to block ${driverName}?\n\nThis will end all active duties and assignments immediately.`)) {
+        const formData = new FormData();
+        formData.append('reason', reason.trim());
+        
+        fetch(`/admin/drivers/${driverId}/block`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error blocking driver: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error blocking driver');
+        });
+    }
+}
+
+function quickUnblockDriver(driverId) {
+    if (confirm('Are you sure you want to unblock this driver?\n\nThey will be able to access the system and start new duties.')) {
+        fetch(`/admin/drivers/${driverId}/unblock`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error unblocking driver: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error unblocking driver');
+        });
+    }
+}
+</script>
 {% endblock %}

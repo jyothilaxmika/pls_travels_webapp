@@ -20,6 +20,10 @@
         <span class="badge bg-warning fs-6">Pending Approval</span>
         {% elif driver.status.value == 'rejected' %}
         <span class="badge bg-danger fs-6">Rejected</span>
+        {% elif driver.status.value == 'suspended' %}
+        <span class="badge bg-danger fs-6">Blocked</span>
+        {% elif driver.status.value == 'terminated' %}
+        <span class="badge bg-dark fs-6">Terminated</span>
         {% else %}
         <span class="badge bg-secondary fs-6">{{ driver.status.value.title() }}</span>
         {% endif %}
@@ -672,9 +676,9 @@
         </div>
         {% endif %}
 
-        <!-- Approval Actions for Pending Drivers -->
+        <!-- Driver Management Actions -->
         {% if driver.status.value == 'pending' %}
-        <div class="card">
+        <div class="card mb-3">
             <div class="card-header bg-warning">
                 <h5 class="mb-0">Approval Actions</h5>
             </div>
@@ -691,6 +695,44 @@
                         </button>
                     </form>
                 </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Block/Unblock Actions -->
+        {% if driver.status.value in ['active', 'suspended'] %}
+        <div class="card">
+            <div class="card-header {% if driver.status.value == 'suspended' %}bg-danger text-white{% else %}bg-info text-white{% endif %}">
+                <h5 class="mb-0">Driver Control</h5>
+            </div>
+            <div class="card-body">
+                {% if driver.status.value == 'suspended' %}
+                    <div class="alert alert-danger mb-3">
+                        <i class="fas fa-ban me-2"></i>
+                        <strong>Driver is currently BLOCKED</strong>
+                        {% if driver.suspension_reason %}
+                            <br><small>Reason: {{ driver.suspension_reason }}</small>
+                        {% endif %}
+                        {% if driver.suspended_at %}
+                            <br><small>Blocked on: {{ driver.suspended_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-success w-100" onclick="unblockDriver({{ driver.id }})">
+                            <i class="fas fa-unlock me-2"></i>Unblock Driver
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success mb-3">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Driver is currently ACTIVE</strong>
+                    </div>
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-danger w-100" onclick="showBlockDriverModal({{ driver.id }}, '{{ driver.full_name }}')">
+                            <i class="fas fa-ban me-2"></i>Block Driver
+                        </button>
+                    </div>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -804,6 +846,60 @@
             </div>
             <div class="modal-body text-center">
                 <img id="documentImage" src="" class="img-fluid" alt="Document">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Block Driver Modal -->
+<div class="modal fade" id="blockDriverModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Block Driver</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Blocking this driver will:
+                    <ul class="mb-0 mt-2">
+                        <li>End all active duties immediately</li>
+                        <li>Complete all active vehicle assignments</li>
+                        <li>Prevent the driver from starting new duties</li>
+                        <li>Block access to the driver portal</li>
+                    </ul>
+                </div>
+                <form id="blockDriverForm">
+                    <input type="hidden" id="blockDriverId" name="driver_id">
+                    <div class="mb-3">
+                        <label class="form-label">Driver Name</label>
+                        <input type="text" id="blockDriverName" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Blocking <span class="text-danger">*</span></label>
+                        <select class="form-select" name="reason" required>
+                            <option value="">Select a reason</option>
+                            <option value="Violation of company policy">Violation of company policy</option>
+                            <option value="Safety concerns">Safety concerns</option>
+                            <option value="Document verification issues">Document verification issues</option>
+                            <option value="Customer complaints">Customer complaints</option>
+                            <option value="Vehicle damage">Vehicle damage</option>
+                            <option value="Administrative decision">Administrative decision</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Additional Notes (Optional)</label>
+                        <textarea class="form-control" name="additional_notes" rows="3" placeholder="Provide additional details about the blocking reason..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmBlockDriver()">
+                    <i class="fas fa-ban me-2"></i>Block Driver
+                </button>
             </div>
         </div>
     </div>
@@ -984,6 +1080,75 @@ function submitTransactionForm() {
 
 function editBankDetails(driverId) {
     alert('Edit bank details functionality will be implemented');
+}
+
+// Driver Block/Unblock Functions
+function showBlockDriverModal(driverId, driverName) {
+    document.getElementById('blockDriverId').value = driverId;
+    document.getElementById('blockDriverName').value = driverName;
+    const modal = new bootstrap.Modal(document.getElementById('blockDriverModal'));
+    modal.show();
+}
+
+function confirmBlockDriver() {
+    const form = document.getElementById('blockDriverForm');
+    const formData = new FormData(form);
+    const driverId = document.getElementById('blockDriverId').value;
+    const reason = formData.get('reason');
+    const additionalNotes = formData.get('additional_notes');
+    
+    if (!reason) {
+        alert('Please select a reason for blocking the driver');
+        return;
+    }
+    
+    // Combine reason and additional notes
+    let fullReason = reason;
+    if (additionalNotes) {
+        fullReason += ` - ${additionalNotes}`;
+    }
+    
+    if (confirm('Are you sure you want to block this driver? This action will end all active duties and assignments immediately.')) {
+        const blockFormData = new FormData();
+        blockFormData.append('reason', fullReason);
+        
+        fetch(`/admin/drivers/${driverId}/block`, {
+            method: 'POST',
+            body: blockFormData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error blocking driver: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error blocking driver');
+        });
+    }
+}
+
+function unblockDriver(driverId) {
+    if (confirm('Are you sure you want to unblock this driver? They will be able to access the system and start new duties.')) {
+        fetch(`/admin/drivers/${driverId}/unblock`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error unblocking driver: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error unblocking driver');
+        });
+    }
 }
 </script>
 {% endblock %}

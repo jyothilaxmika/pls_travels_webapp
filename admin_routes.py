@@ -493,6 +493,83 @@ def remove_transaction(transaction_type, transaction_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
+# Driver Block/Unblock Routes
+@admin_bp.route('/drivers/<int:driver_id>/block', methods=['POST'])
+@login_required
+@admin_required
+def block_driver(driver_id):
+    """Block (suspend) a driver"""
+    driver = Driver.query.get_or_404(driver_id)
+    reason = request.form.get('reason', 'Administrative action')
+    
+    if driver.status == DriverStatus.SUSPENDED:
+        return jsonify({'success': False, 'message': 'Driver is already blocked'})
+    
+    # Store the previous status for audit purposes
+    previous_status = driver.status.value
+    
+    # Block the driver
+    driver.status = DriverStatus.SUSPENDED
+    driver.suspended_at = datetime.utcnow()
+    driver.suspended_by = current_user.id
+    driver.suspension_reason = reason
+    
+    # End any active vehicle assignments
+    active_assignments = VehicleAssignment.query.filter_by(
+        driver_id=driver_id,
+        status=AssignmentStatus.ACTIVE
+    ).all()
+    
+    for assignment in active_assignments:
+        assignment.status = AssignmentStatus.COMPLETED
+        assignment.end_date = datetime.now().date()
+        assignment.notes = f"Assignment ended due to driver suspension: {reason}"
+    
+    # End any active duties
+    active_duties = Duty.query.filter_by(
+        driver_id=driver_id,
+        status=DutyStatus.ACTIVE
+    ).all()
+    
+    for duty in active_duties:
+        duty.status = DutyStatus.COMPLETED
+        duty.end_time = datetime.utcnow()
+        duty.notes = f"Duty ended due to driver suspension: {reason}"
+    
+    try:
+        db.session.commit()
+        log_audit('block_driver', 'driver', driver_id,
+                 {'driver_name': driver.full_name, 'reason': reason, 'previous_status': previous_status})
+        return jsonify({'success': True, 'message': 'Driver has been blocked successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+@admin_bp.route('/drivers/<int:driver_id>/unblock', methods=['POST'])
+@login_required
+@admin_required
+def unblock_driver(driver_id):
+    """Unblock (reactivate) a driver"""
+    driver = Driver.query.get_or_404(driver_id)
+    
+    if driver.status != DriverStatus.SUSPENDED:
+        return jsonify({'success': False, 'message': 'Driver is not currently blocked'})
+    
+    # Reactivate the driver
+    driver.status = DriverStatus.ACTIVE
+    driver.reactivated_at = datetime.utcnow()
+    driver.reactivated_by = current_user.id
+    driver.suspension_reason = None
+    
+    try:
+        db.session.commit()
+        log_audit('unblock_driver', 'driver', driver_id,
+                 {'driver_name': driver.full_name, 'reactivated_by': current_user.username})
+        return jsonify({'success': True, 'message': 'Driver has been unblocked successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
 @admin_bp.route('/assignments')
 @login_required
 @admin_required
