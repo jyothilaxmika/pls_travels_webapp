@@ -19,7 +19,18 @@ def log_audit(action, entity_type=None, entity_id=None, details=None):
         audit.ip_address = request.remote_addr
         audit.user_agent = request.headers.get('User-Agent', '')[:255]
         db.session.add(audit)
-        db.session.commit()
+        
+        # Commit with retry logic for connection issues
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                db.session.commit()
+                break
+            except Exception:
+                db.session.rollback()
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(0.5)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -44,7 +55,18 @@ def login():
             user.last_login = datetime.utcnow()
             user.login_count = (user.login_count or 0) + 1
             user.failed_login_attempts = 0
-            db.session.commit()
+            
+            # Commit with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    db.session.commit()
+                    break
+                except Exception:
+                    db.session.rollback()
+                    if attempt < max_retries - 1:
+                        import time
+                        time.sleep(0.5)
             
             # Log successful login
             log_audit('login_success')
@@ -143,7 +165,23 @@ def register():
             if branch:
                 user.managed_branches.append(branch)
         
-        db.session.commit()
+        # Commit with retry logic for database connection issues
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                db.session.commit()
+                break
+            except Exception as e:
+                db.session.rollback()
+                if attempt == max_retries - 1:
+                    # Last attempt failed, show error to user
+                    flash('Database connection error. Please try again later.', 'error')
+                    return render_template('auth/register.html', form=form)
+                else:
+                    # Wait briefly before retry
+                    import time
+                    time.sleep(1)
+                    continue
         
         flash('Registration successful! Your profile has been submitted for admin approval.', 'success')
         return redirect(url_for('auth.login'))
