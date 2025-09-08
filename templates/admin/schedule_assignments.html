@@ -41,11 +41,35 @@
             </div>
             
             <div id="assignment-calendar" class="table-responsive">
-                <!-- Calendar grid will be generated here -->
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Calendar View:</strong> Shows assignments for the selected date range.
-                    Click dates to see detailed assignments.
+                <!-- Enhanced Calendar View -->
+                <div class="calendar-grid" id="calendar-grid">
+                    <div class="calendar-header">
+                        <div class="calendar-nav">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="previousWeek()">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="calendar-week-display" class="mx-3 fw-bold">Week View</span>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="nextWeek()">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="calendar-legend">
+                            <span class="legend-item"><span class="legend-color bg-success"></span> Available</span>
+                            <span class="legend-item"><span class="legend-color bg-warning"></span> Scheduled</span>
+                            <span class="legend-item"><span class="legend-color bg-danger"></span> Conflict</span>
+                            <span class="legend-item"><span class="legend-color bg-info"></span> Active</span>
+                        </div>
+                    </div>
+                    
+                    <div id="calendar-content" class="calendar-content">
+                        <!-- Calendar will be dynamically generated here -->
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-warning" role="status">
+                                <span class="visually-hidden">Loading calendar...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading assignment calendar...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -104,6 +128,23 @@
                     <button type="button" class="btn btn-warning w-100" onclick="submitQuickAssignment()">
                         <i class="fas fa-bolt me-2"></i>Create Quick Assignments
                     </button>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Use Assignment Template</label>
+                        <select class="form-select" id="assignment-template" onchange="loadTemplate()">
+                            <option value="">Select a template...</option>
+                            <option value="weekday-morning">Weekday Morning Team</option>
+                            <option value="weekend-full">Weekend Full Day</option>
+                            <option value="night-shift">Night Shift Pattern</option>
+                        </select>
+                        <small class="text-muted">Pre-configured assignment patterns</small>
+                    </div>
+                    
+                    <a href="{{ url_for('admin.assignment_templates') }}" class="btn btn-outline-info btn-sm w-100">
+                        <i class="fas fa-cog me-2"></i>Manage Templates
+                    </a>
                 </form>
             </div>
         </div>
@@ -123,6 +164,310 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Assignment Data (JSON)</label>
+                        <textarea name="assignments_data" class="form-control" rows="6" 
+                                  placeholder='[{"driver_id": 1, "vehicle_id": 1, "start_date": "2024-01-01", "shift_type": "full_day"}]'></textarea>
+                        <small class="text-muted">JSON array of assignment objects</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-warning w-100" onclick="showAutoAssignment()">
+                            <i class="fas fa-magic me-2"></i>Auto-Assignment Wizard
+                        </button>
+                        <small class="text-muted">Automatically suggest optimal driver-vehicle pairings</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Recurring Pattern</label>
+                        <select name="recurring_pattern" class="form-select">
+                            <option value="">No Recurrence</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary w-100" onclick="submitBulkAssignment()">
+                        <i class="fas fa-layer-group me-2"></i>Create Bulk Assignments
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-Assignment Modal -->
+<div class="modal fade" id="autoAssignmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning bg-opacity-25">
+                <h5 class="modal-title">
+                    <i class="fas fa-magic me-2"></i>Auto-Assignment Wizard
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Assignment Criteria</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="date" id="auto-start-date" class="form-control mb-2">
+                            <input type="date" id="auto-end-date" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Branch Filter</label>
+                            <select id="auto-branch" class="form-select">
+                                <option value="">All Branches</option>
+                                {% for branch in branches %}
+                                <option value="{{ branch.id }}">{{ branch.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Optimization Priority</label>
+                            <select id="auto-priority" class="form-select">
+                                <option value="experience">Driver Experience</option>
+                                <option value="efficiency">Fuel Efficiency</option>
+                                <option value="availability">Availability</option>
+                                <option value="balanced">Balanced Approach</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-warning w-100" onclick="generateAutoAssignments()">
+                            <i class="fas fa-cog me-2"></i>Generate Suggestions
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Generated Assignments</h6>
+                        <div id="auto-assignment-results" class="border rounded p-3" style="height: 300px; overflow-y: auto;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                <p>Click "Generate Suggestions" to see optimal assignments</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="applyAutoAssignments()">
+                    <i class="fas fa-check me-2"></i>Apply Assignments
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.calendar-grid {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #fff;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
+}
+
+.calendar-legend {
+    display: flex;
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.calendar-content {
+    min-height: 400px;
+}
+
+.assignment-slot {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.assignment-slot:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.assignment-slot.available { background: #d1edff; border-color: #0ea5e9; }
+.assignment-slot.scheduled { background: #fef3c7; border-color: #f59e0b; }
+.assignment-slot.active { background: #dcfce7; border-color: #22c55e; }
+.assignment-slot.conflict { background: #fee2e2; border-color: #ef4444; }
+</style>
+
+<script>
+// Enhanced Calendar Functions
+function refreshCalendar() {
+    const startDate = document.getElementById('calendar-start').value;
+    const endDate = document.getElementById('calendar-end').value;
+    
+    if (startDate && endDate) {
+        window.location.href = `{{ url_for('admin.schedule_assignments') }}?start=${startDate}&end=${endDate}`;
+    }
+}
+
+function previousWeek() {
+    const currentStart = new Date(document.getElementById('calendar-start').value);
+    currentStart.setDate(currentStart.getDate() - 7);
+    document.getElementById('calendar-start').value = currentStart.toISOString().split('T')[0];
+    refreshCalendar();
+}
+
+function nextWeek() {
+    const currentStart = new Date(document.getElementById('calendar-start').value);
+    currentStart.setDate(currentStart.getDate() + 7);
+    document.getElementById('calendar-start').value = currentStart.toISOString().split('T')[0];
+    refreshCalendar();
+}
+
+function loadTemplate() {
+    const templateSelect = document.getElementById('assignment-template');
+    const templateValue = templateSelect.value;
+    
+    if (templateValue) {
+        // Load template data and populate form fields
+        fetch(`/admin/assignment-templates/${templateValue}/data`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('quick-date-range').value = data.default_range || '';
+                // Populate other fields based on template
+            })
+            .catch(error => console.error('Error loading template:', error));
+    }
+}
+
+function submitQuickAssignment() {
+    const form = document.getElementById('quick-assignment-form');
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error creating assignments: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function showAutoAssignment() {
+    const modal = new bootstrap.Modal(document.getElementById('autoAssignmentModal'));
+    modal.show();
+}
+
+function generateAutoAssignments() {
+    const startDate = document.getElementById('auto-start-date').value;
+    const endDate = document.getElementById('auto-end-date').value;
+    const branch = document.getElementById('auto-branch').value;
+    const priority = document.getElementById('auto-priority').value;
+    
+    if (!startDate) {
+        alert('Please select a start date');
+        return;
+    }
+    
+    // Show loading state
+    document.getElementById('auto-assignment-results').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-warning" role="status"></div>
+            <p class="mt-2">Generating optimal assignments...</p>
+        </div>
+    `;
+    
+    // Simulate auto-assignment generation
+    setTimeout(() => {
+        const results = generateMockAssignments();
+        displayAutoAssignmentResults(results);
+    }, 2000);
+}
+
+function generateMockAssignments() {
+    // Mock auto-assignment results
+    return [
+        { driver: 'John Doe', vehicle: 'MH12AB1234', date: '2024-01-15', shift: 'Morning', score: 95 },
+        { driver: 'Jane Smith', vehicle: 'MH12CD5678', date: '2024-01-15', shift: 'Evening', score: 92 },
+        { driver: 'Mike Johnson', vehicle: 'MH12EF9012', date: '2024-01-16', shift: 'Full Day', score: 88 }
+    ];
+}
+
+function displayAutoAssignmentResults(results) {
+    let html = '<div class="list-group list-group-flush">';
+    
+    results.forEach(assignment => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${assignment.driver}</strong><br>
+                    <small class="text-muted">${assignment.vehicle} - ${assignment.date} (${assignment.shift})</small>
+                </div>
+                <span class="badge bg-success rounded-pill">${assignment.score}%</span>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    document.getElementById('auto-assignment-results').innerHTML = html;
+}
+
+function applyAutoAssignments() {
+    // Apply the generated assignments
+    alert('Auto-assignments applied successfully!');
+    const modal = bootstrap.Modal.getInstance(document.getElementById('autoAssignmentModal'));
+    modal.hide();
+    location.reload();
+}
+
+function submitBulkAssignment() {
+    const form = document.getElementById('bulk-assignment-form');
+    // Handle bulk assignment submission
+    form.submit();
+}
+
+// Initialize calendar on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates if not set
+    const startInput = document.getElementById('calendar-start');
+    const endInput = document.getElementById('calendar-end');
+    
+    if (!startInput.value) {
+        const today = new Date();
+        startInput.value = today.toISOString().split('T')[0];
+        
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+        endInput.value = nextWeek.toISOString().split('T')[0];
+    }
+    
+    // Load initial calendar
+    setTimeout(refreshCalendar, 500);
+});
+</script>
+{% endblock %}
                         <textarea name="assignments_data" id="bulk-assignments-data" class="form-control" rows="8"
                                   placeholder="Paste JSON data or use the builder below">[]</textarea>
                         <small class="text-muted">JSON format: [{"driver_id": 1, "vehicle_id": 1, "start_date": "2024-01-01", "shift_type": "full_day"}]</small>

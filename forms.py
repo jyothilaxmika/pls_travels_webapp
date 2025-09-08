@@ -198,6 +198,35 @@ class DutySchemeForm(FlaskForm):
                                       description='Enter mathematical formula using field names like uber_trips, uber_collected, etc.',
                                       validators=[Optional()])
 
+class AssignmentTemplateForm(FlaskForm):
+    name = StringField('Template Name', validators=[DataRequired(), Length(min=3, max=100)])
+    description = TextAreaField('Description', validators=[Optional(), Length(max=500)])
+    branch_id = SelectField('Branch', coerce=str, validators=[Optional()])
+    
+    # Template pattern configuration
+    shift_pattern = SelectField('Shift Pattern', choices=[
+        ('daily', 'Daily Recurring'),
+        ('weekly', 'Weekly Recurring'),
+        ('monthly', 'Monthly Recurring'),
+        ('custom', 'Custom Pattern')
+    ], default='weekly', validators=[DataRequired()])
+    
+    days_of_week = StringField('Days of Week', validators=[Optional()],
+                              description='Comma-separated day numbers (1=Mon, 7=Sun), e.g., "1,2,3,4,5"')
+    
+    default_shift_type = SelectField('Default Shift Type', choices=[
+        ('full_day', 'Full Day (24 Hours)'),
+        ('morning', 'Morning Shift (6AM-2PM)'),
+        ('evening', 'Evening Shift (2PM-10PM)'),
+        ('night', 'Night Shift (10PM-6AM)')
+    ], default='full_day', validators=[DataRequired()])
+    
+    # Template assignments data
+    template_assignments = TextAreaField('Assignment Pattern (JSON)', validators=[Optional()],
+                                       description='JSON format assignment pattern or leave empty to configure manually')
+    
+    is_default = BooleanField('Set as Default Template', default=False)
+
 class DutyForm(FlaskForm):
     vehicle_id = SelectField('Select Vehicle', coerce=int, validators=[DataRequired()])
     duty_scheme_id = SelectField('Duty Scheme (for salary calculation)', coerce=int, validators=[DataRequired()])

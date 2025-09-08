@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
-                   UberSyncJob, UberSyncLog, UberIntegrationSettings, db,
+                   UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus)
-from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm
+from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils import allowed_file, calculate_earnings
 import json
 # Import scheduling functions after initial imports
@@ -431,6 +431,90 @@ def schedule_assignments():
                          calendar_data=calendar_data,
                          start_date=start_date,
                          end_date=end_date)
+
+@admin_bp.route('/assignment-templates')
+@login_required
+@admin_required
+def assignment_templates():
+    """Manage assignment templates"""
+    templates = AssignmentTemplate.query.filter_by(is_active=True).order_by(AssignmentTemplate.name).all()
+    return render_template('admin/assignment_templates.html', templates=templates)
+
+@admin_bp.route('/assignment-templates/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_assignment_template():
+    """Add new assignment template"""
+    form = AssignmentTemplateForm()
+    branches = Branch.query.filter_by(is_active=True).all()
+    form.branch_id.choices = [('', 'All Branches')] + [(str(b.id), b.name) for b in branches]
+    
+    if form.validate_on_submit():
+        template = AssignmentTemplate()
+        template.name = form.name.data
+        template.description = form.description.data
+        template.branch_id = int(form.branch_id.data) if form.branch_id.data else None
+        template.shift_pattern = form.shift_pattern.data
+        template.days_of_week = form.days_of_week.data
+        template.default_shift_type = form.default_shift_type.data
+        template.is_default = form.is_default.data
+        template.created_by = current_user.id
+        
+        # Process template assignments if provided
+        if form.template_assignments.data:
+            try:
+                template_data = json.loads(form.template_assignments.data)
+                template.set_template_data(template_data)
+            except json.JSONDecodeError:
+                flash('Invalid JSON format in template assignments.', 'error')
+                return render_template('admin/assignment_template_form.html', form=form, title='Add Assignment Template')
+        
+        # If set as default, unset other defaults in same branch
+        if template.is_default:
+            AssignmentTemplate.query.filter_by(
+                branch_id=template.branch_id,
+                is_default=True
+            ).update({'is_default': False})
+        
+        db.session.add(template)
+        db.session.commit()
+        
+        log_audit('add_assignment_template', 'assignment_template', template.id,
+                 {'name': template.name, 'pattern': template.shift_pattern})
+        
+        flash('Assignment template created successfully.', 'success')
+        return redirect(url_for('admin.assignment_templates'))
+    
+    return render_template('admin/assignment_template_form.html', form=form, title='Add Assignment Template')
+
+def apply_template_to_dates(template, start_date, end_date):
+    """Apply assignment template to create assignments for date range"""
+    assignments_created = 0
+    template_data = template.get_template_data()
+    
+    if not template_data:
+        # Create basic pattern if no specific data
+        current_date = start_date
+        while current_date <= (end_date or start_date):
+            # Apply basic template logic based on shift pattern
+            if template.shift_pattern == 'daily' or should_apply_on_date(template, current_date):
+                assignments_created += 1
+            
+            current_date += timedelta(days=1)
+            if template.shift_pattern == 'weekly':
+                current_date += timedelta(days=6)  # Skip to next week
+    
+    return assignments_created
+
+def should_apply_on_date(template, date):
+    """Check if template should be applied on given date"""
+    if not template.days_of_week:
+        return True
+    
+    day_numbers = [int(d.strip()) for d in template.days_of_week.split(',') if d.strip().isdigit()]
+    weekday = date.weekday() + 1  # Python uses 0-6, we want 1-7
+    
+    return weekday in day_numbers
 
 @admin_bp.route('/assignments/conflicts', methods=['POST'])
 @login_required

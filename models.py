@@ -694,6 +694,50 @@ class VehicleAssignment(db.Model):
         Index('idx_assignment_dates', 'start_date', 'end_date'),
         CheckConstraint('end_date IS NULL OR end_date >= start_date'),
     )
+    
+    def __repr__(self):
+        return f'<VehicleAssignment {self.driver.full_name} - {self.vehicle.registration_number}>'
+
+class AssignmentTemplate(db.Model):
+    __tablename__ = 'assignment_templates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Template identification
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
+    
+    # Template configuration stored as JSON
+    template_data = db.Column(db.Text)  # JSON with assignments pattern
+    
+    # Template metadata
+    shift_pattern = db.Column(db.String(20))  # daily, weekly, monthly
+    days_of_week = db.Column(db.String(20))  # 1,2,3,4,5,6,7 for Mon-Sun
+    default_shift_type = db.Column(db.String(20), default='full_day')
+    is_active = db.Column(db.Boolean, default=True)
+    is_default = db.Column(db.Boolean, default=False)
+    
+    # Audit fields
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    branch = db.relationship('Branch', backref='assignment_templates')
+    creator = db.relationship('User', foreign_keys=[created_by])
+    
+    def get_template_data(self):
+        import json
+        return json.loads(self.template_data) if self.template_data else {}
+    
+    def set_template_data(self, data_dict):
+        import json
+        self.template_data = json.dumps(data_dict)
+    
+    def __repr__(self):
+        return f'<AssignmentTemplate {self.name}>'
 
 class PaymentRecord(db.Model):
     __tablename__ = 'payment_records'
