@@ -75,21 +75,45 @@ def create_app():
     app.jinja_env.globals['timedelta'] = timedelta
     
     @app.template_global()
-    def moment():
+    def moment(dt=None):
         class MomentJS:
+            def __init__(self, datetime_obj=None):
+                self.dt = datetime_obj or datetime.now()
+            
             def format(self, format_str):
-                now = datetime.now()
+                if not self.dt:
+                    return ''
+                
                 format_mapping = {
-                    'MMMM DD, YYYY': now.strftime('%B %d, %Y'),
-                    'MMM DD, YYYY': now.strftime('%b %d, %Y'), 
-                    'YYYY-MM-DD': now.strftime('%Y-%m-%d'),
+                    'DD/MM/YYYY': self.dt.strftime('%d/%m/%Y'),
+                    'MMMM DD, YYYY': self.dt.strftime('%B %d, %Y'),
+                    'MMM DD, YYYY': self.dt.strftime('%b %d, %Y'), 
+                    'YYYY-MM-DD': self.dt.strftime('%Y-%m-%d'),
+                    'HH:mm': self.dt.strftime('%H:%M'),
+                    'DD MMM': self.dt.strftime('%d %b'),
                 }
-                return format_mapping.get(format_str, now.strftime('%Y-%m-%d'))
+                return format_mapping.get(format_str, self.dt.strftime('%Y-%m-%d'))
+            
+            def fromNow(self):
+                if not self.dt:
+                    return ''
+                now = datetime.now()
+                diff = now - self.dt
+                if diff.days > 0:
+                    return f"{diff.days} days ago"
+                elif diff.seconds > 3600:
+                    hours = diff.seconds // 3600
+                    return f"{hours} hours ago"
+                elif diff.seconds > 60:
+                    minutes = diff.seconds // 60
+                    return f"{minutes} minutes ago"
+                else:
+                    return "Just now"
             
             def date(self):
-                return datetime.now().date()
+                return self.dt.date() if self.dt else None
         
-        return MomentJS()
+        return MomentJS(dt)
     
     # Add context processor for pending duties notifications
     @app.context_processor
