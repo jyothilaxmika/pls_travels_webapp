@@ -69,16 +69,38 @@ def create_app():
     
     # Add template functions
     from datetime import datetime, timedelta
+    import pytz
+    
+    # Configure IST timezone for the application
+    IST = pytz.timezone('Asia/Kolkata')
+    
+    def get_ist_time():
+        """Get current time in IST timezone"""
+        return datetime.now(IST)
+    
+    def convert_to_ist(dt):
+        """Convert datetime to IST timezone"""
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            # Assume UTC if no timezone info
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(IST)
     
     # Make datetime and timedelta available in templates
     app.jinja_env.globals['datetime'] = datetime
     app.jinja_env.globals['timedelta'] = timedelta
+    app.jinja_env.globals['get_ist_time'] = get_ist_time
+    app.jinja_env.globals['convert_to_ist'] = convert_to_ist
     
     @app.template_global()
     def moment(dt=None):
         class MomentJS:
             def __init__(self, datetime_obj=None):
-                self.dt = datetime_obj or datetime.now()
+                if datetime_obj is None:
+                    self.dt = get_ist_time()
+                else:
+                    self.dt = convert_to_ist(datetime_obj)
             
             def format(self, format_str):
                 if not self.dt:
@@ -97,7 +119,7 @@ def create_app():
             def fromNow(self):
                 if not self.dt:
                     return ''
-                now = datetime.now()
+                now = get_ist_time()
                 diff = now - self.dt
                 if diff.days > 0:
                     return f"{diff.days} days ago"
