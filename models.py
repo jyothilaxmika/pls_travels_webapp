@@ -1,6 +1,13 @@
 
 from datetime import datetime, date
 import json
+import pytz
+
+# IST timezone helper for database operations
+def get_ist_time_naive():
+    """Get current IST time as naive datetime for database storage"""
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.now(ist).replace(tzinfo=None)
 from app import db
 from flask_login import UserMixin
 from sqlalchemy import func, Index, CheckConstraint, UniqueConstraint
@@ -65,7 +72,7 @@ manager_branches = db.Table('manager_branches',
     db.Column('id', db.Integer, primary_key=True),
     db.Column('manager_id', db.Integer, db.ForeignKey('users.id'), nullable=False),
     db.Column('branch_id', db.Integer, db.ForeignKey('branches.id'), nullable=False),
-    db.Column('assigned_at', db.DateTime, default=datetime.utcnow),
+    db.Column('assigned_at', db.DateTime, default=get_ist_time_naive),
     db.Column('assigned_by', db.Integer, db.ForeignKey('users.id')),
     db.Column('is_primary', db.Boolean, default=False),
     UniqueConstraint('manager_id', 'branch_id', name='unique_manager_branch')
@@ -94,12 +101,12 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     login_count = db.Column(db.Integer, default=0)
     failed_login_attempts = db.Column(db.Integer, default=0)
-    password_changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    password_changed_at = db.Column(db.DateTime, default=get_ist_time_naive)
     two_factor_enabled = db.Column(db.Boolean, default=False)
     
     # Audit fields
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive, nullable=False)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
@@ -130,8 +137,8 @@ class Region(db.Model):
     timezone = db.Column(db.String(50), default='Asia/Kolkata')
     is_active = db.Column(db.Boolean, default=True, index=True)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     branches = db.relationship('Branch', backref='region', lazy=True)
@@ -167,8 +174,8 @@ class Branch(db.Model):
     is_active = db.Column(db.Boolean, default=True, index=True)
     auto_assignment_enabled = db.Column(db.Boolean, default=True)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     drivers = db.relationship('Driver', backref='branch', lazy=True)
@@ -262,8 +269,8 @@ class Driver(db.Model):
     uber_sync_error = db.Column(db.Text)  # Last sync error message
     uber_profile_data = db.Column(db.Text)  # JSON: Cached Uber profile data
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     duties = db.relationship('Duty', backref='driver', lazy=True)
@@ -323,7 +330,7 @@ class VehicleType(db.Model):
     per_km_rate = db.Column(db.Float, default=0.0)
     
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     
     # Relationships
     vehicles = db.relationship('Vehicle', backref='vehicle_type_info', lazy=True, overlaps="vehicle_instances,vehicle_type_obj")
@@ -397,8 +404,8 @@ class Vehicle(db.Model):
     uber_sync_error = db.Column(db.Text)  # Last sync error message
     uber_vehicle_data = db.Column(db.Text)  # JSON: Cached Uber vehicle data
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     vehicle_type_obj = db.relationship('VehicleType', backref=db.backref('vehicle_instances', overlaps="vehicles,vehicle_type_info"), lazy=True, overlaps="vehicle_type_info,vehicles")
@@ -484,8 +491,8 @@ class DutyScheme(db.Model):
     is_active = db.Column(db.Boolean, default=True, index=True)
     is_default = db.Column(db.Boolean, default=False)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
@@ -611,8 +618,8 @@ class Duty(db.Model):
     approved_at = db.Column(db.DateTime)
     rejection_reason = db.Column(db.Text)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     reviewer = db.relationship('User', foreign_keys=[reviewed_by])
@@ -676,8 +683,8 @@ class VehicleAssignment(db.Model):
     approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     approved_at = db.Column(db.DateTime)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     driver = db.relationship('Driver', backref='assignments')
@@ -729,8 +736,8 @@ class AssignmentTemplate(db.Model):
     
     # Audit fields
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     branch = db.relationship('Branch', backref='assignment_templates')
@@ -779,7 +786,7 @@ class PaymentRecord(db.Model):
     description = db.Column(db.Text)
     internal_notes = db.Column(db.Text)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     
     # Relationships
     driver = db.relationship('Driver', backref='payment_records')
@@ -827,7 +834,7 @@ class MaintenanceRecord(db.Model):
     status = db.Column(db.String(20), default='scheduled')  # scheduled, in_progress, completed, cancelled
     priority = db.Column(db.String(10), default='medium')  # high, medium, low
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
@@ -865,7 +872,7 @@ class Penalty(db.Model):
     waived_amount = db.Column(db.Float, default=0.0)
     waived_reason = db.Column(db.Text)
     
-    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    applied_at = db.Column(db.DateTime, default=get_ist_time_naive)
     approved_at = db.Column(db.DateTime)
     resolved_at = db.Column(db.DateTime)
     
@@ -916,7 +923,7 @@ class ResignationRequest(db.Model):
     rejection_reason = db.Column(db.Text)
     
     # Timestamps
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    submitted_at = db.Column(db.DateTime, default=get_ist_time_naive)
     approved_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
     
@@ -998,8 +1005,8 @@ class Asset(db.Model):
     notes = db.Column(db.Text)
     photos = db.Column(db.Text)  # JSON array of photo URLs
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     driver = db.relationship('Driver', backref='assets')
@@ -1036,7 +1043,7 @@ class AuditLog(db.Model):
     error_message = db.Column(db.Text)
     execution_time = db.Column(db.Float)  # milliseconds
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive, index=True)
     
     # Relationships
     user = db.relationship('User', backref='audit_logs')
@@ -1062,7 +1069,7 @@ class VehicleTracking(db.Model):
     driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False, index=True)
     
     # Tracking data with timestamps
-    recorded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    recorded_at = db.Column(db.DateTime, nullable=False, default=get_ist_time_naive, index=True)
     
     # Odometer tracking
     odometer_reading = db.Column(db.Float, nullable=False)
@@ -1091,8 +1098,8 @@ class VehicleTracking(db.Model):
     notes = db.Column(db.Text)
     source = db.Column(db.String(50), default='duty')  # 'duty', 'maintenance', 'manual', 'gps'
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     
     # Relationships
     vehicle = db.relationship('Vehicle', backref='tracking_records')
@@ -1171,8 +1178,8 @@ class SystemConfiguration(db.Model):
     is_user_configurable = db.Column(db.Boolean, default=True)
     requires_restart = db.Column(db.Boolean, default=False)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
@@ -1209,7 +1216,7 @@ class UberSyncJob(db.Model):
     
     # Metadata
     initiated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     
     # Relationships
     initiator = db.relationship('User', foreign_keys=[initiated_by])
@@ -1240,7 +1247,7 @@ class UberSyncLog(db.Model):
     error_message = db.Column(db.Text)
     
     # Timing
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    timestamp = db.Column(db.DateTime, default=get_ist_time_naive, index=True)
     
     def __repr__(self):
         return f'<UberSyncLog {self.record_type}:{self.operation}:{self.status}>'
@@ -1274,8 +1281,8 @@ class UberIntegrationSettings(db.Model):
     batch_size = db.Column(db.Integer, default=50)
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
@@ -1293,7 +1300,7 @@ class OAuth(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     browser_session_key = db.Column(db.String, nullable=False)
     token = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     
     user = db.relationship('User', backref='oauth_tokens')
     
