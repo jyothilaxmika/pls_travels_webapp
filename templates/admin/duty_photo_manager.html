@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Duty Photo Manager - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-camera me-2"></i>Duty Photo Manager</h2>
+    <div>
+        <a href="/storage/gallery/photos" class="btn btn-outline-primary">
+            <i class="fas fa-images me-2"></i>All Photos
+        </a>
+        <a href="/admin/storage" class="btn btn-outline-info">
+            <i class="fas fa-database me-2"></i>Storage Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">From Date</label>
+                <input type="date" class="form-control" name="date_from" value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">To Date</label>
+                <input type="date" class="form-control" name="date_to" value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="driver_id" class="form-label">Driver</label>
+                <select class="form-control" name="driver_id">
+                    <option value="">All Drivers</option>
+                    {% for duty in duties.items %}
+                        <option value="{{ duty.driver.id }}" {{ 'selected' if request.args.get('driver_id') == duty.driver.id|string else '' }}>
+                            {{ duty.driver.user.full_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search me-1"></i>Filter
+                </button>
+                <a href="/admin/duty-photos" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Duty Photos -->
+<div class="row">
+    {% for duty in duties.items %}
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user me-2"></i>{{ duty.driver.user.full_name }}
+                        <small class="text-muted">- {{ duty.vehicle.registration_number }}</small>
+                    </h6>
+                    <span class="badge bg-{{ 'success' if duty.status.value == 'COMPLETED' else 'warning' if duty.status.value == 'ACTIVE' else 'info' }}">
+                        {{ duty.status.value }}
+                    </span>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-calendar me-1"></i>
+                    {{ duty.start_time.strftime('%d %b %Y, %I:%M %p') if duty.start_time }}
+                    {% if duty.end_time %}
+                        - {{ duty.end_time.strftime('%I:%M %p') }}
+                    {% endif %}
+                </small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Start Photo -->
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <h6 class="text-success">
+                                <i class="fas fa-play-circle me-1"></i>Start Photo
+                            </h6>
+                            {% if duty.start_photo %}
+                                <div class="position-relative">
+                                    <img src="/uploads/{{ duty.start_photo }}" 
+                                         class="img-fluid rounded mb-2" 
+                                         style="max-height: 150px; cursor: pointer;"
+                                         onclick="showPhotoModal('/uploads/{{ duty.start_photo }}', 'Duty Start - {{ duty.driver.user.full_name }}')">
+                                    <div class="position-absolute top-0 start-0">
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="border rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 150px;">
+                                    <div class="text-center">
+                                        <i class="fas fa-camera fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted mb-0">No start photo</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- End Photo -->
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <h6 class="text-danger">
+                                <i class="fas fa-stop-circle me-1"></i>End Photo
+                            </h6>
+                            {% if duty.end_photo %}
+                                <div class="position-relative">
+                                    <img src="/uploads/{{ duty.end_photo }}" 
+                                         class="img-fluid rounded mb-2" 
+                                         style="max-height: 150px; cursor: pointer;"
+                                         onclick="showPhotoModal('/uploads/{{ duty.end_photo }}', 'Duty End - {{ duty.driver.user.full_name }}')">
+                                    <div class="position-absolute top-0 start-0">
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="border rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 150px;">
+                                    <div class="text-center">
+                                        <i class="fas fa-camera fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted mb-0">
+                                            {% if duty.status.value == 'ACTIVE' %}
+                                                Duty in progress
+                                            {% else %}
+                                                No end photo
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Duty Details -->
+                <div class="mt-3 pt-3 border-top">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted">Distance</small>
+                            <div><strong>{{ "%.1f km"|format(duty.total_distance or 0) }}</strong></div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Revenue</small>
+                            <div><strong>₹{{ "%.2f"|format(duty.total_revenue or 0) }}</strong></div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Trips</small>
+                            <div><strong>{{ duty.total_trips or 0 }}</strong></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="mt-3 text-center">
+                    <a href="/admin/duties/{{ duty.id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No duty photos found</h4>
+            <p class="text-muted">Duties with photos will appear here.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if duties.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if duties.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('storage.duty_photo_manager', page=duties.prev_num, **request.args) }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            </li>
+        {% endif %}
+        
+        {% for page_num in duties.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != duties.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('storage.duty_photo_manager', page=page_num, **request.args) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if duties.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('storage.duty_photo_manager', page=duties.next_num, **request.args) }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoModalTitle">Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="photoModalImage" src="" class="img-fluid" alt="Photo">
+            </div>
+            <div class="modal-footer">
+                <a id="photoModalDownload" href="" download class="btn btn-primary">
+                    <i class="fas fa-download me-1"></i>Download
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showPhotoModal(imageUrl, title) {
+    document.getElementById('photoModalImage').src = imageUrl;
+    document.getElementById('photoModalTitle').textContent = title;
+    document.getElementById('photoModalDownload').href = imageUrl;
+    new bootstrap.Modal(document.getElementById('photoModal')).show();
+}
+</script>
+{% endblock %}

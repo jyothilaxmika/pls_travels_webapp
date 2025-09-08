@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Document Manager - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-alt me-2"></i>Document Manager</h2>
+    <div>
+        <a href="/storage/gallery/documents" class="btn btn-outline-primary">
+            <i class="fas fa-images me-2"></i>Gallery View
+        </a>
+        <a href="/admin/storage" class="btn btn-outline-info">
+            <i class="fas fa-database me-2"></i>Storage Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-primary"><i class="fas fa-id-card fa-2x"></i></h5>
+                <h3 class="text-primary">{{ document_stats.categories.documents.subcategories.aadhar.files if document_stats.categories.documents.subcategories.aadhar else 0 }}</h3>
+                <p class="card-text">Aadhar Cards</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-warning"><i class="fas fa-id-badge fa-2x"></i></h5>
+                <h3 class="text-warning">{{ document_stats.categories.documents.subcategories.license.files if document_stats.categories.documents.subcategories.license else 0 }}</h3>
+                <p class="card-text">Licenses</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-success"><i class="fas fa-user-circle fa-2x"></i></h5>
+                <h3 class="text-success">{{ document_stats.categories.photos.subcategories.profile.files if document_stats.categories.photos.subcategories.profile else 0 }}</h3>
+                <p class="card-text">Profile Photos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-info"><i class="fas fa-users fa-2x"></i></h5>
+                <h3 class="text-info">{{ drivers|length }}</h3>
+                <p class="card-text">Active Drivers</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Driver Document List -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-users me-2"></i>Driver Documents
+            <div class="float-end">
+                <input type="text" class="form-control form-control-sm d-inline-block" 
+                       placeholder="Search drivers..." style="width: 250px;" id="driverSearch">
+            </div>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Driver</th>
+                        <th>Contact</th>
+                        <th>Aadhar</th>
+                        <th>License</th>
+                        <th>Profile Photo</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="driversTable">
+                    {% for driver in drivers %}
+                    <tr data-driver-name="{{ driver.user.full_name.lower() }}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if driver.profile_photo %}
+                                    <img src="/uploads/{{ driver.profile_photo }}" 
+                                         class="rounded-circle me-2" width="40" height="40"
+                                         alt="Profile" onerror="this.src='/static/img/default-avatar.png'">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ driver.user.full_name }}</strong><br>
+                                    <small class="text-muted">ID: {{ driver.id }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <i class="fas fa-phone me-1"></i>{{ driver.phone_number }}<br>
+                                <small class="text-muted">
+                                    <i class="fas fa-envelope me-1"></i>{{ driver.user.email }}
+                                </small>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% if driver.aadhar_document %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>
+                                    {% if driver.aadhar_verified %}Verified{% else %}Uploaded{% endif %}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Missing
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if driver.license_document %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>
+                                    {% if driver.license_verified %}Verified{% else %}Uploaded{% endif %}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Missing
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if driver.profile_photo %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Available
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-exclamation me-1"></i>Missing
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if driver.status.value == 'ACTIVE' else 'warning' if driver.status.value == 'PENDING' else 'danger' }}">
+                                {{ driver.status.value }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="viewDriverDocuments({{ driver.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="/admin/drivers/{{ driver.id }}" class="btn btn-outline-info">
+                                    <i class="fas fa-user-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Document Viewer Modal -->
+<div class="modal fade" id="documentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Driver Documents</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="documentModalBody">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Search functionality
+document.getElementById('driverSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#driversTable tr');
+    
+    rows.forEach(row => {
+        const driverName = row.getAttribute('data-driver-name');
+        if (driverName && driverName.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// View driver documents
+function viewDriverDocuments(driverId) {
+    fetch(`/api/storage/user/${driverId}/files`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.files) {
+                displayDriverDocuments(data.files);
+            } else {
+                document.getElementById('documentModalBody').innerHTML = 
+                    '<p class="text-muted">No documents found for this driver.</p>';
+            }
+            new bootstrap.Modal(document.getElementById('documentModal')).show();
+        })
+        .catch(error => {
+            document.getElementById('documentModalBody').innerHTML = 
+                '<p class="text-danger">Error loading documents: ' + error.message + '</p>';
+            new bootstrap.Modal(document.getElementById('documentModal')).show();
+        });
+}
+
+function displayDriverDocuments(files) {
+    let html = '<div class="row">';
+    
+    files.forEach(file => {
+        const isImage = file.content_type && file.content_type.startsWith('image/');
+        html += `
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        ${isImage ? 
+                            `<img src="/storage/file/${file.file_path}" class="img-fluid mb-2" style="max-height: 150px;">` :
+                            `<i class="fas fa-file fa-4x text-muted mb-2"></i>`
+                        }
+                        <h6 class="card-title">${file.file_type ? file.file_type.replace('_', ' ').toUpperCase() : 'Document'}</h6>
+                        <small class="text-muted">
+                            ${file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString() : 'Unknown date'}
+                        </small>
+                        <div class="mt-2">
+                            <a href="/storage/file/${file.file_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-external-link-alt me-1"></i>View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    document.getElementById('documentModalBody').innerHTML = html;
+}
+</script>
+{% endblock %}

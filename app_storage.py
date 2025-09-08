@@ -326,6 +326,51 @@ class AppStorageManager:
                     print(f"Error reading metadata file {metadata_file}: {e}")
         
         return sorted(files, key=lambda x: x.get('uploaded_at', x.get('captured_at', '')), reverse=True)
+
+    def get_files_by_category(self, category: str, user_filter: int = None, page: int = 1, per_page: int = 20) -> Dict:
+        """Get files by category with pagination"""
+        files = []
+        
+        metadata_dir = self.base_path / 'metadata' / category
+        if not metadata_dir.exists():
+            return {
+                'files': [],
+                'total': 0,
+                'page': page,
+                'per_page': per_page,
+                'pages': 0
+            }
+        
+        for metadata_file in metadata_dir.glob('*.json'):
+            try:
+                with open(metadata_file, 'r') as f:
+                    metadata = json.load(f)
+                
+                # Apply user filter if specified
+                if user_filter and metadata.get('user_id') != user_filter:
+                    continue
+                    
+                files.append(metadata)
+                
+            except Exception as e:
+                continue
+        
+        # Sort by upload date (newest first)
+        files.sort(key=lambda x: x.get('uploaded_at', x.get('captured_at', '')), reverse=True)
+        
+        # Calculate pagination
+        total = len(files)
+        pages = (total + per_page - 1) // per_page
+        start = (page - 1) * per_page
+        end = start + per_page
+        
+        return {
+            'files': files[start:end],
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'pages': pages
+        }
     
     def delete_file(self, filename: str, category: str) -> bool:
         """Delete a file and its metadata"""

@@ -136,3 +136,84 @@ def delete_file_api(filename):
             
     except Exception as e:
         return jsonify({'error': f'Failed to delete file: {str(e)}'}), 500
+
+@storage_bp.route('/admin/documents')
+@login_required
+@admin_required
+def document_manager():
+    """Document management dashboard for admins"""
+    from models import Driver, User
+    
+    # Get all drivers with their documents
+    drivers = Driver.query.join(User).filter(User.is_active == True).all()
+    document_stats = StorageIntegration.get_storage_statistics()
+    
+    return render_template('admin/document_manager.html', 
+                         drivers=drivers, 
+                         document_stats=document_stats)
+
+@storage_bp.route('/admin/duty-photos')
+@login_required
+@admin_required
+def duty_photo_manager():
+    """Duty photo management dashboard"""
+    from models import Duty, Driver, Vehicle, User
+    from sqlalchemy import desc
+    
+    # Get recent duties with photos
+    page = request.args.get('page', 1, type=int)
+    duties = Duty.query.join(Driver).join(User).join(Vehicle)\
+        .filter(Duty.start_photo.isnot(None) | Duty.end_photo.isnot(None))\
+        .order_by(desc(Duty.start_time))\
+        .paginate(page=page, per_page=20, error_out=False)
+    
+    return render_template('admin/duty_photo_manager.html', duties=duties)
+
+@storage_bp.route('/storage/gallery/<category>')
+@login_required
+def file_gallery(category):
+    """Gallery view for files by category"""
+    if category not in ['documents', 'photos', 'captures', 'assets']:
+        return jsonify({'error': 'Invalid category'}), 400
+    
+    # Get files by category with pagination
+    page = request.args.get('page', 1, type=int)
+    user_filter = request.args.get('user_id', type=int)
+    
+    try:
+        files = app_storage.get_files_by_category(category, user_filter, page)
+        return render_template('admin/file_gallery.html', 
+                             files=files, 
+                             category=category,
+                             user_filter=user_filter)
+    except Exception as e:
+        return jsonify({'error': f'Failed to load gallery: {str(e)}'}), 500
+
+@storage_bp.route('/api/storage/preview/<filename>')
+@login_required
+def get_file_preview(filename):
+    """Get file preview/thumbnail"""
+    try:
+        doc_type = request.args.get('type', 'photos')
+        metadata = StorageIntegration.get_document_metadata(filename, doc_type)
+        
+        if not metadata:
+            return jsonify({'error': 'File not found'}), 404
+        
+        # Check permissions
+        if current_user.role.name != 'ADMIN' and metadata.get('user_id') != current_user.id:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # For now, return the file URL for preview
+        preview_data = {
+            'filename': filename,
+            'url': f'/storage/file/{metadata["file_path"]}',
+            'content_type': metadata.get('content_type', 'application/octet-stream'),
+            'size': metadata.get('file_size', 0),
+            'uploaded_at': metadata.get('uploaded_at')
+        }
+        
+        return jsonify({'preview': preview_data})
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get preview: {str(e)}'}), 500
