@@ -330,7 +330,23 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/socket.io.min.js"></script>
 <script>
+// Initialize Socket.IO connection for drivers
+const socket = io();
+let isSocketConnected = false;
+
+socket.on('connect', function() {
+    console.log('Driver connected to real-time system');
+    isSocketConnected = true;
+    socket.emit('join_tracking', {});
+});
+
+socket.on('disconnect', function() {
+    console.log('Driver disconnected from real-time system');
+    isSocketConnected = false;
+});
+
 // Automatically request location permission when driver logs in
 document.addEventListener('DOMContentLoaded', function() {
     // Check if geolocation is supported
@@ -499,11 +515,16 @@ function toggleLocationSharing() {
                     timestamp: new Date().toISOString()
                 };
                 
-                // Send location to server (you can integrate this with your real-time tracking)
+                // Send location to server via WebSocket
                 console.log('Sharing location:', locationData);
                 
-                // You can send this to your WebSocket or API endpoint
-                // Example: socket.emit('location_update', locationData);
+                if (isSocketConnected) {
+                    // Send via WebSocket for real-time updates
+                    socket.emit('location_update', locationData);
+                } else {
+                    // Fallback to REST API if WebSocket not connected
+                    sendLocationViaAPI(locationData);
+                }
             },
             function(error) {
                 console.error('Error getting location:', error);
@@ -522,6 +543,27 @@ function toggleLocationSharing() {
         button.className = 'btn btn-sm btn-danger';
         
         showToast('Location sharing started', 'success');
+    }
+}
+
+// Fallback function to send location via REST API
+async function sendLocationViaAPI(locationData) {
+    try {
+        const response = await fetch('/tracking/api/driver-location', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(locationData)
+        });
+        
+        if (response.ok) {
+            console.log('Location sent via REST API successfully');
+        } else {
+            console.warn('Failed to send location via REST API');
+        }
+    } catch (error) {
+        console.error('REST API location update failed:', error);
     }
 }
 
