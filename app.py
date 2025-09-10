@@ -292,8 +292,9 @@ def create_app():
     # Root route
     @app.route('/')
     def index():
-        from flask import redirect, url_for
+        from flask import redirect, url_for, render_template
         from flask_login import current_user
+        from forms import LoginForm
         
         if current_user.is_authenticated:
             from models import UserRole
@@ -304,7 +305,9 @@ def create_app():
             elif current_user.role == UserRole.DRIVER:
                 return redirect(url_for('driver.dashboard'))
         
-        return redirect(url_for('auth.login'))
+        # Show landing page with login form for unauthenticated users
+        form = LoginForm()
+        return render_template('landing.html', form=form)
     
     # Add direct /login route for convenience
     @app.route('/login')
