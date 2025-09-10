@@ -69,19 +69,27 @@
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
                 <!-- Basic Duty Information -->
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-12 mb-3">
                         <label for="end_odometer" class="form-label">Ending Odometer Reading *</label>
-                        <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
-                               min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
+                            <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
+                                   min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
+                            <span class="input-group-text">km</span>
+                        </div>
                         <small class="text-muted">
-                            Started at: {{ active_duty.start_odometer or 'Not recorded' }}
+                            Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
                         </small>
                     </div>
                     
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-12 mb-3">
                         <label for="trip_count" class="form-label">Number of Trips *</label>
-                        <input type="number" class="form-control" name="trip_count" id="trip_count" 
-                               min="0" required>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><i class="fas fa-route"></i></span>
+                            <input type="number" class="form-control" name="trip_count" id="trip_count" 
+                                   min="0" required>
+                            <span class="input-group-text">trips</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -92,27 +100,27 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
                                 <label for="cash_collected" class="form-label">Cash Collected *</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="cash_collected" id="cash_collected" 
                                            min="0" step="0.01" required>
                                 </div>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
                                 <label for="qr_payment" class="form-label">QR/UPI Payments</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="qr_payment" id="qr_payment" 
                                            min="0" step="0.01" value="0">
                                 </div>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-12 mb-3">
                                 <label for="outside_cash" class="form-label">Outside Cash</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="outside_cash" id="outside_cash" 
                                            min="0" step="0.01" value="0">
@@ -129,27 +137,27 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
                                 <label for="operator_bill" class="form-label">Operator Bill *</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="operator_bill" id="operator_bill" 
                                            min="0" step="0.01" required>
                                 </div>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
                                 <label for="toll" class="form-label">Toll Charges</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="toll" id="toll" 
                                            min="0" step="0.01" value="0">
                                 </div>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-12 mb-3">
                                 <label for="petrol_expenses" class="form-label">Petrol/Diesel</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="petrol_expenses" id="petrol_expenses" 
                                            min="0" step="0.01" value="0">
@@ -158,9 +166,9 @@
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label for="gas_expenses" class="form-label">Gas Expenses</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="gas_expenses" id="gas_expenses" 
                                            min="0" step="0.01" value="0">
@@ -178,9 +186,9 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
                                 <label for="start_cng" class="form-label">Start CNG Level (Bars) *</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
                                     <select class="form-select" name="start_cng" id="start_cng" required>
                                         <option value="">Select bars</option>
@@ -199,9 +207,9 @@
                                 <small class="text-muted">CNG level when starting duty</small>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-6 mb-3">
                                 <label for="end_cng" class="form-label">End CNG Level (Bars) *</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
                                     <select class="form-select" name="end_cng" id="end_cng" required>
                                         <option value="">Select bars</option>
@@ -220,9 +228,9 @@
                                 <small class="text-muted">CNG level when ending duty</small>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
+                            <div class="col-lg-4 col-md-12 mb-3">
                                 <label for="cng_point" class="form-label">CNG Station (Optional)</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
                                     <input type="text" class="form-control" name="cng_point" id="cng_point" 
                                            placeholder="Enter CNG station name" maxlength="100">
@@ -257,9 +265,9 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                                            <div class="col-md-3 mb-3">
+                            <div class="col-lg-6 col-md-12 mb-3">
                                 <label for="company_pay" class="form-label">Company Pay *</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="company_pay" id="company_pay" 
                                            min="0" step="0.01" required>
@@ -267,27 +275,29 @@
                                 <small class="text-muted">Base salary/guarantee</small>
                             </div>
                             
-                            <div class="col-md-3 mb-3">
+                            <div class="col-lg-6 col-md-12 mb-3">
                                 <label for="advance" class="form-label">Advance</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="advance" id="advance" 
                                            min="0" step="0.01" value="0">
                                 </div>
                             </div>
-                            
-                            <div class="col-md-3 mb-3">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6 col-md-12 mb-3">
                                 <label for="driver_expenses" class="form-label">Driver Expenses</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="driver_expenses" id="driver_expenses" 
                                            min="0" step="0.01" value="0">
                                 </div>
                             </div>
                             
-                            <div class="col-md-3 mb-3">
+                            <div class="col-lg-6 col-md-12 mb-3">
                                 <label for="pass_deduction" class="form-label">Pass Deduction</label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="pass_deduction" id="pass_deduction" 
                                            min="0" step="0.01" value="0">
