@@ -198,12 +198,14 @@ def create_app():
         import models  # noqa: F401
         db.create_all()
         
+        # Import models needed for checks
+        from models import User, Branch
+        from werkzeug.security import generate_password_hash
+        
         # Only create demo data if explicitly enabled (SECURITY RISK IN PRODUCTION)
         demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
         
         if demo_mode:
-            from models import User, Branch
-            from werkzeug.security import generate_password_hash
             
             admin = User.query.filter_by(username='admin').first()
             if not admin:
@@ -252,28 +254,28 @@ def create_app():
             from models import Driver, DriverStatus
             admin_user = User.query.filter_by(username='admin').first()
             if admin_user and not admin_user.driver_profile:
-            # Check if a driver with employee_id 'EMP000001' already exists
-            existing_admin_driver = Driver.query.filter_by(employee_id='EMP000001').first()
-            if existing_admin_driver:
-                # Link existing driver to admin user if not already linked
-                if not existing_admin_driver.user_id:
-                    existing_admin_driver.user_id = admin_user.id
-                    existing_admin_driver.status = DriverStatus.ACTIVE
-                    existing_admin_driver.approved_by = admin_user.id
-                    existing_admin_driver.approved_at = datetime.utcnow()
-            else:
-                # Get default branch and create new driver
-                default_branch = Branch.query.first()
-                if default_branch:
-                    admin_driver = Driver()
-                    admin_driver.user_id = admin_user.id
-                    admin_driver.branch_id = default_branch.id
-                    admin_driver.employee_id = 'EMP000001'  # Special ID for admin
-                    admin_driver.full_name = f"{admin_user.first_name} {admin_user.last_name}"
-                    admin_driver.status = DriverStatus.ACTIVE  # Make active so they can access duty management
-                    admin_driver.approved_by = admin_user.id  # Self-approved
-                    admin_driver.approved_at = datetime.utcnow()
-                    db.session.add(admin_driver)
+                # Check if a driver with employee_id 'EMP000001' already exists
+                existing_admin_driver = Driver.query.filter_by(employee_id='EMP000001').first()
+                if existing_admin_driver:
+                    # Link existing driver to admin user if not already linked
+                    if not existing_admin_driver.user_id:
+                        existing_admin_driver.user_id = admin_user.id
+                        existing_admin_driver.status = DriverStatus.ACTIVE
+                        existing_admin_driver.approved_by = admin_user.id
+                        existing_admin_driver.approved_at = datetime.utcnow()
+                else:
+                    # Get default branch and create new driver
+                    default_branch = Branch.query.first()
+                    if default_branch:
+                        admin_driver = Driver()
+                        admin_driver.user_id = admin_user.id
+                        admin_driver.branch_id = default_branch.id
+                        admin_driver.employee_id = 'EMP000001'  # Special ID for admin
+                        admin_driver.full_name = f"{admin_user.first_name} {admin_user.last_name}"
+                        admin_driver.status = DriverStatus.ACTIVE  # Make active so they can access duty management
+                        admin_driver.approved_by = admin_user.id  # Self-approved
+                        admin_driver.approved_at = datetime.utcnow()
+                        db.session.add(admin_driver)
         
             # Activate any pending drivers (for demo/testing purposes only)
             pending_drivers = Driver.query.filter_by(status=DriverStatus.PENDING).all()
