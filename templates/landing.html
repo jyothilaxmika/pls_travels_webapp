@@ -272,6 +272,8 @@
                 font-size: 16px !important;
                 padding: 0.75rem 1rem !important;
                 border-radius: 8px;
+                color: #212529 !important;
+                background-color: #ffffff !important;
             }
             
             .input-group-text {
@@ -302,6 +304,8 @@
                 border: 2px solid #dee2e6 !important;
                 border-radius: 10px !important;
                 line-height: 1.5 !important;
+                color: #212529 !important;
+                background-color: #ffffff !important;
             }
             
             .login-section .form-control:focus {
@@ -357,6 +361,8 @@
                 min-height: 60px !important;
                 font-size: 18px !important;
                 padding: 1.125rem 1.25rem !important;
+                color: #212529 !important;
+                background-color: #ffffff !important;
             }
             
             .login-section .input-group-text {
@@ -626,7 +632,7 @@
                             {% endwith %}
                             
                             <div class="text-center mt-3">
-                                <p class="text-muted small">New user? <a href="#" class="text-decoration-none">Register here</a></p>
+                                <p class="text-muted small">New user? <a href="javascript:void(0)" class="text-decoration-none">Register here</a></p>
                             </div>
                         </div>
                     </div>
@@ -687,8 +693,13 @@
         // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href === '#' || href === '#!') {
+                    e.preventDefault();
+                    return;
+                }
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
+                const target = document.querySelector(href);
                 if (target) {
                     target.scrollIntoView({
                         behavior: 'smooth',
