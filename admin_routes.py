@@ -13,13 +13,7 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils import allowed_file, calculate_earnings
 import json
-import pytz
-
-# IST timezone helper for database operations
-def get_ist_time_naive():
-    """Get current IST time as naive datetime for database storage"""
-    ist = pytz.timezone('Asia/Kolkata')
-    return datetime.now(ist).replace(tzinfo=None)
+from timezone_utils import get_ist_time_naive
 
 # Import scheduling functions after initial imports
 try:

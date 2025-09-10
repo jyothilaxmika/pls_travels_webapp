@@ -2,18 +2,13 @@
 from datetime import datetime, date
 import json
 import pytz
-
-# IST timezone helper for database operations
-def get_ist_time_naive():
-    """Get current IST time as naive datetime for database storage"""
-    ist = pytz.timezone('Asia/Kolkata')
-    return datetime.now(ist).replace(tzinfo=None)
 from app import db
 from flask_login import UserMixin
 from sqlalchemy import func, Index, CheckConstraint, UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 from enum import Enum
 import uuid
+from timezone_utils import get_ist_time_naive
 
 # Enums for better data integrity
 class UserRole(Enum):

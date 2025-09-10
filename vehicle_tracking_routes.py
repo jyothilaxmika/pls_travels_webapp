@@ -2,17 +2,11 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from functools import wraps
 from datetime import datetime, timedelta
-import pytz
 from sqlalchemy import func, desc, and_, or_
 from models import (User, Driver, Vehicle, Branch, Duty, VehicleTracking, db,
                    DriverStatus, VehicleStatus, DutyStatus, UserRole)
 from auth import log_audit
-
-# IST timezone helper for database operations
-def get_ist_time_naive():
-    """Get current IST time as naive datetime for database storage"""
-    ist = pytz.timezone('Asia/Kolkata')
-    return datetime.now(ist).replace(tzinfo=None)
+from timezone_utils import get_ist_time_naive
 
 tracking_bp = Blueprint('tracking', __name__)
 
