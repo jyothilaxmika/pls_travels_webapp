@@ -10,8 +10,7 @@
     <link href="{{ url_for('static', filename='css/responsive-enhancements.css') }}" rel="stylesheet">
     <style>
         .hero-section {
-            background: linear-gradient(135deg, rgba(255, 193, 7, 0.8) 0%, rgba(255, 179, 0, 0.8) 100%), 
-                        url("{{ url_for('static', filename='images/hero-bus-background.png') }}") center/cover no-repeat;
+            background: url("{{ url_for('static', filename='images/hero-bus-background.png') }}") center/cover no-repeat;
             color: #343a40;
             padding: 4rem 0;
             position: relative;
@@ -23,7 +22,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(255, 193, 7, 0.7) 0%, rgba(255, 179, 0, 0.7) 100%);
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.3) 0%, rgba(255, 179, 0, 0.3) 100%);
             z-index: 1;
         }
         .hero-section .container {
