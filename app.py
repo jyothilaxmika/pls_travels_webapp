@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
+from flask_socketio import SocketIO
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -14,11 +15,15 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
+socketio = SocketIO()
 
 def create_app():
     # Create the app
     app = Flask(__name__)
-    app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
+    # Enforce SESSION_SECRET requirement
+    app.secret_key = os.environ.get("SESSION_SECRET")
+    if not app.secret_key:
+        raise RuntimeError("SESSION_SECRET environment variable is required but not set")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     # Configure the database
@@ -60,6 +65,14 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'  # type: ignore
     login_manager.login_message = 'Please log in to access this page.'
+    
+    # Initialize SocketIO with proper security
+    allowed_origins = [
+        "https://*.replit.app", 
+        "https://*.replit.dev", 
+        "http://localhost:5000"
+    ]
+    socketio.init_app(app, cors_allowed_origins=allowed_origins, async_mode='eventlet', logger=True, engineio_logger=True)
 
     # User loader for Flask-Login
     @login_manager.user_loader
@@ -185,57 +198,60 @@ def create_app():
         import models  # noqa: F401
         db.create_all()
         
-        # Create initial admin user if doesn't exist
-        from models import User, Branch
-        from werkzeug.security import generate_password_hash
+        # Only create demo data if explicitly enabled (SECURITY RISK IN PRODUCTION)
+        demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
         
-        admin = User.query.filter_by(username='admin').first()
-        if not admin:
-            from models import UserRole, UserStatus
-            admin = User()
-            admin.username = 'admin'
-            admin.email = 'admin@plstravels.com'
-            admin.password_hash = generate_password_hash('admin123')
-            admin.role = UserRole.ADMIN
-            admin.status = UserStatus.ACTIVE
-            admin.first_name = 'System'
-            admin.last_name = 'Administrator'
-            db.session.add(admin)
+        if demo_mode:
+            from models import User, Branch
+            from werkzeug.security import generate_password_hash
             
-        # Create default branches
-        if not Branch.query.first():
-            from models import Region
-            # Create a default region first
-            region = Region()
-            region.name = 'South India'
-            region.code = 'SI'
-            region.state = 'Tamil Nadu'
-            region.country = 'India'
-            db.session.add(region)
-            db.session.flush()  # Get the ID
+            admin = User.query.filter_by(username='admin').first()
+            if not admin:
+                from models import UserRole, UserStatus
+                admin = User()
+                admin.username = 'admin'
+                admin.email = 'admin@plstravels.com'
+                admin.password_hash = generate_password_hash(os.environ.get('ADMIN_INITIAL_PASSWORD', 'admin123'))
+                admin.role = UserRole.ADMIN
+                admin.status = UserStatus.ACTIVE
+                admin.first_name = 'System'
+                admin.last_name = 'Administrator'
+                db.session.add(admin)
             
-            chennai = Branch()
-            chennai.name = 'Chennai HQ'
-            chennai.code = 'CHN'
-            chennai.region_id = region.id
-            chennai.city = 'Chennai'
-            chennai.address = 'Chennai, Tamil Nadu'
-            chennai.target_revenue_monthly = 500000.0
+            # Create default branches only in demo mode
+            if not Branch.query.first():
+                from models import Region
+                # Create a default region first
+                region = Region()
+                region.name = 'South India'
+                region.code = 'SI'
+                region.state = 'Tamil Nadu'
+                region.country = 'India'
+                db.session.add(region)
+                db.session.flush()  # Get the ID
+                
+                chennai = Branch()
+                chennai.name = 'Chennai HQ'
+                chennai.code = 'CHN'
+                chennai.region_id = region.id
+                chennai.city = 'Chennai'
+                chennai.address = 'Chennai, Tamil Nadu'
+                chennai.target_revenue_monthly = 500000.0
+                
+                bangalore = Branch()
+                bangalore.name = 'Bangalore Office'
+                bangalore.code = 'BLR'
+                bangalore.region_id = region.id
+                bangalore.city = 'Bangalore'
+                bangalore.address = 'Bangalore, Karnataka'
+                bangalore.target_revenue_monthly = 400000.0
+                db.session.add(chennai)
+                db.session.add(bangalore)
             
-            bangalore = Branch()
-            bangalore.name = 'Bangalore Office'
-            bangalore.code = 'BLR'
-            bangalore.region_id = region.id
-            bangalore.city = 'Bangalore'
-            bangalore.address = 'Bangalore, Karnataka'
-            bangalore.target_revenue_monthly = 400000.0
-            db.session.add(chennai)
-            db.session.add(bangalore)
-            
-        # Create active driver profile for admin user
-        from models import Driver, DriverStatus
-        admin_user = User.query.filter_by(username='admin').first()
-        if admin_user and not admin_user.driver_profile:
+            # Create active driver profile for admin user only in demo mode
+            from models import Driver, DriverStatus
+            admin_user = User.query.filter_by(username='admin').first()
+            if admin_user and not admin_user.driver_profile:
             # Check if a driver with employee_id 'EMP000001' already exists
             existing_admin_driver = Driver.query.filter_by(employee_id='EMP000001').first()
             if existing_admin_driver:
@@ -259,13 +275,14 @@ def create_app():
                     admin_driver.approved_at = datetime.utcnow()
                     db.session.add(admin_driver)
         
-        # Activate any pending drivers (for demo/testing purposes)
-        pending_drivers = Driver.query.filter_by(status=DriverStatus.PENDING).all()
-        for driver in pending_drivers:
-            driver.status = DriverStatus.ACTIVE
-            driver.approved_by = admin_user.id if admin_user else None
-            driver.approved_at = datetime.utcnow()
-            
+            # Activate any pending drivers (for demo/testing purposes only)
+            pending_drivers = Driver.query.filter_by(status=DriverStatus.PENDING).all()
+            for driver in pending_drivers:
+                driver.status = DriverStatus.ACTIVE
+                driver.approved_by = admin_user.id if admin_user else None
+                driver.approved_at = datetime.utcnow()
+        
+        # Always commit changes (even if no demo data created)
         db.session.commit()
 
     # API routes
@@ -325,3 +342,121 @@ def create_app():
     return app
 
 app = create_app()
+
+# WebSocket event handlers for real-time vehicle tracking
+@socketio.on('connect')
+def handle_connect():
+    from flask_login import current_user
+    from flask_socketio import emit
+    if current_user.is_authenticated:
+        emit('status', {'msg': f'User {current_user.username} connected'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        print(f'User {current_user.username} disconnected')
+
+@socketio.on('join_tracking')
+def handle_join_tracking(data):
+    from flask_socketio import join_room, emit
+    from flask_login import current_user
+    from models import UserRole
+    if current_user.is_authenticated:
+        # Join user-specific room
+        user_room = f"tracking_{current_user.id}"
+        join_room(user_room)
+        
+        # Join global tracking room for real-time updates
+        join_room("tracking_global")
+        
+        # Join branch-specific rooms for managers/admins
+        if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
+            if current_user.role == UserRole.ADMIN:
+                # Admin can see all branches
+                from models import Branch
+                branches = Branch.query.all()
+                for branch in branches:
+                    join_room(f"tracking_branch_{branch.id}")
+            else:
+                # Manager sees only their branches
+                for branch in current_user.managed_branches:
+                    join_room(f"tracking_branch_{branch.id}")
+        
+        emit('status', {'msg': f'Joined tracking rooms successfully'})
+
+@socketio.on('request_vehicle_update')
+def handle_vehicle_update_request():
+    from flask_socketio import emit
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        # Trigger vehicle location update
+        emit('vehicle_update_requested', broadcast=True)
+
+@socketio.on('location_update')
+def handle_driver_location_update(data):
+    from flask_socketio import emit
+    from flask_login import current_user
+    from models import Driver, VehicleTracking, Duty, DutyStatus, db
+    from timezone_utils import get_ist_time_naive
+    
+    if not current_user.is_authenticated:
+        return
+    
+    # Get driver profile
+    driver = Driver.query.filter_by(user_id=current_user.id).first()
+    if not driver:
+        return
+    
+    # Get active duty
+    active_duty = Duty.query.filter(
+        Duty.driver_id == driver.id,
+        Duty.status == DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return
+    
+    # Create tracking record
+    try:
+        tracking = VehicleTracking()
+        tracking.vehicle_id = active_duty.vehicle_id
+        tracking.duty_id = active_duty.id
+        tracking.driver_id = driver.id
+        tracking.recorded_at = get_ist_time_naive()
+        tracking.odometer_reading = 0  # Will be updated by driver later
+        tracking.odometer_type = 'gps'
+        tracking.latitude = data.get('latitude')
+        tracking.longitude = data.get('longitude')
+        tracking.location_accuracy = data.get('accuracy', 0)
+        tracking.location_name = 'GPS Location'
+        tracking.source = 'mobile_gps'
+        tracking.notes = 'Real-time GPS update from mobile device'
+        
+        db.session.add(tracking)
+        db.session.commit()
+        
+        # Broadcast to tracking room
+        broadcast_data = {
+            'vehicle_id': active_duty.vehicle_id,
+            'vehicle_number': active_duty.vehicle.number if active_duty.vehicle else 'Unknown',
+            'driver_name': driver.full_name,
+            'latitude': data.get('latitude'),
+            'longitude': data.get('longitude'),
+            'accuracy': data.get('accuracy', 0),
+            'timestamp': tracking.recorded_at.isoformat(),
+            'is_significant_move': True,
+            'location_name': 'GPS Location'
+        }
+        
+        # Broadcast to appropriate rooms
+        from flask_socketio import emit
+        emit('vehicle_location_update', broadcast_data, room='tracking_global')
+        
+        # Also broadcast to branch-specific room
+        if active_duty.vehicle and active_duty.vehicle.branch_id:
+            emit('vehicle_location_update', broadcast_data, room=f'tracking_branch_{active_duty.vehicle.branch_id}')
+        
+    except Exception as e:
+        print(f"Error handling location update: {e}")
+        db.session.rollback()

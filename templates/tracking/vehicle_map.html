@@ -203,6 +203,32 @@
             </div>
 
             <!-- Vehicle List -->
+            <!-- Real-time Status Indicator -->
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0">
+                        <i class="fas fa-satellite-dish"></i> Real-time Status
+                    </h6>
+                    <span id="connectionStatus" class="badge bg-secondary">Connecting...</span>
+                </div>
+                <small class="text-muted">WebSocket updates active</small>
+            </div>
+
+            <!-- Mobile Location Sharing (for drivers on mobile) -->
+            <div class="mb-3" id="mobileLocationPanel" style="display: none;">
+                <div class="bg-light p-3 rounded">
+                    <h6 class="mb-2">
+                        <i class="fas fa-mobile-alt"></i> Share Your Location
+                    </h6>
+                    <button class="btn btn-success btn-sm w-100 mb-2" id="shareLocationBtn">
+                        <i class="fas fa-location-arrow"></i> Start Sharing Location
+                    </button>
+                    <div id="locationStatus" class="small text-muted">
+                        Location sharing disabled
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-3">
                 <h6>
                     <i class="fas fa-truck"></i> Vehicle Status
@@ -239,6 +265,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Socket.IO for real-time updates -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
@@ -252,9 +281,11 @@ class VehicleTracker {
         this.pathLayers = {};
         this.currentView = 'live';
         this.refreshInterval = null;
+        this.socket = null;
         
         this.initMap();
         this.setupEventListeners();
+        this.initSocket();
         this.startAutoRefresh();
         this.loadVehicleData();
     }
@@ -483,16 +514,126 @@ class VehicleTracker {
                 throw new Error(data.error);
             }
             
-            // Create heatmap layer
-            this.heatmapLayer = L.heatLayer(data.heatmap_data, {
-                radius: 20,
-                blur: 15,
-                maxZoom: 17,
-            }).addTo(this.map);
+            // Enhanced heatmap configuration
+            const heatmapOptions = {
+                radius: this.getAdaptiveRadius(),
+                blur: 25,
+                maxZoom: 18,
+                minOpacity: 0.1,
+                gradient: {
+                    0.0: '#313695',
+                    0.1: '#4575b4', 
+                    0.3: '#74add1',
+                    0.5: '#abd9e9',
+                    0.7: '#fee090',
+                    0.9: '#f46d43',
+                    1.0: '#a50026'
+                }
+            };
+            
+            // Remove existing heatmap
+            if (this.heatmapLayer) {
+                this.map.removeLayer(this.heatmapLayer);
+            }
+            
+            // Create enhanced heatmap layer
+            this.heatmapLayer = L.heatLayer(data.heatmap_data, heatmapOptions).addTo(this.map);
+            
+            // Add heatmap controls
+            this.addHeatmapControls();
+            
+            this.showNotification(`Heatmap loaded with ${data.total_points} data points`, 'success');
             
         } catch (error) {
             console.error('Error loading heatmap data:', error);
             this.showError('Failed to load heatmap data: ' + error.message);
+        }
+    }
+    
+    getAdaptiveRadius() {
+        // Adaptive radius based on zoom level
+        const zoom = this.map.getZoom();
+        if (zoom >= 15) return 15;
+        if (zoom >= 12) return 20;
+        if (zoom >= 10) return 25;
+        return 30;
+    }
+    
+    addHeatmapControls() {
+        if (this.heatmapControlsAdded) return;
+        
+        // Add heatmap intensity control
+        const heatmapControl = L.control({ position: 'topright' });
+        heatmapControl.onAdd = (map) => {
+            const div = L.DomUtil.create('div', 'heatmap-controls');
+            div.innerHTML = `
+                <div class="bg-white p-2 rounded shadow">
+                    <h6 class="mb-2">Heatmap Controls</h6>
+                    <div class="mb-2">
+                        <label class="form-label small">Intensity:</label>
+                        <input type="range" class="form-range" id="heatmapIntensity" min="0.1" max="2" step="0.1" value="1">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Radius:</label>
+                        <input type="range" class="form-range" id="heatmapRadius" min="10" max="50" step="5" value="20">
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" id="clearHeatmap">Clear</button>
+                </div>
+            `;
+            
+            // Prevent map events from bubbling
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+            
+            return div;
+        };
+        
+        heatmapControl.addTo(this.map);
+        this.heatmapControlsAdded = true;
+        
+        // Add event listeners
+        setTimeout(() => {
+            const intensitySlider = document.getElementById('heatmapIntensity');
+            const radiusSlider = document.getElementById('heatmapRadius');
+            const clearBtn = document.getElementById('clearHeatmap');
+            
+            if (intensitySlider) {
+                intensitySlider.addEventListener('input', (e) => {
+                    this.updateHeatmapIntensity(parseFloat(e.target.value));
+                });
+            }
+            
+            if (radiusSlider) {
+                radiusSlider.addEventListener('input', (e) => {
+                    this.updateHeatmapRadius(parseInt(e.target.value));
+                });
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    this.clearHeatmap();
+                });
+            }
+        }, 100);
+    }
+    
+    updateHeatmapIntensity(intensity) {
+        if (this.heatmapLayer) {
+            this.heatmapLayer.setOptions({ minOpacity: intensity * 0.1 });
+        }
+    }
+    
+    updateHeatmapRadius(radius) {
+        if (this.heatmapLayer) {
+            this.heatmapLayer.setOptions({ radius: radius });
+        }
+    }
+    
+    clearHeatmap() {
+        if (this.heatmapLayer) {
+            this.map.removeLayer(this.heatmapLayer);
+            this.heatmapLayer = null;
+            this.showNotification('Heatmap cleared', 'info');
         }
     }
     
@@ -555,17 +696,288 @@ class VehicleTracker {
         alert('Error: ' + message);
     }
     
+    initSocket() {
+        // Initialize Socket.IO connection for real-time updates
+        this.socket = io();
+        
+        this.socket.on('connect', () => {
+            console.log('Connected to real-time vehicle tracking');
+            this.updateConnectionStatus('connected');
+            this.socket.emit('join_tracking', {});
+        });
+        
+        this.socket.on('disconnect', () => {
+            console.log('Disconnected from real-time tracking');
+            this.updateConnectionStatus('disconnected');
+        });
+        
+        this.socket.on('vehicle_location_update', (data) => {
+            console.log('Real-time vehicle update received:', data);
+            this.handleRealTimeUpdate(data);
+        });
+        
+        this.socket.on('vehicle_status_change', (data) => {
+            console.log('Vehicle status change:', data);
+            this.handleStatusChange(data);
+        });
+        
+        // Initialize mobile features
+        this.initMobileFeatures();
+    }
+    
+    updateConnectionStatus(status) {
+        const statusElement = document.getElementById('connectionStatus');
+        if (statusElement) {
+            switch(status) {
+                case 'connected':
+                    statusElement.className = 'badge bg-success';
+                    statusElement.textContent = 'Connected';
+                    break;
+                case 'disconnected':
+                    statusElement.className = 'badge bg-danger';
+                    statusElement.textContent = 'Disconnected';
+                    break;
+                default:
+                    statusElement.className = 'badge bg-secondary';
+                    statusElement.textContent = 'Connecting...';
+            }
+        }
+    }
+    
+    initMobileFeatures() {
+        // Show mobile location panel if on mobile device
+        if (this.isMobileDevice()) {
+            const mobilePanel = document.getElementById('mobileLocationPanel');
+            if (mobilePanel) {
+                mobilePanel.style.display = 'block';
+            }
+        }
+        
+        // Set up location sharing
+        const shareBtn = document.getElementById('shareLocationBtn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', () => {
+                this.toggleLocationSharing();
+            });
+        }
+    }
+    
+    isMobileDevice() {
+        return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    async toggleLocationSharing() {
+        const shareBtn = document.getElementById('shareLocationBtn');
+        const statusDiv = document.getElementById('locationStatus');
+        
+        if (this.locationWatchId) {
+            // Stop sharing location
+            navigator.geolocation.clearWatch(this.locationWatchId);
+            this.locationWatchId = null;
+            
+            shareBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Start Sharing Location';
+            shareBtn.className = 'btn btn-success btn-sm w-100 mb-2';
+            statusDiv.textContent = 'Location sharing disabled';
+            statusDiv.className = 'small text-muted';
+            
+            this.showNotification('Location sharing stopped', 'info');
+        } else {
+            // Start sharing location
+            if (!navigator.geolocation) {
+                this.showNotification('Geolocation is not supported by this browser', 'warning');
+                return;
+            }
+            
+            try {
+                // Get permission and start watching
+                const position = await this.getCurrentPosition();
+                
+                shareBtn.innerHTML = '<i class="fas fa-stop"></i> Stop Sharing Location';
+                shareBtn.className = 'btn btn-danger btn-sm w-100 mb-2';
+                statusDiv.textContent = 'Location sharing active';
+                statusDiv.className = 'small text-success';
+                
+                // Start continuous location watching
+                this.locationWatchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        this.sendLocationUpdate(position);
+                    },
+                    (error) => {
+                        console.error('Location error:', error);
+                        this.showNotification('Location access error: ' + error.message, 'warning');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 30000
+                    }
+                );
+                
+                this.showNotification('Location sharing started', 'success');
+                
+            } catch (error) {
+                this.showNotification('Failed to access location: ' + error.message, 'warning');
+            }
+        }
+    }
+    
+    getCurrentPosition() {
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            });
+        });
+    }
+    
+    sendLocationUpdate(position) {
+        const locationData = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString(),
+            speed: position.coords.speed || 0,
+            heading: position.coords.heading || 0
+        };
+        
+        // Send via WebSocket
+        if (this.socket && this.socket.connected) {
+            this.socket.emit('location_update', locationData);
+        }
+        
+        // Also send via API as backup
+        this.sendLocationToAPI(locationData);
+        
+        // Update status
+        const statusDiv = document.getElementById('locationStatus');
+        if (statusDiv) {
+            statusDiv.innerHTML = `
+                <i class="fas fa-location-dot text-success"></i> 
+                Location updated (±${Math.round(position.coords.accuracy)}m)
+                <br><small class="text-muted">${new Date().toLocaleTimeString()}</small>
+            `;
+        }
+    }
+    
+    async sendLocationToAPI(locationData) {
+        try {
+            // Send to driver location update REST API fallback
+            const response = await fetch('/tracking/api/driver-location', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(locationData)
+            });
+            
+            if (!response.ok) {
+                console.warn('Failed to send location to API');
+            } else {
+                console.log('Location successfully sent via REST API fallback');
+            }
+        } catch (error) {
+            console.warn('API location update failed:', error);
+        }
+    }
+    
+    handleRealTimeUpdate(data) {
+        // Update vehicle marker with new location data
+        if (data.vehicle_id && this.markers[data.vehicle_id]) {
+            const marker = this.markers[data.vehicle_id];
+            const newLatLng = L.latLng(data.latitude, data.longitude);
+            
+            // Animate marker to new position
+            marker.setLatLng(newLatLng);
+            
+            // Update popup content with new data
+            this.updateMarkerPopup(marker, data);
+            
+            // Show notification for significant moves
+            if (data.is_significant_move) {
+                this.showNotification(`Vehicle ${data.vehicle_number} moved to ${data.location_name}`, 'info');
+            }
+        } else {
+            // New vehicle appeared, reload all data
+            this.loadVehicleData();
+        }
+    }
+    
+    handleStatusChange(data) {
+        // Handle vehicle status changes (active/idle/offline)
+        if (data.vehicle_id && this.markers[data.vehicle_id]) {
+            const marker = this.markers[data.vehicle_id];
+            this.updateMarkerStyle(marker, data.status);
+            this.showNotification(`Vehicle ${data.vehicle_number} is now ${data.status}`, 'warning');
+        }
+    }
+    
+    updateMarkerPopup(marker, data) {
+        const popupContent = `
+            <div class="p-2">
+                <h6 class="mb-2">
+                    <i class="fas fa-truck"></i> ${data.vehicle_number}
+                </h6>
+                <p class="mb-1"><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                <p class="mb-1"><strong>Driver:</strong> ${data.driver_name}</p>
+                <p class="mb-1"><strong>Location:</strong> ${data.location_name || 'Unknown'}</p>
+                <p class="mb-1"><strong>Last Update:</strong> Just now</p>
+                <p class="mb-1"><strong>Speed:</strong> ${data.speed || 0} km/h</p>
+                <button class="btn btn-sm btn-primary mt-2" onclick="vehicleTracker.showVehicleDetails(${data.vehicle_id})">
+                    View Details
+                </button>
+            </div>
+        `;
+        marker.setPopupContent(popupContent);
+    }
+    
+    showNotification(message, type = 'info') {
+        // Create toast notification
+        const toastContainer = document.getElementById('toast-container') || this.createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'info' ? 'primary' : type === 'warning' ? 'warning' : 'success'} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        toastContainer.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+        bsToast.show();
+        
+        // Remove after animation
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+    
+    createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+        return container;
+    }
+    
     startAutoRefresh() {
-        // Refresh data every 30 seconds
+        // Reduced polling frequency since we have real-time updates
         this.refreshInterval = setInterval(() => {
             this.loadVehicleData();
-        }, 30000);
+        }, 120000); // Every 2 minutes as fallback
     }
     
     stopAutoRefresh() {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
             this.refreshInterval = null;
+        }
+        
+        if (this.socket) {
+            this.socket.disconnect();
         }
     }
 }

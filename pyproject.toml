@@ -29,4 +29,6 @@ dependencies = [
     "cryptography>=45.0.7",
     "playwright>=1.55.0",
     "pytz>=2025.2",
+    "flask-socketio>=5.5.1",
+    "eventlet>=0.40.3",
 ]

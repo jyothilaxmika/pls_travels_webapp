@@ -273,20 +273,19 @@ def api_add_test_location():
         return jsonify({'error': 'No active duty found for vehicle'}), 404
     
     # Create tracking record
-    tracking = VehicleTracking(
-        vehicle_id=vehicle.id,
-        duty_id=active_duty.id,
-        driver_id=active_duty.driver_id,
-        recorded_at=get_ist_time_naive(),
-        odometer_reading=data.get('odometer_reading', 0),
-        odometer_type='manual',
-        latitude=data['latitude'],
-        longitude=data['longitude'],
-        location_accuracy=data.get('accuracy', 10.0),
-        location_name=data.get('location_name', 'Test Location'),
-        source='manual',
-        notes='Test location data'
-    )
+    tracking = VehicleTracking()
+    tracking.vehicle_id = vehicle.id
+    tracking.duty_id = active_duty.id
+    tracking.driver_id = active_duty.driver_id
+    tracking.recorded_at = get_ist_time_naive()
+    tracking.odometer_reading = data.get('odometer_reading', 0)
+    tracking.odometer_type = 'manual'
+    tracking.latitude = data['latitude']
+    tracking.longitude = data['longitude']
+    tracking.location_accuracy = data.get('accuracy', 10.0)
+    tracking.location_name = data.get('location_name', 'Test Location')
+    tracking.source = 'manual'
+    tracking.notes = 'Test location data'
     
     db.session.add(tracking)
     db.session.commit()
@@ -298,3 +297,64 @@ def api_add_test_location():
         'tracking_id': tracking.id,
         'message': 'Test location added successfully'
     })
+
+@tracking_bp.route('/api/driver-location', methods=['POST'])
+@login_required
+def api_driver_location_update():
+    """REST API fallback for driver location updates when WebSocket is unavailable"""
+    from flask import request, jsonify
+    from flask_login import current_user
+    from models import Driver, VehicleTracking, Duty, DutyStatus, db
+    from timezone_utils import get_ist_time_naive
+    
+    if current_user.role not in [UserRole.DRIVER, UserRole.ADMIN]:
+        return jsonify({'error': 'Access denied. Driver access required.'}), 403
+    
+    data = request.get_json()
+    if not data or 'latitude' not in data or 'longitude' not in data:
+        return jsonify({'error': 'Missing required location data'}), 400
+    
+    # Get driver profile
+    driver = Driver.query.filter_by(user_id=current_user.id).first()
+    if not driver:
+        return jsonify({'error': 'Driver profile not found'}), 404
+    
+    # Get active duty
+    active_duty = Duty.query.filter(
+        Duty.driver_id == driver.id,
+        Duty.status == DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return jsonify({'error': 'No active duty found'}), 404
+    
+    # Create tracking record
+    try:
+        tracking = VehicleTracking()
+        tracking.vehicle_id = active_duty.vehicle_id
+        tracking.duty_id = active_duty.id
+        tracking.driver_id = driver.id
+        tracking.recorded_at = get_ist_time_naive()
+        tracking.odometer_reading = 0  # Will be updated by driver later
+        tracking.odometer_type = 'gps'
+        tracking.latitude = data.get('latitude')
+        tracking.longitude = data.get('longitude')
+        tracking.location_accuracy = data.get('accuracy', 0)
+        tracking.location_name = data.get('location_name', 'GPS Location')
+        tracking.source = 'mobile_gps'
+        tracking.notes = 'GPS update from mobile device (REST fallback)'
+        
+        db.session.add(tracking)
+        db.session.commit()
+        
+        log_audit('driver_location_updated', f'Driver {driver.full_name} updated location via REST API')
+        
+        return jsonify({
+            'success': True,
+            'tracking_id': tracking.id,
+            'message': 'Location updated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update location: {str(e)}'}), 500
