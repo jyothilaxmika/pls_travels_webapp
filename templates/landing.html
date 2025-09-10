@@ -267,13 +267,18 @@
             }
             
             /* Enhanced mobile form inputs */
-            .form-control, .form-select {
+            .login-section .form-control, 
+            .login-section .form-select,
+            .login-section input[type="text"],
+            .login-section input[type="password"] {
                 min-height: 50px !important;
                 font-size: 16px !important;
                 padding: 0.75rem 1rem !important;
                 border-radius: 8px;
-                color: #212529 !important;
+                color: #000000 !important;
                 background-color: #ffffff !important;
+                -webkit-text-fill-color: #000000 !important;
+                opacity: 1 !important;
             }
             
             .input-group-text {
@@ -297,15 +302,19 @@
         
         /* Additional mobile-specific input styling */
         @media (max-width: 768px) {
-            .login-section .form-control {
+            .login-section .card .form-control,
+            .login-section input[type="text"],
+            .login-section input[type="password"] {
                 min-height: 56px !important;
                 font-size: 18px !important;
                 padding: 1rem 1.25rem !important;
                 border: 2px solid #dee2e6 !important;
                 border-radius: 10px !important;
                 line-height: 1.5 !important;
-                color: #212529 !important;
+                color: #000000 !important;
                 background-color: #ffffff !important;
+                -webkit-text-fill-color: #000000 !important;
+                opacity: 1 !important;
             }
             
             .login-section .form-control:focus {
@@ -357,12 +366,16 @@
         
         /* Ultra mobile specific */
         @media (max-width: 480px) {
-            .login-section .form-control {
+            .login-section .card .form-control,
+            .login-section input[type="text"],
+            .login-section input[type="password"] {
                 min-height: 60px !important;
                 font-size: 18px !important;
                 padding: 1.125rem 1.25rem !important;
-                color: #212529 !important;
+                color: #000000 !important;
                 background-color: #ffffff !important;
+                -webkit-text-fill-color: #000000 !important;
+                opacity: 1 !important;
             }
             
             .login-section .input-group-text {
