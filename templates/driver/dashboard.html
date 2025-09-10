@@ -159,6 +159,26 @@
         </div>
     </div>
     
+    <!-- Location Sharing Quick Access (only show if permission granted) -->
+    <div id="locationQuickAccess" class="card mb-4" style="display: none;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
+                </div>
+                <div class="col">
+                    <h6 class="mb-1">Location Sharing</h6>
+                    <small class="text-muted">Share your location during duties for better tracking</small>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="toggleLocationSharing()">
+                        <i class="fas fa-satellite me-1"></i>Share Location
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Financial Actions -->
     <div class="row mb-4">
         <div class="col-4">
@@ -311,6 +331,90 @@
 
 {% block scripts %}
 <script>
+// Automatically request location permission when driver logs in
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if geolocation is supported
+    if ("geolocation" in navigator) {
+        // Request location permission automatically
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                // Permission granted successfully
+                console.log('Location permission granted');
+                
+                // Show success notification
+                showLocationPermissionNotification('granted');
+                
+                // Store location capability
+                localStorage.setItem('locationPermission', 'granted');
+                
+                // Optional: Store initial location
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                console.log(`Initial location: ${latitude}, ${longitude}`);
+            },
+            function(error) {
+                // Permission denied or error occurred
+                console.log('Location permission denied or error:', error.message);
+                
+                // Show permission request notification
+                showLocationPermissionNotification('denied');
+                
+                // Store permission status
+                localStorage.setItem('locationPermission', 'denied');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    } else {
+        // Geolocation not supported
+        console.log('Geolocation is not supported by this browser');
+        showLocationPermissionNotification('not_supported');
+        localStorage.setItem('locationPermission', 'not_supported');
+    }
+});
+
+function showLocationPermissionNotification(status) {
+    let message = '';
+    let alertClass = '';
+    
+    switch(status) {
+        case 'granted':
+            message = '<i class="fas fa-check-circle me-2"></i>Location access enabled! You can now share your location during duties.';
+            alertClass = 'alert-success';
+            break;
+        case 'denied':
+            message = '<i class="fas fa-exclamation-triangle me-2"></i>Location access is needed for duty tracking. Please enable location in your browser settings.';
+            alertClass = 'alert-warning';
+            break;
+        case 'not_supported':
+            message = '<i class="fas fa-info-circle me-2"></i>Location sharing is not available on this device.';
+            alertClass = 'alert-info';
+            break;
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; max-width: 350px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto remove after 8 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 8000);
+}
+
 // Load earnings chart
 {% if driver %}
 fetch('/driver/api/earnings-chart')
@@ -354,6 +458,86 @@ fetch('/driver/api/earnings-chart')
         console.error('Error loading earnings chart:', error);
         document.getElementById('earningsChart').style.display = 'none';
     });
+
+// Show location quick access if permission is granted
+if (localStorage.getItem('locationPermission') === 'granted') {
+    const locationCard = document.getElementById('locationQuickAccess');
+    if (locationCard) {
+        locationCard.style.display = 'block';
+    }
+}
+
 {% endif %}
+
+// Location sharing functionality
+function toggleLocationSharing() {
+    if (localStorage.getItem('locationPermission') !== 'granted') {
+        alert('Location permission is required. Please allow location access in your browser settings.');
+        return;
+    }
+    
+    // Check if already sharing
+    if (window.locationWatchId) {
+        // Stop sharing
+        navigator.geolocation.clearWatch(window.locationWatchId);
+        window.locationWatchId = null;
+        
+        // Update button
+        const button = document.querySelector('#locationQuickAccess button');
+        button.innerHTML = '<i class="fas fa-satellite me-1"></i>Share Location';
+        button.className = 'btn btn-sm btn-primary';
+        
+        showToast('Location sharing stopped', 'info');
+    } else {
+        // Start sharing
+        window.locationWatchId = navigator.geolocation.watchPosition(
+            function(position) {
+                const locationData = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Send location to server (you can integrate this with your real-time tracking)
+                console.log('Sharing location:', locationData);
+                
+                // You can send this to your WebSocket or API endpoint
+                // Example: socket.emit('location_update', locationData);
+            },
+            function(error) {
+                console.error('Error getting location:', error);
+                showToast('Error getting location: ' + error.message, 'error');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 10000
+            }
+        );
+        
+        // Update button
+        const button = document.querySelector('#locationQuickAccess button');
+        button.innerHTML = '<i class="fas fa-stop me-1"></i>Stop Sharing';
+        button.className = 'btn btn-sm btn-danger';
+        
+        showToast('Location sharing started', 'success');
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+    toast.style.cssText = 'bottom: 20px; right: 20px; z-index: 1050; max-width: 300px;';
+    toast.innerHTML = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 3000);
+}
 </script>
 {% endblock %}
