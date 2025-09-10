@@ -1,0 +1,321 @@
+/* Additional responsive enhancements for all screen sizes */
+
+/* Ultra-small devices (phones in landscape, 480px and down) */
+@media (max-width: 480px) {
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .card-header h5, .card-header h6 {
+        font-size: 0.9rem;
+    }
+    
+    .btn-group-vertical .btn {
+        font-size: 0.875rem;
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .modal-header .btn-close {
+        padding: 1rem;
+        margin: -1rem -1rem -1rem auto;
+    }
+}
+
+/* Large tablets and small laptops (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container-fluid {
+        max-width: 95%;
+    }
+    
+    .col-xl-3, .col-xl-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .btn-group .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Extra large screens (1200px and up) */
+@media (min-width: 1200px) {
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .card-columns {
+        column-count: 3;
+        column-gap: 1.5rem;
+    }
+    
+    .btn-group-lg .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar, .offcanvas, .btn, .pagination {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+        box-shadow: none !important;
+    }
+    
+    .container-fluid {
+        padding: 0 !important;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .card {
+        border-width: 0.5px;
+    }
+    
+    .btn {
+        border-width: 1px;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .navbar {
+        padding: 0.25rem 0;
+    }
+    
+    .navbar-brand {
+        font-size: 0.9rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.25rem;
+        max-height: calc(100vh - 0.5rem);
+    }
+    
+    .modal-content {
+        max-height: 100%;
+        overflow-y: auto;
+    }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .card {
+        background-color: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .navbar-light {
+        background-color: #2d3748 !important;
+    }
+    
+    .text-muted {
+        color: #a0aec0 !important;
+    }
+}
+
+/* Focus visible for keyboard navigation */
+@supports selector(:focus-visible) {
+    .btn:focus {
+        outline: none;
+    }
+    
+    .btn:focus-visible {
+        outline: 2px solid var(--pls-primary);
+        outline-offset: 2px;
+    }
+}
+
+/* Enhanced responsive navigation */
+.navbar-collapse {
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+}
+
+@media (max-width: 991px) {
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        margin-bottom: 0.25rem;
+    }
+    
+    .dropdown-menu {
+        position: static;
+        float: none;
+        width: auto;
+        margin-top: 0;
+        background-color: #f8f9fa;
+        border: none;
+        box-shadow: none;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 1.5rem;
+    }
+}
+
+/* Responsive offcanvas sidebar */
+.offcanvas {
+    max-width: 320px;
+}
+
+@media (max-width: 575px) {
+    .offcanvas {
+        max-width: 280px;
+    }
+}
+
+/* Enhanced form responsiveness */
+@media (max-width: 767px) {
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+    
+    .input-group-text {
+        min-width: 3rem;
+        justify-content: center;
+    }
+    
+    .form-check {
+        padding-left: 2rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-check-input {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-left: -2rem;
+        margin-top: 0.125rem;
+    }
+}
+
+/* Responsive tables enhancement */
+@media (max-width: 767px) {
+    .table-responsive-stack {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .table-responsive-stack tr {
+        display: block;
+        border: 1px solid #dee2e6;
+        margin-bottom: 0.5rem;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+    }
+    
+    .table-responsive-stack td {
+        display: block;
+        text-align: right;
+        padding: 0.25rem 0.5rem;
+        border: none;
+    }
+    
+    .table-responsive-stack td:before {
+        content: attr(data-label) ": ";
+        float: left;
+        font-weight: bold;
+        color: var(--pls-primary);
+    }
+}
+
+/* Loading states */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--pls-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Responsive utilities */
+.text-truncate-responsive {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 575px) {
+    .text-truncate-responsive {
+        max-width: 150px;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+    .text-truncate-responsive {
+        max-width: 200px;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .card:hover {
+        transform: none;
+    }
+    
+    .card:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+    
+    .dropdown-toggle:after {
+        font-size: 1.2em;
+    }
+    
+    select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
