@@ -77,16 +77,17 @@ def create_app():
         "http://localhost:5000",
         "http://127.0.0.1:5000"
     ]
-    socketio.init_app(
-        app, 
-        cors_allowed_origins="*",  # Temporarily allow all origins for development testing
-        async_mode='eventlet', 
-        logger=True, 
-        engineio_logger=True,
-        ping_timeout=30,
-        ping_interval=10,
-        max_http_buffer_size=1e6
-    )
+    # Disable WebSocket temporarily to fix stability issues
+    # socketio.init_app(
+    #     app, 
+    #     cors_allowed_origins="*",
+    #     async_mode='threading',  # Use threading instead of eventlet
+    #     logger=False,
+    #     engineio_logger=False,
+    #     ping_timeout=60,
+    #     ping_interval=25,
+    #     max_http_buffer_size=1e6
+    # )
 
     # User loader for Flask-Login
     @login_manager.user_loader

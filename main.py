@@ -1,5 +1,5 @@
-from app import app, socketio
+from app import app  # socketio temporarily disabled
 
 if __name__ == '__main__':
-    # Use SocketIO for WebSocket support
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=True, log_output=True)
+    # Use Flask directly while WebSocket is disabled
+    app.run(host='0.0.0.0', port=5000, debug=False)
