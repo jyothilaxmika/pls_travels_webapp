@@ -67,177 +67,240 @@
         </div>
         <div class="card-body">
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
-                <!-- Basic Duty Information -->
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label for="end_odometer" class="form-label">Ending Odometer Reading *</label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
-                            <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
-                                   min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
-                            <span class="input-group-text">km</span>
-                        </div>
-                        <small class="text-muted">
-                            Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
-                        </small>
-                    </div>
-                    
-                    <div class="col-md-12 mb-3">
-                        <label for="trip_count" class="form-label">Number of Trips *</label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text"><i class="fas fa-route"></i></span>
-                            <input type="number" class="form-control" name="trip_count" id="trip_count" 
-                                   min="0" required>
-                            <span class="input-group-text">trips</span>
-                        </div>
-                    </div>
-                </div>
                 
-                <!-- Comprehensive Financial Section -->
-                <div class="card bg-light mb-3 revenue-section">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Revenue & Collections</h6>
+                <!-- Step 1: Basic Duty Information -->
+                <div class="card bg-primary bg-opacity-10 border-primary mb-3">
+                    <div class="card-header bg-primary bg-opacity-25">
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-play-circle me-2"></i>Step 1: Basic Duty Information
+                        </h6>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <label for="cash_collected" class="form-label">Cash Collected *</label>
+                            <div class="col-12 mb-3">
+                                <label for="end_odometer" class="form-label fw-bold">Ending Odometer Reading *</label>
                                 <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="cash_collected" id="cash_collected" 
-                                           min="0" step="0.01" required>
+                                    <span class="input-group-text"><i class="fas fa-tachometer-alt text-primary"></i></span>
+                                    <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
+                                           min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
+                                    <span class="input-group-text fw-bold">km</span>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
                                 </div>
                             </div>
                             
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <label for="qr_payment" class="form-label">QR/UPI Payments</label>
+                            <div class="col-12 mb-3">
+                                <label for="trip_count" class="form-label fw-bold">Number of Trips *</label>
                                 <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="qr_payment" id="qr_payment" 
-                                           min="0" step="0.01" value="0">
-                                </div>
-                            </div>
-                            
-                            <div class="col-lg-4 col-md-12 mb-3">
-                                <label for="outside_cash" class="form-label">Outside Cash</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="outside_cash" id="outside_cash" 
-                                           min="0" step="0.01" value="0">
+                                    <span class="input-group-text"><i class="fas fa-route text-primary"></i></span>
+                                    <input type="number" class="form-control" name="trip_count" id="trip_count" 
+                                           min="0" required>
+                                    <span class="input-group-text fw-bold">trips</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Company Expenses Section -->
-                <div class="card bg-light mb-3 expense-section">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-receipt me-2"></i>Company Expenses</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <label for="operator_bill" class="form-label">Operator Bill *</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="operator_bill" id="operator_bill" 
-                                           min="0" step="0.01" required>
-                                </div>
-                            </div>
-                            
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <label for="toll" class="form-label">Toll Charges</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="toll" id="toll" 
-                                           min="0" step="0.01" value="0">
-                                </div>
-                            </div>
-                            
-                            <div class="col-lg-4 col-md-12 mb-3">
-                                <label for="petrol_expenses" class="form-label">Petrol/Diesel</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="petrol_expenses" id="petrol_expenses" 
-                                           min="0" step="0.01" value="0">
-                                </div>
-                            </div>
+                <!-- Step 2: Revenue & Collections -->
+                <div class="card bg-success bg-opacity-10 border-success mb-3 revenue-section">
+                    <div class="card-header bg-success bg-opacity-25" data-bs-toggle="collapse" data-bs-target="#revenue-section" role="button">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-success">
+                                <i class="fas fa-money-bill-wave me-2"></i>Step 2: Revenue & Collections
+                            </h6>
+                            <i class="fas fa-chevron-down text-success"></i>
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label for="gas_expenses" class="form-label">Gas Expenses</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="gas_expenses" id="gas_expenses" 
-                                           min="0" step="0.01" value="0">
+                        <small class="text-success">Tap to expand/collapse</small>
+                    </div>
+                    <div class="collapse show" id="revenue-section">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="cash_collected" class="form-label fw-bold">
+                                        <i class="fas fa-coins me-1"></i>Cash Collected *
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-success text-white fw-bold">₹</span>
+                                        <input type="number" class="form-control" name="cash_collected" id="cash_collected" 
+                                               min="0" step="0.01" required placeholder="0.00">
+                                    </div>
+                                    <div class="form-text">Main cash collection from passengers</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="qr_payment" class="form-label fw-bold">
+                                        <i class="fas fa-qrcode me-1"></i>QR/UPI Payments
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-info text-white fw-bold">₹</span>
+                                        <input type="number" class="form-control" name="qr_payment" id="qr_payment" 
+                                               min="0" step="0.01" value="0" placeholder="0.00">
+                                    </div>
+                                    <div class="form-text">Digital payments received</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="outside_cash" class="form-label fw-bold">
+                                        <i class="fas fa-hand-holding-usd me-1"></i>Outside Cash
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-warning text-dark fw-bold">₹</span>
+                                        <input type="number" class="form-control" name="outside_cash" id="outside_cash" 
+                                               min="0" step="0.01" value="0" placeholder="0.00">
+                                    </div>
+                                    <div class="form-text">Additional cash from other sources</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- CNG Tracking Section -->
+                <!-- Step 3: Company Expenses -->
+                <div class="card bg-danger bg-opacity-10 border-danger mb-3 expense-section">
+                    <div class="card-header bg-danger bg-opacity-25" data-bs-toggle="collapse" data-bs-target="#expense-section" role="button">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-danger">
+                                <i class="fas fa-receipt me-2"></i>Step 3: Company Expenses
+                            </h6>
+                            <i class="fas fa-chevron-down text-danger"></i>
+                        </div>
+                        <small class="text-danger">Tap to expand/collapse</small>
+                    </div>
+                    <div class="collapse" id="expense-section">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="operator_bill" class="form-label fw-bold">
+                                        <i class="fas fa-file-invoice me-1"></i>Operator Bill *
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-danger text-white fw-bold">₹</span>
+                                        <input type="number" class="form-control" name="operator_bill" id="operator_bill" 
+                                               min="0" step="0.01" required placeholder="0.00">
+                                    </div>
+                                    <div class="form-text">Required operator charges</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="toll" class="form-label fw-bold">
+                                        <i class="fas fa-road me-1"></i>Toll Charges
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-warning text-dark fw-bold">₹</span>
+                                        <input type="number" class="form-control" name="toll" id="toll" 
+                                               min="0" step="0.01" value="0" placeholder="0.00">
+                                    </div>
+                                    <div class="form-text">Highway toll payments</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="petrol_expenses" class="form-label fw-bold">
+                                        <i class="fas fa-gas-pump me-1"></i>Petrol/Diesel
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-info text-white fw-bold">₹</span>
+                                        <input type="number" class="form-control" name="petrol_expenses" id="petrol_expenses" 
+                                               min="0" step="0.01" value="0" placeholder="0.00">
+                                    </div>
+                                    <div class="form-text">Fuel expenses</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="gas_expenses" class="form-label fw-bold">
+                                        <i class="fas fa-fire me-1"></i>Gas Expenses
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-secondary text-white fw-bold">₹</span>
+                                        <input type="number" class="form-control" name="gas_expenses" id="gas_expenses" 
+                                               min="0" step="0.01" value="0" placeholder="0.00">
+                                    </div>
+                                    <div class="form-text">Additional gas related costs</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4: CNG Tracking -->
                 <div class="card bg-warning bg-opacity-10 border-warning mb-3 cng-section">
-                    <div class="card-header bg-warning bg-opacity-25">
-                        <h6 class="mb-0"><i class="fas fa-gas-pump me-2"></i>CNG Level Tracking</h6>
-                        <small class="text-dark">Track CNG levels to calculate charges/payments (₹90 per bar)</small>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <label for="start_cng" class="form-label">Start CNG Level (Bars) *</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
-                                    <select class="form-select" name="start_cng" id="start_cng" required>
-                                        <option value="">Select bars</option>
-                                        <option value="1">1 Bar (Empty)</option>
-                                        <option value="2">2 Bars</option>
-                                        <option value="3">3 Bars</option>
-                                        <option value="4">4 Bars</option>
-                                        <option value="5">5 Bars (Half)</option>
-                                        <option value="6">6 Bars</option>
-                                        <option value="7">7 Bars</option>
-                                        <option value="8">8 Bars</option>
-                                        <option value="9">9 Bars</option>
-                                        <option value="10">10 Bars (Full)</option>
-                                    </select>
-                                </div>
-                                <small class="text-muted">CNG level when starting duty</small>
-                            </div>
-                            
-                            <div class="col-lg-4 col-md-6 mb-3">
-                                <label for="end_cng" class="form-label">End CNG Level (Bars) *</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text"><i class="fas fa-tachometer-alt"></i></span>
-                                    <select class="form-select" name="end_cng" id="end_cng" required>
-                                        <option value="">Select bars</option>
-                                        <option value="1">1 Bar (Empty)</option>
-                                        <option value="2">2 Bars</option>
-                                        <option value="3">3 Bars</option>
-                                        <option value="4">4 Bars</option>
-                                        <option value="5">5 Bars (Half)</option>
-                                        <option value="6">6 Bars</option>
-                                        <option value="7">7 Bars</option>
-                                        <option value="8">8 Bars</option>
-                                        <option value="9">9 Bars</option>
-                                        <option value="10">10 Bars (Full)</option>
-                                    </select>
-                                </div>
-                                <small class="text-muted">CNG level when ending duty</small>
-                            </div>
-                            
-                            <div class="col-lg-4 col-md-12 mb-3">
-                                <label for="cng_point" class="form-label">CNG Station (Optional)</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                                    <input type="text" class="form-control" name="cng_point" id="cng_point" 
-                                           placeholder="Enter CNG station name" maxlength="100">
-                                </div>
-                                <small class="text-muted">Name/location of CNG station used</small>
-                            </div>
+                    <div class="card-header bg-warning bg-opacity-25" data-bs-toggle="collapse" data-bs-target="#cng-section" role="button">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-dark">
+                                <i class="fas fa-gas-pump me-2"></i>Step 4: CNG Level Tracking
+                            </h6>
+                            <i class="fas fa-chevron-down text-dark"></i>
                         </div>
+                        <small class="text-dark">₹90 per bar • Tap to expand/collapse</small>
+                    </div>
+                    <div class="collapse" id="cng-section">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="start_cng" class="form-label fw-bold">
+                                        <i class="fas fa-play me-1"></i>Start CNG Level (Bars) *
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-warning text-dark fw-bold">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                        </span>
+                                        <select class="form-select" name="start_cng" id="start_cng" required>
+                                            <option value="">Select start level</option>
+                                            <option value="1">1 Bar (Empty)</option>
+                                            <option value="2">2 Bars</option>
+                                            <option value="3">3 Bars</option>
+                                            <option value="4">4 Bars</option>
+                                            <option value="5">5 Bars (Half)</option>
+                                            <option value="6">6 Bars</option>
+                                            <option value="7">7 Bars</option>
+                                            <option value="8">8 Bars</option>
+                                            <option value="9">9 Bars</option>
+                                            <option value="10">10 Bars (Full)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-text">CNG level when you started duty</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="end_cng" class="form-label fw-bold">
+                                        <i class="fas fa-stop me-1"></i>End CNG Level (Bars) *
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-warning text-dark fw-bold">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                        </span>
+                                        <select class="form-select" name="end_cng" id="end_cng" required>
+                                            <option value="">Select end level</option>
+                                            <option value="1">1 Bar (Empty)</option>
+                                            <option value="2">2 Bars</option>
+                                            <option value="3">3 Bars</option>
+                                            <option value="4">4 Bars</option>
+                                            <option value="5">5 Bars (Half)</option>
+                                            <option value="6">6 Bars</option>
+                                            <option value="7">7 Bars</option>
+                                            <option value="8">8 Bars</option>
+                                            <option value="9">9 Bars</option>
+                                            <option value="10">10 Bars (Full)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-text">Current CNG level at duty end</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="cng_point" class="form-label fw-bold">
+                                        <i class="fas fa-map-marker-alt me-1"></i>CNG Station (Optional)
+                                    </label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-info text-white fw-bold">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="cng_point" id="cng_point" 
+                                               placeholder="CNG station name/location" maxlength="100">
+                                    </div>
+                                    <div class="form-text">Where did you fill CNG? (if applicable)</div>
+                                </div>
+                            </div>
                         
                         <!-- CNG Calculation Display -->
                         <div class="row">

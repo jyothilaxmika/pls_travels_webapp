@@ -157,6 +157,54 @@
         gap: 0.5rem;
     }
     
+    /* Mobile-Friendly Form Steps */
+    .duty-management .card-header[data-bs-toggle="collapse"] {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .duty-management .card-header[data-bs-toggle="collapse"]:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+    }
+    
+    /* Enhanced Step Cards for Mobile */
+    .duty-management .card {
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .duty-management .card-header {
+        border-radius: 15px 15px 0 0;
+        padding: 1.25rem;
+    }
+    
+    .duty-management .card-body {
+        padding: 1.5rem;
+    }
+    
+    /* Form Text Enhancements */
+    .duty-management .form-text {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    /* Input Group Enhancements */
+    .duty-management .input-group-text {
+        min-width: 60px;
+        justify-content: center;
+        font-weight: bold;
+        border-radius: 8px 0 0 8px;
+    }
+    
+    .duty-management .form-control, 
+    .duty-management .form-select {
+        border-radius: 0 8px 8px 0;
+        border-left: none;
+    }
+    
     /* Active Duty Card - Mobile */
     .duty-management .active-duty-card .row.align-items-center {
         text-align: center;
