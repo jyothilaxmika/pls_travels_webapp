@@ -226,38 +226,38 @@
     /* Duty Forms - Enhanced Mobile Layout */
     .duty-management .input-group-lg .form-control,
     .duty-management .input-group-lg .form-select {
-        width: 200px !important;
-        height: 35px !important;
-        font-size: 14px !important;
-        padding: 0.5rem;
+        width: 100% !important;
+        height: 55px !important;
+        font-size: 18px !important;
+        padding: 0.75rem;
         line-height: 1.4;
         font-weight: 500;
         color: #212529 !important;
-        min-height: 35px !important;
+        min-height: 55px !important;
     }
     
     /* Specific fix for number inputs in duty forms */
     .duty-management input[type="number"].form-control {
-        width: 200px !important;
-        height: 35px !important;
-        font-size: 14px !important;
+        width: 100% !important;
+        height: 55px !important;
+        font-size: 18px !important;
         font-weight: 500 !important;
         color: #000 !important;
         text-align: center;
-        min-height: 35px !important;
-        padding: 0.5rem !important;
+        min-height: 55px !important;
+        padding: 0.75rem !important;
         letter-spacing: normal;
     }
     
     /* Text inputs in duty forms */
     .duty-management input[type="text"].form-control {
-        width: 200px !important;
-        height: 35px !important;
-        font-size: 14px !important;
+        width: 100% !important;
+        height: 55px !important;
+        font-size: 18px !important;
         font-weight: 500 !important;
         color: #000 !important;
-        min-height: 35px !important;
-        padding: 0.5rem !important;
+        min-height: 55px !important;
+        padding: 0.75rem !important;
     }
     
     .duty-management .input-group-text {
@@ -354,49 +354,49 @@
 @media (max-width: 576px) {
     /* Enhanced Form Controls */
     .form-control, .form-select {
-        width: 200px !important;
-        height: 35px !important;
-        font-size: 14px !important;
-        border-radius: 4px;
+        width: 100% !important;
+        height: 55px !important;
+        font-size: 18px !important;
+        border-radius: 8px;
         font-weight: 500 !important;
         color: #000 !important;
-        padding: 0.5rem !important;
-        min-height: 35px !important;
+        padding: 0.75rem !important;
+        min-height: 55px !important;
     }
     
     .input-group-lg .form-control,
     .input-group-lg .form-select {
-        width: 200px !important;
-        height: 35px !important;
-        font-size: 14px !important;
+        width: 100% !important;
+        height: 55px !important;
+        font-size: 18px !important;
         font-weight: 500 !important;
         color: #000 !important;
-        padding: 0.5rem !important;
-        min-height: 35px !important;
+        padding: 0.75rem !important;
+        min-height: 55px !important;
     }
     
     /* Special handling for number inputs on mobile */
     input[type="number"].form-control {
-        width: 200px !important;
-        height: 35px !important;
-        font-size: 14px !important;
+        width: 100% !important;
+        height: 55px !important;
+        font-size: 18px !important;
         font-weight: 500 !important;
         color: #000 !important;
         text-align: center;
         letter-spacing: normal;
-        min-height: 35px !important;
-        padding: 0.5rem !important;
+        min-height: 55px !important;
+        padding: 0.75rem !important;
     }
     
     /* Text input enhancement */
     input[type="text"].form-control {
-        width: 200px !important;
-        height: 35px !important;
-        font-size: 14px !important;
+        width: 100% !important;
+        height: 55px !important;
+        font-size: 18px !important;
         font-weight: 500 !important;
         color: #000 !important;
-        min-height: 35px !important;
-        padding: 0.5rem !important;
+        min-height: 55px !important;
+        padding: 0.75rem !important;
     }
     
     /* Button Enhancements */
