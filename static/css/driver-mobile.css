@@ -176,8 +176,26 @@
     /* Duty Forms - Enhanced Mobile Layout */
     .duty-management .input-group-lg .form-control,
     .duty-management .input-group-lg .form-select {
-        font-size: 1.1rem;
+        font-size: 18px !important; /* Prevents iOS zoom and ensures visibility */
         padding: 1rem;
+        line-height: 1.5;
+        font-weight: 500; /* Makes text more visible */
+        color: #212529 !important; /* Ensures high contrast */
+    }
+    
+    /* Specific fix for number inputs in duty forms */
+    .duty-management input[type="number"].form-control {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #000 !important; /* Strong black text for visibility */
+        text-align: center; /* Center align numbers for better readability */
+    }
+    
+    /* Text inputs in duty forms */
+    .duty-management input[type="text"].form-control {
+        font-size: 18px !important;
+        font-weight: 500 !important;
+        color: #000 !important;
     }
     
     .duty-management .input-group-text {
@@ -277,12 +295,33 @@
         min-height: 48px; /* Touch-friendly minimum */
         font-size: 16px; /* Prevents zoom on iOS */
         border-radius: 8px;
+        font-weight: 500; /* Better text visibility */
+        color: #000 !important; /* Strong text color */
     }
     
     .input-group-lg .form-control,
     .input-group-lg .form-select {
         min-height: 56px;
-        font-size: 18px;
+        font-size: 18px !important;
+        font-weight: 600 !important; /* Bold text for better visibility */
+        color: #000 !important; /* Strong black text */
+        padding: 0.875rem 1rem; /* Better padding for mobile */
+    }
+    
+    /* Special handling for number inputs on mobile */
+    input[type="number"].form-control {
+        font-size: 18px !important;
+        font-weight: 700 !important; /* Very bold for numbers */
+        color: #000 !important;
+        text-align: center; /* Center align numbers */
+        letter-spacing: 0.5px; /* Slight spacing for better readability */
+    }
+    
+    /* Text input enhancement */
+    input[type="text"].form-control {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #000 !important;
     }
     
     /* Button Enhancements */
@@ -375,6 +414,8 @@
     .form-select:focus {
         border-width: 2px;
         box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+        font-size: 18px !important; /* Maintain font size on focus */
+        color: #000 !important; /* Maintain strong text color */
     }
     
     .btn:focus {
