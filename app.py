@@ -351,6 +351,23 @@ def create_app():
         upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
         return send_from_directory(upload_folder, filename)
 
+    # SEO routes
+    @app.route('/robots.txt')
+    def robots_txt():
+        """Serve robots.txt for search engine crawlers"""
+        return send_from_directory('static', 'robots.txt')
+
+    @app.route('/sitemap.xml')
+    def sitemap_xml():
+        """Generate sitemap.xml for search engines"""
+        from flask import render_template, make_response
+        from datetime import datetime
+        
+        response = make_response(render_template('sitemap.xml', 
+                                               current_date=datetime.now().strftime('%Y-%m-%d')))
+        response.headers['Content-Type'] = 'application/xml'
+        return response
+
     return app
 
 app = create_app()

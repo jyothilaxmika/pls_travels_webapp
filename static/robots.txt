@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /driver/
+Disallow: /manager/
+Disallow: /uploads/
+Sitemap: https://your-domain.replit.app/sitemap.xml
+
+# Allow search engines to index the landing page
+User-agent: Googlebot
+Allow: /
+Allow: /static/
+
+# Block access to sensitive admin and user areas
+User-agent: *
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /driver/
+Disallow: /manager/
+Disallow: /uploads/
+Disallow: /instance/
