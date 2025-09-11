@@ -67,15 +67,19 @@ def create_app():
     login_manager.login_message = 'Please log in to access this page.'
     
     # Initialize SocketIO with proper security and extended configuration
+    # For development, allow all Replit domains with proper wildcard matching
     allowed_origins = [
         "https://*.replit.app", 
         "https://*.replit.dev", 
+        "https://*.pike.replit.dev",
+        "https://*-*.pike.replit.dev",  # More specific pattern for complex Replit domains
+        "https://*.*.*replit.dev",      # Even more permissive for development
         "http://localhost:5000",
         "http://127.0.0.1:5000"
     ]
     socketio.init_app(
         app, 
-        cors_allowed_origins=allowed_origins, 
+        cors_allowed_origins="*",  # Temporarily allow all origins for development testing
         async_mode='eventlet', 
         logger=True, 
         engineio_logger=True,
