@@ -3,7 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLS TRAVELS - Drive with Uber, Earn More!</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>PLS TRAVELS - Uber Driver Jobs Chennai Bangalore | Earn ₹3,450/Day</title>
+    <meta name="title" content="PLS TRAVELS - Uber Driver Jobs Chennai Bangalore | Earn ₹3,450/Day">
+    <meta name="description" content="Join PLS TRAVELS as Uber driver in Chennai & Bangalore. No car needed - we provide cabs. Fixed salary + 70% incentives. Daily payouts up to ₹3,450. Apply now!">
+    <meta name="keywords" content="Uber driver jobs Chennai, Uber driver jobs Bangalore, driver jobs without car, taxi driver jobs, fleet management, daily payouts, driver recruitment, PLS Travels">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="PLS TRAVELS">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="PLS TRAVELS - Uber Driver Jobs Chennai Bangalore | Earn ₹3,450/Day">
+    <meta property="og:description" content="Join PLS TRAVELS as Uber driver in Chennai & Bangalore. No car needed - we provide cabs. Fixed salary + 70% incentives. Daily payouts up to ₹3,450. Apply now!">
+    <meta property="og:image" content="{{ url_for('static', filename='images/hero-bus-background.png', _external=True) }}">
+    <meta property="og:site_name" content="PLS TRAVELS">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="ta_IN">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.url }}">
+    <meta property="twitter:title" content="PLS TRAVELS - Uber Driver Jobs Chennai Bangalore | Earn ₹3,450/Day">
+    <meta property="twitter:description" content="Join PLS TRAVELS as Uber driver in Chennai & Bangalore. No car needed - we provide cabs. Fixed salary + 70% incentives. Daily payouts up to ₹3,450. Apply now!">
+    <meta property="twitter:image" content="{{ url_for('static', filename='images/hero-bus-background.png', _external=True) }}">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url }}">
+    
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "PLS TRAVELS",
+        "url": "{{ request.url_root }}",
+        "logo": "{{ url_for('static', filename='images/hero-bus-background.png', _external=True) }}",
+        "description": "Uber's Authorised Supplier for Fleet & Driver Management in Chennai and Bangalore",
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+91-9787247132",
+            "contactType": "Customer Service",
+            "areaServed": ["Chennai", "Bangalore", "IN"],
+            "availableLanguage": ["English", "Tamil"]
+        },
+        "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "IN",
+            "addressRegion": ["Tamil Nadu", "Karnataka"]
+        },
+        "sameAs": [
+            "https://wa.me/919787247132"
+        ]
+    }
+    </script>
+    
+    <!-- Structured Data - JobPosting -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": "Uber Driver - No Car Required",
+        "description": "Join PLS TRAVELS as an Uber driver in Chennai or Bangalore. We provide fully maintained cars, fixed salary plus incentives up to ₹3,450 per day. Food and accommodation provided.",
+        "hiringOrganization": {
+            "@type": "Organization",
+            "name": "PLS TRAVELS",
+            "url": "{{ request.url_root }}"
+        },
+        "jobLocation": [
+            {
+                "@type": "Place",
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressLocality": "Chennai",
+                    "addressRegion": "Tamil Nadu",
+                    "addressCountry": "IN"
+                }
+            },
+            {
+                "@type": "Place",
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressLocality": "Bangalore",
+                    "addressRegion": "Karnataka",
+                    "addressCountry": "IN"
+                }
+            }
+        ],
+        "employmentType": "FULL_TIME",
+        "baseSalary": {
+            "@type": "MonetaryAmount",
+            "currency": "INR",
+            "value": {
+                "@type": "QuantitativeValue",
+                "minValue": 1350,
+                "maxValue": 3450,
+                "unitText": "DAY"
+            }
+        },
+        "benefits": [
+            "No car required - company provided vehicle",
+            "Daily payouts",
+            "Food and accommodation provided",
+            "Accident insurance coverage",
+            "Fixed salary plus incentives"
+        ],
+        "datePosted": "2025-01-11"
+    }
+    </script>
+    
+    <!-- Structured Data - FAQ -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Do I need my own car to drive for PLS TRAVELS?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "No, you don't need your own car. PLS TRAVELS provides fully maintained cabs for all drivers."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How much can I earn as a driver?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "You can earn up to ₹3,450 per day. First ₹4,500 collection gives you 30% (₹1,350) fixed salary, and above ₹4,500 you get 70% incentive directly."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "In which cities is PLS TRAVELS operating?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "PLS TRAVELS operates in Chennai and Bangalore as Uber's authorised supplier."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What benefits do drivers get?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Drivers get daily payouts, food and accommodation during duty, accident coverage, and fully maintained vehicles."
+                }
+            }
+        ]
+    }
+    </script>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
@@ -382,12 +534,12 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h1 class="display-3 fw-bold mb-3">PLS TRAVELS</h1>
-                    <h2 class="h2 mb-4">Drive with Uber, Earn More!<br><span style="font-size: 0.8em;">ஊபரில் ஓட்டுங்கள், அதிகம் சம்பாதியுங்கள்!</span></h2>
+                    <h1 class="display-3 fw-bold mb-3">PLS TRAVELS - Uber Driver Jobs Chennai Bangalore</h1>
+                    <h2 class="h2 mb-4">Drive with Uber, Earn More! No Car Required<br><span style="font-size: 0.8em;">ஊபரில் ஓட்டுங்கள், அதிகம் சம்பாதியுங்கள்!</span></h2>
                     <p class="lead mb-4 text-white-75">
-                        Uber's Authorised Supplier | Fleet & Driver Management<br>
+                        <strong>Uber's Authorised Supplier</strong> | Fleet & Driver Management<br>
                         ஊபரின் அங்கீகரிக்கப்பட்ட சப்ளையர் | வாகன மேலாண்மை<br>
-                        <i class="fas fa-map-marker-alt"></i> Chennai & Bangalore | சென்னை மற்றும் பெங்களூரு
+                        <i class="fas fa-map-marker-alt" aria-hidden="true"></i> Chennai & Bangalore | சென்னை மற்றும் பெங்களூரு
                     </p>
                 </div>
             </div>
@@ -396,15 +548,15 @@
             <div class="row mt-4">
                 <div class="col-lg-6 mb-3">
                     <div class="benefit-box">
-                        <i class="fas fa-car benefit-icon"></i>
+                        <i class="fas fa-car benefit-icon" aria-hidden="true"></i>
                         <strong>No car needed</strong> – we provide fully maintained cabs<br>
                         <small class="text-muted">கார் தேவையில்லை - நாங்கள் முழுமையாக பராமரிக்கப்பட்ட கார்களை வழங்குகிறோம்</small>
                     </div>
                 </div>
                 <div class="col-lg-6 mb-3">
                     <div class="benefit-box">
-                        <i class="fas fa-money-bill benefit-icon"></i>
-                        <strong>Fixed salary + big incentives</strong><br>
+                        <i class="fas fa-money-bill benefit-icon" aria-hidden="true"></i>
+                        <strong>Fixed salary + big incentives - Earn up to ₹3,450/day</strong><br>
                         <small class="text-muted">நிர்ணயிக்கப்பட்ட சம்பளம் + பெரிய ஊக்கத்தொகை</small>
                     </div>
                 </div>
@@ -425,8 +577,8 @@
     <section id="benefits" class="py-5 bg-light">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold">Why Drive with Us? | எங்களுடன் ஏன் ஓட்ட வேண்டும்?</h2>
-                <p class="lead text-muted">Join thousands of drivers earning more with PLS Travels</p>
+                <h2 class="display-5 fw-bold">Why Choose PLS TRAVELS for Uber Driver Jobs? | எங்களுடன் ஏன் ஓட்ட வேண்டும்?</h2>
+                <p class="lead text-muted">Join thousands of drivers earning more with PLS Travels - No car required, daily payouts guaranteed</p>
             </div>
             
             <div class="row">
@@ -434,11 +586,11 @@
                     <div class="card feature-card h-100">
                         <div class="card-body d-flex align-items-center">
                             <div class="feature-icon me-3">
-                                <i class="fas fa-car"></i>
+                                <i class="fas fa-car" aria-hidden="true"></i>
                             </div>
                             <div>
-                                <h6 class="card-title mb-1">No car needed</h6>
-                                <small class="text-muted">We provide fully maintained cabs<br>கார் தேவையில்லை - நாங்கள் கார்களை வழங்குகிறோம்</small>
+                                <h3 class="card-title mb-1">No Car Required for Uber Driving</h3>
+                                <small class="text-muted">We provide fully maintained, Uber-approved vehicles<br>கார் தேவையில்லை - நாங்கள் கார்களை வழங்குகிறோம்</small>
                             </div>
                         </div>
                     </div>
@@ -447,11 +599,11 @@
                     <div class="card feature-card h-100">
                         <div class="card-body d-flex align-items-center">
                             <div class="feature-icon me-3">
-                                <i class="fas fa-clock"></i>
+                                <i class="fas fa-clock" aria-hidden="true"></i>
                             </div>
                             <div>
-                                <h6 class="card-title mb-1">Instant daily payouts</h6>
-                                <small class="text-muted">Get paid daily, no waiting<br>உடனடி தினசரி பேமெண்ட்</small>
+                                <h3 class="card-title mb-1">Daily Payouts - No Waiting</h3>
+                                <small class="text-muted">Get paid every day, up to ₹3,450 daily<br>உடனடி தினசரி பேமெண்ட்</small>
                             </div>
                         </div>
                     </div>
@@ -460,11 +612,11 @@
                     <div class="card feature-card h-100">
                         <div class="card-body d-flex align-items-center">
                             <div class="feature-icon me-3">
-                                <i class="fas fa-shield-alt"></i>
+                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
                             </div>
                             <div>
-                                <h6 class="card-title mb-1">Food & accommodation</h6>
-                                <small class="text-muted">Provided during duty hours<br>உணவு மற்றும் தங்குமிடம் வழங்கப்படும்</small>
+                                <h3 class="card-title mb-1">Food & Accommodation Provided</h3>
+                                <small class="text-muted">Complete support during duty hours<br>உணவு மற்றும் தங்குமிடம் வழங்கப்படும்</small>
                             </div>
                         </div>
                     </div>
@@ -473,11 +625,11 @@
                     <div class="card feature-card h-100">
                         <div class="card-body d-flex align-items-center">
                             <div class="feature-icon me-3">
-                                <i class="fas fa-check-circle"></i>
+                                <i class="fas fa-check-circle" aria-hidden="true"></i>
                             </div>
                             <div>
-                                <h6 class="card-title mb-1">Accident coverage</h6>
-                                <small class="text-muted">Full protection & expenses covered<br>விபத்து மற்றும் செலவுகள் பாதுகாக்கப்படும்</small>
+                                <h3 class="card-title mb-1">Complete Insurance Coverage</h3>
+                                <small class="text-muted">Accident insurance & medical expenses covered<br>விபத்து மற்றும் செலவுகள் பாதுகாக்கப்படும்</small>
                             </div>
                         </div>
                     </div>
@@ -492,10 +644,10 @@
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <div class="salary-highlight">
-                        <h3 class="mb-4">
-                            <i class="fas fa-money-bill-wave me-2"></i>
-                            Salary & Incentive Scheme | சம்பளம் மற்றும் ஊக்கத்தொகை திட்டம்
-                        </h3>
+                        <h2 class="mb-4">
+                            <i class="fas fa-money-bill-wave me-2" aria-hidden="true"></i>
+                            Uber Driver Salary: Up to ₹3,450 Daily | சம்பளம் மற்றும் ஊக்கத்தொகை திட்டம்
+                        </h2>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px;">
@@ -528,24 +680,30 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6">
                     <div class="application-form">
-                        <h3 class="text-center mb-4">
-                            <i class="fas fa-car me-2"></i>Apply Now | இப்போதே விண்ணப்பிக்கவும்
-                        </h3>
+                        <h2 class="text-center mb-4">
+                            <i class="fas fa-car me-2" aria-hidden="true"></i>Apply for Uber Driver Job | இப்போதே விண்ணப்பிக்கவும்
+                        </h2>
                         <form id="applicationForm">
                             <div class="mb-3">
+                                <label for="name" class="form-label sr-only">Your Full Name</label>
                                 <input type="text" class="form-control form-control-lg" id="name" name="name" 
-                                       placeholder="Your Name | உங்கள் பெயர்" required>
+                                       placeholder="Your Name | உங்கள் பெயர்" required aria-describedby="nameHelp">
+                                <small id="nameHelp" class="form-text text-muted">Enter your full name as per ID proof</small>
                             </div>
                             <div class="mb-3">
+                                <label for="phone" class="form-label sr-only">Phone Number</label>
                                 <input type="tel" class="form-control form-control-lg" id="phone" name="phone" 
-                                       placeholder="Phone Number | தொலைபேசி எண்" required>
+                                       placeholder="Phone Number | தொலைபேசி எண்" required aria-describedby="phoneHelp">
+                                <small id="phoneHelp" class="form-text text-muted">10-digit mobile number</small>
                             </div>
                             <div class="mb-3">
+                                <label for="city" class="form-label sr-only">Preferred City</label>
                                 <input type="text" class="form-control form-control-lg" id="city" name="city" 
-                                       placeholder="City (Chennai/Bangalore) | நகரம் (சென்னை/பெங்களூரு)" required>
+                                       placeholder="City (Chennai/Bangalore) | நகரம் (சென்னை/பெங்களூரு)" required aria-describedby="cityHelp">
+                                <small id="cityHelp" class="form-text text-muted">Choose Chennai or Bangalore</small>
                             </div>
                             <button type="submit" class="btn btn-whatsapp btn-lg w-100">
-                                <i class="fab fa-whatsapp me-2"></i>Send via WhatsApp | WhatsApp மூலம் அனுப்பவும்
+                                <i class="fab fa-whatsapp me-2" aria-hidden="true"></i>Apply via WhatsApp | WhatsApp மூலம் அனுப்பவும்
                             </button>
                         </form>
                     </div>
@@ -556,11 +714,11 @@
             <div class="row justify-content-center mt-5">
                 <div class="col-lg-8">
                     <div class="text-center">
-                        <a href="tel:+919787247132" class="btn btn-primary btn-lg me-3 mb-3">
-                            <i class="fas fa-phone me-2"></i>Call Now | இப்போது அழைக்கவும்
+                        <a href="tel:+919787247132" class="btn btn-primary btn-lg me-3 mb-3" aria-label="Call PLS TRAVELS at +91 9787 247 132">
+                            <i class="fas fa-phone me-2" aria-hidden="true"></i>Call Now | இப்போது அழைக்கவும்
                         </a>
-                        <a href="https://wa.me/919787247132" class="btn btn-whatsapp btn-lg mb-3" target="_blank">
-                            <i class="fab fa-whatsapp me-2"></i>WhatsApp Us | WhatsApp செய்யவும்
+                        <a href="https://wa.me/919787247132" class="btn btn-whatsapp btn-lg mb-3" target="_blank" rel="noopener noreferrer" aria-label="Contact PLS TRAVELS on WhatsApp">
+                            <i class="fab fa-whatsapp me-2" aria-hidden="true"></i>WhatsApp Us | WhatsApp செய்யவும்
                         </a>
                     </div>
                 </div>
@@ -574,15 +732,15 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6 col-md-8 col-sm-10">
                     <div class="text-center">
-                        <h3 class="text-white mb-4">
-                            <i class="fas fa-user-circle me-2"></i>Driver Login | டிரைவர் உள்நுழைவு
-                        </h3>
+                        <h2 class="text-white mb-4">
+                            <i class="fas fa-user-circle me-2" aria-hidden="true"></i>Existing Driver Login | டிரைவர் உள்நுழைவு
+                        </h2>
                         <p class="text-white-50 mb-4 lead">
-                            Existing drivers login for duty management | இருக்கும் டிரைவர்கள் டியூட்டி நிர்வாகத்திற்கு உள்நுழைவு
+                            Current PLS TRAVELS drivers access duty management portal | இருக்கும் டிரைவர்கள் டியூட்டி நிர்வாகத்திற்கு உள்நுழைவு
                         </p>
                         <div class="d-grid gap-3 d-md-flex justify-content-md-center">
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-5 py-3">
-                                <i class="fas fa-sign-in-alt me-2"></i>Login to Dashboard | டாஷ்போர்டுக்கு உள்நுழைவு
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-5 py-3" aria-label="Login to PLS TRAVELS driver dashboard">
+                                <i class="fas fa-sign-in-alt me-2" aria-hidden="true"></i>Login to Dashboard | டாஷ்போர்டுக்கு உள்நுழைவு
                             </a>
                         </div>
                         <div class="mt-4">
