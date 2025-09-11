@@ -226,32 +226,38 @@
     /* Duty Forms - Enhanced Mobile Layout */
     .duty-management .input-group-lg .form-control,
     .duty-management .input-group-lg .form-select {
-        font-size: 22px !important; /* Even larger font for better visibility */
-        padding: 1.5rem 1.25rem; /* Increased padding for larger touch area */
-        line-height: 1.6;
-        font-weight: 600; /* Makes text more visible */
-        color: #212529 !important; /* Ensures high contrast */
-        min-height: 90px !important; /* Much larger input boxes for mobile */
+        width: 200px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+        padding: 0.5rem;
+        line-height: 1.4;
+        font-weight: 500;
+        color: #212529 !important;
+        min-height: 35px !important;
     }
     
     /* Specific fix for number inputs in duty forms */
     .duty-management input[type="number"].form-control {
-        font-size: 24px !important; /* Extra large font for numbers */
-        font-weight: 700 !important;
-        color: #000 !important; /* Strong black text for visibility */
-        text-align: center; /* Center align numbers for better readability */
-        min-height: 90px !important; /* Extra large input box for mobile */
-        padding: 1.5rem 1.25rem !important;
-        letter-spacing: 1px; /* Better number spacing */
+        width: 200px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #000 !important;
+        text-align: center;
+        min-height: 35px !important;
+        padding: 0.5rem !important;
+        letter-spacing: normal;
     }
     
     /* Text inputs in duty forms */
     .duty-management input[type="text"].form-control {
-        font-size: 20px !important;
-        font-weight: 600 !important;
+        width: 200px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
         color: #000 !important;
-        min-height: 90px !important; /* Extra large input box for mobile */
-        padding: 1.5rem 1.25rem !important;
+        min-height: 35px !important;
+        padding: 0.5rem !important;
     }
     
     .duty-management .input-group-text {
@@ -348,41 +354,49 @@
 @media (max-width: 576px) {
     /* Enhanced Form Controls */
     .form-control, .form-select {
-        min-height: 80px !important; /* Extra large for mobile touch */
-        font-size: 20px !important; /* Larger font prevents zoom on iOS */
-        border-radius: 12px;
-        font-weight: 600 !important; /* Better text visibility */
-        color: #000 !important; /* Strong text color */
-        padding: 1.25rem !important; /* Extra padding for touch */
+        width: 200px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+        border-radius: 4px;
+        font-weight: 500 !important;
+        color: #000 !important;
+        padding: 0.5rem !important;
+        min-height: 35px !important;
     }
     
     .input-group-lg .form-control,
     .input-group-lg .form-select {
-        min-height: 90px !important; /* Extra large for mobile touch */
-        font-size: 22px !important;
-        font-weight: 700 !important; /* Extra bold text for better visibility */
-        color: #000 !important; /* Strong black text */
-        padding: 1.5rem 1.25rem !important; /* Extra padding for larger touch area */
+        width: 200px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #000 !important;
+        padding: 0.5rem !important;
+        min-height: 35px !important;
     }
     
     /* Special handling for number inputs on mobile */
     input[type="number"].form-control {
-        font-size: 24px !important; /* Extra large for numbers */
-        font-weight: 800 !important; /* Extra bold for numbers */
+        width: 200px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
         color: #000 !important;
-        text-align: center; /* Center align numbers */
-        letter-spacing: 1px; /* Better spacing for readability */
-        min-height: 90px !important; /* Extra large touch-friendly input boxes */
-        padding: 1.5rem 1.25rem !important;
+        text-align: center;
+        letter-spacing: normal;
+        min-height: 35px !important;
+        padding: 0.5rem !important;
     }
     
     /* Text input enhancement */
     input[type="text"].form-control {
-        font-size: 20px !important;
-        font-weight: 700 !important;
+        width: 200px !important;
+        height: 35px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
         color: #000 !important;
-        min-height: 90px !important; /* Extra large touch-friendly input boxes */
-        padding: 1.5rem 1.25rem !important;
+        min-height: 35px !important;
+        padding: 0.5rem !important;
     }
     
     /* Button Enhancements */
