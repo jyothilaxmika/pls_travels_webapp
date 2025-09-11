@@ -9,10 +9,13 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.heat/dist/leaflet-heat.css" />
 <style>
     #map {
-        height: 70vh;
-        min-height: 400px;
+        height: 70vh !important;
+        min-height: 400px !important;
+        width: 100% !important;
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 1;
     }
     
     .map-controls {
@@ -226,7 +229,7 @@
             </div>
 
             <!-- Map Container -->
-            <div id="map"></div>
+            <div id="map" style="height: 70vh; min-height: 400px; width: 100%; position: relative; z-index: 1; background-color: #f8f9fa;"></div>
         </div>
 
         <div class="col-12 col-lg-3">
@@ -343,9 +346,63 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+<!-- Simple Map Test -->
+<script>
+console.log('Script starting to load...');
+
+// Simple map initialization
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - checking Leaflet...');
+    
+    if (typeof L === 'undefined') {
+        console.error('Leaflet not loaded!');
+        return;
+    }
+    
+    console.log('Leaflet available, initializing map...');
+    
+    // Force map container to be visible
+    const mapEl = document.getElementById('map');
+    if (!mapEl) {
+        console.error('Map container not found!');
+        return;
+    }
+    
+    console.log('Map container found, dimensions:', mapEl.getBoundingClientRect());
+    
+    // Simple map initialization
+    try {
+        const map = L.map('map').setView([20.5937, 78.9629], 5);
+        console.log('Leaflet map created successfully');
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        console.log('Tiles added to map');
+        
+        // Make globally accessible
+        window.simpleMap = map;
+        
+        // Force resize
+        setTimeout(() => {
+            map.invalidateSize();
+            console.log('Map invalidateSize called');
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error creating map:', error);
+    }
+});
+
+console.log('Script loaded completely');
+</script>
+
 <script>
 class VehicleTracker {
     constructor() {
+        console.log('VehicleTracker constructor started');
         this.map = null;
         this.markers = {};
         this.heatmapLayer = null;
@@ -354,24 +411,80 @@ class VehicleTracker {
         this.refreshInterval = null;
         this.socket = null;
         
-        this.initMap();
-        this.setupEventListeners();
-        this.initSocket();
-        this.startAutoRefresh();
-        this.loadVehicleData();
+        try {
+            console.log('About to initialize map...');
+            this.initMap();
+            console.log('Map initialized, setting up event listeners...');
+            this.setupEventListeners();
+            console.log('Event listeners set up, initializing socket...');
+            this.initSocket();
+            console.log('Socket initialized, starting auto-refresh...');
+            this.startAutoRefresh();
+            console.log('Auto-refresh started, loading vehicle data...');
+            this.loadVehicleData();
+            console.log('VehicleTracker constructor completed successfully');
+        } catch (error) {
+            console.error('Error in VehicleTracker constructor:', error);
+        }
     }
     
     initMap() {
-        // Initialize map centered on India
-        this.map = L.map('map').setView([20.5937, 78.9629], 5);
+        // Ensure map container exists and has dimensions
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) {
+            console.error('Map container not found');
+            return;
+        }
         
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(this.map);
+        // Force container dimensions if needed
+        if (mapContainer.offsetHeight === 0) {
+            mapContainer.style.height = '70vh';
+            mapContainer.style.minHeight = '400px';
+            mapContainer.style.width = '100%';
+        }
+        
+        // Initialize map centered on India
+        this.map = L.map('map', {
+            preferCanvas: true,
+            renderer: L.canvas()
+        }).setView([20.5937, 78.9629], 5);
+        
+        // Add tile layer with error handling
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18,
+            subdomains: ['a', 'b', 'c']
+        });
+        
+        tileLayer.on('tileerror', function(error) {
+            console.warn('Tile loading error:', error);
+        });
+        
+        tileLayer.on('tileload', function() {
+            console.log('Tiles loading successfully');
+        });
+        
+        tileLayer.addTo(this.map);
         
         // Add scale control
         L.control.scale().addTo(this.map);
+        
+        // Force map resize after a short delay to ensure proper rendering
+        setTimeout(() => {
+            if (this.map) {
+                this.map.invalidateSize();
+                console.log('Map invalidateSize called');
+            }
+        }, 100);
+        
+        // Also invalidate size on window resize
+        window.addEventListener('resize', () => {
+            if (this.map) {
+                this.map.invalidateSize();
+            }
+        });
+        
+        console.log('Map initialized successfully');
     }
     
     setupEventListeners() {
@@ -1108,7 +1221,31 @@ class VehicleTracker {
 // Initialize when page loads
 let vehicleTracker;
 document.addEventListener('DOMContentLoaded', function() {
-    vehicleTracker = new VehicleTracker();
+    console.log('DOM Content Loaded - starting VehicleTracker initialization');
+    
+    // Check if Leaflet is available
+    if (typeof L === 'undefined') {
+        console.error('Leaflet library not loaded!');
+        return;
+    }
+    console.log('Leaflet library is available');
+    
+    // Check if map container exists
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('Map container not found!');
+        return;
+    }
+    console.log('Map container found:', mapContainer);
+    
+    // Initialize VehicleTracker
+    try {
+        vehicleTracker = new VehicleTracker();
+        window.map = vehicleTracker.map; // Make map globally accessible for debugging
+        console.log('VehicleTracker initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize VehicleTracker:', error);
+    }
 });
 
 // Clean up on page unload
