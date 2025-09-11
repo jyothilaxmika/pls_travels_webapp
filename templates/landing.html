@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLS TRAVELS - Premium Bus Services</title>
+    <title>PLS TRAVELS - Drive with Uber, Earn More!</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/responsive-enhancements.css') }}" rel="stylesheet">
     <style>
         .hero-section {
-            background: url("{{ url_for('static', filename='images/hero-bus-background.png') }}") center/cover no-repeat;
-            color: #343a40;
+            background: linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #0f172a 100%);
+            color: white;
             padding: 4rem 0;
             position: relative;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
         }
         .hero-section::before {
             content: '';
@@ -22,31 +25,37 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(255, 193, 7, 0.3) 0%, rgba(255, 179, 0, 0.3) 100%);
+            background: url("{{ url_for('static', filename='images/hero-bus-background.png') }}") center/cover no-repeat;
+            opacity: 0.1;
             z-index: 1;
         }
         .hero-section .container {
             position: relative;
             z-index: 2;
         }
-        .countdown-box {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
+        .benefit-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
             padding: 1.5rem;
             margin: 0.5rem;
+            text-align: left;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .benefit-icon {
+            font-size: 1.5rem;
+            color: #10b981;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            width: 40px;
+        }
+        .salary-highlight {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            color: white;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .countdown-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #ffc107;
-        }
-        .countdown-label {
-            font-size: 0.9rem;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin: 2rem 0;
         }
         .feature-card {
             border: none;
@@ -55,14 +64,16 @@
             text-align: center;
             height: 100%;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
         .feature-icon {
-            font-size: 3rem;
-            color: #ffc107;
+            font-size: 2.5rem;
+            color: #10b981;
             margin-bottom: 1rem;
         }
         .stats-section {
@@ -89,15 +100,33 @@
             padding: 3rem 0;
         }
         .btn-primary {
-            background: #ffc107;
-            border-color: #ffc107;
-            color: #343a40;
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
             font-weight: 600;
         }
         .btn-primary:hover {
-            background: #ffb300;
-            border-color: #ffb300;
-            color: #343a40;
+            background: #059669;
+            border-color: #059669;
+            color: white;
+        }
+        .btn-whatsapp {
+            background: #25D366;
+            border-color: #25D366;
+            color: white;
+            font-weight: 600;
+        }
+        .btn-whatsapp:hover {
+            background: #128C7E;
+            border-color: #128C7E;
+            color: white;
+        }
+        .application-form {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            margin: 2rem 0;
         }
         /* Comprehensive responsive design for all devices */
         @media (max-width: 480px) {
@@ -324,7 +353,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-bus me-2"></i>PLS TRAVELS
+                <i class="fas fa-car me-2"></i>PLS TRAVELS
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -332,13 +361,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#features">Features</a>
+                        <a class="nav-link" href="#benefits">Benefits</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
+                        <a class="nav-link" href="#salary">Salary</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#login">Login</a>
+                        <a class="nav-link" href="#apply">Apply</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#login">Driver Login</a>
                     </li>
                 </ul>
             </div>
@@ -350,86 +382,103 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h1 class="display-4 fw-bold mb-3 text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">New Bus Service Launch</h1>
-                    <h2 class="h3 mb-4 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Chennai to Thoothukudi – Your Journey, Our Priority</h2>
+                    <h1 class="display-3 fw-bold mb-3">PLS TRAVELS</h1>
+                    <h2 class="h2 mb-4">Drive with Uber, Earn More!<br><span style="font-size: 0.8em;">ஊபரில் ஓட்டுங்கள், அதிகம் சம்பாதியுங்கள்!</span></h2>
+                    <p class="lead mb-4 text-white-75">
+                        Uber's Authorised Supplier | Fleet & Driver Management<br>
+                        ஊபரின் அங்கீகரிக்கப்பட்ட சப்ளையர் | வாகன மேலாண்மை<br>
+                        <i class="fas fa-map-marker-alt"></i> Chennai & Bangalore | சென்னை மற்றும் பெங்களூரு
+                    </p>
                 </div>
             </div>
             
-            <!-- Countdown Timer -->
-            <div class="row mt-4 justify-content-center">
-                <div class="col-lg-2 col-md-3 col-6 mb-2">
-                    <div class="countdown-box">
-                        <div class="countdown-number" id="days">100</div>
-                        <div class="countdown-label">Days</div>
+            <!-- Key Benefits -->
+            <div class="row mt-4">
+                <div class="col-lg-6 mb-3">
+                    <div class="benefit-box">
+                        <i class="fas fa-car benefit-icon"></i>
+                        <strong>No car needed</strong> – we provide fully maintained cabs<br>
+                        <small class="text-muted">கார் தேவையில்லை - நாங்கள் முழுமையாக பராமரிக்கப்பட்ட கார்களை வழங்குகிறோம்</small>
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-3 col-6 mb-2">
-                    <div class="countdown-box">
-                        <div class="countdown-number" id="hours">00</div>
-                        <div class="countdown-label">Hours</div>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-3 col-6 mb-2">
-                    <div class="countdown-box">
-                        <div class="countdown-number" id="minutes">59</div>
-                        <div class="countdown-label">Minutes</div>
-                    </div>
-                </div>
-                <div class="col-lg-2 col-md-3 col-6 mb-2">
-                    <div class="countdown-box">
-                        <div class="countdown-number" id="seconds">55</div>
-                        <div class="countdown-label">Seconds</div>
+                <div class="col-lg-6 mb-3">
+                    <div class="benefit-box">
+                        <i class="fas fa-money-bill benefit-icon"></i>
+                        <strong>Fixed salary + big incentives</strong><br>
+                        <small class="text-muted">நிர்ணயிக்கப்பட்ட சம்பளம் + பெரிய ஊக்கத்தொகை</small>
                     </div>
                 </div>
             </div>
             
             <div class="text-center mt-4">
-                <a href="#login" class="btn btn-primary btn-lg px-5 py-3">
-                    <i class="fas fa-ticket-alt me-2"></i>Book Now
+                <a href="#apply" class="btn btn-primary btn-lg px-5 py-3 me-3">
+                    <i class="fas fa-car me-2"></i>Apply Now | விண்ணப்பிக்கவும்
+                </a>
+                <a href="https://wa.me/919787247132" class="btn btn-whatsapp btn-lg px-5 py-3" target="_blank">
+                    <i class="fab fa-whatsapp me-2"></i>WhatsApp Us
                 </a>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="py-5">
+    <!-- Benefits Section -->
+    <section id="benefits" class="py-5 bg-light">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold">Why Choose PLS Travels?</h2>
-                <p class="lead text-muted">Experience premium travel services with modern amenities</p>
+                <h2 class="display-5 fw-bold">Why Drive with Us? | எங்களுடன் ஏன் ஓட்ட வேண்டும்?</h2>
+                <p class="lead text-muted">Join thousands of drivers earning more with PLS Travels</p>
             </div>
             
-            <div class="row justify-content-center">
-                <div class="col-xl-4 col-lg-6 col-md-6 col-sm-8 mb-4">
+            <div class="row">
+                <div class="col-lg-6 mb-4">
                     <div class="card feature-card h-100">
-                        <div class="card-body d-flex flex-column">
-                            <div class="feature-icon">
-                                <i class="fas fa-wifi"></i>
+                        <div class="card-body d-flex align-items-center">
+                            <div class="feature-icon me-3">
+                                <i class="fas fa-car"></i>
                             </div>
-                            <h5 class="card-title">Onboard Wi-Fi</h5>
-                            <p class="card-text flex-grow-1">Stay connected throughout your journey.</p>
+                            <div>
+                                <h6 class="card-title mb-1">No car needed</h6>
+                                <small class="text-muted">We provide fully maintained cabs<br>கார் தேவையில்லை - நாங்கள் கார்களை வழங்குகிறோம்</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-lg-6 col-md-6 col-sm-8 mb-4">
+                <div class="col-lg-6 mb-4">
                     <div class="card feature-card h-100">
-                        <div class="card-body d-flex flex-column">
-                            <div class="feature-icon">
-                                <i class="fas fa-chair"></i>
+                        <div class="card-body d-flex align-items-center">
+                            <div class="feature-icon me-3">
+                                <i class="fas fa-clock"></i>
                             </div>
-                            <h5 class="card-title">Luxury Seating</h5>
-                            <p class="card-text flex-grow-1">Reclining seats with extra legroom for comfort.</p>
+                            <div>
+                                <h6 class="card-title mb-1">Instant daily payouts</h6>
+                                <small class="text-muted">Get paid daily, no waiting<br>உடனடி தினசரி பேமெண்ட்</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-lg-6 col-md-6 col-sm-8 mb-4">
+                <div class="col-lg-6 mb-4">
                     <div class="card feature-card h-100">
-                        <div class="card-body d-flex flex-column">
-                            <div class="feature-icon">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="feature-icon me-3">
                                 <i class="fas fa-shield-alt"></i>
                             </div>
-                            <h5 class="card-title">Safe & Secure</h5>
-                            <p class="card-text flex-grow-1">GPS tracking & professional drivers ensure safety.</p>
+                            <div>
+                                <h6 class="card-title mb-1">Food & accommodation</h6>
+                                <small class="text-muted">Provided during duty hours<br>உணவு மற்றும் தங்குமிடம் வழங்கப்படும்</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                    <div class="card feature-card h-100">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="feature-icon me-3">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <h6 class="card-title mb-1">Accident coverage</h6>
+                                <small class="text-muted">Full protection & expenses covered<br>விபத்து மற்றும் செலவுகள் பாதுகாக்கப்படும்</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -437,42 +486,82 @@
         </div>
     </section>
 
-    <!-- About Section -->
-    <section id="about" class="stats-section">
+    <!-- Salary Section -->
+    <section id="salary" class="py-5">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-6">
-                    <h2 class="display-6 fw-bold mb-4">About PLS Travels</h2>
-                    <p class="lead mb-4">
-                        PLS Travels is proud to announce its premium bus services connecting Chennai to Thoothukudi. 
-                        With years of experience in the transportation industry, we understand what makes a journey 
-                        comfortable and memorable.
-                    </p>
-                    <p>
-                        Experience a safe, reliable, and luxurious journey with us. We're committed to making your 
-                        travel comfortable and affordable, with modern amenities and professional service that sets us apart.
-                    </p>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="salary-highlight">
+                        <h3 class="mb-4">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Salary & Incentive Scheme | சம்பளம் மற்றும் ஊக்கத்தொகை திட்டம்
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px;">
+                                    <h5>First ₹4,500 collection</h5>
+                                    <p class="mb-0"><strong>30% = ₹1,350</strong> fixed salary<br>
+                                    <small>முதல் ₹4,500 கலெக்ஷன் → 30% நிர்ணயிக்கப்பட்ட சம்பளம்</small></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px;">
+                                    <h5>Above ₹4,500</h5>
+                                    <p class="mb-0"><strong>70% incentive</strong> directly to you<br>
+                                    <small>₹4,500க்கு மேல் → 70% ஊக்கத்தொகை உங்களுக்கு</small></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.3); padding: 1.5rem; border-radius: 12px; margin-top: 1rem;">
+                            <h4><strong>Example: ₹7,500/day collection → ₹3,450 earnings!</strong></h4>
+                            <p class="mb-0">உதாரணம்: ₹7,500/நாள் கலெக்ஷன் → ₹3,450 வருமானம்!</p>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Application Form Section -->
+    <section id="apply" class="py-5 bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
                 <div class="col-lg-6">
-                    <div class="row text-center justify-content-center">
-                        <div class="col-lg-4 col-md-4 col-6 mb-3">
-                            <div class="stat-box">
-                                <span class="stat-number">10+</span>
-                                <div class="stat-label">Years Experience</div>
+                    <div class="application-form">
+                        <h3 class="text-center mb-4">
+                            <i class="fas fa-car me-2"></i>Apply Now | இப்போதே விண்ணப்பிக்கவும்
+                        </h3>
+                        <form id="applicationForm">
+                            <div class="mb-3">
+                                <input type="text" class="form-control form-control-lg" id="name" name="name" 
+                                       placeholder="Your Name | உங்கள் பெயர்" required>
                             </div>
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-6 mb-3">
-                            <div class="stat-box">
-                                <span class="stat-number">50K+</span>
-                                <div class="stat-label">Happy Customers</div>
+                            <div class="mb-3">
+                                <input type="tel" class="form-control form-control-lg" id="phone" name="phone" 
+                                       placeholder="Phone Number | தொலைபேசி எண்" required>
                             </div>
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-12 mb-3">
-                            <div class="stat-box">
-                                <span class="stat-number">24/7</span>
-                                <div class="stat-label">Customer Support</div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control form-control-lg" id="city" name="city" 
+                                       placeholder="City (Chennai/Bangalore) | நகரம் (சென்னை/பெங்களூரு)" required>
                             </div>
-                        </div>
+                            <button type="submit" class="btn btn-whatsapp btn-lg w-100">
+                                <i class="fab fa-whatsapp me-2"></i>Send via WhatsApp | WhatsApp மூலம் அனுப்பவும்
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Buttons -->
+            <div class="row justify-content-center mt-5">
+                <div class="col-lg-8">
+                    <div class="text-center">
+                        <a href="tel:+919787247132" class="btn btn-primary btn-lg me-3 mb-3">
+                            <i class="fas fa-phone me-2"></i>Call Now | இப்போது அழைக்கவும்
+                        </a>
+                        <a href="https://wa.me/919787247132" class="btn btn-whatsapp btn-lg mb-3" target="_blank">
+                            <i class="fab fa-whatsapp me-2"></i>WhatsApp Us | WhatsApp செய்யவும்
+                        </a>
                     </div>
                 </div>
             </div>
@@ -486,19 +575,19 @@
                 <div class="col-lg-6 col-md-8 col-sm-10">
                     <div class="text-center">
                         <h3 class="text-white mb-4">
-                            <i class="fas fa-user-circle me-2"></i>For Fleet Staffs Only
+                            <i class="fas fa-user-circle me-2"></i>Driver Login | டிரைவர் உள்நுழைவு
                         </h3>
                         <p class="text-white-50 mb-4 lead">
-                            Staff login for fleet management and operations
+                            Existing drivers login for duty management | இருக்கும் டிரைவர்கள் டியூட்டி நிர்வாகத்திற்கு உள்நுழைவு
                         </p>
                         <div class="d-grid gap-3 d-md-flex justify-content-md-center">
                             <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-5 py-3">
-                                <i class="fas fa-sign-in-alt me-2"></i>Login to Your Account
+                                <i class="fas fa-sign-in-alt me-2"></i>Login to Dashboard | டாஷ்போர்டுக்கு உள்நுழைவு
                             </a>
                         </div>
                         <div class="mt-4">
                             <p class="text-white-50 small">
-                                For Fleet Staffs Only - Contact admin for account access
+                                For registered drivers only | பதிவு செய்யப்பட்ட டிரைவர்களுக்கு மட்டும்
                             </p>
                         </div>
                     </div>
@@ -512,10 +601,10 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <p class="mb-0">&copy; 2024 PLS TRAVELS. All rights reserved.</p>
+                    <p class="mb-0">&copy; 2025 PLS TRAVELS. All rights reserved.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <p class="mb-0">Your journey, our priority</p>
+                    <p class="mb-0">Fleet & Driver Management</p>
                 </div>
             </div>
         </div>
@@ -524,37 +613,28 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Countdown Timer Script -->
+    <!-- Application Form Script -->
     <script>
-        function updateCountdown() {
-            // Set target date (you can modify this as needed)
-            const targetDate = new Date();
-            targetDate.setDate(targetDate.getDate() + 100);
+        document.getElementById('applicationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            const now = new Date().getTime();
-            const distance = targetDate - now;
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const city = document.getElementById('city').value.trim();
             
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            
-            document.getElementById('days').innerText = days.toString().padStart(2, '0');
-            document.getElementById('hours').innerText = hours.toString().padStart(2, '0');
-            document.getElementById('minutes').innerText = minutes.toString().padStart(2, '0');
-            document.getElementById('seconds').innerText = seconds.toString().padStart(2, '0');
-            
-            if (distance < 0) {
-                document.getElementById('days').innerText = '00';
-                document.getElementById('hours').innerText = '00';
-                document.getElementById('minutes').innerText = '00';
-                document.getElementById('seconds').innerText = '00';
+            if (!name || !phone || !city) {
+                alert('Please fill all fields | தயவுசெய்து அனைத்து புலங்களையும் நிரப்பவும்');
+                return;
             }
-        }
-        
-        // Update countdown every second
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
+            
+            const message = `Hi, I want to join PLS Travels.
+Name: ${name}
+Phone: ${phone}
+City: ${city}`;
+            
+            const whatsappURL = `https://wa.me/919787247132?text=${encodeURIComponent(message)}`;
+            window.open(whatsappURL, '_blank');
+        });
         
         // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
