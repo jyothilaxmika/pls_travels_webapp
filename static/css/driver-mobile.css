@@ -1,0 +1,460 @@
+/* Driver Portal Mobile Responsiveness Enhancements */
+
+/* === MOBILE-FIRST DRIVER DASHBOARD === */
+
+/* Mobile Dashboard Cards */
+@media (max-width: 576px) {
+    /* Dashboard Header */
+    .driver-dashboard .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    /* Profile Card Mobile */
+    .driver-dashboard .card-body .row.align-items-center {
+        text-align: center;
+    }
+    
+    .driver-dashboard .card-body .row.align-items-center .col-auto {
+        margin: 0 auto 1rem;
+    }
+    
+    /* Earnings Cards - Better Mobile Layout */
+    .driver-dashboard .earnings-cards .col-6 {
+        margin-bottom: 1rem;
+    }
+    
+    .driver-dashboard .earnings-cards .card-body {
+        padding: 1.5rem 1rem;
+    }
+    
+    .driver-dashboard .earnings-cards h4 {
+        font-size: 1.75rem;
+        font-weight: 600;
+    }
+    
+    .driver-dashboard .earnings-cards small {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+    
+    /* Quick Actions - Enhanced Mobile Touch Targets */
+    .driver-dashboard .quick-actions .col-6,
+    .driver-dashboard .quick-actions .col-4 {
+        margin-bottom: 1rem;
+    }
+    
+    .driver-dashboard .quick-actions .btn {
+        min-height: 80px;
+        padding: 1rem 0.5rem;
+        font-size: 0.9rem;
+        border-radius: 12px;
+    }
+    
+    .driver-dashboard .quick-actions .btn i {
+        font-size: 1.8rem !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Current Duty Status - Mobile Layout */
+    .driver-dashboard .duty-status .row.align-items-center {
+        text-align: center;
+    }
+    
+    .driver-dashboard .duty-status .col-auto img {
+        width: 60px !important;
+        height: 60px !important;
+        margin: 0 auto 1rem;
+    }
+    
+    /* Recent Duties List - Mobile Optimization */
+    .driver-dashboard .recent-duties .list-group-item {
+        padding: 1rem 0.5rem;
+    }
+    
+    .driver-dashboard .recent-duties .row.align-items-center {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .driver-dashboard .recent-duties .col-auto {
+        margin: 0 auto;
+    }
+    
+    /* Earnings Chart Mobile */
+    .driver-dashboard .earnings-chart canvas {
+        max-height: 200px !important;
+    }
+}
+
+/* === MOBILE DRIVER PROFILE FORMS === */
+
+@media (max-width: 768px) {
+    /* Profile Form Enhancements */
+    .driver-profile .card-header h6 {
+        font-size: 1rem;
+        text-align: center;
+    }
+    
+    /* Form Field Spacing */
+    .driver-profile .form-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .driver-profile .form-control,
+    .driver-profile .form-select {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+    
+    /* Document Upload Section - Mobile */
+    .driver-profile .camera-capture-container,
+    .driver-profile .file-upload-container {
+        margin-bottom: 1rem;
+    }
+    
+    .driver-profile .capture-photo-btn {
+        min-height: 50px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+    }
+    
+    .driver-profile .photo-preview img,
+    .driver-profile .file-preview img {
+        max-height: 120px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    /* Document Showcase - Mobile Grid */
+    .driver-profile .document-showcase .row {
+        gap: 1rem;
+    }
+    
+    .driver-profile .document-card {
+        margin-bottom: 1rem;
+    }
+    
+    /* Bank Details - Single Column on Mobile */
+    .driver-profile .bank-details .row .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* === MOBILE DUTY MANAGEMENT === */
+
+@media (max-width: 768px) {
+    /* Duty Management Header */
+    .duty-management .d-flex.justify-content-between {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    /* Active Duty Card - Mobile */
+    .duty-management .active-duty-card .row.align-items-center {
+        text-align: center;
+    }
+    
+    .duty-management .active-duty-card .col-6 {
+        margin-bottom: 1rem;
+    }
+    
+    .duty-management .active-duty-card img {
+        max-width: 100%;
+        max-height: 150px;
+        margin: 1rem auto;
+        display: block;
+    }
+    
+    /* Duty Forms - Enhanced Mobile Layout */
+    .duty-management .input-group-lg .form-control,
+    .duty-management .input-group-lg .form-select {
+        font-size: 1.1rem;
+        padding: 1rem;
+    }
+    
+    .duty-management .input-group-text {
+        min-width: 50px;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    /* Revenue & Collections Section */
+    .duty-management .revenue-section .col-lg-4 {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* CNG Tracking - Mobile Layout */
+    .duty-management .cng-section .col-lg-4 {
+        margin-bottom: 1.5rem;
+    }
+    
+    .duty-management .cng-calculation-alert {
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    /* Expense Sections - Mobile */
+    .duty-management .expense-section .col-lg-4,
+    .duty-management .expense-section .col-md-6 {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Live Calculation Card - Mobile */
+    .duty-management .live-calculation {
+        position: sticky;
+        top: 10px;
+        z-index: 100;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Photo Capture Section - Mobile */
+    .duty-management .camera-capture-container {
+        margin-bottom: 1.5rem;
+    }
+    
+    .duty-management .photo-preview {
+        text-align: center;
+    }
+    
+    .duty-management .photo-preview img {
+        max-height: 200px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    /* Submit Button - Enhanced Mobile */
+    .duty-management .btn-lg {
+        min-height: 60px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+}
+
+/* === MOBILE NAVIGATION ENHANCEMENTS === */
+
+@media (max-width: 992px) {
+    /* Offcanvas Menu Improvements */
+    .offcanvas-body .nav-pills .nav-link {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    
+    .offcanvas-body .nav-pills .nav-link i {
+        width: 24px;
+        margin-right: 12px;
+    }
+    
+    /* Navbar Brand - Mobile */
+    .navbar-brand {
+        font-size: 1.2rem !important;
+    }
+    
+    .navbar-brand .d-sm-none {
+        font-size: 1.1rem;
+    }
+}
+
+/* === MOBILE FORMS & INPUTS === */
+
+@media (max-width: 576px) {
+    /* Enhanced Form Controls */
+    .form-control, .form-select {
+        min-height: 48px; /* Touch-friendly minimum */
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 8px;
+    }
+    
+    .input-group-lg .form-control,
+    .input-group-lg .form-select {
+        min-height: 56px;
+        font-size: 18px;
+    }
+    
+    /* Button Enhancements */
+    .btn {
+        min-height: 44px; /* Accessibility guideline */
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+    
+    .btn-lg {
+        min-height: 56px;
+        font-size: 1.1rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .btn-sm {
+        min-height: 36px;
+        font-size: 0.9rem;
+    }
+    
+    /* Card Improvements */
+    .card {
+        margin-bottom: 1.5rem;
+        border-radius: 12px;
+    }
+    
+    .card-header {
+        padding: 1rem;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .card-body {
+        padding: 1.5rem 1rem;
+    }
+    
+    /* Alert Improvements */
+    .alert {
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Modal Improvements */
+    .modal-content {
+        border-radius: 12px;
+    }
+    
+    .modal-header {
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+}
+
+/* === LANDSCAPE MOBILE ADJUSTMENTS === */
+
+@media (max-height: 600px) and (orientation: landscape) {
+    /* Reduce vertical spacing in landscape */
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .duty-management .input-group-lg .form-control {
+        padding: 0.75rem;
+    }
+    
+    .duty-management .btn-lg {
+        min-height: 50px;
+        font-size: 1rem;
+    }
+    
+    /* Compress navigation */
+    .navbar {
+        padding: 0.25rem 1rem;
+    }
+}
+
+/* === ACCESSIBILITY ENHANCEMENTS === */
+
+/* Focus states for mobile */
+@media (max-width: 768px) {
+    .form-control:focus,
+    .form-select:focus {
+        border-width: 2px;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn:focus {
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.5);
+        outline: none;
+    }
+    
+    /* High contrast for better readability */
+    .text-muted {
+        color: #6c757d !important;
+        font-weight: 500;
+    }
+    
+    .badge {
+        font-weight: 600;
+        padding: 0.5em 0.75em;
+    }
+}
+
+/* === TOUCH OPTIMIZATION === */
+
+@media (pointer: coarse) {
+    /* Larger touch targets */
+    .btn, .form-control, .form-select {
+        min-height: 44px;
+    }
+    
+    .list-group-item {
+        padding: 1rem;
+    }
+    
+    .nav-link {
+        padding: 1rem;
+    }
+    
+    /* Spacing between interactive elements */
+    .btn + .btn {
+        margin-left: 0.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* === DRIVER-SPECIFIC MOBILE UTILITIES === */
+
+/* Mobile-first utility classes for driver portal */
+@media (max-width: 576px) {
+    .mobile-text-center { text-align: center !important; }
+    .mobile-mb-3 { margin-bottom: 1rem !important; }
+    .mobile-p-2 { padding: 0.5rem !important; }
+    .mobile-rounded { border-radius: 8px !important; }
+    
+    /* Hide secondary information on very small screens */
+    .mobile-hide { display: none !important; }
+    
+    /* Stack elements vertically on mobile */
+    .mobile-stack > * {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Dark mode support for mobile */
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+    .card {
+        background-color: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .form-control, .form-select {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .btn-primary {
+        background-color: #3182ce;
+        border-color: #3182ce;
+    }
+}

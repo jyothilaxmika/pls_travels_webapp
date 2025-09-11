@@ -6,7 +6,7 @@
 <!-- Include Camera Capture Component -->
 {% include 'components/camera_capture.html' %}
 
-<div class="container-fluid">
+<div class="container-fluid duty-management">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3><i class="fas fa-play-circle me-2"></i>Duty Management</h3>
         <div class="text-muted">
@@ -29,7 +29,7 @@
     
     {% elif active_duty %}
     <!-- Active Duty - End Duty Form -->
-    <div class="card border-success mb-4">
+    <div class="card border-success mb-4 active-duty-card">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Active Duty</h5>
         </div>
@@ -94,7 +94,7 @@
                 </div>
                 
                 <!-- Comprehensive Financial Section -->
-                <div class="card bg-light mb-3">
+                <div class="card bg-light mb-3 revenue-section">
                     <div class="card-header">
                         <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Revenue & Collections</h6>
                     </div>
@@ -131,7 +131,7 @@
                 </div>
                 
                 <!-- Company Expenses Section -->
-                <div class="card bg-light mb-3">
+                <div class="card bg-light mb-3 expense-section">
                     <div class="card-header">
                         <h6 class="mb-0"><i class="fas fa-receipt me-2"></i>Company Expenses</h6>
                     </div>
@@ -179,7 +179,7 @@
                 </div>
                 
                 <!-- CNG Tracking Section -->
-                <div class="card bg-warning bg-opacity-10 border-warning mb-3">
+                <div class="card bg-warning bg-opacity-10 border-warning mb-3 cng-section">
                     <div class="card-header bg-warning bg-opacity-25">
                         <h6 class="mb-0"><i class="fas fa-gas-pump me-2"></i>CNG Level Tracking</h6>
                         <small class="text-dark">Track CNG levels to calculate charges/payments (₹90 per bar)</small>
@@ -317,7 +317,7 @@
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <div class="card border-info">
+                        <div class="card border-info live-calculation">
                             <div class="card-body p-2">
                                 <h6 class="text-info mb-1"><i class="fas fa-calculator me-2"></i>Live Calculation</h6>
                                 <div id="live-calculation">
