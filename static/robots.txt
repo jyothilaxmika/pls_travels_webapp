@@ -5,7 +5,7 @@ Disallow: /auth/
 Disallow: /driver/
 Disallow: /manager/
 Disallow: /uploads/
-Sitemap: https://your-domain.replit.app/sitemap.xml
+Sitemap: https://plstravels.com/sitemap.xml
 
 # Allow search engines to index the landing page
 User-agent: Googlebot
