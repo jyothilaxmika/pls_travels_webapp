@@ -66,13 +66,23 @@ def create_app():
     login_manager.login_view = 'auth.login'  # type: ignore
     login_manager.login_message = 'Please log in to access this page.'
     
-    # Initialize SocketIO with proper security
+    # Initialize SocketIO with proper security and extended configuration
     allowed_origins = [
         "https://*.replit.app", 
         "https://*.replit.dev", 
-        "http://localhost:5000"
+        "http://localhost:5000",
+        "http://127.0.0.1:5000"
     ]
-    socketio.init_app(app, cors_allowed_origins=allowed_origins, async_mode='eventlet', logger=True, engineio_logger=True)
+    socketio.init_app(
+        app, 
+        cors_allowed_origins=allowed_origins, 
+        async_mode='eventlet', 
+        logger=True, 
+        engineio_logger=True,
+        ping_timeout=30,
+        ping_interval=10,
+        max_http_buffer_size=1e6
+    )
 
     # User loader for Flask-Login
     @login_manager.user_loader
@@ -453,11 +463,11 @@ def handle_driver_location_update(data):
         
         # Broadcast to appropriate rooms
         from flask_socketio import emit
-        emit('vehicle_location_update', broadcast_data, room='tracking_global')
+        emit('vehicle_location_update', broadcast_data, to='tracking_global')
         
         # Also broadcast to branch-specific room
         if active_duty.vehicle and active_duty.vehicle.branch_id:
-            emit('vehicle_location_update', broadcast_data, room=f'tracking_branch_{active_duty.vehicle.branch_id}')
+            emit('vehicle_location_update', broadcast_data, to=f'tracking_branch_{active_duty.vehicle.branch_id}')
         
     except Exception as e:
         print(f"Error handling location update: {e}")
