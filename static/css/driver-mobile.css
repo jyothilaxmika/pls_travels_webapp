@@ -177,10 +177,11 @@
     .duty-management .input-group-lg .form-control,
     .duty-management .input-group-lg .form-select {
         font-size: 18px !important; /* Prevents iOS zoom and ensures visibility */
-        padding: 1rem;
+        padding: 1.25rem 1rem; /* Increased padding for larger touch area */
         line-height: 1.5;
         font-weight: 500; /* Makes text more visible */
         color: #212529 !important; /* Ensures high contrast */
+        min-height: 70px !important; /* Much larger input boxes for mobile */
     }
     
     /* Specific fix for number inputs in duty forms */
@@ -189,6 +190,8 @@
         font-weight: 600 !important;
         color: #000 !important; /* Strong black text for visibility */
         text-align: center; /* Center align numbers for better readability */
+        min-height: 70px !important; /* Large input box for mobile */
+        padding: 1.25rem 1rem !important;
     }
     
     /* Text inputs in duty forms */
@@ -196,6 +199,8 @@
         font-size: 18px !important;
         font-weight: 500 !important;
         color: #000 !important;
+        min-height: 70px !important; /* Large input box for mobile */
+        padding: 1.25rem 1rem !important;
     }
     
     .duty-management .input-group-text {
@@ -292,20 +297,21 @@
 @media (max-width: 576px) {
     /* Enhanced Form Controls */
     .form-control, .form-select {
-        min-height: 48px; /* Touch-friendly minimum */
+        min-height: 60px !important; /* Much larger for mobile touch */
         font-size: 16px; /* Prevents zoom on iOS */
         border-radius: 8px;
         font-weight: 500; /* Better text visibility */
         color: #000 !important; /* Strong text color */
+        padding: 1rem !important; /* Larger padding for touch */
     }
     
     .input-group-lg .form-control,
     .input-group-lg .form-select {
-        min-height: 56px;
+        min-height: 70px !important; /* Much larger for mobile touch */
         font-size: 18px !important;
         font-weight: 600 !important; /* Bold text for better visibility */
         color: #000 !important; /* Strong black text */
-        padding: 0.875rem 1rem; /* Better padding for mobile */
+        padding: 1.25rem 1rem !important; /* Increased padding for larger touch area */
     }
     
     /* Special handling for number inputs on mobile */
@@ -315,6 +321,8 @@
         color: #000 !important;
         text-align: center; /* Center align numbers */
         letter-spacing: 0.5px; /* Slight spacing for better readability */
+        min-height: 70px !important; /* Large touch-friendly input boxes */
+        padding: 1.25rem 1rem !important;
     }
     
     /* Text input enhancement */
@@ -322,6 +330,8 @@
         font-size: 18px !important;
         font-weight: 600 !important;
         color: #000 !important;
+        min-height: 70px !important; /* Large touch-friendly input boxes */
+        padding: 1.25rem 1rem !important;
     }
     
     /* Button Enhancements */
