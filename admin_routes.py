@@ -2321,12 +2321,16 @@ def branch_performance():
 @admin_required
 def uber_integration():
     """Main Uber integration management page"""
-    from uber_sync import uber_sync
-    
-    # Get current settings
-    settings = uber_sync.get_sync_settings()
-    if not settings:
-        settings = uber_sync.create_default_settings(current_user.id)
+    try:
+        from uber_sync import uber_sync
+        
+        # Get current settings
+        settings = uber_sync.get_sync_settings()
+        if not settings:
+            settings = uber_sync.create_default_settings(current_user.id)
+    except Exception as e:
+        flash(f'Uber integration not available: {str(e)}', 'warning')
+        return redirect(url_for('admin.dashboard'))
     
     # Get recent sync jobs
     recent_jobs = UberSyncJob.query.order_by(desc(UberSyncJob.created_at)).limit(10).all()
@@ -2362,9 +2366,13 @@ def uber_integration():
 @admin_required
 def uber_test_connection():
     """Test connection to Uber APIs"""
-    from uber_sync import uber_sync
-    
-    result = uber_sync.test_connection()
+    try:
+        from uber_sync import uber_sync
+        
+        result = uber_sync.test_connection()
+    except Exception as e:
+        flash(f'Uber integration not available: {str(e)}', 'error')
+        return redirect(url_for('admin.uber_integration'))
     
     if result['status'] == 'success':
         flash(f"Connection successful! {result['message']}", 'success')

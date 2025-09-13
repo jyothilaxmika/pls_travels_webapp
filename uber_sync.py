@@ -27,6 +27,8 @@ class UberDataSync:
     
     def __init__(self):
         self.service = uber_service
+        if not self.service:
+            logger.warning("Uber service not available - credentials not configured")
     
     def get_sync_settings(self) -> Optional[UberIntegrationSettings]:
         """Get current Uber integration settings"""
@@ -53,6 +55,13 @@ class UberDataSync:
     
     def test_connection(self) -> Dict[str, Any]:
         """Test connection to Uber APIs"""
+        if not self.service:
+            return {
+                'status': 'error',
+                'message': 'Uber service not available - credentials not configured',
+                'authenticated': False
+            }
+            
         try:
             result = self.service.test_connection()
             logger.info(f"Uber connection test: {result['status']}")

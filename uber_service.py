@@ -46,8 +46,7 @@ class UberFleetService:
             client_secret=os.environ.get("UBER_CLIENT_SECRET", "")
         )
         
-        if not self.config.client_id or not self.config.client_secret:
-            raise ValueError("Uber API credentials not found in environment variables")
+        self.credentials_available = bool(self.config.client_id and self.config.client_secret)
         
         self._access_token: Optional[str] = None
         self._token_expires_at: Optional[datetime] = None
@@ -65,6 +64,10 @@ class UberFleetService:
         Returns:
             bool: True if authentication successful, False otherwise
         """
+        if not self.credentials_available:
+            logger.warning("Uber API credentials not configured")
+            return False
+            
         try:
             auth_data = {
                 'grant_type': 'client_credentials',
@@ -282,6 +285,13 @@ class UberFleetService:
         Returns:
             Connection test results
         """
+        if not self.credentials_available:
+            return {
+                'status': 'error',
+                'message': 'Uber API credentials not configured. Please set UBER_CLIENT_ID and UBER_CLIENT_SECRET environment variables.',
+                'authenticated': False
+            }
+            
         try:
             if self._ensure_authenticated():
                 # Try to fetch a small amount of data to test the connection
@@ -306,4 +316,9 @@ class UberFleetService:
             }
 
 # Global service instance
-uber_service = UberFleetService()
+try:
+    uber_service = UberFleetService()
+except Exception as e:
+    logger.error(f"Failed to initialize Uber service: {str(e)}")
+    # Create a dummy service that will handle missing credentials gracefully
+    uber_service = None
