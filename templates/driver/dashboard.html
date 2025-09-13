@@ -159,25 +159,6 @@
         </div>
     </div>
     
-    <!-- Location Sharing Quick Access (only show if permission granted) -->
-    <div id="locationQuickAccess" class="card mb-4" style="display: none;">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
-                </div>
-                <div class="col">
-                    <h6 class="mb-1">Location Sharing</h6>
-                    <small class="text-muted">Share your location during duties for better tracking</small>
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-sm btn-primary" onclick="toggleLocationSharing()">
-                        <i class="fas fa-satellite me-1"></i>Share Location
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <!-- Financial Actions -->
     <div class="row mb-4 quick-actions">
@@ -475,97 +456,8 @@ fetch('/driver/api/earnings-chart')
         document.getElementById('earningsChart').style.display = 'none';
     });
 
-// Show location quick access if permission is granted
-if (localStorage.getItem('locationPermission') === 'granted') {
-    const locationCard = document.getElementById('locationQuickAccess');
-    if (locationCard) {
-        locationCard.style.display = 'block';
-    }
-}
-
 {% endif %}
 
-// Location sharing functionality
-function toggleLocationSharing() {
-    if (localStorage.getItem('locationPermission') !== 'granted') {
-        alert('Location permission is required. Please allow location access in your browser settings.');
-        return;
-    }
-    
-    // Check if already sharing
-    if (window.locationWatchId) {
-        // Stop sharing
-        navigator.geolocation.clearWatch(window.locationWatchId);
-        window.locationWatchId = null;
-        
-        // Update button
-        const button = document.querySelector('#locationQuickAccess button');
-        button.innerHTML = '<i class="fas fa-satellite me-1"></i>Share Location';
-        button.className = 'btn btn-sm btn-primary';
-        
-        showToast('Location sharing stopped', 'info');
-    } else {
-        // Start sharing
-        window.locationWatchId = navigator.geolocation.watchPosition(
-            function(position) {
-                const locationData = {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy,
-                    timestamp: new Date().toISOString()
-                };
-                
-                // Send location to server via WebSocket
-                console.log('Sharing location:', locationData);
-                
-                if (isSocketConnected) {
-                    // Send via WebSocket for real-time updates
-                    socket.emit('location_update', locationData);
-                } else {
-                    // Fallback to REST API if WebSocket not connected
-                    sendLocationViaAPI(locationData);
-                }
-            },
-            function(error) {
-                console.error('Error getting location:', error);
-                showToast('Error getting location: ' + error.message, 'error');
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 10000
-            }
-        );
-        
-        // Update button
-        const button = document.querySelector('#locationQuickAccess button');
-        button.innerHTML = '<i class="fas fa-stop me-1"></i>Stop Sharing';
-        button.className = 'btn btn-sm btn-danger';
-        
-        showToast('Location sharing started', 'success');
-    }
-}
-
-// Fallback function to send location via REST API
-async function sendLocationViaAPI(locationData) {
-    try {
-        const response = await fetch('/tracking/api/driver-location', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(locationData)
-        });
-        
-        if (response.ok) {
-            console.log('Location sent via REST API successfully');
-        } else {
-            console.warn('Failed to send location via REST API');
-        }
-    } catch (error) {
-        console.error('REST API location update failed:', error);
-    }
-}
 
 function showToast(message, type) {
     const toast = document.createElement('div');
