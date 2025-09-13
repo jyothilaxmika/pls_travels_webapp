@@ -1055,6 +1055,86 @@ class AuditLog(db.Model):
         Index('idx_audit_entity', 'entity_type', 'entity_id'),
     )
 
+class OTPVerification(db.Model):
+    """OTP verification for SMS-based authentication"""
+    __tablename__ = 'otp_verifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    phone_number = db.Column(db.String(15), nullable=False, index=True)
+    otp_code = db.Column(db.String(10), nullable=False)
+    
+    # Verification status
+    is_verified = db.Column(db.Boolean, default=False)
+    is_expired = db.Column(db.Boolean, default=False)
+    attempts = db.Column(db.Integer, default=0)
+    max_attempts = db.Column(db.Integer, default=3)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    verified_at = db.Column(db.DateTime)
+    
+    # Request context
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(500))
+    
+    # Indexes for performance and cleanup
+    __table_args__ = (
+        Index('idx_otp_phone_active', 'phone_number', 'is_verified', 'expires_at'),
+        Index('idx_otp_cleanup', 'expires_at', 'is_verified'),
+    )
+    
+    @classmethod
+    def create_otp(cls, phone_number, otp_code, expires_in_minutes=5):
+        """Create a new OTP verification entry"""
+        from datetime import datetime, timedelta
+        
+        otp_entry = cls(
+            phone_number=phone_number,
+            otp_code=otp_code,
+            expires_at=datetime.utcnow() + timedelta(minutes=expires_in_minutes)
+        )
+        return otp_entry
+    
+    @classmethod
+    def verify_otp(cls, phone_number, otp_code):
+        """Verify OTP code for a phone number"""
+        from datetime import datetime
+        
+        otp_entry = cls.query.filter_by(
+            phone_number=phone_number,
+            is_verified=False
+        ).filter(
+            cls.expires_at > datetime.utcnow()
+        ).first()
+        
+        if not otp_entry:
+            return False, "OTP not found or expired"
+        
+        otp_entry.attempts += 1
+        
+        if otp_entry.attempts > otp_entry.max_attempts:
+            otp_entry.is_expired = True
+            db.session.commit()
+            return False, "Maximum attempts exceeded"
+        
+        if otp_entry.otp_code == otp_code:
+            otp_entry.is_verified = True
+            otp_entry.verified_at = datetime.utcnow()
+            db.session.commit()
+            return True, "OTP verified successfully"
+        else:
+            db.session.commit()
+            return False, f"Invalid OTP. {otp_entry.max_attempts - otp_entry.attempts} attempts remaining"
+    
+    @classmethod
+    def cleanup_expired(cls):
+        """Clean up expired OTP entries"""
+        from datetime import datetime
+        expired_count = cls.query.filter(cls.expires_at < datetime.utcnow()).delete()
+        db.session.commit()
+        return expired_count
+
 class VehicleTracking(db.Model):
     """
     Track vehicle odometer readings and CNG usage with full continuity

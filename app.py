@@ -197,9 +197,11 @@ def create_app():
     from driver_routes import driver_bp
     from storage_routes import storage_bp
     from vehicle_tracking_routes import tracking_bp
+    from otp_routes import otp_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
+    app.register_blueprint(otp_bp, url_prefix='/otp')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(manager_bp, url_prefix='/manager')
     app.register_blueprint(driver_bp, url_prefix='/driver')
