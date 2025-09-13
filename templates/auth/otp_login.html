@@ -105,6 +105,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const verifyOTPForm = document.getElementById('verifyOTPForm');
     const resendOTPBtn = document.getElementById('resendOTPBtn');
     
+    // Get CSRF token for JavaScript requests
+    const csrfToken = '{{ csrf_token() }}';
+    
     // Send OTP
     sendOTPForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -125,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const formData = new FormData();
             formData.append('phone_number', phoneNumber);
+            formData.append('csrf_token', csrfToken);
             
             const response = await fetch('{{ url_for("otp.send_otp") }}', {
                 method: 'POST',
@@ -171,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const formData = new FormData();
             formData.append('otp_code', otpCode);
+            formData.append('csrf_token', csrfToken);
             
             const response = await fetch('{{ url_for("otp.verify_otp") }}', {
                 method: 'POST',
@@ -206,8 +211,12 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
         
         try {
+            const formData = new FormData();
+            formData.append('csrf_token', csrfToken);
+            
             const response = await fetch('{{ url_for("otp.resend_otp") }}', {
-                method: 'POST'
+                method: 'POST',
+                body: formData
             });
             
             const result = await response.json();

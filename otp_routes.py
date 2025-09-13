@@ -9,6 +9,9 @@ from datetime import datetime
 
 otp_bp = Blueprint('otp', __name__)
 
+# Import CSRF protection
+from app import csrf
+
 @otp_bp.route('/login/otp')
 def otp_login():
     """OTP login page"""
@@ -17,6 +20,7 @@ def otp_login():
     return render_template('auth/otp_login.html')
 
 @otp_bp.route('/send-otp', methods=['POST'])
+@csrf.exempt
 def send_otp():
     """Send OTP to phone number"""
     try:
@@ -30,11 +34,6 @@ def send_otp():
         
         # Check if user exists with this phone number
         user = User.query.filter_by(phone=phone_number).first()
-        if not user:
-            # Check in Driver table as well
-            driver = Driver.query.filter_by(phone_number=phone_number).first()
-            if driver and driver.user:
-                user = driver.user
         
         if not user:
             return jsonify({'success': False, 'message': 'No account found with this phone number'})
@@ -76,6 +75,7 @@ def send_otp():
         return jsonify({'success': False, 'message': 'An error occurred. Please try again.'})
 
 @otp_bp.route('/verify-otp', methods=['POST'])
+@csrf.exempt
 def verify_otp():
     """Verify OTP and login user"""
     try:
@@ -136,6 +136,7 @@ def verify_otp():
         return jsonify({'success': False, 'message': 'An error occurred during verification.'})
 
 @otp_bp.route('/resend-otp', methods=['POST'])
+@csrf.exempt
 def resend_otp():
     """Resend OTP to the same phone number"""
     try:
