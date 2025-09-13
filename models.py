@@ -216,12 +216,14 @@ class Driver(db.Model):
     
     # Documents with enhanced tracking
     aadhar_number = db.Column(db.String(20), unique=True, index=True)
-    aadhar_document = db.Column(db.String(255))
+    aadhar_document_front = db.Column(db.String(255))
+    aadhar_document_back = db.Column(db.String(255))
     aadhar_verified = db.Column(db.Boolean, default=False)
     aadhar_verified_at = db.Column(db.DateTime)
     
     license_number = db.Column(db.String(50), unique=True, index=True)
-    license_document = db.Column(db.String(255))
+    license_document_front = db.Column(db.String(255))
+    license_document_back = db.Column(db.String(255))
     license_type = db.Column(db.String(20))  # LMV, HMV, etc.
     license_expiry = db.Column(db.Date)
     license_verified = db.Column(db.Boolean, default=False)

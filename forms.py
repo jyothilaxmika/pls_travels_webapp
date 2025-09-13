@@ -35,9 +35,11 @@ class RegisterForm(FlaskForm):
     ifsc_code = StringField('IFSC Code', validators=[Optional()])
     account_holder_name = StringField('Account Holder Name', validators=[Optional()])
     
-    # Document Uploads
-    aadhar_photo = FileField('Aadhar Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
-    license_photo = FileField('License Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    # Document Uploads - Front and Back
+    aadhar_photo_front = FileField('Aadhar Front', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    aadhar_photo_back = FileField('Aadhar Back', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    license_photo_front = FileField('License Front', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    license_photo_back = FileField('License Back', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
     profile_photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
     
     # Branch Selection
@@ -70,8 +72,10 @@ class DriverProfileForm(FlaskForm):
     ifsc_code = StringField('IFSC Code')
     account_holder_name = StringField('Account Holder Name')
     
-    aadhar_photo = FileField('Aadhar Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
-    license_photo = FileField('License Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    aadhar_photo_front = FileField('Aadhar Front', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    aadhar_photo_back = FileField('Aadhar Back', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    license_photo_front = FileField('License Front', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    license_photo_back = FileField('License Back', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
     profile_photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
 
 class VehicleAssignmentForm(FlaskForm):

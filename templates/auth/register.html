@@ -205,28 +205,56 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">{{ form.aadhar_photo.label.text }}</label>
+                                    <!-- Aadhar Front -->
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">{{ form.aadhar_photo_front.label.text }}</label>
                                         <div class="camera-capture-container">
                                             <button type="button" class="btn btn-warning capture-photo-btn w-100" 
-                                                    onclick="initCameraCapture('aadhar_photo', 'Capture Aadhar Document')">
-                                                <i class="fas fa-camera me-2"></i>Take Aadhar Photo
+                                                    onclick="initCameraCapture('aadhar_photo_front', 'Capture Aadhar Front')">
+                                                <i class="fas fa-camera me-2"></i>Aadhar Front
                                             </button>
                                             <small class="d-block text-muted mt-1">Or upload file below</small>
                                         </div>
-                                        {{ form.aadhar_photo(class="form-control mt-2", id="aadhar_photo", accept="image/*,.pdf") }}
+                                        {{ form.aadhar_photo_front(class="form-control mt-2", id="aadhar_photo_front", accept="image/*,.pdf") }}
                                     </div>
 
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">{{ form.license_photo.label.text }}</label>
+                                    <!-- Aadhar Back -->
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">{{ form.aadhar_photo_back.label.text }}</label>
                                         <div class="camera-capture-container">
                                             <button type="button" class="btn btn-warning capture-photo-btn w-100" 
-                                                    onclick="initCameraCapture('license_photo', 'Capture License')">
-                                                <i class="fas fa-camera me-2"></i>Take License Photo
+                                                    onclick="initCameraCapture('aadhar_photo_back', 'Capture Aadhar Back')">
+                                                <i class="fas fa-camera me-2"></i>Aadhar Back
                                             </button>
                                             <small class="d-block text-muted mt-1">Or upload file below</small>
                                         </div>
-                                        {{ form.license_photo(class="form-control mt-2", id="license_photo", accept="image/*,.pdf") }}
+                                        {{ form.aadhar_photo_back(class="form-control mt-2", id="aadhar_photo_back", accept="image/*,.pdf") }}
+                                    </div>
+
+                                    <!-- License Front -->
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">{{ form.license_photo_front.label.text }}</label>
+                                        <div class="camera-capture-container">
+                                            <button type="button" class="btn btn-warning capture-photo-btn w-100" 
+                                                    onclick="initCameraCapture('license_photo_front', 'Capture License Front')">
+                                                <i class="fas fa-camera me-2"></i>License Front
+                                            </button>
+                                            <small class="d-block text-muted mt-1">Or upload file below</small>
+                                        </div>
+                                        {{ form.license_photo_front(class="form-control mt-2", id="license_photo_front", accept="image/*,.pdf") }}
+                                    </div>
+
+                                    <!-- License Back -->
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">{{ form.license_photo_back.label.text }}</label>
+                                        <div class="camera-capture-container">
+                                            <button type="button" class="btn btn-warning capture-photo-btn w-100" 
+                                                    onclick="initCameraCapture('license_photo_back', 'Capture License Back')">
+                                                <i class="fas fa-camera me-2"></i>License Back
+                                            </button>
+                                            <small class="d-block text-muted mt-1">Or upload file below</small>
+                                        </div>
+                                        {{ form.license_photo_back(class="form-control mt-2", id="license_photo_back", accept="image/*,.pdf") }}
                                     </div>
 
                                     <div class="col-md-4 mb-3">

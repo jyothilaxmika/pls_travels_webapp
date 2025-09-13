@@ -140,17 +140,27 @@ def register():
             driver.branch_id = form.branch.data
             driver.status = DriverStatus.PENDING  # Default to pending approval
             
-            # Handle file uploads
+            # Handle file uploads - Front and Back documents
             from utils import process_file_upload
-            if form.aadhar_photo.data:
-                aadhar_url = process_file_upload(form.aadhar_photo.data, user.id, 'aadhar', use_cloud=True)
-                if aadhar_url:
-                    driver.aadhar_document = aadhar_url
+            if form.aadhar_photo_front.data:
+                aadhar_front_url = process_file_upload(form.aadhar_photo_front.data, user.id, 'aadhar_front', use_cloud=True)
+                if aadhar_front_url:
+                    driver.aadhar_document_front = aadhar_front_url
             
-            if form.license_photo.data:
-                license_url = process_file_upload(form.license_photo.data, user.id, 'license', use_cloud=True)
-                if license_url:
-                    driver.license_document = license_url
+            if form.aadhar_photo_back.data:
+                aadhar_back_url = process_file_upload(form.aadhar_photo_back.data, user.id, 'aadhar_back', use_cloud=True)
+                if aadhar_back_url:
+                    driver.aadhar_document_back = aadhar_back_url
+            
+            if form.license_photo_front.data:
+                license_front_url = process_file_upload(form.license_photo_front.data, user.id, 'license_front', use_cloud=True)
+                if license_front_url:
+                    driver.license_document_front = license_front_url
+                    
+            if form.license_photo_back.data:
+                license_back_url = process_file_upload(form.license_photo_back.data, user.id, 'license_back', use_cloud=True)
+                if license_back_url:
+                    driver.license_document_back = license_back_url
                     
             if form.profile_photo.data:
                 profile_url = process_file_upload(form.profile_photo.data, user.id, 'profile', use_cloud=True)
