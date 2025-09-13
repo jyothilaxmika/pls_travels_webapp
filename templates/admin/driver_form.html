@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning bg-opacity-25">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus me-2"></i>{{ title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Personal Information Section -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-user me-2"></i>Personal Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.full_name.label(class="form-label required") }}
+                                    {{ form.full_name(class="form-control") }}
+                                    {% if form.full_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.full_name.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.phone.label(class="form-label required") }}
+                                    {{ form.phone(class="form-control") }}
+                                    {% if form.phone.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.phone.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.date_of_birth.label(class="form-label") }}
+                                    {{ form.date_of_birth(class="form-control") }}
+                                    {% if form.date_of_birth.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.date_of_birth.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.branch_id.label(class="form-label required") }}
+                                    {{ form.branch_id(class="form-select") }}
+                                    {% if form.branch_id.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.branch_id.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.address.label(class="form-label") }}
+                                {{ form.address(class="form-control", rows="3") }}
+                                {% if form.address.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.address.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documents Section -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Documents</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.aadhar_number.label(class="form-label required") }}
+                                    {{ form.aadhar_number(class="form-control") }}
+                                    {% if form.aadhar_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.aadhar_number.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.license_number.label(class="form-label required") }}
+                                    {{ form.license_number(class="form-control") }}
+                                    {% if form.license_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.license_number.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bank Details Section -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-university me-2"></i>Bank Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.bank_name.label(class="form-label") }}
+                                    {{ form.bank_name(class="form-control") }}
+                                    {% if form.bank_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.bank_name.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.account_number.label(class="form-label") }}
+                                    {{ form.account_number(class="form-control") }}
+                                    {% if form.account_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.account_number.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.ifsc_code.label(class="form-label") }}
+                                    {{ form.ifsc_code(class="form-control") }}
+                                    {% if form.ifsc_code.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.ifsc_code.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.account_holder_name.label(class="form-label") }}
+                                    {{ form.account_holder_name(class="form-control") }}
+                                    {% if form.account_holder_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.account_holder_name.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.drivers') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Drivers
+                        </a>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i>
+                            {% if action == 'edit' %}Update Driver{% else %}Add Driver{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        const forms = document.getElementsByClassName('needs-validation');
+        
+        Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+
+<style>
+.required::after {
+    content: " *";
+    color: red;
+}
+</style>
+{% endblock %}

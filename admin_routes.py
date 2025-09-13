@@ -589,6 +589,164 @@ def block_driver(driver_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
+@admin_bp.route('/drivers/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_driver():
+    """Add a new driver by admin"""
+    from forms import DriverForm
+    form = DriverForm()
+    
+    # Populate branch choices
+    branches = Branch.query.filter_by(is_active=True).all()
+    form.branch_id.choices = [(b.id, b.name) for b in branches]
+    
+    if form.validate_on_submit():
+        try:
+            # Create user account first
+            user = User()
+            user.username = form.full_name.data.lower().replace(' ', '_')
+            user.email = f"{user.username}@plstravels.com"  # Generate email if not provided
+            user.password_hash = generate_password_hash('driver123')  # Default password
+            user.role = UserRole.DRIVER
+            user.status = UserStatus.ACTIVE
+            
+            db.session.add(user)
+            db.session.flush()  # Get user ID
+            
+            # Create driver profile
+            driver = Driver()
+            driver.user_id = user.id
+            driver.branch_id = form.branch_id.data
+            from utils import generate_employee_id
+            driver.employee_id = generate_employee_id()
+            driver.full_name = form.full_name.data
+            driver.phone = form.phone.data
+            driver.address = form.address.data
+            driver.date_of_birth = form.date_of_birth.data
+            driver.aadhar_number = form.aadhar_number.data
+            driver.license_number = form.license_number.data
+            driver.bank_name = form.bank_name.data
+            driver.account_number = form.account_number.data
+            driver.ifsc_code = form.ifsc_code.data
+            driver.account_holder_name = form.account_holder_name.data
+            driver.status = DriverStatus.ACTIVE  # Admin created drivers are active by default
+            driver.approved_by = current_user.id
+            driver.approved_at = get_ist_time_naive()
+            
+            db.session.add(driver)
+            db.session.commit()
+            
+            log_audit('add_driver', 'driver', driver.id, {
+                'driver_name': driver.full_name, 
+                'branch': driver.branch.name,
+                'created_by_admin': True
+            })
+            
+            flash(f'Driver {driver.full_name} has been successfully added.', 'success')
+            return redirect(url_for('admin.drivers'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding driver: {str(e)}', 'error')
+    
+    return render_template('admin/driver_form.html', form=form, title='Add Driver', action='add')
+
+@admin_bp.route('/drivers/<int:driver_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_driver(driver_id):
+    """Edit an existing driver"""
+    from forms import DriverForm
+    driver = Driver.query.get_or_404(driver_id)
+    form = DriverForm(obj=driver)
+    
+    # Populate branch choices
+    branches = Branch.query.filter_by(is_active=True).all()
+    form.branch_id.choices = [(b.id, b.name) for b in branches]
+    
+    if form.validate_on_submit():
+        try:
+            # Update driver details
+            driver.full_name = form.full_name.data
+            driver.phone = form.phone.data
+            driver.address = form.address.data
+            driver.date_of_birth = form.date_of_birth.data
+            driver.aadhar_number = form.aadhar_number.data
+            driver.license_number = form.license_number.data
+            driver.bank_name = form.bank_name.data
+            driver.account_number = form.account_number.data
+            driver.ifsc_code = form.ifsc_code.data
+            driver.account_holder_name = form.account_holder_name.data
+            driver.branch_id = form.branch_id.data
+            
+            db.session.commit()
+            
+            log_audit('edit_driver', 'driver', driver.id, {
+                'driver_name': driver.full_name,
+                'updated_by_admin': True
+            })
+            
+            flash(f'Driver {driver.full_name} has been successfully updated.', 'success')
+            return redirect(url_for('admin.drivers'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating driver: {str(e)}', 'error')
+    
+    return render_template('admin/driver_form.html', form=form, title='Edit Driver', action='edit', driver=driver)
+
+@admin_bp.route('/drivers/<int:driver_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_driver(driver_id):
+    """Soft delete a driver (set status to terminated)"""
+    driver = Driver.query.get_or_404(driver_id)
+    
+    if driver.status == DriverStatus.TERMINATED:
+        return jsonify({'success': False, 'message': 'Driver is already deleted'})
+    
+    try:
+        # Soft delete - set status to terminated
+        previous_status = driver.status.value
+        driver.status = DriverStatus.TERMINATED
+        driver.terminated_at = datetime.utcnow()
+        driver.terminated_by = current_user.id
+        
+        # End any active assignments and duties
+        active_assignments = VehicleAssignment.query.filter_by(
+            driver_id=driver_id,
+            status=AssignmentStatus.ACTIVE
+        ).all()
+        
+        for assignment in active_assignments:
+            assignment.status = AssignmentStatus.COMPLETED
+            assignment.end_date = datetime.now().date()
+            assignment.notes = "Assignment ended due to driver termination"
+        
+        active_duties = Duty.query.filter_by(
+            driver_id=driver_id,
+            status=DutyStatus.ACTIVE
+        ).all()
+        
+        for duty in active_duties:
+            duty.status = DutyStatus.COMPLETED
+            duty.end_time = datetime.utcnow()
+            duty.notes = "Duty ended due to driver termination"
+        
+        db.session.commit()
+        
+        log_audit('delete_driver', 'driver', driver_id, {
+            'driver_name': driver.full_name,
+            'previous_status': previous_status
+        })
+        
+        return jsonify({'success': True, 'message': 'Driver has been successfully deleted'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error deleting driver: {str(e)}'})
+
 @admin_bp.route('/drivers/<int:driver_id>/unblock', methods=['POST'])
 @login_required
 @admin_required
