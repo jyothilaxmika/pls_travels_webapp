@@ -306,11 +306,13 @@ def add_driver_document():
         
         # Update driver document fields
         if document_type == 'aadhar':
-            driver.aadhar_document = filename
+            # Handle legacy uploads - map to front document for now
+            driver.aadhar_document_front = filename
             if document_number:
                 driver.aadhar_number = document_number
         elif document_type == 'license':
-            driver.license_document = filename
+            # Handle legacy uploads - map to front document for now
+            driver.license_document_front = filename
             if document_number:
                 driver.license_number = document_number
         elif document_type == 'profile':
@@ -334,32 +336,51 @@ def delete_driver_document(driver_id, document_type):
     """Delete a driver's document"""
     driver = Driver.query.get_or_404(driver_id)
     
-    # Remove file and update database
-    filename = None
+    # Collect all filenames to delete
+    files_to_delete = []
+    
     if document_type == 'aadhar':
-        filename = driver.aadhar_document
-        driver.aadhar_document = None
+        # Handle deletion of both front and back documents
+        if driver.aadhar_document_front:
+            files_to_delete.append(driver.aadhar_document_front)
+        if driver.aadhar_document_back:
+            files_to_delete.append(driver.aadhar_document_back)
+        driver.aadhar_document_front = None
+        driver.aadhar_document_back = None
         driver.aadhar_verified = False
         driver.aadhar_verified_at = None
     elif document_type == 'license':
-        filename = driver.license_document
-        driver.license_document = None
+        # Handle deletion of both front and back documents
+        if driver.license_document_front:
+            files_to_delete.append(driver.license_document_front)
+        if driver.license_document_back:
+            files_to_delete.append(driver.license_document_back)
+        driver.license_document_front = None
+        driver.license_document_back = None
         driver.license_verified = False
         driver.license_verified_at = None
     elif document_type == 'profile':
-        filename = driver.profile_photo
+        if driver.profile_photo:
+            files_to_delete.append(driver.profile_photo)
         driver.profile_photo = None
     
-    # Delete physical file
-    if filename:
-        file_path = os.path.join(os.getcwd(), 'uploads', filename)
-        if os.path.exists(file_path):
-            os.remove(file_path)
+    # Delete all physical files
+    deleted_files = []
+    for filename in files_to_delete:
+        if filename:
+            file_path = os.path.join(os.getcwd(), 'uploads', filename)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    deleted_files.append(filename)
+                except OSError as e:
+                    # Log but don't fail the entire operation
+                    flash(f'Warning: Could not delete file {filename}: {str(e)}', 'warning')
     
     try:
         db.session.commit()
         log_audit('delete_driver_document', 'driver', driver_id,
-                 {'document_type': document_type, 'filename': filename})
+                 {'document_type': document_type, 'deleted_files': deleted_files})
         return jsonify({'success': True, 'message': 'Document deleted successfully'})
     except Exception as e:
         db.session.rollback()

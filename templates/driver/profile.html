@@ -110,15 +110,15 @@
                 <!-- Document Capture Section -->
                 {% if not driver or driver.status in ['pending', 'rejected'] %}
                 <div class="row">
-                    <!-- Aadhar Photo Upload -->
-                    <div class="col-md-4 mb-3" id="aadhar_photo_container">
-                        <label class="form-label">Aadhar Photo *</label>
+                    <!-- Aadhar Photo Upload - Front -->
+                    <div class="col-lg-3 col-md-6 mb-3" id="aadhar_photo_front_container">
+                        <label class="form-label">Aadhar Front *</label>
                         
                         <!-- Camera Capture Option -->
                         <div class="camera-capture-container mb-2">
                             <button type="button" class="btn btn-primary capture-photo-btn w-100" 
-                                    onclick="initCameraCapture('aadhar_photo', 'Capture Aadhar Photo')">
-                                <i class="fas fa-camera me-2"></i>Capture Aadhar Photo
+                                    onclick="initCameraCapture('aadhar_photo_front', 'Capture Aadhar Front')">
+                                <i class="fas fa-camera me-2"></i>Capture Front
                             </button>
                         </div>
                         
@@ -129,46 +129,46 @@
                         
                         <!-- File Upload Option -->
                         <div class="file-upload-container">
-                            <input type="file" class="form-control" id="aadhar_photo" name="aadhar_photo" accept="image/*,.pdf" 
-                                   onchange="previewFile(this, 'aadhar_preview')">
-                            <small class="d-block text-muted mt-1">Upload Aadhar card (JPG, PNG, PDF)</small>
+                            <input type="file" class="form-control" id="aadhar_photo_front" name="aadhar_photo_front" accept="image/*,.pdf" 
+                                   onchange="previewFile(this, 'aadhar_front_preview')">
+                            <small class="d-block text-muted mt-1">Aadhar front side</small>
                         </div>
                         
                         <!-- Photo Preview -->
                         <div class="photo-preview mt-3" style="display: none;">
-                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured Aadhar Photo">
+                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured Aadhar Front">
                             <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
                         </div>
                         
                         <!-- File Preview -->
-                        <div class="file-preview mt-2" id="aadhar_preview" style="display: none;">
-                            <img class="img-fluid rounded" style="max-height: 100px;" alt="Aadhar Preview">
+                        <div class="file-preview mt-2" id="aadhar_front_preview" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 100px;" alt="Aadhar Front Preview">
                             <small class="d-block text-success mt-1">File selected for upload</small>
                         </div>
                         
-                        {% if driver and driver.aadhar_document %}
+                        {% if driver and driver.aadhar_document_front %}
                         <div class="mt-2">
-                            <p class="mb-1"><strong>Current Document:</strong></p>
-                            {% if driver.aadhar_document.startswith('gs://') %}
+                            <p class="mb-1"><strong>Current Front:</strong></p>
+                            {% if driver.aadhar_document_front.startswith('gs://') %}
                                 <small class="d-block text-info">Stored in cloud storage</small>
                                 <i class="fas fa-cloud text-primary"></i> Cloud stored document
                             {% else %}
-                                <img src="/uploads/{{ driver.aadhar_document }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
+                                <img src="/uploads/{{ driver.aadhar_document_front }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
                                 <small class="d-block text-info">Previously uploaded</small>
                             {% endif %}
                         </div>
                         {% endif %}
                     </div>
                     
-                    <!-- License Photo Upload -->
-                    <div class="col-md-4 mb-3" id="license_photo_container">
-                        <label class="form-label">License Photo *</label>
+                    <!-- Aadhar Photo Upload - Back -->
+                    <div class="col-lg-3 col-md-6 mb-3" id="aadhar_photo_back_container">
+                        <label class="form-label">Aadhar Back *</label>
                         
                         <!-- Camera Capture Option -->
                         <div class="camera-capture-container mb-2">
                             <button type="button" class="btn btn-primary capture-photo-btn w-100" 
-                                    onclick="initCameraCapture('license_photo', 'Capture License Photo')">
-                                <i class="fas fa-camera me-2"></i>Capture License Photo
+                                    onclick="initCameraCapture('aadhar_photo_back', 'Capture Aadhar Back')">
+                                <i class="fas fa-camera me-2"></i>Capture Back
                             </button>
                         </div>
                         
@@ -179,39 +179,142 @@
                         
                         <!-- File Upload Option -->
                         <div class="file-upload-container">
-                            <input type="file" class="form-control" id="license_photo" name="license_photo" accept="image/*,.pdf" 
-                                   onchange="previewFile(this, 'license_preview')">
-                            <small class="d-block text-muted mt-1">Upload driving license (JPG, PNG, PDF)</small>
+                            <input type="file" class="form-control" id="aadhar_photo_back" name="aadhar_photo_back" accept="image/*,.pdf" 
+                                   onchange="previewFile(this, 'aadhar_back_preview')">
+                            <small class="d-block text-muted mt-1">Aadhar back side</small>
                         </div>
                         
                         <!-- Photo Preview -->
                         <div class="photo-preview mt-3" style="display: none;">
-                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured License Photo">
+                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured Aadhar Back">
                             <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
                         </div>
                         
                         <!-- File Preview -->
-                        <div class="file-preview mt-2" id="license_preview" style="display: none;">
-                            <img class="img-fluid rounded" style="max-height: 100px;" alt="License Preview">
+                        <div class="file-preview mt-2" id="aadhar_back_preview" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 100px;" alt="Aadhar Back Preview">
                             <small class="d-block text-success mt-1">File selected for upload</small>
                         </div>
                         
-                        {% if driver and driver.license_document %}
+                        {% if driver and driver.aadhar_document_back %}
                         <div class="mt-2">
-                            <p class="mb-1"><strong>Current Document:</strong></p>
-                            {% if driver.license_document.startswith('gs://') %}
+                            <p class="mb-1"><strong>Current Back:</strong></p>
+                            {% if driver.aadhar_document_back.startswith('gs://') %}
                                 <small class="d-block text-info">Stored in cloud storage</small>
                                 <i class="fas fa-cloud text-primary"></i> Cloud stored document
                             {% else %}
-                                <img src="/uploads/{{ driver.license_document }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
+                                <img src="/uploads/{{ driver.aadhar_document_back }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
                                 <small class="d-block text-info">Previously uploaded</small>
                             {% endif %}
                         </div>
                         {% endif %}
                     </div>
                     
+                    <!-- License Photo Upload - Front -->
+                    <div class="col-lg-3 col-md-6 mb-3" id="license_photo_front_container">
+                        <label class="form-label">License Front *</label>
+                        
+                        <!-- Camera Capture Option -->
+                        <div class="camera-capture-container mb-2">
+                            <button type="button" class="btn btn-primary capture-photo-btn w-100" 
+                                    onclick="initCameraCapture('license_photo_front', 'Capture License Front')">
+                                <i class="fas fa-camera me-2"></i>Capture Front
+                            </button>
+                        </div>
+                        
+                        <!-- OR separator -->
+                        <div class="text-center mb-2">
+                            <small class="text-muted">OR</small>
+                        </div>
+                        
+                        <!-- File Upload Option -->
+                        <div class="file-upload-container">
+                            <input type="file" class="form-control" id="license_photo_front" name="license_photo_front" accept="image/*,.pdf" 
+                                   onchange="previewFile(this, 'license_front_preview')">
+                            <small class="d-block text-muted mt-1">License front side</small>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div class="photo-preview mt-3" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured License Front">
+                            <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
+                        </div>
+                        
+                        <!-- File Preview -->
+                        <div class="file-preview mt-2" id="license_front_preview" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 100px;" alt="License Front Preview">
+                            <small class="d-block text-success mt-1">File selected for upload</small>
+                        </div>
+                        
+                        {% if driver and driver.license_document_front %}
+                        <div class="mt-2">
+                            <p class="mb-1"><strong>Current Front:</strong></p>
+                            {% if driver.license_document_front.startswith('gs://') %}
+                                <small class="d-block text-info">Stored in cloud storage</small>
+                                <i class="fas fa-cloud text-primary"></i> Cloud stored document
+                            {% else %}
+                                <img src="/uploads/{{ driver.license_document_front }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
+                                <small class="d-block text-info">Previously uploaded</small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- License Photo Upload - Back -->
+                    <div class="col-lg-3 col-md-6 mb-3" id="license_photo_back_container">
+                        <label class="form-label">License Back *</label>
+                        
+                        <!-- Camera Capture Option -->
+                        <div class="camera-capture-container mb-2">
+                            <button type="button" class="btn btn-primary capture-photo-btn w-100" 
+                                    onclick="initCameraCapture('license_photo_back', 'Capture License Back')">
+                                <i class="fas fa-camera me-2"></i>Capture Back
+                            </button>
+                        </div>
+                        
+                        <!-- OR separator -->
+                        <div class="text-center mb-2">
+                            <small class="text-muted">OR</small>
+                        </div>
+                        
+                        <!-- File Upload Option -->
+                        <div class="file-upload-container">
+                            <input type="file" class="form-control" id="license_photo_back" name="license_photo_back" accept="image/*,.pdf" 
+                                   onchange="previewFile(this, 'license_back_preview')">
+                            <small class="d-block text-muted mt-1">License back side</small>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div class="photo-preview mt-3" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 150px; width: 100%;" alt="Captured License Back">
+                            <small class="d-block text-success mt-1">Photo captured with location & timestamp</small>
+                        </div>
+                        
+                        <!-- File Preview -->
+                        <div class="file-preview mt-2" id="license_back_preview" style="display: none;">
+                            <img class="img-fluid rounded" style="max-height: 100px;" alt="License Back Preview">
+                            <small class="d-block text-success mt-1">File selected for upload</small>
+                        </div>
+                        
+                        {% if driver and driver.license_document_back %}
+                        <div class="mt-2">
+                            <p class="mb-1"><strong>Current Back:</strong></p>
+                            {% if driver.license_document_back.startswith('gs://') %}
+                                <small class="d-block text-info">Stored in cloud storage</small>
+                                <i class="fas fa-cloud text-primary"></i> Cloud stored document
+                            {% else %}
+                                <img src="/uploads/{{ driver.license_document_back }}" class="img-fluid rounded" style="max-height: 100px;" onerror="this.style.display='none';">
+                                <small class="d-block text-info">Previously uploaded</small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Profile Photo Row -->
+                <div class="row">
                     <!-- Profile Photo Upload -->
-                    <div class="col-md-4 mb-3" id="profile_photo_container">
+                    <div class="col-md-4 mx-auto mb-3" id="profile_photo_container">
                         <label class="form-label">Profile Photo *</label>
                         
                         <!-- Camera Capture Option -->
@@ -263,22 +366,34 @@
                 {% else %}
                 <!-- Show existing documents for approved drivers -->
                 <div class="row">
-                    {% if driver.aadhar_photo %}
-                    <div class="col-md-4 text-center mb-3">
-                        <p><strong>Aadhar Photo</strong></p>
-                        <img src="/uploads/{{ driver.aadhar_photo }}" class="img-fluid rounded" style="max-height: 150px;">
+                    {% if driver.aadhar_document_front %}
+                    <div class="col-lg-2 col-md-4 col-6 text-center mb-3">
+                        <p><strong>Aadhar Front</strong></p>
+                        <img src="/uploads/{{ driver.aadhar_document_front }}" class="img-fluid rounded" style="max-height: 120px; cursor: pointer;" onclick="showImageModal(this.src, 'Aadhar Front')">
                     </div>
                     {% endif %}
-                    {% if driver.license_photo %}
-                    <div class="col-md-4 text-center mb-3">
-                        <p><strong>License Photo</strong></p>
-                        <img src="/uploads/{{ driver.license_photo }}" class="img-fluid rounded" style="max-height: 150px;">
+                    {% if driver.aadhar_document_back %}
+                    <div class="col-lg-2 col-md-4 col-6 text-center mb-3">
+                        <p><strong>Aadhar Back</strong></p>
+                        <img src="/uploads/{{ driver.aadhar_document_back }}" class="img-fluid rounded" style="max-height: 120px; cursor: pointer;" onclick="showImageModal(this.src, 'Aadhar Back')">
+                    </div>
+                    {% endif %}
+                    {% if driver.license_document_front %}
+                    <div class="col-lg-2 col-md-4 col-6 text-center mb-3">
+                        <p><strong>License Front</strong></p>
+                        <img src="/uploads/{{ driver.license_document_front }}" class="img-fluid rounded" style="max-height: 120px; cursor: pointer;" onclick="showImageModal(this.src, 'License Front')">
+                    </div>
+                    {% endif %}
+                    {% if driver.license_document_back %}
+                    <div class="col-lg-2 col-md-4 col-6 text-center mb-3">
+                        <p><strong>License Back</strong></p>
+                        <img src="/uploads/{{ driver.license_document_back }}" class="img-fluid rounded" style="max-height: 120px; cursor: pointer;" onclick="showImageModal(this.src, 'License Back')">
                     </div>
                     {% endif %}
                     {% if driver.profile_photo %}
-                    <div class="col-md-4 text-center mb-3">
+                    <div class="col-lg-2 col-md-4 col-6 text-center mb-3">
                         <p><strong>Profile Photo</strong></p>
-                        <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded" style="max-height: 150px;">
+                        <img src="/uploads/{{ driver.profile_photo }}" class="img-fluid rounded" style="max-height: 120px; cursor: pointer;" onclick="showImageModal(this.src, 'Profile Photo')">
                     </div>
                     {% endif %}
                 </div>
@@ -394,21 +509,21 @@
     </form>
 
     <!-- Enhanced Document Showcase -->
-    {% if driver and (driver.aadhar_document or driver.license_document or driver.profile_photo) %}
+    {% if driver and (driver.aadhar_document_front or driver.aadhar_document_back or driver.license_document_front or driver.license_document_back or driver.profile_photo) %}
     <div class="card mb-4 shadow-sm document-showcase">
         <div class="card-header bg-primary text-white">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-0"><i class="fas fa-id-card-alt me-2"></i>Document Showcase</h6>
                 <span class="badge bg-light text-primary">
-                    {{ [driver.aadhar_document, driver.license_document, driver.profile_photo] | select | list | length }} Documents
+                    {{ [driver.aadhar_document_front, driver.aadhar_document_back, driver.license_document_front, driver.license_document_back, driver.profile_photo] | select | list | length }} Documents
                 </span>
             </div>
         </div>
         <div class="card-body">
             <div class="row">
                 <!-- Aadhar Document Card -->
-                {% if driver.aadhar_document %}
-                <div class="col-lg-4 col-md-6 mb-4">
+                {% if driver.aadhar_document_front or driver.aadhar_document_back %}
+                <div class="col-lg-6 col-md-12 mb-4">
                     <div class="card h-100 border-success document-card">
                         <div class="card-header bg-light">
                             <div class="d-flex justify-content-between align-items-center">
@@ -419,22 +534,43 @@
                             </div>
                         </div>
                         <div class="card-body p-2">
-                            <div class="document-preview position-relative">
-                                <img src="/uploads/{{ driver.aadhar_document }}" 
-                                     class="img-fluid rounded document-thumbnail cursor-pointer" 
-                                     style="width: 100%; height: 180px; object-fit: cover;"
-                                     alt="Aadhar Document"
-                                     onclick="showDocumentModal('{{ driver.aadhar_document }}', 'Aadhar Card', 'aadhar')">
-                                <div class="document-overlay">
-                                    <button class="btn btn-primary btn-sm" 
-                                            onclick="showDocumentModal('{{ driver.aadhar_document }}', 'Aadhar Card', 'aadhar')">
-                                        <i class="fas fa-eye"></i> View
-                                    </button>
-                                    <a href="/uploads/{{ driver.aadhar_document }}" 
-                                       class="btn btn-success btn-sm ms-1" download>
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                            <div class="row">
+                                {% if driver.aadhar_document_front %}
+                                <div class="col-6">
+                                    <p class="small mb-1 text-center"><strong>Front</strong></p>
+                                    <div class="document-preview position-relative">
+                                        <img src="/uploads/{{ driver.aadhar_document_front }}" 
+                                             class="img-fluid rounded document-thumbnail cursor-pointer" 
+                                             style="width: 100%; height: 140px; object-fit: cover;"
+                                             alt="Aadhar Front"
+                                             onclick="showDocumentModal('{{ driver.aadhar_document_front }}', 'Aadhar Card Front', 'aadhar_front')">
+                                        <div class="document-overlay">
+                                            <button class="btn btn-primary btn-sm" 
+                                                    onclick="showDocumentModal('{{ driver.aadhar_document_front }}', 'Aadhar Card Front', 'aadhar_front')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
+                                {% endif %}
+                                {% if driver.aadhar_document_back %}
+                                <div class="col-6">
+                                    <p class="small mb-1 text-center"><strong>Back</strong></p>
+                                    <div class="document-preview position-relative">
+                                        <img src="/uploads/{{ driver.aadhar_document_back }}" 
+                                             class="img-fluid rounded document-thumbnail cursor-pointer" 
+                                             style="width: 100%; height: 140px; object-fit: cover;"
+                                             alt="Aadhar Back"
+                                             onclick="showDocumentModal('{{ driver.aadhar_document_back }}', 'Aadhar Card Back', 'aadhar_back')">
+                                        <div class="document-overlay">
+                                            <button class="btn btn-primary btn-sm" 
+                                                    onclick="showDocumentModal('{{ driver.aadhar_document_back }}', 'Aadhar Card Back', 'aadhar_back')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="card-footer bg-light">
@@ -455,8 +591,8 @@
                 {% endif %}
                 
                 <!-- License Document Card -->
-                {% if driver.license_document %}
-                <div class="col-lg-4 col-md-6 mb-4">
+                {% if driver.license_document_front or driver.license_document_back %}
+                <div class="col-lg-6 col-md-12 mb-4">
                     <div class="card h-100 border-info document-card">
                         <div class="card-header bg-light">
                             <div class="d-flex justify-content-between align-items-center">
@@ -467,22 +603,43 @@
                             </div>
                         </div>
                         <div class="card-body p-2">
-                            <div class="document-preview position-relative">
-                                <img src="/uploads/{{ driver.license_document }}" 
-                                     class="img-fluid rounded document-thumbnail cursor-pointer" 
-                                     style="width: 100%; height: 180px; object-fit: cover;"
-                                     alt="License Document"
-                                     onclick="showDocumentModal('{{ driver.license_document }}', 'Driving License', 'license')">
-                                <div class="document-overlay">
-                                    <button class="btn btn-primary btn-sm" 
-                                            onclick="showDocumentModal('{{ driver.license_document }}', 'Driving License', 'license')">
-                                        <i class="fas fa-eye"></i> View
-                                    </button>
-                                    <a href="/uploads/{{ driver.license_document }}" 
-                                       class="btn btn-success btn-sm ms-1" download>
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                            <div class="row">
+                                {% if driver.license_document_front %}
+                                <div class="col-6">
+                                    <p class="small mb-1 text-center"><strong>Front</strong></p>
+                                    <div class="document-preview position-relative">
+                                        <img src="/uploads/{{ driver.license_document_front }}" 
+                                             class="img-fluid rounded document-thumbnail cursor-pointer" 
+                                             style="width: 100%; height: 140px; object-fit: cover;"
+                                             alt="License Front"
+                                             onclick="showDocumentModal('{{ driver.license_document_front }}', 'Driving License Front', 'license_front')">
+                                        <div class="document-overlay">
+                                            <button class="btn btn-primary btn-sm" 
+                                                    onclick="showDocumentModal('{{ driver.license_document_front }}', 'Driving License Front', 'license_front')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
+                                {% endif %}
+                                {% if driver.license_document_back %}
+                                <div class="col-6">
+                                    <p class="small mb-1 text-center"><strong>Back</strong></p>
+                                    <div class="document-preview position-relative">
+                                        <img src="/uploads/{{ driver.license_document_back }}" 
+                                             class="img-fluid rounded document-thumbnail cursor-pointer" 
+                                             style="width: 100%; height: 140px; object-fit: cover;"
+                                             alt="License Back"
+                                             onclick="showDocumentModal('{{ driver.license_document_back }}', 'Driving License Back', 'license_back')">
+                                        <div class="document-overlay">
+                                            <button class="btn btn-primary btn-sm" 
+                                                    onclick="showDocumentModal('{{ driver.license_document_back }}', 'Driving License Back', 'license_back')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="card-footer bg-light">
@@ -507,7 +664,7 @@
                 
                 <!-- Profile Photo Card -->
                 {% if driver.profile_photo %}
-                <div class="col-lg-4 col-md-6 mb-4">
+                <div class="col-lg-12 col-md-12 mb-4">
                     <div class="card h-100 border-secondary document-card">
                         <div class="card-header bg-light">
                             <div class="d-flex justify-content-between align-items-center">
