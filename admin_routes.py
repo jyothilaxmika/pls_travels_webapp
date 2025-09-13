@@ -1840,6 +1840,116 @@ def duplicate_duty_scheme(scheme_id):
     flash(f'Salary method duplicated as "{duplicate.name}".', 'success')
     return redirect(url_for('admin.edit_duty_scheme', scheme_id=duplicate.id))
 
+@admin_bp.route('/duty-schemes/bulk-action', methods=['POST'])
+@login_required
+@admin_required
+def bulk_duty_schemes_action():
+    """Handle bulk operations on duty schemes"""
+    try:
+        action = request.form.get('action')
+        scheme_ids = request.form.getlist('scheme_ids')
+        
+        if not scheme_ids:
+            flash('No duty schemes selected', 'warning')
+            return redirect(url_for('admin.duty_schemes'))
+        
+        scheme_ids = [int(id) for id in scheme_ids]
+        schemes = DutyScheme.query.filter(DutyScheme.id.in_(scheme_ids)).all()
+        
+        if action == 'activate':
+            for scheme in schemes:
+                scheme.is_active = True
+            db.session.commit()
+            flash(f'{len(schemes)} duty schemes activated successfully')
+            
+        elif action == 'deactivate':
+            for scheme in schemes:
+                scheme.is_active = False
+            db.session.commit()
+            flash(f'{len(schemes)} duty schemes deactivated successfully')
+            
+        elif action == 'delete':
+            # Check if any scheme is currently in use
+            in_use_schemes = []
+            for scheme in schemes:
+                # Check if scheme is referenced by any drivers or duties
+                from models import Driver, Duty
+                if Driver.query.filter_by(duty_scheme_id=scheme.id).first() or \
+                   Duty.query.filter_by(duty_scheme_id=scheme.id).first():
+                    in_use_schemes.append(scheme.name)
+                    
+            if in_use_schemes:
+                flash(f'Cannot delete schemes in use: {", ".join(in_use_schemes)}', 'error')
+            else:
+                for scheme in schemes:
+                    scheme.is_active = False  # Soft delete
+                db.session.commit()
+                flash(f'{len(schemes)} duty schemes deleted successfully')
+                
+        else:
+            flash('Invalid bulk action', 'error')
+            
+        # Log the bulk action
+        log_audit('bulk_duty_schemes_action', 'duty_scheme', 0,
+                 {'action': action, 'scheme_count': len(schemes), 'scheme_ids': scheme_ids})
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error performing bulk action: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.duty_schemes'))
+
+@admin_bp.route('/duty-schemes/compare')
+@login_required
+@admin_required
+def compare_duty_schemes():
+    """Compare multiple duty schemes"""
+    scheme_ids = request.args.getlist('ids')
+    
+    if not scheme_ids or len(scheme_ids) < 2:
+        flash('Please select at least 2 duty schemes to compare', 'warning')
+        return redirect(url_for('admin.duty_schemes'))
+    
+    try:
+        scheme_ids = [int(id) for id in scheme_ids]
+        schemes = DutyScheme.query.filter(DutyScheme.id.in_(scheme_ids)).all()
+        
+        if len(schemes) != len(scheme_ids):
+            flash('One or more selected schemes not found', 'error')
+            return redirect(url_for('admin.duty_schemes'))
+        
+        # Sample calculation scenarios for comparison
+        test_scenarios = [
+            {'revenue': 1000, 'trips': 5, 'name': 'Low Revenue Day'},
+            {'revenue': 2500, 'trips': 10, 'name': 'Average Day'},
+            {'revenue': 5000, 'trips': 15, 'name': 'High Revenue Day'},
+            {'revenue': 8000, 'trips': 20, 'name': 'Exceptional Day'}
+        ]
+        
+        comparison_data = []
+        for scenario in test_scenarios:
+            scenario_data = {'scenario': scenario}
+            for scheme in schemes:
+                try:
+                    from utils_main import calculate_earnings
+                    earnings_data = calculate_earnings(scheme, scenario['revenue'], scenario['trips'])
+                    scenario_data[f'scheme_{scheme.id}'] = earnings_data
+                except Exception as e:
+                    scenario_data[f'scheme_{scheme.id}'] = {'earnings': 0, 'error': str(e)}
+            comparison_data.append(scenario_data)
+        
+        # Log the comparison action
+        log_audit('compare_duty_schemes', 'duty_scheme', 0,
+                 {'scheme_count': len(schemes), 'scheme_ids': scheme_ids})
+        
+        return render_template('admin/duty_schemes_comparison.html', 
+                             schemes=schemes, 
+                             comparison_data=comparison_data)
+        
+    except Exception as e:
+        flash(f'Error comparing schemes: {str(e)}', 'error')
+        return redirect(url_for('admin.duty_schemes'))
+
 @admin_bp.route('/vehicle-tracking')
 @login_required
 @admin_required
