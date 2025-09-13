@@ -324,8 +324,8 @@ function LandingContent() {
 
         {/* Contact Buttons */}
         <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 18 }}>
-          <a href="tel:+919787247132" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)" }}><PhoneIcon /> Call Now | இப்போது அழைக்கவும்</a>
-          <a href="https://wa.me/919787247132" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "#16a34a", color: "white" }}><MessageIcon /> WhatsApp Us | WhatsApp செய்யவும்</a>
+          <a href="tel:+919345046474" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)" }}><PhoneIcon /> Call Now | இப்போது அழைக்கவும்</a>
+          <a href="https://wa.me/919345046474" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "#16a34a", color: "white" }}><MessageIcon /> WhatsApp Us | WhatsApp செய்யவும்</a>
         </div>
 
         {/* Dev Self Test Panel (visible to developer only) */}
