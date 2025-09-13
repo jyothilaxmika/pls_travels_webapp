@@ -160,7 +160,12 @@ def drivers():
     query = Driver.query
     
     if status_filter:
-        query = query.filter(Driver.status == status_filter)
+        try:
+            status_enum = DriverStatus(status_filter)
+            query = query.filter(Driver.status == status_enum)
+        except ValueError:
+            # Invalid status filter, ignore it
+            pass
     
     if branch_filter:
         query = query.filter(Driver.branch_id == branch_filter)

@@ -85,15 +85,15 @@
                         <td>{{ driver.branch.name }}</td>
                         <td>{{ driver.phone }}</td>
                         <td>
-                            {% if driver.status == 'active' %}
+                            {% if driver.status.value == 'active' %}
                                 <span class="badge bg-success">Active</span>
-                            {% elif driver.status == 'pending' %}
+                            {% elif driver.status.value == 'pending' %}
                                 <span class="badge bg-warning">Pending</span>
-                            {% elif driver.status == 'rejected' %}
+                            {% elif driver.status.value == 'rejected' %}
                                 <span class="badge bg-danger">Rejected</span>
-                            {% elif driver.status == 'suspended' %}
+                            {% elif driver.status.value == 'suspended' %}
                                 <span class="badge bg-danger">Blocked</span>
-                            {% elif driver.status == 'terminated' %}
+                            {% elif driver.status.value == 'terminated' %}
                                 <span class="badge bg-dark">Terminated</span>
                             {% else %}
                                 <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
@@ -113,32 +113,37 @@
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 
-                                {% if driver.status == 'pending' %}
+                                {% if driver.status.value == 'pending' %}
                                 <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}" class="d-inline">
+                                    {{ csrf_token() }}
                                     <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')" title="Approve">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}" class="d-inline">
+                                    {{ csrf_token() }}
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')" title="Reject">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </form>
-                                {% elif driver.status == 'active' %}
+                                {% elif driver.status.value == 'active' %}
                                 <button type="button" class="btn btn-sm btn-warning" onclick="quickBlockDriver({{ driver.id }}, '{{ driver.full_name }}')" title="Block Driver">
                                     <i class="fas fa-ban"></i>
                                 </button>
-                                {% elif driver.status == 'suspended' %}
+                                {% elif driver.status.value == 'suspended' %}
                                 <button type="button" class="btn btn-sm btn-success" onclick="quickUnblockDriver({{ driver.id }})" title="Unblock Driver">
                                     <i class="fas fa-unlock"></i>
                                 </button>
                                 {% endif %}
                                 
                                 <!-- Delete button -->
-                                {% if driver.status != 'terminated' %}
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteDriver({{ driver.id }}, '{{ driver.full_name }}')" title="Delete Driver">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                {% if driver.status.value != 'terminated' %}
+                                <form method="POST" action="{{ url_for('admin.delete_driver', driver_id=driver.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver? This action cannot be undone.')">
+                                    {{ csrf_token() }}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Driver">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                                 {% endif %}
                             </div>
                         </td>
@@ -209,15 +214,15 @@
                                     <small class="text-muted">{{ driver.user.username }}</small>
                                 </div>
                                 <div class="text-end">
-                                    {% if driver.status == 'active' %}
+                                    {% if driver.status.value == 'active' %}
                                         <span class="badge bg-success">Active</span>
-                                    {% elif driver.status == 'pending' %}
+                                    {% elif driver.status.value == 'pending' %}
                                         <span class="badge bg-warning">Pending</span>
-                                    {% elif driver.status == 'rejected' %}
+                                    {% elif driver.status.value == 'rejected' %}
                                         <span class="badge bg-danger">Rejected</span>
-                                    {% elif driver.status == 'suspended' %}
+                                    {% elif driver.status.value == 'suspended' %}
                                         <span class="badge bg-danger">Blocked</span>
-                                    {% elif driver.status == 'terminated' %}
+                                    {% elif driver.status.value == 'terminated' %}
                                         <span class="badge bg-dark">Terminated</span>
                                     {% else %}
                                         <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
@@ -257,31 +262,36 @@
                                     <i class="fas fa-edit me-1"></i>Edit
                                 </a>
                                 
-                                {% if driver.status == 'pending' %}
+                                {% if driver.status.value == 'pending' %}
                                 <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}" class="d-inline">
+                                    {{ csrf_token() }}
                                     <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')">
                                         <i class="fas fa-check me-1"></i>Approve
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}" class="d-inline">
+                                    {{ csrf_token() }}
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')">
                                         <i class="fas fa-times me-1"></i>Reject
                                     </button>
                                 </form>
-                                {% elif driver.status == 'active' %}
+                                {% elif driver.status.value == 'active' %}
                                 <button type="button" class="btn btn-sm btn-warning" onclick="quickBlockDriver({{ driver.id }}, '{{ driver.full_name }}')">
                                     <i class="fas fa-ban me-1"></i>Block
                                 </button>
-                                {% elif driver.status == 'suspended' %}
+                                {% elif driver.status.value == 'suspended' %}
                                 <button type="button" class="btn btn-sm btn-success" onclick="quickUnblockDriver({{ driver.id }})">
                                     <i class="fas fa-unlock me-1"></i>Unblock
                                 </button>
                                 {% endif %}
                                 
-                                {% if driver.status != 'terminated' %}
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteDriver({{ driver.id }}, '{{ driver.full_name }}')">
-                                    <i class="fas fa-trash me-1"></i>Delete
-                                </button>
+                                {% if driver.status.value != 'terminated' %}
+                                <form method="POST" action="{{ url_for('admin.delete_driver', driver_id=driver.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver? This action cannot be undone.')">
+                                    {{ csrf_token() }}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
+                                </form>
                                 {% endif %}
                             </div>
                         </div>
@@ -400,8 +410,17 @@ function quickBlockDriver(driverId, driverName) {
         const formData = new FormData();
         formData.append('reason', reason.trim());
         
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        }
+        
         fetch(`/admin/drivers/${driverId}/block`, {
             method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
             body: formData
         })
         .then(response => response.json())
@@ -421,8 +440,20 @@ function quickBlockDriver(driverId, driverName) {
 
 function quickUnblockDriver(driverId) {
     if (confirm('Are you sure you want to unblock this driver?\n\nThey will be able to access the system and start new duties.')) {
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        
+        const formData = new FormData();
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        }
+        
         fetch(`/admin/drivers/${driverId}/unblock`, {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
@@ -458,42 +489,7 @@ document.getElementById('searchInput')?.addEventListener('input', function() {
     });
 });
 
-// Delete driver function
-function deleteDriver(driverId, driverName) {
-    if (confirm(`Are you sure you want to delete driver "${driverName}"? This action cannot be undone.`)) {
-        fetch(`/admin/drivers/${driverId}/delete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-success alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    <strong>Success!</strong> ${data.message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.querySelector('.container-fluid')?.insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
-                
-                // Reload the page after a short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else {
-                alert(`Error: ${data.message}`);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the driver.');
-        });
-    }
-}
+// JavaScript delete function removed - now using proper form submission with CSRF protection
 
 // View toggle functionality for mobile
 document.addEventListener('DOMContentLoaded', function() {
