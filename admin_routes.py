@@ -2767,23 +2767,14 @@ def view_audit_log(log_id):
     """View detailed audit log entry"""
     audit_log = AuditLog.query.get_or_404(log_id)
     
-    # Parse JSON fields
-    old_values = {}
-    new_values = {}
-    changed_fields = []
+    # Import security utilities
+    from utils.security import get_sanitized_audit_data
     
-    try:
-        if audit_log.old_values:
-            old_values = json.loads(audit_log.old_values)
-    except (json.JSONDecodeError, TypeError):
-        pass
-        
-    try:
-        if audit_log.new_values:
-            new_values = json.loads(audit_log.new_values)
-    except (json.JSONDecodeError, TypeError):
-        pass
-        
+    # Get sanitized data for display
+    sanitized_data = get_sanitized_audit_data(audit_log)
+    
+    # Parse changed fields
+    changed_fields = []
     try:
         if audit_log.changed_fields:
             changed_fields = json.loads(audit_log.changed_fields)
@@ -2792,15 +2783,21 @@ def view_audit_log(log_id):
     
     return render_template('admin/audit_log_detail.html',
                          audit_log=audit_log,
-                         old_values=old_values,
-                         new_values=new_values,
-                         changed_fields=changed_fields)
+                         old_values=sanitized_data['old_values'],
+                         new_values=sanitized_data['new_values'],
+                         changed_fields=changed_fields,
+                         sanitized_error=sanitized_data['error_message'],
+                         masked_ip=sanitized_data['masked_ip'],
+                         masked_session=sanitized_data['masked_session'])
 
 @admin_bp.route('/audit-logs/export')
 @login_required
 @admin_required
 def export_audit_logs():
-    """Export audit logs to CSV"""
+    """Export audit logs to CSV with security protections"""
+    # Import security utilities
+    from utils.security import CSVSanitizer, AuditDataSanitizer
+    
     # Apply same filters as main view
     user_filter = request.args.get('user', '', type=int)
     action_filter = request.args.get('action', '')
@@ -2848,35 +2845,54 @@ def export_audit_logs():
         success_bool = success_filter.lower() == 'true'
         query = query.filter(AuditLog.success == success_bool)
     
-    # Limit to prevent memory issues
+    # Limit to prevent memory issues (max 10,000 rows for security)
     audit_logs = query.order_by(desc(AuditLog.created_at)).limit(10000).all()
     
-    # Generate CSV
+    # Generate CSV with security protections
     import csv
     from io import StringIO
     
     output = StringIO()
     writer = csv.writer(output)
     
-    # Header
+    # Security header with metadata
     writer.writerow([
-        'Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 
-        'Success', 'IP Address', 'Details', 'Error Message'
+        f'# PLS TRAVELS AUDIT LOG EXPORT',
+        f'# Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+        f'# Records: {len(audit_logs)}/10000 max',
+        f'# Note: Sensitive data has been sanitized for security'
     ])
     
-    # Data
+    # Column headers
+    header_row = [
+        'Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 
+        'Success', 'IP Address (Masked)', 'Details (Sanitized)', 'Error Message (Sanitized)'
+    ]
+    writer.writerow(CSVSanitizer.sanitize_csv_row(header_row))
+    
+    # Data with sanitization and CSV injection protection
+    sanitizer = AuditDataSanitizer()
     for log in audit_logs:
-        writer.writerow([
+        # Sanitize sensitive data
+        sanitized_details = sanitizer.sanitize_json_data(log.new_values)
+        sanitized_error = sanitizer.sanitize_error_message(log.error_message or '')
+        masked_ip = sanitizer.mask_ip_address(log.ip_address or '')
+        
+        # Prepare row data
+        row_data = [
             log.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             log.user.username if log.user else 'Unknown',
             log.action,
             log.entity_type or '',
             log.entity_id or '',
             'Yes' if log.success else 'No',
-            log.ip_address or '',
-            log.new_values or '',
-            log.error_message or ''
-        ])
+            masked_ip,
+            json.dumps(sanitized_details) if sanitized_details else '',
+            sanitized_error
+        ]
+        
+        # Apply CSV injection protection
+        writer.writerow(CSVSanitizer.sanitize_csv_row(row_data))
     
     output.seek(0)
     
@@ -2884,5 +2900,5 @@ def export_audit_logs():
     return Response(
         output.getvalue(),
         mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename=audit_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+        headers={'Content-Disposition': f'attachment; filename=audit_logs_secure_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
     )
