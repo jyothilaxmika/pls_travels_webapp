@@ -99,6 +99,10 @@ class User(UserMixin, db.Model):
     password_changed_at = db.Column(db.DateTime, default=get_ist_time_naive)
     two_factor_enabled = db.Column(db.Boolean, default=False)
     
+    # Password reset functionality
+    reset_token = db.Column(db.String(6))
+    reset_token_expiry = db.Column(db.DateTime)
+    
     # Audit fields
     created_at = db.Column(db.DateTime, default=get_ist_time_naive, nullable=False)
     updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
