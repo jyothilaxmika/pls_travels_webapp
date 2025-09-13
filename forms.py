@@ -335,3 +335,15 @@ class EndDutyForm(FlaskForm):
     
     # Photo verification
     end_photo = FileField('End Duty Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
+
+class ForgotPasswordRequestForm(FlaskForm):
+    phone = StringField('Phone Number', validators=[DataRequired(), Length(min=10, max=15)], 
+                       render_kw={"placeholder": "Enter your registered phone number"})
+
+class ForgotPasswordVerifyForm(FlaskForm):
+    verification_code = StringField('Verification Code', validators=[DataRequired(), Length(min=6, max=6)],
+                                   render_kw={"placeholder": "Enter 6-digit code"})
+
+class ForgotPasswordResetForm(FlaskForm):
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password', message='Passwords must match')])
