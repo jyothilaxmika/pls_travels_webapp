@@ -1503,12 +1503,80 @@ def duties():
                          branch_filter=branch_filter,
                          date_filter=date_filter)
 
+def _validate_salary_method_config(scheme_type, config):
+    """Validate salary method configuration based on scheme type"""
+    if scheme_type == 'daily_payout':
+        return config.get('daily_base_amount', 0) > 0 or config.get('daily_incentive_percent', 0) > 0
+    elif scheme_type == 'monthly_payout':
+        return config.get('monthly_base_salary', 0) > 0 or config.get('monthly_incentive_percent', 0) > 0
+    elif scheme_type == 'performance_based':
+        return config.get('target_trips_daily', 0) > 0 and config.get('target_revenue_daily', 0) > 0
+    elif scheme_type == 'hybrid_commission':
+        return config.get('base_amount', 0) > 0 and config.get('incentive_percent', 0) > 0
+    elif scheme_type == 'revenue_sharing':
+        return config.get('revenue_share_percent', 0) > 0
+    elif scheme_type == 'fixed_salary':
+        return config.get('fixed_monthly_salary', 0) > 0
+    elif scheme_type == 'piece_rate':
+        return config.get('per_trip_amount', 0) > 0
+    elif scheme_type == 'slab_incentive':
+        return config.get('slab1_max', 0) > 0 and config.get('slab1_percent', 0) > 0
+    elif scheme_type == 'custom_formula':
+        return bool(config.get('calculation_formula', '').strip())
+    return True
+
 @admin_bp.route('/duty-schemes')
 @login_required
 @admin_required
 def duty_schemes():
-    schemes = DutyScheme.query.filter_by(is_active=True).all()
-    return render_template('admin/duty_schemes.html', schemes=schemes)
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    filter_type = request.args.get('type', '')
+    filter_branch = request.args.get('branch', '')
+    
+    query = DutyScheme.query.filter_by(is_active=True)
+    
+    # Apply search filter
+    if search:
+        query = query.filter(or_(
+            DutyScheme.name.ilike(f'%{search}%'),
+            DutyScheme.scheme_type.ilike(f'%{search}%')
+        ))
+    
+    # Apply type filter
+    if filter_type:
+        query = query.filter(DutyScheme.scheme_type == filter_type)
+    
+    # Apply branch filter
+    if filter_branch:
+        if filter_branch == 'global':
+            query = query.filter(DutyScheme.branch_id.is_(None))
+        else:
+            query = query.filter(DutyScheme.branch_id == int(filter_branch))
+    
+    schemes = query.order_by(desc(DutyScheme.created_at)).paginate(
+        page=page, per_page=12, error_out=False)
+    
+    branches = Branch.query.filter_by(is_active=True).all()
+    scheme_types = [
+        ('daily_payout', 'Daily Salary'),
+        ('monthly_payout', 'Monthly Salary'),
+        ('performance_based', 'Performance Based'),
+        ('hybrid_commission', 'Hybrid Commission'),
+        ('revenue_sharing', 'Revenue Sharing'),
+        ('fixed_salary', 'Fixed Salary'),
+        ('piece_rate', 'Piece Rate'),
+        ('slab_incentive', 'Slab Incentive'),
+        ('custom_formula', 'Custom Formula')
+    ]
+    
+    return render_template('admin/duty_schemes.html', 
+                         schemes=schemes, 
+                         branches=branches,
+                         scheme_types=scheme_types,
+                         search=search,
+                         filter_type=filter_type,
+                         filter_branch=filter_branch)
 
 @admin_bp.route('/duty-schemes/add', methods=['GET', 'POST'])
 @login_required
@@ -1519,21 +1587,44 @@ def add_duty_scheme():
     form.branch_id.choices = [('', 'Global')] + [(str(b.id), b.name) for b in branches]
     
     if form.validate_on_submit():
-        # Configuration for payout schemes
+        # Enhanced configuration for all salary methods
         config = {
             'scheme_type': form.scheme_type.data,
             'bmg_amount': safe_float_conversion(form.bmg_amount.data, 0),
             'payout_frequency': form.payout_frequency.data or 'immediate',
             
-            # Daily payout scheme configuration
+            # Basic payout configurations
             'daily_base_amount': safe_float_conversion(form.daily_base_amount.data, 0),
             'daily_incentive_percent': safe_float_conversion(form.daily_incentive_percent.data, 0),
-            
-            # Monthly payout scheme configuration  
             'monthly_base_salary': safe_float_conversion(form.monthly_base_salary.data, 0),
             'monthly_incentive_percent': safe_float_conversion(form.monthly_incentive_percent.data, 0),
             
-            # Legacy scheme configurations
+            # Performance-based salary components
+            'target_trips_daily': safe_float_conversion(form.target_trips_daily.data, 0),
+            'target_revenue_daily': safe_float_conversion(form.target_revenue_daily.data, 0),
+            'bonus_per_extra_trip': safe_float_conversion(form.bonus_per_extra_trip.data, 0),
+            'bonus_target_achievement': safe_float_conversion(form.bonus_target_achievement.data, 0),
+            
+            # Deduction management
+            'fuel_deduction_percent': safe_float_conversion(form.fuel_deduction_percent.data, 0),
+            'maintenance_deduction': safe_float_conversion(form.maintenance_deduction.data, 0),
+            'insurance_deduction': safe_float_conversion(form.insurance_deduction.data, 0),
+            'other_deductions': safe_float_conversion(form.other_deductions.data, 0),
+            
+            # Advanced salary components
+            'overtime_rate_multiplier': safe_float_conversion(form.overtime_rate_multiplier.data, 1.5),
+            'weekend_bonus_percent': safe_float_conversion(form.weekend_bonus_percent.data, 0),
+            'holiday_bonus_percent': safe_float_conversion(form.holiday_bonus_percent.data, 0),
+            
+            # Revenue sharing configurations
+            'revenue_share_percent': safe_float_conversion(form.revenue_share_percent.data, 0),
+            'company_expense_deduction': safe_float_conversion(form.company_expense_deduction.data, 0),
+            
+            # Fixed salary components
+            'fixed_monthly_salary': safe_float_conversion(form.fixed_monthly_salary.data, 0),
+            'allowances': safe_float_conversion(form.allowances.data, 0),
+            
+            # Legacy scheme configurations (maintained for compatibility)
             'fixed_amount': safe_float_conversion(form.fixed_amount.data, 0),
             'per_trip_amount': safe_float_conversion(form.per_trip_amount.data, 0),
             'base_amount': safe_float_conversion(form.base_amount.data, 0),
@@ -1551,20 +1642,203 @@ def add_duty_scheme():
         scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != '' else None
         scheme.minimum_guarantee = form.bmg_amount.data or 0.0
         scheme.calculation_formula = form.calculation_formula.data or ''
-        scheme.effective_from = form.effective_from.data or date.today()
+        scheme.effective_from = form.effective_from.data or datetime.now().date()
         scheme.effective_until = form.effective_until.data
         scheme.set_config(config)
+        scheme.created_by = current_user.id
+        
+        # Validation for salary method configurations
+        if not _validate_salary_method_config(form.scheme_type.data, config):
+            flash('Please fill in required fields for the selected salary method.', 'error')
+            return render_template('admin/duty_scheme_form.html', form=form, title='Add Duty Scheme')
         
         db.session.add(scheme)
         db.session.commit()
         
         log_audit('add_duty_scheme', 'duty_scheme', scheme.id,
-                 {'name': scheme.name, 'type': scheme.scheme_type})
+                 {'name': scheme.name, 'type': scheme.scheme_type, 'branch_id': scheme.branch_id})
         
-        flash('Duty scheme added successfully.', 'success')
+        flash(f'Salary method "{scheme.name}" added successfully!', 'success')
         return redirect(url_for('admin.duty_schemes'))
     
-    return render_template('admin/duty_scheme_form.html', form=form, title='Add Duty Scheme')
+    return render_template('admin/duty_scheme_form.html', form=form, title='Add Salary Method')
+
+@admin_bp.route('/duty-schemes/<int:scheme_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_duty_scheme(scheme_id):
+    scheme = DutyScheme.query.get_or_404(scheme_id)
+    form = DutySchemeForm(obj=scheme)
+    branches = Branch.query.filter_by(is_active=True).all()
+    form.branch_id.choices = [('', 'Global')] + [(str(b.id), b.name) for b in branches]
+    
+    if request.method == 'GET':
+        # Pre-populate form with existing scheme data
+        config = scheme.get_configuration()
+        form.scheme_type.data = scheme.scheme_type
+        form.branch_id.data = str(scheme.branch_id) if scheme.branch_id else ''
+        form.bmg_amount.data = scheme.minimum_guarantee
+        form.calculation_formula.data = scheme.calculation_formula
+        
+        # Populate configuration fields
+        form.daily_base_amount.data = config.get('daily_base_amount', 0)
+        form.daily_incentive_percent.data = config.get('daily_incentive_percent', 0)
+        form.monthly_base_salary.data = config.get('monthly_base_salary', 0)
+        form.monthly_incentive_percent.data = config.get('monthly_incentive_percent', 0)
+        form.target_trips_daily.data = config.get('target_trips_daily', 0)
+        form.target_revenue_daily.data = config.get('target_revenue_daily', 0)
+        form.bonus_per_extra_trip.data = config.get('bonus_per_extra_trip', 0)
+        form.bonus_target_achievement.data = config.get('bonus_target_achievement', 0)
+        form.fuel_deduction_percent.data = config.get('fuel_deduction_percent', 0)
+        form.maintenance_deduction.data = config.get('maintenance_deduction', 0)
+        form.insurance_deduction.data = config.get('insurance_deduction', 0)
+        form.other_deductions.data = config.get('other_deductions', 0)
+        form.overtime_rate_multiplier.data = config.get('overtime_rate_multiplier', 1.5)
+        form.weekend_bonus_percent.data = config.get('weekend_bonus_percent', 0)
+        form.holiday_bonus_percent.data = config.get('holiday_bonus_percent', 0)
+        form.revenue_share_percent.data = config.get('revenue_share_percent', 0)
+        form.company_expense_deduction.data = config.get('company_expense_deduction', 0)
+        form.fixed_monthly_salary.data = config.get('fixed_monthly_salary', 0)
+        form.allowances.data = config.get('allowances', 0)
+        form.fixed_amount.data = config.get('fixed_amount', 0)
+        form.per_trip_amount.data = config.get('per_trip_amount', 0)
+        form.base_amount.data = config.get('base_amount', 0)
+        form.incentive_percent.data = config.get('incentive_percent', 0)
+        form.slab1_max.data = config.get('slab1_max', 0)
+        form.slab1_percent.data = config.get('slab1_percent', 0)
+        form.slab2_max.data = config.get('slab2_max', 0)
+        form.slab2_percent.data = config.get('slab2_percent', 0)
+        form.slab3_percent.data = config.get('slab3_percent', 0)
+    
+    if form.validate_on_submit():
+        # Enhanced configuration for all salary methods
+        config = {
+            'scheme_type': form.scheme_type.data,
+            'bmg_amount': safe_float_conversion(form.bmg_amount.data, 0),
+            'payout_frequency': form.payout_frequency.data or 'immediate',
+            
+            # Basic payout configurations
+            'daily_base_amount': safe_float_conversion(form.daily_base_amount.data, 0),
+            'daily_incentive_percent': safe_float_conversion(form.daily_incentive_percent.data, 0),
+            'monthly_base_salary': safe_float_conversion(form.monthly_base_salary.data, 0),
+            'monthly_incentive_percent': safe_float_conversion(form.monthly_incentive_percent.data, 0),
+            
+            # Performance-based salary components
+            'target_trips_daily': safe_float_conversion(form.target_trips_daily.data, 0),
+            'target_revenue_daily': safe_float_conversion(form.target_revenue_daily.data, 0),
+            'bonus_per_extra_trip': safe_float_conversion(form.bonus_per_extra_trip.data, 0),
+            'bonus_target_achievement': safe_float_conversion(form.bonus_target_achievement.data, 0),
+            
+            # Deduction management
+            'fuel_deduction_percent': safe_float_conversion(form.fuel_deduction_percent.data, 0),
+            'maintenance_deduction': safe_float_conversion(form.maintenance_deduction.data, 0),
+            'insurance_deduction': safe_float_conversion(form.insurance_deduction.data, 0),
+            'other_deductions': safe_float_conversion(form.other_deductions.data, 0),
+            
+            # Advanced salary components
+            'overtime_rate_multiplier': safe_float_conversion(form.overtime_rate_multiplier.data, 1.5),
+            'weekend_bonus_percent': safe_float_conversion(form.weekend_bonus_percent.data, 0),
+            'holiday_bonus_percent': safe_float_conversion(form.holiday_bonus_percent.data, 0),
+            
+            # Revenue sharing configurations
+            'revenue_share_percent': safe_float_conversion(form.revenue_share_percent.data, 0),
+            'company_expense_deduction': safe_float_conversion(form.company_expense_deduction.data, 0),
+            
+            # Fixed salary components
+            'fixed_monthly_salary': safe_float_conversion(form.fixed_monthly_salary.data, 0),
+            'allowances': safe_float_conversion(form.allowances.data, 0),
+            
+            # Legacy scheme configurations (maintained for compatibility)
+            'fixed_amount': safe_float_conversion(form.fixed_amount.data, 0),
+            'per_trip_amount': safe_float_conversion(form.per_trip_amount.data, 0),
+            'base_amount': safe_float_conversion(form.base_amount.data, 0),
+            'incentive_percent': safe_float_conversion(form.incentive_percent.data, 0),
+            'slab1_max': safe_float_conversion(form.slab1_max.data, 0),
+            'slab1_percent': safe_float_conversion(form.slab1_percent.data, 0),
+            'slab2_max': safe_float_conversion(form.slab2_max.data, 0),
+            'slab2_percent': safe_float_conversion(form.slab2_percent.data, 0),
+            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0)
+        }
+        
+        # Validation for salary method configurations
+        if not _validate_salary_method_config(form.scheme_type.data, config):
+            flash('Please fill in required fields for the selected salary method.', 'error')
+            return render_template('admin/duty_scheme_form.html', form=form, title=f'Edit {scheme.name}')
+        
+        # Update scheme
+        scheme.name = form.name.data
+        scheme.scheme_type = form.scheme_type.data
+        scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != '' else None
+        scheme.minimum_guarantee = form.bmg_amount.data or 0.0
+        scheme.calculation_formula = form.calculation_formula.data or ''
+        scheme.effective_from = form.effective_from.data or datetime.now().date()
+        scheme.effective_until = form.effective_until.data
+        scheme.set_config(config)
+        scheme.updated_at = datetime.now()
+        
+        db.session.commit()
+        
+        log_audit('edit_duty_scheme', 'duty_scheme', scheme.id,
+                 {'name': scheme.name, 'type': scheme.scheme_type, 'branch_id': scheme.branch_id})
+        
+        flash(f'Salary method "{scheme.name}" updated successfully!', 'success')
+        return redirect(url_for('admin.duty_schemes'))
+    
+    return render_template('admin/duty_scheme_form.html', form=form, title=f'Edit {scheme.name}', scheme=scheme)
+
+@admin_bp.route('/duty-schemes/<int:scheme_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_duty_scheme(scheme_id):
+    scheme = DutyScheme.query.get_or_404(scheme_id)
+    
+    # Check if scheme is being used by active duties
+    active_duties = Duty.query.filter_by(duty_scheme_id=scheme.id).filter(
+        Duty.status.in_(['pending', 'in_progress'])
+    ).count()
+    
+    if active_duties > 0:
+        flash(f'Cannot delete "{scheme.name}" - it is currently being used by {active_duties} active duties.', 'error')
+        return redirect(url_for('admin.duty_schemes'))
+    
+    # Soft delete by marking as inactive
+    scheme.is_active = False
+    scheme.updated_at = datetime.now()
+    
+    db.session.commit()
+    
+    log_audit('delete_duty_scheme', 'duty_scheme', scheme.id,
+             {'name': scheme.name, 'type': scheme.scheme_type})
+    
+    flash(f'Salary method "{scheme.name}" has been deleted.', 'success')
+    return redirect(url_for('admin.duty_schemes'))
+
+@admin_bp.route('/duty-schemes/<int:scheme_id>/duplicate', methods=['POST'])
+@login_required
+@admin_required
+def duplicate_duty_scheme(scheme_id):
+    original = DutyScheme.query.get_or_404(scheme_id)
+    
+    # Create duplicate
+    duplicate = DutyScheme()
+    duplicate.name = f"{original.name} (Copy)"
+    duplicate.scheme_type = original.scheme_type
+    duplicate.branch_id = original.branch_id
+    duplicate.minimum_guarantee = original.minimum_guarantee
+    duplicate.calculation_formula = original.calculation_formula
+    duplicate.effective_from = datetime.now().date()
+    duplicate.effective_until = original.effective_until
+    duplicate.configuration = original.configuration
+    duplicate.created_by = current_user.id
+    
+    db.session.add(duplicate)
+    db.session.commit()
+    
+    log_audit('duplicate_duty_scheme', 'duty_scheme', duplicate.id,
+             {'original_id': original.id, 'name': duplicate.name})
+    
+    flash(f'Salary method duplicated as "{duplicate.name}".', 'success')
+    return redirect(url_for('admin.edit_duty_scheme', scheme_id=duplicate.id))
 
 @admin_bp.route('/vehicle-tracking')
 @login_required
