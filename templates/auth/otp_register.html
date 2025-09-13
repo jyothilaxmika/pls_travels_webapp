@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}OTP Registration - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="row w-100">
+        <div class="col-md-6 col-lg-5 mx-auto">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <!-- Logo/Brand -->
+                    <div class="text-center mb-4">
+                        <h2 class="text-warning fw-bold mb-1">PLS TRAVELS</h2>
+                        <p class="text-muted">Create account with phone verification</p>
+                    </div>
+                    
+                    <!-- Registration Form -->
+                    <div id="registrationForm">
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       placeholder="Enter your full name" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email (Optional)</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="your@email.com">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">+91</span>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                           placeholder="9876543210" required maxlength="10" pattern="[0-9]{10}">
+                                </div>
+                                <div class="form-text">We'll send an OTP to verify your phone number</div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" name="password" 
+                                           placeholder="Create password" required minlength="6">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="password2" class="form-label">Confirm Password</label>
+                                    <input type="password" class="form-control" id="password2" name="password2" 
+                                           placeholder="Confirm password" required minlength="6">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="role" class="form-label">Role</label>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="">Select Role</option>
+                                    <option value="driver">Driver</option>
+                                    <option value="manager">Manager</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-warning w-100 mb-3" id="sendOTPBtn">
+                                <i class="fas fa-paper-plane me-2"></i>Send OTP & Register
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- OTP Verification Form (Initially Hidden) -->
+                    <div id="otpVerificationForm" style="display: none;">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-mobile-alt fa-2x text-success mb-2"></i>
+                            <h5>Verify Your Phone Number</h5>
+                            <p class="text-muted">OTP sent to <span id="maskedPhone"></span></p>
+                        </div>
+                        
+                        <form id="verifyOTPForm">
+                            <div class="mb-3">
+                                <label for="otp_code" class="form-label">Enter OTP</label>
+                                <input type="text" class="form-control text-center" id="otp_code" name="otp_code" 
+                                       placeholder="000000" required maxlength="6" pattern="[0-9]{6}"
+                                       style="font-size: 1.5rem; letter-spacing: 0.5rem;">
+                                <div class="form-text">Enter the 6-digit code sent to your phone</div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success w-100 mb-3" id="verifyOTPBtn">
+                                <i class="fas fa-check me-2"></i>Verify & Complete Registration
+                            </button>
+                        </form>
+                        
+                        <div class="text-center">
+                            <p class="text-muted mb-2">Didn't receive the code?</p>
+                            <button type="button" class="btn btn-outline-warning btn-sm" id="resendOTPBtn">
+                                <i class="fas fa-redo me-1"></i>Resend OTP
+                            </button>
+                        </div>
+                        
+                        <div class="mt-3 text-center">
+                            <button type="button" class="btn btn-link btn-sm text-muted" onclick="resetToRegistrationForm()">
+                                <i class="fas fa-arrow-left me-1"></i>Change Registration Details
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Alternative Options -->
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <p class="text-muted mb-2">Already have an account?</p>
+                        <div class="row">
+                            <div class="col-6">
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-sm w-100">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Password Login
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('otp.otp_login') }}" class="btn btn-outline-success btn-sm w-100">
+                                    <i class="fas fa-mobile-alt me-1"></i>OTP Login
+                                </a>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-link btn-sm text-muted">
+                                Need full registration? <span class="text-warning">Click here</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    © {{ moment().format('YYYY') }} PLS TRAVELS. All rights reserved.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 11"></div>
+
+<script>
+const csrfToken = '{{ csrf_token() }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    const registerForm = document.getElementById('registerForm');
+    const verifyOTPForm = document.getElementById('verifyOTPForm');
+    const resendOTPBtn = document.getElementById('resendOTPBtn');
+    
+    let registrationData = {};
+    
+    // Register and Send OTP
+    registerForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const phoneNumber = formData.get('phone_number');
+        const password = formData.get('password');
+        const password2 = formData.get('password2');
+        const fullName = formData.get('full_name');
+        const role = formData.get('role');
+        
+        // Validation
+        if (!/^[6-9][0-9]{9}$/.test(phoneNumber)) {
+            showToast('Please enter a valid 10-digit phone number starting with 6, 7, 8, or 9', 'error');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showToast('Password must be at least 6 characters long', 'error');
+            return;
+        }
+        
+        if (password !== password2) {
+            showToast('Passwords do not match', 'error');
+            return;
+        }
+        
+        if (!fullName.trim()) {
+            showToast('Please enter your full name', 'error');
+            return;
+        }
+        
+        if (!role) {
+            showToast('Please select your role', 'error');
+            return;
+        }
+        
+        const sendBtn = document.getElementById('sendOTPBtn');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending OTP...';
+        
+        // Store registration data
+        registrationData = Object.fromEntries(formData);
+        
+        try {
+            const otpFormData = new FormData();
+            otpFormData.append('phone_number', phoneNumber);
+            otpFormData.append('action', 'register');
+            otpFormData.append('csrf_token', csrfToken);
+            
+            const response = await fetch('{{ url_for("otp.send_register_otp") }}', {
+                method: 'POST',
+                body: otpFormData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Switch to OTP verification form
+                document.getElementById('registrationForm').style.display = 'none';
+                document.getElementById('otpVerificationForm').style.display = 'block';
+                document.getElementById('maskedPhone').textContent = result.masked_phone;
+                document.getElementById('otp_code').focus();
+                showToast(result.message, 'success');
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send OTP & Register';
+        }
+    });
+    
+    // Verify OTP and Complete Registration
+    verifyOTPForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const otpCode = document.getElementById('otp_code').value;
+        const verifyBtn = document.getElementById('verifyOTPBtn');
+        
+        if (!/^[0-9]{6}$/.test(otpCode)) {
+            showToast('Please enter a valid 6-digit OTP', 'error');
+            return;
+        }
+        
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying...';
+        
+        try {
+            const formData = new FormData();
+            formData.append('otp_code', otpCode);
+            // Include registration data
+            Object.keys(registrationData).forEach(key => {
+                formData.append(key, registrationData[key]);
+            });
+            formData.append('csrf_token', csrfToken);
+            
+            const response = await fetch('{{ url_for("otp.complete_registration") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast(result.message, 'success');
+                // Redirect after short delay
+                setTimeout(() => {
+                    window.location.href = result.redirect;
+                }, 1500);
+            } else {
+                showToast(result.message, 'error');
+                if (result.message.includes('expired') || result.message.includes('not found')) {
+                    resetToRegistrationForm();
+                }
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="fas fa-check me-2"></i>Verify & Complete Registration';
+        }
+    });
+    
+    // Resend OTP
+    resendOTPBtn.addEventListener('click', async function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+        
+        try {
+            const formData = new FormData();
+            formData.append('phone_number', registrationData.phone_number);
+            formData.append('action', 'register');
+            formData.append('csrf_token', csrfToken);
+            
+            const response = await fetch('{{ url_for("otp.send_register_otp") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast(result.message, 'success');
+                document.getElementById('otp_code').value = '';
+                document.getElementById('otp_code').focus();
+            } else {
+                showToast(result.message, 'error');
+                if (result.message.includes('expired')) {
+                    resetToRegistrationForm();
+                }
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo me-1"></i>Resend OTP';
+        }
+    });
+    
+    // Auto-format inputs
+    document.getElementById('phone_number').addEventListener('input', function(e) {
+        this.value = this.value.replace(/\D/g, '').substring(0, 10);
+    });
+    
+    document.getElementById('otp_code').addEventListener('input', function(e) {
+        this.value = this.value.replace(/\D/g, '').substring(0, 6);
+    });
+});
+
+function resetToRegistrationForm() {
+    document.getElementById('otpVerificationForm').style.display = 'none';
+    document.getElementById('registrationForm').style.display = 'block';
+    document.getElementById('full_name').focus();
+    document.getElementById('otp_code').value = '';
+    registrationData = {};
+}
+
+function showToast(message, type) {
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+    toast.setAttribute('role', 'alert');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Initialize Bootstrap toast
+    const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: 5000
+    });
+    bsToast.show();
+    
+    // Remove toast element after it's hidden
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+</script>
+{% endblock %}
