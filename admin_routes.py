@@ -11,7 +11,7 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
-from utils import allowed_file, calculate_earnings
+from utils_main import allowed_file, calculate_earnings
 import json
 from timezone_utils import get_ist_time_naive
 
@@ -1266,7 +1266,7 @@ def add_assignment_template():
     """Add new assignment template"""
     form = AssignmentTemplateForm()
     branches = Branch.query.filter_by(is_active=True).all()
-    form.branch_id.choices = [('', 'All Branches')] + [(str(b.id), b.name) for b in branches]
+    form.branch_id.choices = [(0, 'All Branches')] + [(b.id, b.name) for b in branches]
     
     if form.validate_on_submit():
         template = AssignmentTemplate()
@@ -1584,7 +1584,7 @@ def duty_schemes():
 def add_duty_scheme():
     form = DutySchemeForm()
     branches = Branch.query.filter_by(is_active=True).all()
-    form.branch_id.choices = [('', 'Global')] + [(str(b.id), b.name) for b in branches]
+    form.branch_id.choices = [(0, 'Global')] + [(b.id, b.name) for b in branches]
     
     if form.validate_on_submit():
         # Enhanced configuration for all salary methods
@@ -1639,7 +1639,7 @@ def add_duty_scheme():
         scheme = DutyScheme()
         scheme.name = form.name.data
         scheme.scheme_type = form.scheme_type.data
-        scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != '' else None
+        scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != 0 else None
         scheme.minimum_guarantee = form.bmg_amount.data or 0.0
         scheme.calculation_formula = form.calculation_formula.data or ''
         scheme.effective_from = form.effective_from.data or datetime.now().date()
@@ -1670,7 +1670,7 @@ def edit_duty_scheme(scheme_id):
     scheme = DutyScheme.query.get_or_404(scheme_id)
     form = DutySchemeForm(obj=scheme)
     branches = Branch.query.filter_by(is_active=True).all()
-    form.branch_id.choices = [('', 'Global')] + [(str(b.id), b.name) for b in branches]
+    form.branch_id.choices = [(0, 'Global')] + [(b.id, b.name) for b in branches]
     
     if request.method == 'GET':
         # Pre-populate form with existing scheme data
@@ -1768,7 +1768,7 @@ def edit_duty_scheme(scheme_id):
         # Update scheme
         scheme.name = form.name.data
         scheme.scheme_type = form.scheme_type.data
-        scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != '' else None
+        scheme.branch_id = int(form.branch_id.data) if form.branch_id.data and form.branch_id.data != 0 else None
         scheme.minimum_guarantee = form.bmg_amount.data or 0.0
         scheme.calculation_formula = form.calculation_formula.data or ''
         scheme.effective_from = form.effective_from.data or datetime.now().date()

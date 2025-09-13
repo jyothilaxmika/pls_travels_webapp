@@ -3,322 +3,616 @@
 {% block title %}{{ title }} - PLS TRAVELS{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h4><i class="fas fa-calculator me-2"></i>{{ title }}</h4>
+<div class="container-fluid">
+    <!-- Gamified Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body text-center py-4">
+                    <h2><i class="fas fa-trophy me-3"></i>🎯 Salary Method Setup Wizard</h2>
+                    <p class="mb-0">Create the perfect driver compensation plan step by step</p>
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3" style="height: 8px; background: rgba(255,255,255,0.2);">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 25%" id="setup-progress"></div>
+                    </div>
+                    <small class="mt-2 d-block">Step <span id="current-step">1</span> of 4 - Basic Configuration</small>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <!-- Basic Information -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            {{ form.name.label(class="form-label") }}
-                            {{ form.name(class="form-control") }}
-                            {% if form.name.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.name.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="col-md-6">
-                            {{ form.branch_id.label(class="form-label") }}
-                            {{ form.branch_id(class="form-select") }}
-                            <small class="text-muted">Select 'Global' to apply to all branches</small>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            {{ form.scheme_type.label(class="form-label") }}
-                            {{ form.scheme_type(class="form-select", id="scheme-type") }}
-                        </div>
-                        
-                        <div class="col-md-6">
-                            {{ form.payout_frequency.label(class="form-label") }}
-                            {{ form.payout_frequency(class="form-select") }}
-                            <small class="text-muted">When drivers receive their payments</small>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            {{ form.bmg_amount.label(class="form-label") }}
-                            {{ form.bmg_amount(class="form-control") }}
-                            <small class="text-muted">Business Minimum Guarantee (optional)</small>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            {{ form.effective_from.label(class="form-label") }}
-                            {{ form.effective_from(class="form-control") }}
-                            <small class="text-muted">When this scheme becomes active</small>
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.effective_until.label(class="form-label") }}
-                            {{ form.effective_until(class="form-control") }}
-                            <small class="text-muted">Optional end date for scheme validity</small>
-                        </div>
-                    </div>
-                    
-                    <!-- Daily Payout Scheme Fields -->
-                    <div id="daily-payout-fields" class="scheme-fields" style="display: none;">
-                        <div class="card bg-warning bg-opacity-10 border-warning mb-4">
-                            <div class="card-header bg-warning bg-opacity-25">
-                                <h6><i class="fas fa-calendar-day me-2"></i>Daily Salary Payout Configuration</h6>
-                                <small class="text-muted">Immediate payment after each duty completion</small>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ form.daily_base_amount.label(class="form-label") }}
-                                        {{ form.daily_base_amount(class="form-control") }}
-                                        <small class="text-muted">Fixed base amount paid daily</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        {{ form.daily_incentive_percent.label(class="form-label") }}
-                                        {{ form.daily_incentive_percent(class="form-control") }}
-                                        <small class="text-muted">% of daily revenue as incentive</small>
-                                    </div>
-                                </div>
-                                
-                                <div class="alert alert-info mt-3">
-                                    <small>
-                                        <strong>Example:</strong> Base ₹800 + 15% incentive<br>
-                                        For ₹3000 daily revenue: ₹800 + (₹3000 × 15%) = ₹800 + ₹450 = ₹1,250 paid immediately
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Monthly Payout Scheme Fields -->
-                    <div id="monthly-payout-fields" class="scheme-fields" style="display: none;">
-                        <div class="card bg-primary bg-opacity-10 border-primary mb-4">
-                            <div class="card-header bg-primary bg-opacity-25">
-                                <h6><i class="fas fa-calendar-alt me-2"></i>Monthly Payout Configuration</h6>
-                                <small class="text-muted">Accumulated earnings paid at month end</small>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ form.monthly_base_salary.label(class="form-label") }}
-                                        {{ form.monthly_base_salary(class="form-control") }}
-                                        <small class="text-muted">Monthly base salary (pro-rated daily)</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        {{ form.monthly_incentive_percent.label(class="form-label") }}
-                                        {{ form.monthly_incentive_percent(class="form-control") }}
-                                        <small class="text-muted">% of monthly revenue as incentive</small>
-                                    </div>
-                                </div>
-                                
-                                <div class="alert alert-info mt-3">
-                                    <small>
-                                        <strong>Example:</strong> Base ₹25,000/month + 12% incentive<br>
-                                        For ₹90,000 monthly revenue: ₹25,000 + (₹90,000 × 12%) = ₹35,800 paid at month end
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        </div>
+    </div>
 
-                    <!-- Fixed Scheme Fields -->
-                    <div id="fixed-fields" class="scheme-fields" style="display: none;">
-                        <div class="card bg-light mb-4">
-                            <div class="card-header">
-                                <h6><i class="fas fa-money-bill me-2"></i>Fixed Amount Configuration</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ form.fixed_amount.label(class="form-label") }}
-                                        {{ form.fixed_amount(class="form-control") }}
-                                        <small class="text-muted">Amount driver receives per day</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Per Trip Scheme Fields -->
-                    <div id="per-trip-fields" class="scheme-fields" style="display: none;">
-                        <div class="card bg-light mb-4">
-                            <div class="card-header">
-                                <h6><i class="fas fa-route me-2"></i>Per Trip Configuration</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ form.per_trip_amount.label(class="form-label") }}
-                                        {{ form.per_trip_amount(class="form-control") }}
-                                        <small class="text-muted">Amount driver receives per trip</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Slab Scheme Fields -->
-                    <div id="slab-fields" class="scheme-fields" style="display: none;">
-                        <div class="card bg-light mb-4">
-                            <div class="card-header">
-                                <h6><i class="fas fa-layer-group me-2"></i>Slab-Based Configuration</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        {{ form.slab1_max.label(class="form-label") }}
-                                        {{ form.slab1_max(class="form-control") }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        {{ form.slab1_percent.label(class="form-label") }}
-                                        {{ form.slab1_percent(class="form-control") }}
-                                    </div>
-                                </div>
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        {{ form.slab2_max.label(class="form-label") }}
-                                        {{ form.slab2_max(class="form-control") }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        {{ form.slab2_percent.label(class="form-label") }}
-                                        {{ form.slab2_percent(class="form-control") }}
-                                    </div>
-                                </div>
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Slab 3 Max Revenue</label>
-                                        <input type="text" class="form-control" value="Above Slab 2" readonly>
-                                    </div>
-                                    <div class="col-md-4">
-                                        {{ form.slab3_percent.label(class="form-label") }}
-                                        {{ form.slab3_percent(class="form-control") }}
-                                    </div>
-                                </div>
-                                
-                                <div class="alert alert-info">
-                                    <small>
-                                        <strong>Example:</strong> If Slab 1 Max is ₹1000 at 30%, Slab 2 Max is ₹3000 at 40%, and Slab 3 is 50%:<br>
-                                        - Revenue ₹0-₹1000: 30% earning<br>
-                                        - Revenue ₹1001-₹3000: 40% earning<br>
-                                        - Revenue above ₹3000: 50% earning
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Mixed Scheme Fields -->
-                    <div id="mixed-fields" class="scheme-fields" style="display: none;">
-                        <div class="card bg-light mb-4">
-                            <div class="card-header">
-                                <h6><i class="fas fa-mix me-2"></i>Mixed (Base + Incentive) Configuration</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ form.base_amount.label(class="form-label") }}
-                                        {{ form.base_amount(class="form-control") }}
-                                        <small class="text-muted">Fixed base amount per day</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        {{ form.incentive_percent.label(class="form-label") }}
-                                        {{ form.incentive_percent(class="form-control") }}
-                                        <small class="text-muted">Percentage of revenue as incentive</small>
-                                    </div>
-                                </div>
-                                
-                                <div class="alert alert-info mt-3">
-                                    <small>
-                                        <strong>Example:</strong> Base ₹500 + 20% incentive<br>
-                                        For ₹2000 revenue: ₹500 + (₹2000 × 20%) = ₹500 + ₹400 = ₹900
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Calculation Formula Section -->
-                    <div class="card bg-light mb-4">
-                        <div class="card-header">
-                            <h6><i class="fas fa-calculator me-2"></i>Custom Calculation Formula</h6>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <form method="POST" id="salary-wizard">
+                {{ form.hidden_tag() }}
+                
+                <!-- Step 1: Basic Setup -->
+                <div class="wizard-step active" id="step-1">
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5><i class="fas fa-rocket me-2"></i>🚀 Step 1: Basic Setup</h5>
+                            <small>Let's start with the fundamentals of your salary scheme!</small>
                         </div>
                         <div class="card-body">
-                            {{ form.calculation_formula.label(class="form-label") }}
-                            {{ form.calculation_formula(class="form-control", rows="4", placeholder="Example: (uber_collected + cash_on_hand - toll - advance) * 0.8") }}
-                            {% if form.calculation_formula.description %}
-                                <div class="form-text">{{ form.calculation_formula.description }}</div>
-                            {% endif %}
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-tag me-2"></i>🏷️ Scheme Name</label>
+                                    {{ form.name(class="form-control form-control-lg", placeholder="e.g., High Performance Driver Plan") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Choose a memorable name that drivers will recognize</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-building me-2"></i>🏢 Branch Application</label>
+                                    {{ form.branch_id(class="form-select form-control-lg") }}
+                                    <div class="form-text">Select 'Global' to apply across all branches</div>
+                                </div>
+                            </div>
                             
-                            <div class="alert alert-info mt-3">
-                                <small>
-                                    <strong>Available Variables:</strong><br>
-                                    uber_trips, uber_collected, operator_out, cng_average, toll, qr_payment, company_pay, advance, cash_on_hand, pass_amount, insurance, start_cng, end_cng<br>
-                                    <strong>Functions:</strong> max(), min(), abs(), round(), math functions
-                                </small>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-calendar-check me-2"></i>📅 Start Date</label>
+                                    {{ form.effective_from(class="form-control") }}
+                                    <div class="form-text">When this scheme becomes active</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-calendar-times me-2"></i>📅 End Date (Optional)</label>
+                                    {{ form.effective_until(class="form-control") }}
+                                    <div class="form-text">Leave empty for permanent scheme</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-shield-alt me-2"></i>🛡️ Minimum Guarantee</label>
+                                    {{ form.bmg_amount(class="form-control", placeholder="0") }}
+                                    <div class="form-text">Safety net - minimum earnings guaranteed per day</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="fas fa-clock me-2"></i>⏰ Payout Frequency</label>
+                                    {{ form.payout_frequency(class="form-select") }}
+                                    <div class="form-text">How often drivers receive payments</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Submit Button -->
-                    <div class="row">
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary me-2">
-                                <i class="fas fa-save me-2"></i>Save Duty Scheme
-                            </button>
-                            <a href="{{ url_for('admin.duty_schemes') }}" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i>Cancel
-                            </a>
+                </div>
+
+                <!-- Step 2: Salary Method Selection -->
+                <div class="wizard-step" id="step-2" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-bullseye me-2"></i>🎯 Step 2: Choose Salary Method</h5>
+                            <small>Select the perfect compensation strategy for your drivers!</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <label class="form-label text-center d-block mb-4">
+                                        <h6><i class="fas fa-gem me-2"></i>💎 Select Your Preferred Salary Method</h6>
+                                    </label>
+                                    {{ form.scheme_type(class="form-select form-control-lg text-center", id="scheme-type") }}
+                                    <div class="form-text text-center mt-3">Each method has different benefits - choose what works best for your drivers!</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Method Preview Cards -->
+                            <div class="row mt-4" id="method-preview">
+                                <div class="col-12">
+                                    <div class="alert alert-info text-center">
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        Select a salary method above to see its configuration options
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </form>
-            </div>
+                </div>
+                <!-- Step 3: Salary Configuration -->
+                <div class="wizard-step" id="step-3" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5><i class="fas fa-cogs me-2"></i>⚙️ Step 3: Configure Your Salary Method</h5>
+                            <small>Fine-tune the parameters for maximum driver satisfaction!</small>
+                        </div>
+                        <div class="card-body">
+                            
+                            <!-- Daily Payout Configuration -->
+                            <div id="daily-payout-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-calendar-day me-2"></i>🌅 Daily Payout Method</h6>
+                                    <p>Drivers get paid immediately after each duty completion - perfect for cash flow!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-coins me-2"></i>💰 Daily Base Amount</label>
+                                        {{ form.daily_base_amount(class="form-control form-control-lg", placeholder="800") }}
+                                        <div class="form-text">Fixed amount paid every day</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-percentage me-2"></i>📈 Daily Incentive (%)</label>
+                                        {{ form.daily_incentive_percent(class="form-control form-control-lg", placeholder="15") }}
+                                        <div class="form-text">Percentage of daily revenue as bonus</div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <strong>💡 Example:</strong> Base ₹800 + 15% incentive<br>
+                                    For ₹3000 daily revenue: ₹800 + (₹3000 × 15%) = <strong>₹1,250 paid immediately!</strong>
+                                </div>
+                            </div>
+
+                            <!-- Monthly Payout Configuration -->
+                            <div id="monthly-payout-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-primary">
+                                    <h6><i class="fas fa-calendar-alt me-2"></i>📅 Monthly Payout Method</h6>
+                                    <p>Accumulated earnings paid at month end - great for budgeting and bigger payments!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-money-bill me-2"></i>💵 Monthly Base Salary</label>
+                                        {{ form.monthly_base_salary(class="form-control form-control-lg", placeholder="25000") }}
+                                        <div class="form-text">Monthly base salary (pro-rated daily)</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-chart-line me-2"></i>📊 Monthly Incentive (%)</label>
+                                        {{ form.monthly_incentive_percent(class="form-control form-control-lg", placeholder="12") }}
+                                        <div class="form-text">Percentage of monthly revenue as bonus</div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <strong>💡 Example:</strong> Base ₹25,000/month + 12% incentive<br>
+                                    For ₹90,000 monthly revenue: ₹25,000 + (₹90,000 × 12%) = <strong>₹35,800 at month end!</strong>
+                                </div>
+                            </div>
+
+                            <!-- Performance Based Configuration -->
+                            <div id="performance-based-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-trophy me-2"></i>🏆 Performance Based Method</h6>
+                                    <p>Reward high performers with extra bonuses for hitting targets!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-bullseye me-2"></i>🎯 Target Trips Daily</label>
+                                        {{ form.target_trips_daily(class="form-control form-control-lg", placeholder="12") }}
+                                        <div class="form-text">Daily trip target for bonus eligibility</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-dollar-sign me-2"></i>💰 Target Revenue Daily</label>
+                                        {{ form.target_revenue_daily(class="form-control form-control-lg", placeholder="3000") }}
+                                        <div class="form-text">Daily revenue target for bonus</div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-gift me-2"></i>🎁 Bonus Per Extra Trip</label>
+                                        {{ form.bonus_per_extra_trip(class="form-control form-control-lg", placeholder="50") }}
+                                        <div class="form-text">Extra bonus for trips above target</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-star me-2"></i>⭐ Target Achievement Bonus</label>
+                                        {{ form.bonus_target_achievement(class="form-control form-control-lg", placeholder="200") }}
+                                        <div class="form-text">Bonus when both targets are hit</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hybrid Commission Configuration -->
+                            <div id="hybrid-commission-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-balance-scale me-2"></i>⚖️ Hybrid Commission Method</h6>
+                                    <p>Best of both worlds - guaranteed base pay plus performance incentives!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-home me-2"></i>🏠 Base Amount</label>
+                                        {{ form.base_amount(class="form-control form-control-lg", placeholder="600") }}
+                                        <div class="form-text">Guaranteed base amount per day</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-rocket me-2"></i>🚀 Incentive Percentage</label>
+                                        {{ form.incentive_percent(class="form-control form-control-lg", placeholder="18") }}
+                                        <div class="form-text">Commission percentage on revenue</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Revenue Sharing Configuration -->
+                            <div id="revenue-sharing-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-warning">
+                                    <h6><i class="fas fa-handshake me-2"></i>🤝 Revenue Sharing Method</h6>
+                                    <p>Share the success! Drivers earn a percentage of what they generate!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-chart-pie me-2"></i>🥧 Revenue Share (%)</label>
+                                        {{ form.revenue_share_percent(class="form-control form-control-lg", placeholder="65") }}
+                                        <div class="form-text">Driver's share of total revenue</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-minus-circle me-2"></i>➖ Company Expense Deduction</label>
+                                        {{ form.company_expense_deduction(class="form-control form-control-lg", placeholder="200") }}
+                                        <div class="form-text">Daily company expenses to deduct</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fixed Salary Configuration -->
+                            <div id="fixed-salary-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-secondary">
+                                    <h6><i class="fas fa-lock me-2"></i>🔒 Fixed Salary Method</h6>
+                                    <p>Predictable and stable - same amount every month regardless of performance!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-calendar me-2"></i>📅 Fixed Monthly Salary</label>
+                                        {{ form.fixed_monthly_salary(class="form-control form-control-lg", placeholder="28000") }}
+                                        <div class="form-text">Fixed amount paid monthly</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-plus me-2"></i>➕ Monthly Allowances</label>
+                                        {{ form.allowances(class="form-control form-control-lg", placeholder="2000") }}
+                                        <div class="form-text">Additional allowances (fuel, maintenance)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Piece Rate Configuration -->
+                            <div id="piece-rate-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-route me-2"></i>🛣️ Piece Rate Method</h6>
+                                    <p>Pay per trip - the more trips completed, the more money earned!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-car me-2"></i>🚗 Amount Per Trip</label>
+                                        {{ form.per_trip_amount(class="form-control form-control-lg", placeholder="120") }}
+                                        <div class="form-text">Fixed amount earned per completed trip</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slab Incentive Configuration -->
+                            <div id="slab-incentive-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-danger">
+                                    <h6><i class="fas fa-layer-group me-2"></i>📊 Slab Incentive Method</h6>
+                                    <p>Progressive earnings - higher revenue means higher commission rates!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">🥉 Slab 1 Max Revenue</label>
+                                        {{ form.slab1_max(class="form-control", placeholder="1500") }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">🥉 Slab 1 Percentage</label>
+                                        {{ form.slab1_percent(class="form-control", placeholder="25") }}
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">🥈 Slab 2 Max Revenue</label>
+                                        {{ form.slab2_max(class="form-control", placeholder="3500") }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">🥈 Slab 2 Percentage</label>
+                                        {{ form.slab2_percent(class="form-control", placeholder="35") }}
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">🥇 Slab 3+ Percentage</label>
+                                        {{ form.slab3_percent(class="form-control", placeholder="45") }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Formula Configuration -->
+                            <div id="custom-formula-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-dark">
+                                    <h6><i class="fas fa-code me-2"></i>👨‍💻 Custom Formula Method</h6>
+                                    <p>For advanced users - create your own calculation formula!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label class="form-label"><i class="fas fa-calculator me-2"></i>🧮 Custom Formula</label>
+                                        {{ form.calculation_formula(class="form-control", rows="4", placeholder="(uber_collected + cash_on_hand - toll - advance) * 0.75") }}
+                                        <div class="form-text">
+                                            <strong>Available Variables:</strong> uber_trips, uber_collected, operator_out, cng_average, toll, qr_payment, company_pay, advance, cash_on_hand, pass_amount, insurance, start_cng, end_cng<br>
+                                            <strong>Functions:</strong> max(), min(), abs(), round(), math functions
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Advanced Options -->
+                <div class="wizard-step" id="step-4" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5><i class="fas fa-star me-2"></i>⭐ Step 4: Advanced Options</h5>
+                            <small>Add extra bonuses and deductions to fine-tune your salary plan!</small>
+                        </div>
+                        <div class="card-body">
+                            <!-- Bonus Configuration -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6><i class="fas fa-gift me-2"></i>🎁 Performance Bonuses</h6>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="fas fa-sun me-2"></i>🌅 Weekend Bonus (%)</label>
+                                    {{ form.weekend_bonus_percent(class="form-control", placeholder="10") }}
+                                    <div class="form-text">Extra bonus for weekend duties</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="fas fa-clock me-2"></i>⏰ Overtime Multiplier</label>
+                                    {{ form.overtime_rate_multiplier(class="form-control", placeholder="1.5") }}
+                                    <div class="form-text">Rate multiplier for overtime hours</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="fas fa-calendar-star me-2"></i>🎊 Holiday Bonus (%)</label>
+                                    {{ form.holiday_bonus_percent(class="form-control", placeholder="25") }}
+                                    <div class="form-text">Special holiday bonus percentage</div>
+                                </div>
+                            </div>
+
+                            <!-- Deduction Configuration -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6><i class="fas fa-minus-circle me-2"></i>➖ Deductions</h6>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label"><i class="fas fa-gas-pump me-2"></i>⛽ Fuel Deduction (%)</label>
+                                    {{ form.fuel_deduction_percent(class="form-control", placeholder="8") }}
+                                    <div class="form-text">Percentage deducted for fuel</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label"><i class="fas fa-tools me-2"></i>🔧 Maintenance Deduction</label>
+                                    {{ form.maintenance_deduction(class="form-control", placeholder="100") }}
+                                    <div class="form-text">Fixed daily maintenance cost</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label"><i class="fas fa-shield-alt me-2"></i>🛡️ Insurance Deduction</label>
+                                    {{ form.insurance_deduction(class="form-control", placeholder="50") }}
+                                    <div class="form-text">Daily insurance cost</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label"><i class="fas fa-ellipsis-h me-2"></i>🔹 Other Deductions</label>
+                                    {{ form.other_deductions(class="form-control", placeholder="25") }}
+                                    <div class="form-text">Miscellaneous deductions</div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-success text-center">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Great work!</strong> Your comprehensive salary scheme is ready to be saved!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="row mb-4">
+                    <div class="col-12 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary" id="prev-btn" style="display: none;">
+                            <i class="fas fa-arrow-left me-2"></i>Previous
+                        </button>
+                        <button type="button" class="btn btn-primary" id="next-btn">
+                            Next<i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                        <button type="submit" class="btn btn-success btn-lg" id="submit-btn" style="display: none;">
+                            <i class="fas fa-rocket me-2"></i>🚀 Launch Salary Scheme!
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Gamified Wizard Variables
+    let currentStep = 1;
+    const totalSteps = 4;
+    const progressBar = document.getElementById('setup-progress');
+    const currentStepSpan = document.getElementById('current-step');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
     const schemeTypeSelect = document.getElementById('scheme-type');
     const schemeFields = document.querySelectorAll('.scheme-fields');
     
-    function showSchemeFields() {
-        // Hide all fields first
-        schemeFields.forEach(field => field.style.display = 'none');
+    // Step names for progress tracking
+    const stepNames = {
+        1: 'Basic Configuration',
+        2: 'Salary Method Selection', 
+        3: 'Method Configuration',
+        4: 'Advanced Options'
+    };
+    
+    // Update progress bar and step indicator
+    function updateProgress() {
+        const progressPercent = (currentStep / totalSteps) * 100;
+        progressBar.style.width = progressPercent + '%';
+        currentStepSpan.textContent = currentStep;
+        document.querySelector('.progress').nextElementSibling.innerHTML = 
+            `Step <span id="current-step">${currentStep}</span> of ${totalSteps} - ${stepNames[currentStep]}`;
+    }
+    
+    // Show/hide wizard steps
+    function showStep(step) {
+        document.querySelectorAll('.wizard-step').forEach(stepDiv => {
+            stepDiv.style.display = 'none';
+        });
         
-        // Show relevant fields based on scheme type
-        const selectedType = schemeTypeSelect.value;
+        const targetStep = document.getElementById(`step-${step}`);
+        if (targetStep) {
+            targetStep.style.display = 'block';
+        }
         
-        // Map payout scheme types to field sets
-        const fieldMapping = {
-            'daily_payout': 'daily-payout',
-            'monthly_payout': 'monthly-payout',
-            'scheme_3': 'slab',
-            'scheme_4': 'mixed',
-            'scheme_5': 'fixed'
-        };
+        // Update navigation buttons
+        prevBtn.style.display = step > 1 ? 'block' : 'none';
+        nextBtn.style.display = step < totalSteps ? 'block' : 'none';
+        submitBtn.style.display = step === totalSteps ? 'block' : 'none';
         
-        const fieldToShow = fieldMapping[selectedType] || 'fixed';
-        const targetField = document.getElementById(fieldToShow + '-fields');
-        if (targetField) {
-            targetField.style.display = 'block';
+        updateProgress();
+        
+        // Add some animation
+        if (targetStep) {
+            targetStep.style.opacity = '0';
+            setTimeout(() => {
+                targetStep.style.transition = 'opacity 0.3s ease-in-out';
+                targetStep.style.opacity = '1';
+            }, 50);
         }
     }
     
+    // Handle salary method selection and show appropriate fields
+    function showSchemeFields() {
+        // Hide all scheme fields first
+        schemeFields.forEach(field => field.style.display = 'none');
+        
+        const selectedType = schemeTypeSelect.value;
+        
+        // Complete mapping for all 9 salary methods
+        const fieldMapping = {
+            'daily_payout': 'daily-payout-fields',
+            'monthly_payout': 'monthly-payout-fields', 
+            'performance_based': 'performance-based-fields',
+            'hybrid_commission': 'hybrid-commission-fields',
+            'revenue_sharing': 'revenue-sharing-fields',
+            'fixed_salary': 'fixed-salary-fields',
+            'piece_rate': 'piece-rate-fields',
+            'slab_incentive': 'slab-incentive-fields',
+            'custom_formula': 'custom-formula-fields'
+        };
+        
+        // Show method preview
+        const methodPreview = document.getElementById('method-preview');
+        if (selectedType && fieldMapping[selectedType]) {
+            const targetField = document.getElementById(fieldMapping[selectedType]);
+            if (targetField) {
+                targetField.style.display = 'block';
+                
+                // Show preview in step 2
+                const methodName = selectedType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                methodPreview.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-success text-center">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Selected: ${methodName}</strong><br>
+                            <small>Configuration options will appear in the next step!</small>
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            methodPreview.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Select a salary method above to see its configuration options
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // Navigation event handlers
+    nextBtn.addEventListener('click', function() {
+        if (currentStep < totalSteps) {
+            currentStep++;
+            showStep(currentStep);
+        }
+    });
+    
+    prevBtn.addEventListener('click', function() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    });
+    
+    // Handle scheme type changes
     schemeTypeSelect.addEventListener('change', showSchemeFields);
     
-    // Show initial fields
+    // Form validation before proceeding
+    function validateCurrentStep() {
+        const currentStepDiv = document.getElementById(`step-${currentStep}`);
+        const requiredFields = currentStepDiv.querySelectorAll('input[required], select[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        return isValid;
+    }
+    
+    // Add some gamification effects
+    function celebrateStep() {
+        const celebration = document.createElement('div');
+        celebration.innerHTML = '🎉';
+        celebration.style.position = 'fixed';
+        celebration.style.top = '50%';
+        celebration.style.left = '50%';
+        celebration.style.fontSize = '3rem';
+        celebration.style.zIndex = '9999';
+        celebration.style.animation = 'bounce 0.5s ease-in-out';
+        document.body.appendChild(celebration);
+        
+        setTimeout(() => {
+            document.body.removeChild(celebration);
+        }, 1000);
+    }
+    
+    // Initialize wizard
+    showStep(1);
     showSchemeFields();
+    
+    // Add some CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-30px) translateX(-50%); }
+            60% { transform: translateY(-15px) translateX(-50%); }
+        }
+        .wizard-step {
+            min-height: 400px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            transition: all 0.2s ease-in-out;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Add celebration when reaching final step
+    const originalShowStep = showStep;
+    showStep = function(step) {
+        originalShowStep(step);
+        if (step === totalSteps) {
+            setTimeout(celebrateStep, 300);
+        }
+    };
 });
 </script>
 {% endblock %}

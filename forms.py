@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SelectField, FloatField, IntegerField, DateField, TextAreaField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, NumberRange
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, NumberRange, ValidationError
 from datetime import date
 
 class LoginForm(FlaskForm):
@@ -157,7 +157,7 @@ class DutySchemeForm(FlaskForm):
         ('slab_incentive', 'Slab Incentive - Tiered earnings based on revenue slabs'),
         ('custom_formula', 'Custom Formula - User-defined calculation method')
     ], validators=[DataRequired()])
-    branch_id = SelectField('Branch', coerce=str, validators=[Optional()])
+    branch_id = SelectField('Branch', coerce=int, validators=[Optional()], default=0)
     bmg_amount = FloatField('BMG Amount', validators=[Optional(), NumberRange(min=0)])
     
     # Fixed scheme fields
@@ -226,11 +226,51 @@ class DutySchemeForm(FlaskForm):
     calculation_formula = TextAreaField('Custom Calculation Formula', 
                                       description='Enter mathematical formula using variables: uber_trips, uber_collected, operator_out, toll, advance, etc.',
                                       validators=[Optional()])
+    
+    def validate_scheme_type(self, field):
+        """Custom validation for scheme-specific required fields"""
+        scheme_type = field.data
+        
+        if scheme_type == 'daily_payout':
+            if not self.daily_base_amount.data and not self.daily_incentive_percent.data:
+                raise ValidationError('Daily payout requires either base amount or incentive percentage')
+                
+        elif scheme_type == 'monthly_payout':
+            if not self.monthly_base_salary.data and not self.monthly_incentive_percent.data:
+                raise ValidationError('Monthly payout requires either base salary or incentive percentage')
+                
+        elif scheme_type == 'performance_based':
+            if not self.target_trips_daily.data or not self.target_revenue_daily.data:
+                raise ValidationError('Performance based method requires both daily trip and revenue targets')
+                
+        elif scheme_type == 'hybrid_commission':
+            if not self.base_amount.data or not self.incentive_percent.data:
+                raise ValidationError('Hybrid commission requires both base amount and incentive percentage')
+                
+        elif scheme_type == 'revenue_sharing':
+            if not self.revenue_share_percent.data:
+                raise ValidationError('Revenue sharing requires a revenue share percentage')
+                
+        elif scheme_type == 'fixed_salary':
+            if not self.fixed_monthly_salary.data:
+                raise ValidationError('Fixed salary method requires a monthly salary amount')
+                
+        elif scheme_type == 'piece_rate':
+            if not self.per_trip_amount.data:
+                raise ValidationError('Piece rate method requires an amount per trip')
+                
+        elif scheme_type == 'slab_incentive':
+            if not self.slab1_max.data or not self.slab1_percent.data:
+                raise ValidationError('Slab incentive requires at least first slab configuration')
+                
+        elif scheme_type == 'custom_formula':
+            if not self.calculation_formula.data or not self.calculation_formula.data.strip():
+                raise ValidationError('Custom formula method requires a calculation formula')
 
 class AssignmentTemplateForm(FlaskForm):
     name = StringField('Template Name', validators=[DataRequired(), Length(min=3, max=100)])
     description = TextAreaField('Description', validators=[Optional(), Length(max=500)])
-    branch_id = SelectField('Branch', coerce=str, validators=[Optional()])
+    branch_id = SelectField('Branch', coerce=int, validators=[Optional()])
     
     # Template pattern configuration
     shift_pattern = SelectField('Shift Pattern', choices=[
