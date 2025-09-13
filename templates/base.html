@@ -123,6 +123,11 @@
                                 <i class="fab fa-uber me-1"></i>Uber Integration
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.audit_logs') }}">
+                                <i class="fas fa-history me-1"></i>Audit Logs
+                            </a>
+                        </li>
                     {% elif current_user.role.name == 'MANAGER' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('manager.dashboard') }}">

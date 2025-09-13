@@ -2660,3 +2660,229 @@ def reject_duty(duty_id):
     
     flash(f'Duty rejected for {duty.driver.full_name if duty.driver else "Unknown"}. Reason: {rejection_reason}', 'warning')
     return redirect(url_for('admin.pending_duties'))
+
+
+# Audit Log Management Routes
+@admin_bp.route('/audit-logs')
+@login_required  
+@admin_required
+def audit_logs():
+    """View audit logs with filtering and search"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+    
+    # Filters
+    user_filter = request.args.get('user', '', type=int)
+    action_filter = request.args.get('action', '')
+    entity_type_filter = request.args.get('entity_type', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    search_term = request.args.get('search', '')
+    success_filter = request.args.get('success', '')
+    
+    # Build query
+    query = AuditLog.query.join(User)
+    
+    if user_filter:
+        query = query.filter(AuditLog.user_id == user_filter)
+        
+    if action_filter:
+        query = query.filter(AuditLog.action.ilike(f'%{action_filter}%'))
+        
+    if entity_type_filter:
+        query = query.filter(AuditLog.entity_type == entity_type_filter)
+        
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d')
+            query = query.filter(AuditLog.created_at >= from_date)
+        except ValueError:
+            pass
+            
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d')
+            # Add one day to include the entire day
+            to_date = to_date + timedelta(days=1)
+            query = query.filter(AuditLog.created_at < to_date)
+        except ValueError:
+            pass
+            
+    if search_term:
+        query = query.filter(
+            db.or_(
+                AuditLog.action.ilike(f'%{search_term}%'),
+                AuditLog.new_values.ilike(f'%{search_term}%'),
+                AuditLog.old_values.ilike(f'%{search_term}%'),
+                User.username.ilike(f'%{search_term}%'),
+                AuditLog.ip_address.ilike(f'%{search_term}%')
+            )
+        )
+        
+    if success_filter:
+        success_bool = success_filter.lower() == 'true'
+        query = query.filter(AuditLog.success == success_bool)
+    
+    # Order by most recent first
+    audit_logs = query.order_by(desc(AuditLog.created_at)).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Get filter options
+    users = User.query.filter(User.role.in_([UserRole.ADMIN, UserRole.MANAGER])).all()
+    actions = db.session.query(AuditLog.action).distinct().order_by(AuditLog.action).all()
+    entity_types = db.session.query(AuditLog.entity_type).distinct().filter(
+        AuditLog.entity_type.isnot(None)
+    ).order_by(AuditLog.entity_type).all()
+    
+    # Statistics
+    stats = {
+        'total_logs': AuditLog.query.count(),
+        'today_logs': AuditLog.query.filter(
+            AuditLog.created_at >= datetime.now().date()
+        ).count(),
+        'failed_actions': AuditLog.query.filter(AuditLog.success == False).count(),
+        'unique_users': db.session.query(AuditLog.user_id).distinct().count()
+    }
+    
+    return render_template('admin/audit_logs.html',
+                         audit_logs=audit_logs,
+                         users=users,
+                         actions=[a[0] for a in actions],
+                         entity_types=[e[0] for e in entity_types],
+                         user_filter=user_filter,
+                         action_filter=action_filter,
+                         entity_type_filter=entity_type_filter,
+                         date_from=date_from,
+                         date_to=date_to,
+                         search_term=search_term,
+                         success_filter=success_filter,
+                         per_page=per_page,
+                         stats=stats)
+
+@admin_bp.route('/audit-logs/<int:log_id>')
+@login_required
+@admin_required  
+def view_audit_log(log_id):
+    """View detailed audit log entry"""
+    audit_log = AuditLog.query.get_or_404(log_id)
+    
+    # Parse JSON fields
+    old_values = {}
+    new_values = {}
+    changed_fields = []
+    
+    try:
+        if audit_log.old_values:
+            old_values = json.loads(audit_log.old_values)
+    except (json.JSONDecodeError, TypeError):
+        pass
+        
+    try:
+        if audit_log.new_values:
+            new_values = json.loads(audit_log.new_values)
+    except (json.JSONDecodeError, TypeError):
+        pass
+        
+    try:
+        if audit_log.changed_fields:
+            changed_fields = json.loads(audit_log.changed_fields)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    
+    return render_template('admin/audit_log_detail.html',
+                         audit_log=audit_log,
+                         old_values=old_values,
+                         new_values=new_values,
+                         changed_fields=changed_fields)
+
+@admin_bp.route('/audit-logs/export')
+@login_required
+@admin_required
+def export_audit_logs():
+    """Export audit logs to CSV"""
+    # Apply same filters as main view
+    user_filter = request.args.get('user', '', type=int)
+    action_filter = request.args.get('action', '')
+    entity_type_filter = request.args.get('entity_type', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    search_term = request.args.get('search', '')
+    success_filter = request.args.get('success', '')
+    
+    query = AuditLog.query.join(User)
+    
+    if user_filter:
+        query = query.filter(AuditLog.user_id == user_filter)
+        
+    if action_filter:
+        query = query.filter(AuditLog.action.ilike(f'%{action_filter}%'))
+        
+    if entity_type_filter:
+        query = query.filter(AuditLog.entity_type == entity_type_filter)
+        
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d')
+            query = query.filter(AuditLog.created_at >= from_date)
+        except ValueError:
+            pass
+            
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(AuditLog.created_at < to_date)
+        except ValueError:
+            pass
+            
+    if search_term:
+        query = query.filter(
+            db.or_(
+                AuditLog.action.ilike(f'%{search_term}%'),
+                AuditLog.new_values.ilike(f'%{search_term}%'),
+                User.username.ilike(f'%{search_term}%')
+            )
+        )
+        
+    if success_filter:
+        success_bool = success_filter.lower() == 'true'
+        query = query.filter(AuditLog.success == success_bool)
+    
+    # Limit to prevent memory issues
+    audit_logs = query.order_by(desc(AuditLog.created_at)).limit(10000).all()
+    
+    # Generate CSV
+    import csv
+    from io import StringIO
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow([
+        'Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 
+        'Success', 'IP Address', 'Details', 'Error Message'
+    ])
+    
+    # Data
+    for log in audit_logs:
+        writer.writerow([
+            log.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            log.user.username if log.user else 'Unknown',
+            log.action,
+            log.entity_type or '',
+            log.entity_id or '',
+            'Yes' if log.success else 'No',
+            log.ip_address or '',
+            log.new_values or '',
+            log.error_message or ''
+        ])
+    
+    output.seek(0)
+    
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=audit_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+    )
