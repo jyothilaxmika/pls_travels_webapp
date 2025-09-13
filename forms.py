@@ -146,12 +146,16 @@ class VehicleForm(FlaskForm):
 
 class DutySchemeForm(FlaskForm):
     name = StringField('Scheme Name', validators=[DataRequired()])
-    scheme_type = SelectField('Payout Scheme', choices=[
-        ('daily_payout', 'Daily Salary Payout - Immediate payment after each duty'),
-        ('monthly_payout', 'Monthly Payout - Accumulated earnings paid monthly'),
-        ('scheme_3', 'Custom Scheme 3'),
-        ('scheme_4', 'Custom Scheme 4'),
-        ('scheme_5', 'Custom Scheme 5')
+    scheme_type = SelectField('Salary Method', choices=[
+        ('daily_payout', 'Daily Salary - Immediate payment after each duty'),
+        ('monthly_payout', 'Monthly Salary - Accumulated earnings paid monthly'),
+        ('performance_based', 'Performance Based - Earnings tied to targets and KPIs'),
+        ('hybrid_commission', 'Hybrid Commission - Base + Commission + Bonuses'),
+        ('revenue_sharing', 'Revenue Sharing - Percentage of total vehicle revenue'),
+        ('fixed_salary', 'Fixed Salary - Guaranteed monthly amount'),
+        ('piece_rate', 'Piece Rate - Payment per trip/task completed'),
+        ('slab_incentive', 'Slab Incentive - Tiered earnings based on revenue slabs'),
+        ('custom_formula', 'Custom Formula - User-defined calculation method')
     ], validators=[DataRequired()])
     branch_id = SelectField('Branch', coerce=str, validators=[Optional()])
     bmg_amount = FloatField('BMG Amount', validators=[Optional(), NumberRange(min=0)])
@@ -193,9 +197,34 @@ class DutySchemeForm(FlaskForm):
     effective_from = DateField('Effective From', default=date.today, validators=[DataRequired()])
     effective_until = DateField('Effective Until', validators=[Optional()])
     
+    # Performance and bonus fields
+    target_trips_daily = IntegerField('Daily Trip Target', validators=[Optional(), NumberRange(min=1)])
+    target_revenue_daily = FloatField('Daily Revenue Target', validators=[Optional(), NumberRange(min=0)])
+    bonus_per_extra_trip = FloatField('Bonus per Extra Trip', validators=[Optional(), NumberRange(min=0)])
+    bonus_target_achievement = FloatField('Target Achievement Bonus', validators=[Optional(), NumberRange(min=0)])
+    
+    # Deduction management
+    fuel_deduction_percent = FloatField('Fuel Deduction %', validators=[Optional(), NumberRange(min=0, max=100)])
+    maintenance_deduction = FloatField('Maintenance Deduction', validators=[Optional(), NumberRange(min=0)])
+    insurance_deduction = FloatField('Insurance Deduction', validators=[Optional(), NumberRange(min=0)])
+    other_deductions = FloatField('Other Deductions', validators=[Optional(), NumberRange(min=0)])
+    
+    # Advanced salary components
+    overtime_rate_multiplier = FloatField('Overtime Rate Multiplier', validators=[Optional(), NumberRange(min=1)], default=1.5)
+    weekend_bonus_percent = FloatField('Weekend Bonus %', validators=[Optional(), NumberRange(min=0, max=100)])
+    holiday_bonus_percent = FloatField('Holiday Bonus %', validators=[Optional(), NumberRange(min=0, max=100)])
+    
+    # Revenue sharing specifics
+    revenue_share_percent = FloatField('Revenue Share %', validators=[Optional(), NumberRange(min=0, max=100)])
+    company_expense_deduction = FloatField('Company Expense Deduction', validators=[Optional(), NumberRange(min=0)])
+    
+    # Fixed salary components
+    fixed_monthly_salary = FloatField('Fixed Monthly Salary', validators=[Optional(), NumberRange(min=0)])
+    allowances = FloatField('Monthly Allowances', validators=[Optional(), NumberRange(min=0)])
+    
     # Editable calculation formula
-    calculation_formula = TextAreaField('Calculation Formula', 
-                                      description='Enter mathematical formula using field names like uber_trips, uber_collected, etc.',
+    calculation_formula = TextAreaField('Custom Calculation Formula', 
+                                      description='Enter mathematical formula using variables: uber_trips, uber_collected, operator_out, toll, advance, etc.',
                                       validators=[Optional()])
 
 class AssignmentTemplateForm(FlaskForm):
