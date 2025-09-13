@@ -31,4 +31,5 @@ dependencies = [
     "pytz>=2025.2",
     "flask-socketio>=5.5.1",
     "eventlet>=0.40.3",
+    "google-genai>=1.36.0",
 ]
