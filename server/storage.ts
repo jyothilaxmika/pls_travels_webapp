@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type DriverProfile, type InsertDriverProfile, type AuditLog, type InsertAuditLog, DriverStatus, users, driverProfiles, auditLogs } from "@shared/schema";
+import { type User, type InsertUser, type DriverProfile, type InsertDriverProfile, type AuditLog, type InsertAuditLog, type AuditLogWithUser, DriverStatus, users, driverProfiles, auditLogs } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
@@ -16,7 +16,7 @@ export interface IStorage {
   listDriversByStatus(status?: DriverStatus): Promise<DriverProfile[]>;
   // Audit log methods
   createAuditLog(auditLog: InsertAuditLog): Promise<AuditLog>;
-  getAuditLogs(limit?: number): Promise<AuditLog[]>;
+  getAuditLogs(limit?: number): Promise<AuditLogWithUser[]>;
 }
 
 // Database implementation based on javascript_database blueprint
@@ -108,7 +108,7 @@ export class DatabaseStorage implements IStorage {
     return log;
   }
 
-  async getAuditLogs(limit: number = 100): Promise<AuditLog[]> {
+  async getAuditLogs(limit: number = 100): Promise<AuditLogWithUser[]> {
     return await db
       .select({
         id: auditLogs.id,

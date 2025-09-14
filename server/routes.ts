@@ -155,10 +155,6 @@ export function registerRoutes(app: any) {
 
       // Store OTP in session or database
       // For now, we'll use session storage
-      if (!req.session) {
-        req.session = {};
-      }
-      
       req.session.pendingOTP = {
         phoneNumber: cleanPhone,
         code: otpCode,
@@ -277,7 +273,7 @@ export function registerRoutes(app: any) {
             userId: storageUser.id,
             action: 'user_created',
             targetType: 'user',
-            targetId: storageUser.id.toString(),
+            targetId: storageUser.id,
             details: JSON.stringify({ 
               phoneNumber: cleanPhone,
               role: storageUser.role,
@@ -305,7 +301,7 @@ export function registerRoutes(app: any) {
             userId: storageUser.id,
             action: 'user_login',
             targetType: 'user',
-            targetId: storageUser.id.toString(),
+            targetId: storageUser.id,
             details: JSON.stringify({ 
               phoneNumber: cleanPhone,
               role: storageUser.role,
@@ -595,7 +591,7 @@ export function registerRoutes(app: any) {
         userId: currentUser.id,
         action: 'driver_approved',
         targetType: 'driver',
-        targetId: userId,
+        targetId: userIdNum,
         details: JSON.stringify({ driverName: profile.fullName }),
         ipAddress: req.ip,
         userAgent: req.get('User-Agent') || '',
@@ -624,7 +620,7 @@ export function registerRoutes(app: any) {
         userId: currentUser.id,
         action: 'driver_rejected',
         targetType: 'driver',
-        targetId: userId,
+        targetId: userIdNum,
         details: JSON.stringify({ driverName: profile.fullName }),
         ipAddress: req.ip,
         userAgent: req.get('User-Agent') || '',

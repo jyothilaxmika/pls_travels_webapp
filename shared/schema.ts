@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pgTable, varchar, timestamp, text, pgEnum, serial, boolean } from "drizzle-orm/pg-core";
+import { pgTable, varchar, timestamp, text, pgEnum, serial, boolean, integer } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
@@ -36,7 +36,7 @@ export const users = pgTable('users', {
 
 export const driverProfiles = pgTable('driver_profiles', {
   id: serial("id").primaryKey(),
-  userId: serial("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
   fullName: varchar("full_name", { length: 100 }).notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),
   address: text("address"),
@@ -60,10 +60,10 @@ export const driverProfiles = pgTable('driver_profiles', {
 
 export const auditLogs = pgTable('audit_logs', {
   id: serial("id").primaryKey(),
-  userId: serial("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
   action: auditActionEnum("action").notNull(),
   targetType: varchar("target_type", { length: 50 }), // 'driver', 'user', etc.
-  targetId: varchar("target_id", { length: 50 }), // ID of the affected resource
+  targetId: integer("target_id"), // ID of the affected resource (integer for consistency)
   details: text("details"), // JSON string with action details
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
@@ -108,6 +108,11 @@ export type DriverProfile = typeof driverProfiles.$inferSelect;
 export type InsertDriverProfile = typeof driverProfiles.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// Extended types for API responses
+export type AuditLogWithUser = AuditLog & {
+  userFullName?: string | null;
+};
 
 // OTP schema (remains in-memory for now)
 export const otpSchema = z.object({

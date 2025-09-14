@@ -4,3 +4,8 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+# Session and cookie files
+*.txt
+cookies.txt
+*_session.txt
+*_cookies.txt
