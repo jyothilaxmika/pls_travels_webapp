@@ -141,7 +141,7 @@
 <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 11"></div>
 
 <script>
-const csrfToken = '{{ csrf_token() }}';
+// No CSRF needed for exempted routes
 
 document.addEventListener('DOMContentLoaded', function() {
     const registerForm = document.getElementById('registerForm');
@@ -198,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const otpFormData = new FormData();
             otpFormData.append('phone_number', phoneNumber);
             otpFormData.append('action', 'register');
-            otpFormData.append('csrf_token', csrfToken);
             
             const response = await fetch('{{ url_for("otp.send_register_otp") }}', {
                 method: 'POST',
@@ -247,7 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
             Object.keys(registrationData).forEach(key => {
                 formData.append(key, registrationData[key]);
             });
-            formData.append('csrf_token', csrfToken);
             
             const response = await fetch('{{ url_for("otp.complete_registration") }}', {
                 method: 'POST',
@@ -286,7 +284,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('phone_number', registrationData.phone_number);
             formData.append('action', 'register');
-            formData.append('csrf_token', csrfToken);
             
             const response = await fetch('{{ url_for("otp.send_register_otp") }}', {
                 method: 'POST',
