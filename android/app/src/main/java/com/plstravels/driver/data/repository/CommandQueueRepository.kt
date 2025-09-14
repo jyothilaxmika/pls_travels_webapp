@@ -7,6 +7,7 @@ import com.plstravels.driver.data.network.ApiService
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,6 +29,27 @@ class CommandQueueRepository @Inject constructor(
         private const val TAG = "CommandQueueRepository"
         private const val MAX_EXECUTION_TIME_MS = 30_000L // 30 seconds
         private const val CLEANUP_OLDER_THAN_DAYS = 7
+    }
+    
+    /**
+     * Initialize the repository and clean up any stuck commands
+     * Should be called on app startup to handle restart robustness
+     */
+    suspend fun initialize() {
+        try {
+            Log.d(TAG, "Initializing CommandQueueRepository")
+            
+            // Clean up any commands stuck in executing state after app restart
+            val stuckCommands = commandQueueDao.getExecutingCommands()
+            stuckCommands.forEach { command ->
+                commandQueueDao.updateCommandExecutionStatus(command.id, false)
+                Log.w(TAG, "Reset stuck command after app restart: ${command.type}")
+            }
+            
+            Log.d(TAG, "CommandQueueRepository initialized - reset ${stuckCommands.size} stuck commands")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during CommandQueueRepository initialization", e)
+        }
     }
     
     /**
@@ -153,17 +175,16 @@ class CommandQueueRepository @Inject constructor(
                         )
                         commandQueueDao.updateCommandExecutionStatus(queuedCommand.id, false)
                     } else {
-                        // Max retries reached or shouldn't retry
+                        // Max retries reached or shouldn't retry - move to dead letter queue
                         Log.e(TAG, "Command failed permanently: ${queuedCommand.type}")
-                        commandQueueDao.deleteCommand(queuedCommand.id)
+                        moveToDeadLetterQueue(queuedCommand, result.error)
                     }
                     return false
                 }
                 
                 is CommandResult.Conflict -> {
-                    Log.w(TAG, "Command conflict: ${queuedCommand.type}")
-                    // Handle conflict resolution here
-                    commandQueueDao.deleteCommand(queuedCommand.id)
+                    Log.w(TAG, "Command conflict: ${queuedCommand.type}, server data: ${result.serverData}")
+                    handleConflictResolution(queuedCommand, result.serverData)
                     return false
                 }
             }
@@ -178,7 +199,8 @@ class CommandQueueRepository @Inject constructor(
                 )
                 commandQueueDao.updateCommandExecutionStatus(queuedCommand.id, false)
             } else {
-                commandQueueDao.deleteCommand(queuedCommand.id)
+                // Max retries reached for exception - move to dead letter queue
+                moveToDeadLetterQueue(queuedCommand, e.message ?: "Unknown exception")
             }
             return false
         }
@@ -294,10 +316,10 @@ class CommandQueueRepository @Inject constructor(
                         val tempIdHash = tempDutyId.hashCode()
                         val localDuty = dutyDao.getDutyById(tempIdHash)
                         if (localDuty != null) {
-                            // Update duty with server ID and mark as synced
+                            // Never mutate primary keys - use proper reconciliation
                             val updatedDuty = localDuty.copy(
-                                id = serverDutyId.toIntOrNull() ?: localDuty.id,
                                 syncStatus = "SYNCED"
+                                // TODO: Add serverId field for safe reconciliation
                             )
                             dutyDao.updateDuty(updatedDuty)
                             Log.d(TAG, "Successfully updated duty: $tempIdHash -> $serverDutyId")
@@ -354,4 +376,305 @@ class CommandQueueRepository @Inject constructor(
             needsReconciliation = unreconciledCommands.isNotEmpty()
         )
     }
+    
+    /**
+     * Handle conflict resolution based on command type and server data
+     */
+    private suspend fun handleConflictResolution(command: QueuedCommand, serverData: String) {
+        Log.d(TAG, "Handling conflict for command: ${command.type}")
+        
+        try {
+            when (command.type) {
+                CommandType.START_DUTY -> handleStartDutyConflict(command, serverData)
+                CommandType.END_DUTY -> handleEndDutyConflict(command, serverData)
+                CommandType.UPDATE_LOCATION -> {
+                    // Location conflicts are usually not critical - accept server state
+                    Log.d(TAG, "Location update conflict - accepting server state")
+                    commandQueueDao.deleteCommand(command.id)
+                }
+                CommandType.UPLOAD_PHOTO -> {
+                    // NOTE: This path is currently unreachable since parseCommand returns null for UPLOAD_PHOTO
+                    // Photo uploads are delegated to PhotoUploadService - this is here for completeness
+                    Log.w(TAG, "UPLOAD_PHOTO conflict handling - may be unreachable due to delegation")
+                    handlePhotoUploadConflict(command, serverData)
+                }
+                else -> {
+                    // Default conflict resolution - move to dead letter queue for manual review
+                    Log.w(TAG, "Unknown conflict type for ${command.type} - moving to dead letter queue")
+                    moveToDeadLetterQueue(command, "Conflict: $serverData")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling conflict for command ${command.id}", e)
+            moveToDeadLetterQueue(command, "Conflict resolution error: ${e.message}")
+        }
+    }
+    
+    /**
+     * Handle START_DUTY command conflicts
+     */
+    private suspend fun handleStartDutyConflict(command: QueuedCommand, serverData: String) {
+        try {
+            // Parse server duty state
+            val serverDutyData = gson.fromJson(serverData, Map::class.java) as Map<String, Any>
+            val serverDutyId = serverDutyData["dutyId"] as? String
+            val serverStatus = serverDutyData["status"] as? String
+            
+            when (serverStatus) {
+                "ACTIVE" -> {
+                    // Server already has an active duty - update local state to match
+                    Log.d(TAG, "Server already has active duty $serverDutyId - syncing local state")
+                    
+                    // Update local duty to match server state if possible
+                    command.tempEntityId?.let { tempId ->
+                        val tempIdHash = tempId.hashCode()
+                        val localDuty = dutyDao.getDutyById(tempIdHash)
+                        if (localDuty != null && serverDutyId != null) {
+                            // Never mutate primary keys - use serverId field instead
+                            val syncedDuty = localDuty.copy(
+                                syncStatus = "SYNCED"
+                                // TODO: Add serverId field to Duty entity for proper reconciliation
+                            )
+                            dutyDao.updateDuty(syncedDuty)
+                            
+                            // Mark as reconciled and delete command
+                            commandQueueDao.updateCommandReconciliation(command.id, serverDutyId)
+                            commandQueueDao.deleteCommand(command.id)
+                            Log.d(TAG, "Successfully reconciled conflicted duty: $tempId -> $serverDutyId")
+                        } else {
+                            // Cannot reconcile - move to dead letter queue
+                            moveToDeadLetterQueue(command, "Cannot reconcile duty - server duty $serverDutyId conflicts with local $tempId")
+                        }
+                    }
+                }
+                "REJECTED", "DENIED" -> {
+                    // Server rejected the duty start - rollback local state
+                    Log.w(TAG, "Server rejected duty start - rolling back local duty")
+                    rollbackLocalDuty(command)
+                    commandQueueDao.deleteCommand(command.id)
+                }
+                else -> {
+                    // Unknown server state - move to dead letter queue for manual review
+                    moveToDeadLetterQueue(command, "Unknown server duty status: $serverStatus")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing START_DUTY conflict", e)
+            moveToDeadLetterQueue(command, "START_DUTY conflict processing error: ${e.message}")
+        }
+    }
+    
+    /**
+     * Handle END_DUTY command conflicts
+     */
+    private suspend fun handleEndDutyConflict(command: QueuedCommand, serverData: String) {
+        try {
+            // Parse server response
+            val serverResponse = gson.fromJson(serverData, Map::class.java) as Map<String, Any>
+            val conflictType = serverResponse["conflictType"] as? String
+            
+            when (conflictType) {
+                "DUTY_NOT_FOUND" -> {
+                    // Server doesn't have this duty - local state may be stale
+                    Log.w(TAG, "Server doesn't have duty to end - cleaning up local state")
+                    command.tempEntityId?.let { dutyId ->
+                        dutyDao.deleteDutyById(dutyId.toIntOrNull() ?: dutyId.hashCode())
+                    }
+                    commandQueueDao.deleteCommand(command.id)
+                }
+                "DUTY_ALREADY_ENDED" -> {
+                    // Duty already ended on server - sync the end time
+                    Log.d(TAG, "Duty already ended on server - syncing local state")
+                    val serverEndTime = (serverResponse["endTime"] as? Number)?.toLong()
+                    syncLocalDutyEndTime(command, serverEndTime)
+                    commandQueueDao.deleteCommand(command.id)
+                }
+                else -> {
+                    moveToDeadLetterQueue(command, "END_DUTY conflict: $conflictType")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing END_DUTY conflict", e)
+            moveToDeadLetterQueue(command, "END_DUTY conflict processing error: ${e.message}")
+        }
+    }
+    
+    /**
+     * Handle photo upload conflicts
+     */
+    private suspend fun handlePhotoUploadConflict(command: QueuedCommand, serverData: String) {
+        try {
+            val conflictData = gson.fromJson(serverData, Map::class.java) as Map<String, Any>
+            val conflictReason = conflictData["reason"] as? String
+            
+            when (conflictReason) {
+                "DUPLICATE_PHOTO" -> {
+                    // Photo already exists on server - consider it uploaded
+                    Log.d(TAG, "Photo already exists on server - marking as completed")
+                    commandQueueDao.deleteCommand(command.id)
+                }
+                "INVALID_DUTY" -> {
+                    // Photo belongs to invalid duty - move to dead letter queue
+                    moveToDeadLetterQueue(command, "Photo upload failed - invalid duty")
+                }
+                else -> {
+                    // Unknown photo conflict - retry with different strategy or move to dead letter
+                    moveToDeadLetterQueue(command, "Photo upload conflict: $conflictReason")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing photo upload conflict", e)
+            moveToDeadLetterQueue(command, "Photo upload conflict processing error: ${e.message}")
+        }
+    }
+    
+    /**
+     * Move command to dead letter queue for manual resolution
+     */
+    private suspend fun moveToDeadLetterQueue(command: QueuedCommand, reason: String) {
+        try {
+            // TODO: Add isDeadLetter boolean field to QueuedCommand for proper DLQ handling
+            val deadLetterCommand = command.copy(
+                id = "dlq_${command.id}", // Temporary solution - should use boolean field
+                lastError = "DEAD_LETTER: $reason",
+                isExecuting = false,
+                retryCount = command.maxRetries + 1 // Mark as exceeded retries
+            )
+            
+            // Insert into dead letter queue (using same table with different ID prefix)
+            commandQueueDao.insertCommand(deadLetterCommand)
+            
+            // Delete original command
+            commandQueueDao.deleteCommand(command.id)
+            
+            Log.w(TAG, "Moved command ${command.id} to dead letter queue: $reason")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error moving command to dead letter queue", e)
+            // Last resort - just delete the command to prevent infinite loops
+            commandQueueDao.deleteCommand(command.id)
+        }
+    }
+    
+    /**
+     * Rollback local duty state when server rejects
+     */
+    private suspend fun rollbackLocalDuty(command: QueuedCommand) {
+        try {
+            command.tempEntityId?.let { tempId ->
+                val tempIdHash = tempId.hashCode()
+                val localDuty = dutyDao.getDutyById(tempIdHash)
+                if (localDuty != null) {
+                    // Mark duty as cancelled/failed instead of deleting to preserve history
+                    val rolledBackDuty = localDuty.copy(
+                        status = "CANCELLED",
+                        syncStatus = "REJECTED",
+                        endTime = System.currentTimeMillis()
+                    )
+                    dutyDao.updateDuty(rolledBackDuty)
+                    Log.d(TAG, "Rolled back local duty $tempId to CANCELLED status")
+                } else {
+                    Log.w(TAG, "Could not find local duty to rollback: $tempId")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error rolling back local duty", e)
+        }
+    }
+    
+    /**
+     * Sync local duty end time with server
+     */
+    private suspend fun syncLocalDutyEndTime(command: QueuedCommand, serverEndTime: Long?) {
+        try {
+            command.tempEntityId?.let { dutyId ->
+                val localDuty = dutyDao.getDutyById(dutyId.toIntOrNull() ?: dutyId.hashCode())
+                if (localDuty != null && serverEndTime != null) {
+                    val syncedDuty = localDuty.copy(
+                        endTime = serverEndTime,
+                        status = "COMPLETED",
+                        syncStatus = "SYNCED"
+                    )
+                    dutyDao.updateDuty(syncedDuty)
+                    Log.d(TAG, "Synced local duty end time with server: $dutyId")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing duty end time", e)
+        }
+    }
+    
+    /**
+     * Get dead letter queue commands for admin review
+     * TODO: This should use a proper isDeadLetter boolean field instead of ID prefix
+     */
+    fun getDeadLetterQueueCommands(): Flow<List<QueuedCommand>> {
+        return commandQueueDao.getAllCommandsFlow().map { allCommands ->
+            allCommands.filter { it.id.startsWith("dlq_") }
+        }
+    }
+    
+    /**
+     * Get dead letter queue statistics for admin dashboard
+     */
+    suspend fun getDeadLetterQueueStats(): DeadLetterQueueStats {
+        val dlqCommands = commandQueueDao.getAllCommandsFlow().first().filter { it.id.startsWith("dlq_") }
+        
+        return DeadLetterQueueStats(
+            totalCount = dlqCommands.size,
+            byCommandType = dlqCommands.groupBy { it.type }.mapValues { it.value.size },
+            oldestTimestamp = dlqCommands.minOfOrNull { it.timestamp },
+            newestTimestamp = dlqCommands.maxOfOrNull { it.timestamp }
+        )
+    }
+    
+    /**
+     * Retry command from dead letter queue
+     */
+    suspend fun retryFromDeadLetterQueue(deadLetterCommandId: String): Result<String> {
+        return try {
+            val dlqCommand = commandQueueDao.getCommandById(deadLetterCommandId)
+            if (dlqCommand != null && dlqCommand.id.startsWith("dlq_")) {
+                // Create new command with original ID and reset retry count
+                val originalId = dlqCommand.id.removePrefix("dlq_")
+                val retryCommand = dlqCommand.copy(
+                    id = originalId,
+                    retryCount = 0,
+                    lastError = null,
+                    isExecuting = false
+                )
+                
+                // Insert retry command and delete dead letter entry
+                commandQueueDao.insertCommand(retryCommand)
+                commandQueueDao.deleteCommand(deadLetterCommandId)
+                
+                Log.d(TAG, "Retrying command from dead letter queue: $originalId")
+                Result.success("Command moved back to active queue")
+            } else {
+                Result.failure(Exception("Dead letter command not found"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error retrying command from dead letter queue", e)
+            Result.failure(e)
+        }
+    }
 }
+
+/**
+ * Statistics for dead letter queue monitoring
+ */
+data class DeadLetterQueueStats(
+    val totalCount: Int,
+    val byCommandType: Map<CommandType, Int>,
+    val oldestTimestamp: Long?,
+    val newestTimestamp: Long?
+)
+
+/**
+ * Reconciliation status for commands
+ */
+data class ReconciliationStatus(
+    val totalCommands: Int,
+    val unreconciledCount: Int,
+    val needsReconciliation: Boolean
+)
