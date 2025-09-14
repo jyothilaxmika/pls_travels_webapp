@@ -26,7 +26,11 @@ def create_app():
     app.secret_key = os.environ.get("SESSION_SECRET")
     if not app.secret_key:
         raise RuntimeError("SESSION_SECRET environment variable is required but not set")
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    # Configure ProxyFix for proper client IP detection in production
+    # x_for=1: Trust one proxy for X-Forwarded-For header (client IP)
+    # x_proto=1: Trust one proxy for X-Forwarded-Proto header (HTTPS detection)
+    # x_host=1: Trust one proxy for X-Forwarded-Host header (hostname)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     # Configure the database - temporarily use SQLite for development
     database_url = "sqlite:///pls_travels.db"  # Force SQLite for now
@@ -227,6 +231,10 @@ def create_app():
         session.permanent = True
 
     # Create tables
+    # Check OTP system configuration on startup
+    from utils.config_validator import get_otp_config_status
+    print(f"OTP Configuration: {get_otp_config_status()}")
+    
     with app.app_context():
         import models  # noqa: F401
         db.create_all()

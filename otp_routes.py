@@ -16,6 +16,8 @@ from utils.twilio_otp import (
     format_phone_number,
     OTPSession
 )
+from utils.rate_limiter import otp_rate_limiter
+from utils.config_validator import check_production_readiness
 from models import User, UserRole, UserStatus, db
 from timezone_utils import get_ist_time_naive
 
@@ -23,6 +25,37 @@ logger = logging.getLogger(__name__)
 
 # Create OTP blueprint
 otp_bp = Blueprint('otp', __name__)
+
+def get_client_ip():
+    """
+    Securely extract client IP address from request headers.
+    Uses ProxyFix-compatible header detection with fallback protection.
+    
+    Returns:
+        str: Client IP address
+    """
+    # ProxyFix with x_for=1 processes X-Forwarded-For header and sets request.remote_addr
+    # In production with ProxyFix, request.remote_addr contains the real client IP
+    client_ip = request.remote_addr or '127.0.0.1'
+    
+    # Additional validation for security
+    if client_ip in ('127.0.0.1', 'localhost', '::1'):
+        # Check if we have forwarded headers as fallback (but validate them)
+        forwarded_for = request.environ.get('HTTP_X_FORWARDED_FOR', '')
+        if forwarded_for:
+            # Take the first IP (original client) and validate
+            first_ip = forwarded_for.split(',')[0].strip()
+            if first_ip and not first_ip.startswith(('127.', '10.', '172.', '192.168.')):
+                client_ip = first_ip
+    
+    # Log potential IP spoofing attempts
+    forwarded_for = request.environ.get('HTTP_X_FORWARDED_FOR', '')
+    real_ip = request.environ.get('HTTP_X_REAL_IP', '')
+    if forwarded_for or real_ip:
+        logger.debug(f"IP_DETECTION: RemoteAddr={request.remote_addr} "
+                    f"XForwardedFor={forwarded_for} XRealIP={real_ip} FinalIP={client_ip}")
+    
+    return client_ip
 
 def log_audit(action, phone_number=None, details=None):
     """Log audit trail for OTP actions"""
@@ -37,15 +70,16 @@ def log_audit(action, phone_number=None, details=None):
 def send_otp():
     """Send OTP to phone number for login"""
     try:
-        # Basic rate limiting - check if OTP was sent recently
-        last_otp_time = session.get('last_otp_time')
-        if last_otp_time:
-            last_time = datetime.fromisoformat(last_otp_time)
-            if datetime.now(timezone.utc) - last_time < timedelta(seconds=60):
-                return jsonify({
-                    'success': False,
-                    'message': 'Please wait before requesting another OTP'
-                }), 429
+        # Get client IP using secure detection
+        client_ip = get_client_ip()
+        
+        # Check production readiness
+        config_status = check_production_readiness()
+        if not config_status['otp_enabled']:
+            return jsonify({
+                'success': False,
+                'message': 'OTP service is currently unavailable'
+            }), 503
         data = request.get_json()
         phone_number = data.get('phone_number', '').strip()
         
@@ -65,6 +99,16 @@ def send_otp():
         # Format phone number
         formatted_phone = format_phone_number(phone_number)
         
+        # Apply production-grade rate limiting
+        can_send, reason, retry_after = otp_rate_limiter.can_send_otp(formatted_phone, client_ip)
+        if not can_send:
+            log_audit("SEND_OTP_RATE_LIMITED", formatted_phone, f"Reason: {reason}, Retry after: {retry_after}s")
+            return jsonify({
+                'success': False,
+                'message': 'Rate limit exceeded. Please try again later.',
+                'retry_after': retry_after
+            }), 429
+        
         # Record start time for consistent response timing
         import time
         start_time = time.time()
@@ -83,11 +127,15 @@ def send_otp():
             if sms_result['success']:
                 # Store OTP in session only for valid users
                 OTPSession.store_otp(session, formatted_phone, otp_code, 'login')
+                # Record successful send for rate limiting
+                otp_rate_limiter.record_otp_sent(formatted_phone, client_ip)
                 log_audit('send_otp_success', formatted_phone, f'User: {user.username}')
             else:
                 log_audit('send_otp_failed', formatted_phone, sms_result['message'])
         else:
             # Log but don't store OTP for invalid users
+            # Still record the send attempt for rate limiting to prevent enumeration
+            otp_rate_limiter.record_otp_sent(formatted_phone, client_ip)
             if not user:
                 log_audit('send_otp_unknown_user', formatted_phone)
             else:
@@ -99,8 +147,7 @@ def send_otp():
         if elapsed < min_response_time:
             time.sleep(min_response_time - elapsed)
         
-        # Record send time for rate limiting
-        session['last_otp_time'] = datetime.now(timezone.utc).isoformat()
+        # Note: Rate limiting is now handled by otp_rate_limiter.record_otp_sent() above
         
         # Always return the same message to prevent enumeration
         return jsonify({
@@ -118,8 +165,11 @@ def send_otp():
 @otp_bp.route('/verify-otp', methods=['POST'])
 @csrf.exempt
 def verify_otp():
-    """Verify OTP and log user in"""
+    """Verify OTP and log user in with comprehensive brute-force protection"""
     try:
+        # Get client IP using secure detection
+        client_ip = get_client_ip()
+        
         data = request.get_json()
         otp_code = data.get('otp_code', '').strip()
         
@@ -129,11 +179,43 @@ def verify_otp():
                 'message': 'OTP code is required'
             }), 400
         
-        # Verify OTP
+        # Get session ID for verification tracking
+        session_id = session.get('otp_session_id', 'unknown')
+        
+        # Get OTP data to determine phone number before verification check
+        otp_data = OTPSession.get_otp_data(session)
+        if not otp_data:
+            return jsonify({
+                'success': False,
+                'message': 'No active OTP session found. Please request a new OTP.'
+            }), 400
+        
+        phone_number = otp_data['phone']
+        
+        # Apply brute-force protection BEFORE attempting verification
+        can_verify, reason, lockout_seconds = otp_rate_limiter.can_verify_otp(
+            phone_number, client_ip, session_id
+        )
+        
+        if not can_verify:
+            log_audit('verify_otp_rate_limited', phone_number, 
+                     f'Reason: {reason}, Lockout: {lockout_seconds}s, IP: {client_ip}')
+            return jsonify({
+                'success': False,
+                'message': f'Verification temporarily blocked: {reason}',
+                'lockout_seconds': lockout_seconds
+            }), 429
+        
+        # Attempt OTP verification
         verification_result = OTPSession.verify_otp(session, otp_code)
         
         if not verification_result['success']:
-            log_audit('verify_otp_failed', None, verification_result['message'])
+            # Record failed verification attempt
+            otp_rate_limiter.record_verification_attempt(
+                phone_number, client_ip, session_id, success=False
+            )
+            log_audit('verify_otp_failed', phone_number, 
+                     f'{verification_result["message"]}, IP: {client_ip}')
             return jsonify(verification_result), 400
         
         # Get user by phone number
@@ -155,6 +237,11 @@ def verify_otp():
                 'message': 'Account is not active'
             }), 403
         
+        # Record successful verification attempt
+        otp_rate_limiter.record_verification_attempt(
+            phone_number, client_ip, session_id, success=True
+        )
+        
         # Log the user in
         login_user(user, remember=True)
         
@@ -175,7 +262,7 @@ def verify_otp():
                     import time
                     time.sleep(0.5)
         
-        log_audit('verify_otp_success', phone_number, f'User: {user.username}')
+        log_audit('verify_otp_success', phone_number, f'User: {user.username}, IP: {client_ip}')
         
         # Determine redirect URL based on user role
         if user.role == UserRole.ADMIN:
@@ -208,6 +295,17 @@ def verify_otp():
 def resend_otp():
     """Resend OTP to the same phone number"""
     try:
+        # Get client IP using secure detection
+        client_ip = get_client_ip()
+        
+        # Check production readiness
+        config_status = check_production_readiness()
+        if not config_status['otp_enabled']:
+            return jsonify({
+                'success': False,
+                'message': 'OTP service is currently unavailable'
+            }), 503
+        
         # Get current OTP data
         otp_data = OTPSession.get_otp_data(session)
         
@@ -218,6 +316,16 @@ def resend_otp():
             }), 400
         
         phone_number = otp_data['phone']
+        
+        # Apply production-grade rate limiting
+        can_send, reason, retry_after = otp_rate_limiter.can_send_otp(phone_number, client_ip)
+        if not can_send:
+            log_audit("RESEND_OTP_RATE_LIMITED", phone_number, f"Reason: {reason}, Retry after: {retry_after}s")
+            return jsonify({
+                'success': False,
+                'message': 'Rate limit exceeded. Please try again later.',
+                'retry_after': retry_after
+            }), 429
         
         # Check if user still exists and is active
         user = User.query.filter_by(phone=phone_number).first()
@@ -243,6 +351,9 @@ def resend_otp():
         
         # Store new OTP in session
         OTPSession.store_otp(session, phone_number, otp_code, 'login')
+        
+        # Record successful resend for rate limiting
+        otp_rate_limiter.record_otp_sent(phone_number, client_ip)
         
         log_audit('resend_otp_success', phone_number, f'User: {user.username}')
         
