@@ -7,6 +7,7 @@ import com.plstravels.driver.data.models.Vehicle
 import com.plstravels.driver.data.models.PhotoType
 import com.plstravels.driver.data.models.NotificationType
 import com.plstravels.driver.data.models.NotificationPriority
+import com.plstravels.driver.data.models.CommandType
 
 /**
  * Room type converters for complex data types
@@ -56,5 +57,15 @@ class Converters {
     @TypeConverter
     fun toNotificationPriority(priorityString: String?): NotificationPriority? {
         return priorityString?.let { NotificationPriority.valueOf(it) }
+    }
+    
+    @TypeConverter
+    fun fromCommandType(commandType: CommandType?): String? {
+        return commandType?.name
+    }
+    
+    @TypeConverter
+    fun toCommandType(commandTypeString: String?): CommandType? {
+        return commandTypeString?.let { CommandType.valueOf(it) }
     }
 }

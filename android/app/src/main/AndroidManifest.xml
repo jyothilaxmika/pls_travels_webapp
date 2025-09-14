@@ -17,9 +17,10 @@
     <!-- Storage permissions for file uploads (scoped storage compliant) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     
-    <!-- Foreground service for location tracking -->
+    <!-- Foreground service for location tracking and data sync -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     
     <!-- Wake lock for background operations -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -73,6 +74,13 @@
             android:name=".service.NotificationActionReceiver"
             android:enabled="true"
             android:exported="false" />
+            
+        <!-- Background Sync Service -->
+        <service
+            android:name=".service.SyncService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
         
         <!-- Work Manager workers -->
         <service

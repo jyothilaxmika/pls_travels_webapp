@@ -18,7 +18,8 @@ import javax.inject.Singleton
 class DutyRepository @Inject constructor(
     private val apiService: ApiService,
     private val dutyDao: DutyDao,
-    private val vehicleDao: VehicleDao
+    private val vehicleDao: VehicleDao,
+    private val commandQueueRepository: CommandQueueRepository
 ) {
     
     fun getAllDuties(): Flow<List<Duty>> = dutyDao.getAllDuties()
@@ -67,38 +68,60 @@ class DutyRepository @Inject constructor(
         currentLocation: LocationData?
     ): Result<DutyDetails> {
         return try {
-            val request = StartDutyRequest(
+            // Get vehicle details for local duty creation
+            val vehicle = vehicleDao.getVehicleById(vehicleId)
+            
+            // Generate temp ID for consistent tracking
+            val tempDutyId = generateTempId()
+            
+            // Create local duty first (offline-first approach)
+            val localDuty = Duty(
+                id = tempDutyId.hashCode(), // Convert string to int for Duty ID
+                status = "ACTIVE",
+                startTime = System.currentTimeMillis(),
+                endTime = null,
+                vehicle = vehicle,
+                route = null,
+                totalEarnings = 0.0,
+                distanceKm = 0.0,
+                createdAt = System.currentTimeMillis()
+            )
+            dutyDao.insertDuty(localDuty)
+            
+            // Queue command for server sync with proper temp ID tracking
+            val command = StartDutyCommand(
                 vehicleId = vehicleId,
-                startOdometer = startOdometer,
-                startLocation = currentLocation
+                startOdometer = startOdometer.toInt(),
+                notes = "Started duty from mobile app",
+                tempDutyId = tempDutyId
+            )
+            commandQueueRepository.queueCommand(
+                command = command,
+                idempotencyKey = command.idempotencyKey,
+                tempEntityId = tempDutyId
             )
             
-            val response = apiService.startDuty(request)
+            // Create local duty details for immediate UI update
+            val dutyDetails = DutyDetails(
+                id = localDuty.id,
+                status = localDuty.status,
+                startTime = localDuty.startTime,
+                endTime = null,
+                vehicle = vehicle,
+                distanceKm = 0.0,
+                totalRevenue = 0.0
+            )
             
-            if (response.isSuccessful && response.body()?.success == true) {
-                val dutyDetails = response.body()!!.duty!!
-                
-                // Convert to local Duty model and save
-                val duty = Duty(
-                    id = dutyDetails.id,
-                    status = dutyDetails.status,
-                    startTime = dutyDetails.startTime,
-                    endTime = dutyDetails.endTime,
-                    vehicle = dutyDetails.vehicle,
-                    route = null,
-                    totalEarnings = 0.0,
-                    distanceKm = dutyDetails.distanceKm,
-                    createdAt = dutyDetails.startTime
-                )
-                dutyDao.insertDuty(duty)
-                
-                Result.success(dutyDetails)
-            } else {
-                Result.failure(Exception("Failed to start duty: ${response.body()?.error}"))
-            }
+            Result.success(dutyDetails)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+    
+    private fun generateTempId(): String {
+        // Generate temporary negative ID for offline duties as string
+        // Server will assign proper positive ID when synced
+        return "temp_${System.currentTimeMillis()}"
     }
     
     suspend fun endDuty(
@@ -109,37 +132,45 @@ class DutyRepository @Inject constructor(
         notes: String
     ): Result<DutyDetails> {
         return try {
-            val request = EndDutyRequest(
-                dutyId = dutyId,
-                endOdometer = endOdometer,
-                totalRevenue = totalRevenue,
-                endLocation = currentLocation,
+            // Get current active duty
+            val currentDuty = dutyDao.getActiveDuty()
+            if (currentDuty == null) {
+                return Result.failure(Exception("No active duty found"))
+            }
+            
+            // Update local duty first (offline-first approach)
+            val updatedDuty = currentDuty.copy(
+                status = "COMPLETED",
+                endTime = System.currentTimeMillis(),
+                totalEarnings = totalRevenue,
+                distanceKm = endOdometer - (currentDuty.vehicle?.mileage ?: 0.0)
+            )
+            dutyDao.updateDuty(updatedDuty)
+            
+            // Queue command for server sync
+            val command = EndDutyCommand(
+                dutyId = currentDuty.id,
+                endOdometer = endOdometer.toInt(),
                 notes = notes
             )
+            commandQueueRepository.queueCommand(
+                command = command,
+                idempotencyKey = command.idempotencyKey,
+                tempEntityId = currentDuty.id.toString()
+            )
             
-            val response = apiService.endDuty(request)
+            // Create duty details for immediate UI update
+            val dutyDetails = DutyDetails(
+                id = updatedDuty.id,
+                status = updatedDuty.status,
+                startTime = updatedDuty.startTime,
+                endTime = updatedDuty.endTime,
+                vehicle = updatedDuty.vehicle,
+                distanceKm = updatedDuty.distanceKm,
+                totalRevenue = updatedDuty.totalEarnings
+            )
             
-            if (response.isSuccessful && response.body()?.success == true) {
-                val dutyDetails = response.body()!!.duty!!
-                
-                // Update local duty
-                val duty = Duty(
-                    id = dutyDetails.id,
-                    status = dutyDetails.status,
-                    startTime = dutyDetails.startTime,
-                    endTime = dutyDetails.endTime,
-                    vehicle = dutyDetails.vehicle,
-                    route = null,
-                    totalEarnings = dutyDetails.totalRevenue,
-                    distanceKm = dutyDetails.distanceKm,
-                    createdAt = dutyDetails.startTime
-                )
-                dutyDao.updateDuty(duty)
-                
-                Result.success(dutyDetails)
-            } else {
-                Result.failure(Exception("Failed to end duty: ${response.body()?.error}"))
-            }
+            Result.success(dutyDetails)
         } catch (e: Exception) {
             Result.failure(e)
         }

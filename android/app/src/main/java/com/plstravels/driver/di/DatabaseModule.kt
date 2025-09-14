@@ -25,7 +25,7 @@ object DatabaseModule {
             PLSDatabase::class.java,
             PLSDatabase.DATABASE_NAME
         )
-        .fallbackToDestructiveMigration() // For development - remove in production
+        .addMigrations(*DatabaseMigrations.getAllMigrations())
         .build()
     }
     
@@ -46,4 +46,7 @@ object DatabaseModule {
     
     @Provides
     fun provideNotificationDao(database: PLSDatabase): NotificationDao = database.notificationDao()
+    
+    @Provides
+    fun provideCommandQueueDao(database: PLSDatabase): CommandQueueDao = database.commandQueueDao()
 }

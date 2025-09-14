@@ -12,13 +12,14 @@ import com.plstravels.driver.data.models.LocationPoint
 import com.plstravels.driver.data.models.LocationSession
 import com.plstravels.driver.data.models.Photo
 import com.plstravels.driver.data.models.Notification
+import com.plstravels.driver.data.models.QueuedCommand
 
 /**
  * Room database for offline storage and caching
  */
 @Database(
-    entities = [User::class, Duty::class, Vehicle::class, LocationPoint::class, LocationSession::class, Photo::class, Notification::class],
-    version = 4,
+    entities = [User::class, Duty::class, Vehicle::class, LocationPoint::class, LocationSession::class, Photo::class, Notification::class, QueuedCommand::class],
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -30,6 +31,7 @@ abstract class PLSDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao
     abstract fun photoDao(): PhotoDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun commandQueueDao(): CommandQueueDao
     
     companion object {
         const val DATABASE_NAME = "pls_driver_database"
