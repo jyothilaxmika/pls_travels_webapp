@@ -31,6 +31,7 @@ class CameraManager @Inject constructor(
     private var imageCapture: ImageCapture? = null
     private var camera: Camera? = null
     private var currentConfig = CameraCaptureConfig()
+    private var currentLensFacing: Int = CameraSelector.LENS_FACING_BACK
     
     companion object {
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
@@ -43,7 +44,8 @@ class CameraManager @Inject constructor(
     suspend fun initializeCamera(
         lifecycleOwner: LifecycleOwner,
         previewView: PreviewView,
-        config: CameraCaptureConfig = CameraCaptureConfig()
+        config: CameraCaptureConfig = CameraCaptureConfig(),
+        lensFacing: Int? = null
     ): Result<Unit> {
         return withContext(Dispatchers.Main) {
             try {
@@ -66,8 +68,15 @@ class CameraManager @Inject constructor(
                     .setFlashMode(if (config.enableFlash) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF)
                     .build()
                 
-                // Select back camera as a default
-                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                // Use provided lens facing or current state
+                if (lensFacing != null) {
+                    currentLensFacing = lensFacing
+                }
+                
+                val cameraSelector = when (currentLensFacing) {
+                    CameraSelector.LENS_FACING_FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+                    else -> CameraSelector.DEFAULT_BACK_CAMERA
+                }
                 
                 // Unbind use cases before rebinding
                 cameraProvider?.unbindAll()
@@ -158,6 +167,27 @@ class CameraManager @Inject constructor(
     }
     
     /**
+     * Get current lens facing
+     */
+    fun getCurrentLensFacing(): Int {
+        return currentLensFacing
+    }
+    
+    /**
+     * Check if currently using front camera
+     */
+    fun isFrontCamera(): Boolean {
+        return currentLensFacing == CameraSelector.LENS_FACING_FRONT
+    }
+    
+    /**
+     * Check if currently using back camera
+     */
+    fun isBackCamera(): Boolean {
+        return currentLensFacing == CameraSelector.LENS_FACING_BACK
+    }
+    
+    /**
      * Switch between front and back camera
      */
     suspend fun switchCamera(
@@ -170,17 +200,15 @@ class CameraManager @Inject constructor(
                     IllegalStateException("Camera not initialized")
                 )
                 
-                // Determine current camera and switch
-                val currentCameraSelector = camera?.cameraInfo?.let { info ->
-                    if (info.lensFacing == CameraSelector.LENS_FACING_BACK) {
-                        CameraSelector.DEFAULT_FRONT_CAMERA
-                    } else {
-                        CameraSelector.DEFAULT_BACK_CAMERA
-                    }
-                } ?: CameraSelector.DEFAULT_BACK_CAMERA
+                // Determine current camera and switch to the opposite
+                val newLensFacing = if (currentLensFacing == CameraSelector.LENS_FACING_BACK) {
+                    CameraSelector.LENS_FACING_FRONT
+                } else {
+                    CameraSelector.LENS_FACING_BACK
+                }
                 
                 // Reinitialize with new camera
-                initializeCamera(lifecycleOwner, previewView, currentConfig)
+                initializeCamera(lifecycleOwner, previewView, currentConfig, newLensFacing)
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -195,6 +223,8 @@ class CameraManager @Inject constructor(
         cameraProvider = null
         imageCapture = null
         camera = null
+        // Reset to default back camera
+        currentLensFacing = CameraSelector.LENS_FACING_BACK
     }
     
     private fun createPhotoFile(fileName: String?): File {

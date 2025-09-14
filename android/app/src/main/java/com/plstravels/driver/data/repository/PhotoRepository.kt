@@ -1,9 +1,12 @@
 package com.plstravels.driver.data.repository
 
+import android.content.Context
 import com.plstravels.driver.camera.CameraManager
 import com.plstravels.driver.data.local.PhotoDao
 import com.plstravels.driver.data.models.*
 import com.plstravels.driver.data.network.ApiService
+import com.plstravels.driver.service.UnifiedSyncOrchestrator
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -20,9 +23,11 @@ import javax.inject.Singleton
  */
 @Singleton
 class PhotoRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val apiService: ApiService,
     private val photoDao: PhotoDao,
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraManager,
+    private val unifiedSyncOrchestrator: UnifiedSyncOrchestrator
 ) {
     
     fun getAllPhotos(): Flow<List<Photo>> = photoDao.getAllPhotos()
@@ -155,6 +160,12 @@ class PhotoRepository @Inject constructor(
             val cutoffTime = System.currentTimeMillis() - (30 * 24 * 60 * 60 * 1000L)
             photoDao.deleteOldUploadedPhotos(cutoffTime)
             
+            // If there are still pending photos, schedule another sync
+            val remainingCount = photoDao.getPendingUploadCount()
+            if (remainingCount > 0) {
+                schedulePhotoSync(UnifiedSyncOrchestrator.PRIORITY_MEDIUM)
+            }
+            
             Result.success(successCount)
         } catch (e: Exception) {
             Result.failure(e)
@@ -187,13 +198,64 @@ class PhotoRepository @Inject constructor(
     }
     
     private suspend fun schedulePhotoUpload(photo: Photo) {
-        // In a real implementation, this would schedule background upload work
-        // For now, we'll just attempt immediate upload if possible
         try {
-            uploadPhoto(photo)
+            // Determine priority based on photo type
+            val priority = when (photo.photoType) {
+                PhotoType.DUTY_START, PhotoType.DUTY_END -> {
+                    // High priority for duty-critical photos
+                    UnifiedSyncOrchestrator.PRIORITY_HIGH
+                }
+                PhotoType.VEHICLE_INSPECTION, PhotoType.ODOMETER_READING -> {
+                    // Medium priority for important compliance photos
+                    UnifiedSyncOrchestrator.PRIORITY_MEDIUM
+                }
+                else -> {
+                    // Low priority for other photos
+                    UnifiedSyncOrchestrator.PRIORITY_LOW
+                }
+            }
+            
+            // Schedule upload through unified orchestrator
+            unifiedSyncOrchestrator.scheduleImmediateSync(
+                context,
+                priority,
+                "photo_upload_${photo.photoType.name.lowercase()}"
+            )
+            
+            // Also attempt immediate upload if conditions are optimal
+            // This provides instant feedback when network/battery is good
+            if (priority >= UnifiedSyncOrchestrator.PRIORITY_MEDIUM) {
+                try {
+                    uploadPhoto(photo)
+                } catch (e: Exception) {
+                    // Upload will be retried via scheduled sync work
+                }
+            }
+            
         } catch (e: Exception) {
-            // Upload will be retried later via sync
+            // Upload will be retried later via periodic sync
         }
+    }
+    
+    /**
+     * Schedule photo sync through unified orchestrator
+     */
+    suspend fun schedulePhotoSync(priority: Int = UnifiedSyncOrchestrator.PRIORITY_MEDIUM) {
+        unifiedSyncOrchestrator.scheduleImmediateSync(
+            context,
+            priority,
+            "photo_sync_pending_uploads"
+        )
+    }
+    
+    /**
+     * Schedule expedited photo sync for critical operations
+     */
+    suspend fun scheduleExpeditedPhotoSync() {
+        unifiedSyncOrchestrator.scheduleExpeditedSync(
+            context,
+            "critical_photo_upload"
+        )
     }
     
     /**
