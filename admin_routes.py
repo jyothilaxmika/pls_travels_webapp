@@ -2855,12 +2855,13 @@ def export_audit_logs():
     writer = csv.writer(output)
     
     # Security header with metadata
-    writer.writerow([
+    metadata_row = [
         f'# PLS TRAVELS AUDIT LOG EXPORT',
         f'# Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
         f'# Records: {len(audit_logs)}/10000 max',
         f'# Note: Sensitive data has been sanitized for security'
-    ])
+    ]
+    writer.writerow(CSVSanitizer.sanitize_csv_row(metadata_row))
     
     # Column headers
     header_row = [
