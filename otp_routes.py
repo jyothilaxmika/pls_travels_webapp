@@ -233,6 +233,23 @@ def complete_registration():
         if not phone_number or not session.get('registration_pending'):
             return jsonify({'success': False, 'message': 'Session expired. Please start registration again.'})
         
+        # If session is lost, try to find phone number from recent OTP verification
+        if not phone_number:
+            # Look for recent OTP verification with this code
+            recent_otp = OTPVerification.query.filter_by(
+                otp_code=otp_code,
+                is_verified=False
+            ).filter(
+                OTPVerification.expires_at > datetime.utcnow()
+            ).first()
+            
+            if recent_otp:
+                phone_number = recent_otp.phone_number
+                logging.info(f"Found phone number from OTP verification: {phone_number}")
+            
+        if not phone_number:
+            return jsonify({'success': False, 'message': 'Session expired. Please start registration again.'})
+        
         # Verify OTP
         is_valid, message = OTPVerification.verify_otp(phone_number, otp_code)
         
