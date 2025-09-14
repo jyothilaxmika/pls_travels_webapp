@@ -89,7 +89,7 @@ class User(UserMixin, db.Model):
     # Profile information
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
-    phone = db.Column(db.String(20), index=True)
+    phone = db.Column(db.String(20), unique=True, index=True)
     profile_picture = db.Column(db.String(255))
     
     # Authentication and security
