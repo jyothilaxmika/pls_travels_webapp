@@ -18,7 +18,7 @@ interface ApiService {
     suspend fun verifyOtp(@Body request: VerifyOtpRequest): Response<VerifyOtpResponse>
     
     @POST("api/v1/auth/refresh")
-    suspend fun refreshToken(): Response<RefreshTokenResponse>
+    suspend fun refreshToken(@Body request: RefreshTokenRequest): Response<RefreshTokenResponse>
     
     @POST("api/v1/auth/logout")
     suspend fun logout(): Response<ApiResponse>
