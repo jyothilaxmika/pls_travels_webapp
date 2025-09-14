@@ -14,6 +14,9 @@ from utils import (allowed_file, calculate_earnings, calculate_advanced_salary,
                    process_file_upload, process_camera_capture, calculate_tripsheet)
 from auth import log_audit
 
+# Import CSRF protection
+from app import csrf
+
 driver_bp = Blueprint('driver', __name__)
 
 def driver_required(f):
@@ -406,6 +409,7 @@ def duty():
                          available_schemes=available_schemes)
 
 @driver_bp.route('/duty/start', methods=['POST'])
+@csrf.exempt
 @login_required
 @driver_required
 def start_duty():
@@ -549,6 +553,7 @@ def start_duty():
     return redirect(url_for('driver.duty'))
 
 @driver_bp.route('/duty/end', methods=['POST'])
+@csrf.exempt
 @login_required
 @driver_required
 def end_duty():
