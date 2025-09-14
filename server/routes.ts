@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { sendOTPSchema, verifyOTPSchema, resendOTPSchema, insertDriverProfileSchema, DriverStatus } from "@shared/schema";
 import multer from "multer";
 import { mkdirSync } from "fs";
+import twilio from "twilio";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,7 +141,7 @@ export function registerRoutes(app: any) {
       // Set expiration time (5 minutes from now)
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-      // TODO: Integrate with Twilio SMS service using environment variables
+      // Integrate with Twilio SMS service
       const accountSid = process.env.TWILIO_ACCOUNT_SID;
       const authToken = process.env.TWILIO_AUTH_TOKEN;
       const fromNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -149,8 +150,19 @@ export function registerRoutes(app: any) {
         console.warn("Twilio credentials not configured, logging OTP instead");
         console.log(`OTP for ${cleanPhone}: ${otpCode}`);
       } else {
-        // TODO: Implement actual Twilio SMS sending
-        console.log(`Would send OTP ${otpCode} to ${cleanPhone} via Twilio`);
+        try {
+          const client = twilio(accountSid, authToken);
+          const message = await client.messages.create({
+            body: `Your PLS Travels verification code is: ${otpCode}. This code will expire in 5 minutes.`,
+            from: fromNumber,
+            to: cleanPhone.startsWith('+') ? cleanPhone : `+91${cleanPhone}`
+          });
+          console.log(`SMS sent successfully to ${cleanPhone}: ${message.sid}`);
+        } catch (smsError) {
+          console.error("Failed to send SMS:", smsError);
+          // Fall back to logging for development
+          console.log(`Fallback - OTP for ${cleanPhone}: ${otpCode}`);
+        }
       }
 
       // Store OTP in session or database
