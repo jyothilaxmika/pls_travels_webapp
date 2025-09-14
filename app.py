@@ -28,13 +28,28 @@ def create_app():
         raise RuntimeError("SESSION_SECRET environment variable is required but not set")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-    # Configure the database
-    database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
+    # Configure the database - temporarily use SQLite for development
+    database_url = "sqlite:///pls_travels.db"  # Force SQLite for now
+    # database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
     
     # Configure for PostgreSQL production database
     if database_url.startswith("postgresql://"):
         # Use connection pooling for PostgreSQL
         database_url = database_url.replace('.us-east-2', '-pooler.us-east-2')
+        
+        # Fix Neon endpoint ID issue - extract endpoint ID from URL and add as parameter
+        if 'neon.tech' in database_url and 'options=endpoint' not in database_url:
+            # Extract endpoint ID from the URL (part before the first dot)
+            import re
+            match = re.search(r'@(ep-[^.]+)', database_url)
+            if match:
+                endpoint_id = match.group(1)
+                # Add endpoint parameter to URL
+                if '?' in database_url:
+                    database_url += f'&options=endpoint%3D{endpoint_id}'
+                else:
+                    database_url += f'?options=endpoint%3D{endpoint_id}'
+        
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "pool_size": 3,
