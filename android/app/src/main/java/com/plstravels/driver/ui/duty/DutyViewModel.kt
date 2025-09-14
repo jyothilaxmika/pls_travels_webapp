@@ -8,6 +8,8 @@ import com.plstravels.driver.data.models.LocationData
 import com.plstravels.driver.data.repository.DutyRepository
 import com.plstravels.driver.data.repository.LocationRepository
 import com.plstravels.driver.data.repository.PhotoRepository
+import com.plstravels.driver.data.repository.ConnectivityRepository
+import com.plstravels.driver.data.repository.CommandQueueRepository
 import com.plstravels.driver.service.LocationTrackingService
 import com.plstravels.driver.utils.LocationPermissionHelper
 import com.plstravels.driver.workers.LocationSyncWorker
@@ -17,6 +19,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import android.content.Context
 import android.content.Intent
@@ -30,6 +34,8 @@ class DutyViewModel @Inject constructor(
     private val dutyRepository: DutyRepository,
     private val locationRepository: LocationRepository,
     private val photoRepository: PhotoRepository,
+    private val connectivityRepository: ConnectivityRepository,
+    private val commandQueueRepository: CommandQueueRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     
@@ -56,6 +62,33 @@ class DutyViewModel @Inject constructor(
     
     private val _currentDutyPhotos = MutableStateFlow<List<com.plstravels.driver.data.models.Photo>>(emptyList())
     val currentDutyPhotos: StateFlow<List<com.plstravels.driver.data.models.Photo>> = _currentDutyPhotos.asStateFlow()
+    
+    // Connectivity and sync status flows
+    val connectivityStatus = combine(
+        connectivityRepository.isConnected,
+        connectivityRepository.networkType
+    ) { isConnected, networkType ->
+        ConnectivityStatus(isConnected, networkType)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ConnectivityStatus(false, ConnectivityRepository.NetworkType.NONE)
+    )
+    
+    val syncStatus = commandQueueRepository.getPendingCommandCount().combine(
+        connectivityRepository.isConnected
+    ) { pendingCount, isConnected ->
+        SyncStatus(
+            pendingCount = pendingCount,
+            isSyncing = false, // This would be managed by SyncManager in a real implementation
+            lastSyncTime = null,
+            isConnected = isConnected
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SyncStatus(0, false, null, false)
+    )
     
     init {
         loadInitialData()
@@ -278,6 +311,24 @@ class DutyViewModel @Inject constructor(
         return photoRepository.getRequiredDutyEndPhotos()
     }
 }
+
+/**
+ * Data class for connectivity status
+ */
+data class ConnectivityStatus(
+    val isConnected: Boolean,
+    val networkType: ConnectivityRepository.NetworkType
+)
+
+/**
+ * Data class for sync status  
+ */
+data class SyncStatus(
+    val pendingCount: Int,
+    val isSyncing: Boolean,
+    val lastSyncTime: Long?,
+    val isConnected: Boolean
+)
 
 /**
  * UI state for duty management

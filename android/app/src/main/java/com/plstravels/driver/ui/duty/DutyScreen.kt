@@ -3,11 +3,21 @@ package com.plstravels.driver.ui.duty
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
+import com.plstravels.driver.ui.components.ConnectivityIndicator
+import com.plstravels.driver.ui.components.SyncStatusIndicator
+import com.plstravels.driver.ui.components.OfflineModeBanner
+import com.plstravels.driver.data.repository.ConnectivityRepository
+import com.plstravels.driver.data.repository.CommandQueueRepository
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +38,8 @@ fun DutyScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     onLogout: () -> Unit,
     onNavigateToCamera: (com.plstravels.driver.data.models.PhotoType, Int?) -> Unit,
-    onNavigateToNotifications: () -> Unit
+    onNavigateToNotifications: () -> Unit,
+    onNavigateToSync: () -> Unit
 ) {
     val uiState by dutyViewModel.uiState.collectAsState()
     val activeDuty by dutyViewModel.activeDuty.collectAsState()
@@ -38,6 +49,8 @@ fun DutyScreen(
     val showLocationPermissionDialog by dutyViewModel.showLocationPermissionDialog.collectAsState()
     val showPhotoCaptureSheet by dutyViewModel.showPhotoCaptureSheet.collectAsState()
     val currentDutyPhotos by dutyViewModel.currentDutyPhotos.collectAsState()
+    val connectivityStatus by dutyViewModel.connectivityStatus.collectAsState()
+    val syncStatus by dutyViewModel.syncStatus.collectAsState()
     
     Column(
         modifier = Modifier
@@ -45,7 +58,7 @@ fun DutyScreen(
             .padding(16.dp)
     ) {
         
-        // Header with logout
+        // Header with connectivity status
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -57,31 +70,58 @@ fun DutyScreen(
                 fontWeight = FontWeight.Bold
             )
             
-            // Notification bell with badge
-            Box {
-                IconButton(onClick = onNavigateToNotifications) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Connectivity indicator
+                ConnectivityIndicator(
+                    isConnected = connectivityStatus?.isConnected ?: false,
+                    networkType = connectivityStatus?.networkType ?: ConnectivityRepository.NetworkType.NONE
+                )
+                
+                // Sync status indicator
+                SyncStatusIndicator(
+                    pendingCount = syncStatus?.pendingCount ?: 0,
+                    isConnected = connectivityStatus?.isConnected ?: false,
+                    isSyncing = syncStatus?.isSyncing ?: false,
+                    lastSyncTime = syncStatus?.lastSyncTime,
+                    onClick = onNavigateToSync
+                )
+                
+                // Notification bell with badge
+                Box {
+                    IconButton(onClick = onNavigateToNotifications) {
+                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                    }
+                    
+                    // Notification badge - in real app this would show unread count
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(MaterialTheme.colorScheme.error, CircleShape)
+                            .align(Alignment.TopEnd)
+                            .offset(x = (-4).dp, y = 4.dp)
+                    )
                 }
                 
-                // Notification badge - in real app this would show unread count
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(MaterialTheme.colorScheme.error, CircleShape)
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-4).dp, y = 4.dp)
-                )
-            }
-            
-            IconButton(
-                onClick = {
-                    authViewModel.resetState()
-                    onLogout()
+                IconButton(
+                    onClick = {
+                        authViewModel.resetState()
+                        onLogout()
+                    }
+                ) {
+                    Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
                 }
-            ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
             }
         }
+        
+        // Offline mode banner
+        OfflineModeBanner(
+            pendingCount = syncStatus?.pendingCount ?: 0,
+            onSyncClick = onNavigateToSync,
+            modifier = Modifier.padding(top = 8.dp)
+        )
         
         Spacer(modifier = Modifier.height(16.dp))
         

@@ -19,6 +19,7 @@ import com.plstravels.driver.ui.auth.AuthViewModel
 import com.plstravels.driver.ui.duty.DutyScreen
 import com.plstravels.driver.ui.camera.CameraScreen
 import com.plstravels.driver.ui.notifications.NotificationScreen
+import com.plstravels.driver.ui.sync.SyncStatusScreen
 import com.plstravels.driver.ui.theme.PLSDriverTheme
 import com.plstravels.driver.data.models.PhotoType
 import dagger.hilt.android.AndroidEntryPoint
@@ -76,12 +77,23 @@ fun PLSDriverApp(authViewModel: AuthViewModel) {
                 },
                 onNavigateToNotifications = {
                     navController.navigate("notifications")
+                },
+                onNavigateToSync = {
+                    navController.navigate("sync_status")
                 }
             )
         }
         
         composable("notifications") {
             NotificationScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("sync_status") {
+            SyncStatusScreen(
                 onBack = {
                     navController.popBackStack()
                 }
