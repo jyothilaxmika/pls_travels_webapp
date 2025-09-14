@@ -84,6 +84,39 @@ class SyncManager @Inject constructor(
     }
     
     /**
+     * Perform full synchronization for background sync worker
+     */
+    suspend fun performFullSync(): BackgroundSyncResult {
+        return try {
+            Log.d(TAG, "Starting full sync for background worker")
+            
+            // Check connectivity first
+            if (!connectivityRepository.isConnected.first()) {
+                Log.w(TAG, "No connectivity - cannot perform sync")
+                return BackgroundSyncResult.NETWORK_ERROR
+            }
+            
+            // Execute sync and get count
+            val executedCount = executeSync()
+            
+            // Check if there are still pending commands
+            val pendingCount = commandQueueRepository.getPendingCommandCount().first()
+            
+            Log.d(TAG, "Full sync completed - executed: $executedCount, remaining: $pendingCount")
+            
+            when {
+                executedCount > 0 && pendingCount == 0 -> BackgroundSyncResult.SUCCESS
+                executedCount > 0 && pendingCount > 0 -> BackgroundSyncResult.PARTIAL_SUCCESS
+                executedCount == 0 && pendingCount == 0 -> BackgroundSyncResult.SUCCESS
+                else -> BackgroundSyncResult.FAILURE
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception during full sync", e)
+            BackgroundSyncResult.FAILURE
+        }
+    }
+    
+    /**
      * Start monitoring connectivity changes and sync when connected
      */
     private fun startConnectivityMonitoring() {
@@ -236,3 +269,13 @@ data class SyncStatus(
     val isMetered: Boolean,
     val lastSyncAttempt: Long
 )
+
+/**
+ * Background sync result enumeration
+ */
+enum class BackgroundSyncResult {
+    SUCCESS,
+    PARTIAL_SUCCESS,
+    FAILURE,
+    NETWORK_ERROR
+}
