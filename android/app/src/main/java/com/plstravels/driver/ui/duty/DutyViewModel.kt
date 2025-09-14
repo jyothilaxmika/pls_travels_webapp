@@ -6,12 +6,19 @@ import com.plstravels.driver.data.models.Duty
 import com.plstravels.driver.data.models.Vehicle
 import com.plstravels.driver.data.models.LocationData
 import com.plstravels.driver.data.repository.DutyRepository
+import com.plstravels.driver.data.repository.LocationRepository
+import com.plstravels.driver.service.LocationTrackingService
+import com.plstravels.driver.utils.LocationPermissionHelper
+import com.plstravels.driver.workers.LocationSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import android.content.Context
+import android.content.Intent
 import javax.inject.Inject
 
 /**
@@ -19,7 +26,9 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class DutyViewModel @Inject constructor(
-    private val dutyRepository: DutyRepository
+    private val dutyRepository: DutyRepository,
+    private val locationRepository: LocationRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(DutyUiState())
@@ -34,8 +43,15 @@ class DutyViewModel @Inject constructor(
     private val _activeDuty = MutableStateFlow<Duty?>(null)
     val activeDuty: StateFlow<Duty?> = _activeDuty.asStateFlow()
     
+    private val _locationPermissionsGranted = MutableStateFlow(false)
+    val locationPermissionsGranted: StateFlow<Boolean> = _locationPermissionsGranted.asStateFlow()
+    
+    private val _showLocationPermissionDialog = MutableStateFlow(false)
+    val showLocationPermissionDialog: StateFlow<Boolean> = _showLocationPermissionDialog.asStateFlow()
+    
     init {
         loadInitialData()
+        checkLocationPermissions()
     }
     
     private fun loadInitialData() {
@@ -87,6 +103,12 @@ class DutyViewModel @Inject constructor(
                 val result = dutyRepository.startDuty(vehicleId, startOdometer, currentLocation)
                 
                 if (result.isSuccess) {
+                    // Start location tracking if permissions are granted
+                    val dutyDetails = result.getOrNull()
+                    if (dutyDetails != null && _locationPermissionsGranted.value) {
+                        startLocationTracking(dutyDetails.id)
+                    }
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         message = "Duty started successfully"
@@ -123,6 +145,9 @@ class DutyViewModel @Inject constructor(
                 )
                 
                 if (result.isSuccess) {
+                    // Stop location tracking
+                    stopLocationTracking()
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         message = "Duty ended successfully"
@@ -149,6 +174,76 @@ class DutyViewModel @Inject constructor(
     
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+    
+    private fun checkLocationPermissions() {
+        _locationPermissionsGranted.value = LocationPermissionHelper.hasAllRequiredPermissions(context)
+    }
+    
+    fun requestLocationPermissions() {
+        if (!LocationPermissionHelper.hasAllRequiredPermissions(context)) {
+            _showLocationPermissionDialog.value = true
+        } else {
+            _locationPermissionsGranted.value = true
+        }
+    }
+    
+    fun onLocationPermissionsGranted() {
+        _locationPermissionsGranted.value = true
+        _showLocationPermissionDialog.value = false
+        
+        // Start location sync worker
+        LocationSyncWorker.schedulePeriodicSync(context)
+    }
+    
+    fun onLocationPermissionsDenied() {
+        _locationPermissionsGranted.value = false
+        _showLocationPermissionDialog.value = false
+    }
+    
+    fun dismissLocationPermissionDialog() {
+        _showLocationPermissionDialog.value = false
+    }
+    
+    private fun startLocationTracking(dutyId: Int) {
+        viewModelScope.launch {
+            try {
+                // Start location session in repository
+                locationRepository.startLocationSession(dutyId)
+                
+                // Start foreground location service
+                val intent = Intent(context, LocationTrackingService::class.java).apply {
+                    action = LocationTrackingService.ACTION_START_TRACKING
+                    putExtra(LocationTrackingService.EXTRA_DUTY_ID, dutyId)
+                }
+                context.startForegroundService(intent)
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to start location tracking: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    private fun stopLocationTracking() {
+        viewModelScope.launch {
+            try {
+                // Stop foreground location service
+                val intent = Intent(context, LocationTrackingService::class.java).apply {
+                    action = LocationTrackingService.ACTION_STOP_TRACKING
+                }
+                context.startService(intent)
+                
+                // Trigger immediate sync of pending locations
+                LocationSyncWorker.scheduleImmediateSync(context)
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to stop location tracking: ${e.message}"
+                )
+            }
+        }
     }
 }
 

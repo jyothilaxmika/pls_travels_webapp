@@ -32,6 +32,8 @@ fun DutyScreen(
     val activeDuty by dutyViewModel.activeDuty.collectAsState()
     val duties by dutyViewModel.duties.collectAsState()
     val vehicles by dutyViewModel.vehicles.collectAsState()
+    val locationPermissionsGranted by dutyViewModel.locationPermissionsGranted.collectAsState()
+    val showLocationPermissionDialog by dutyViewModel.showLocationPermissionDialog.collectAsState()
     
     Column(
         modifier = Modifier
@@ -63,13 +65,26 @@ fun DutyScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
+        // Location Permission Status
+        if (!locationPermissionsGranted) {
+            LocationPermissionCard(
+                onRequestPermissions = { dutyViewModel.requestLocationPermissions() }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // Active Duty Section
         ActiveDutySection(
             activeDuty = activeDuty,
             vehicles = vehicles,
             uiState = uiState,
+            locationPermissionsGranted = locationPermissionsGranted,
             onStartDuty = { vehicleId, odometer ->
-                dutyViewModel.startDuty(vehicleId, odometer, null)
+                if (locationPermissionsGranted) {
+                    dutyViewModel.startDuty(vehicleId, odometer, null)
+                } else {
+                    dutyViewModel.requestLocationPermissions()
+                }
             },
             onEndDuty = { dutyId, odometer, revenue ->
                 dutyViewModel.endDuty(dutyId, odometer, revenue, null)
@@ -134,6 +149,7 @@ private fun ActiveDutySection(
     activeDuty: Duty?,
     vehicles: List<Vehicle>,
     uiState: DutyUiState,
+    locationPermissionsGranted: Boolean,
     onStartDuty: (Int, Double) -> Unit,
     onEndDuty: (Int?, Double, Double) -> Unit
 ) {
@@ -234,7 +250,7 @@ private fun ActiveDutySection(
                                 onStartDuty(vehicle.id, startOdometer.toDoubleOrNull() ?: 0.0)
                             }
                         },
-                        enabled = !uiState.isLoading && selectedVehicle != null,
+                        enabled = !uiState.isLoading && selectedVehicle != null && locationPermissionsGranted,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         if (uiState.isLoading) {
@@ -245,8 +261,18 @@ private fun ActiveDutySection(
                         } else {
                             Icon(Icons.Default.PlayArrow, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Start Duty")
+                            Text(if (locationPermissionsGranted) "Start Duty" else "Grant Location Permission")
                         }
+                    }
+                    
+                    if (!locationPermissionsGranted) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Location permission required for duty tracking",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 } else {
                     Text("No vehicles available")

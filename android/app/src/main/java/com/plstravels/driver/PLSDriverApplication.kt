@@ -3,6 +3,7 @@ package com.plstravels.driver
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.plstravels.driver.workers.LocationSyncWorker
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -19,6 +20,8 @@ class PLSDriverApplication : Application(), Configuration.Provider {
             
     override fun onCreate() {
         super.onCreate()
-        // Initialize any global components here
+        
+        // Initialize location sync worker
+        LocationSyncWorker.schedulePeriodicSync(this)
     }
 }

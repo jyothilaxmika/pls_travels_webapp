@@ -37,4 +37,7 @@ object DatabaseModule {
     
     @Provides
     fun provideVehicleDao(database: PLSDatabase): VehicleDao = database.vehicleDao()
+    
+    @Provides
+    fun provideLocationDao(database: PLSDatabase): LocationDao = database.locationDao()
 }
