@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}OTP Login - PLS TRAVELS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .otp-input {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        letter-spacing: 0.5em;
+    }
+    .phone-step, .otp-step {
+        transition: all 0.3s ease-in-out;
+    }
+    .step-hidden {
+        display: none;
+    }
+    .resend-timer {
+        color: #6c757d;
+    }
+    .resend-available {
+        color: #0d6efd;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    .loading-spinner {
+        display: none;
+    }
+    .form-floating > .form-control {
+        padding-top: 1.625rem;
+        padding-bottom: 0.625rem;
+    }
+    .form-floating > label {
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <i class="fas fa-bus fa-3x text-primary mb-3"></i>
+                    <h3>PLS TRAVELS</h3>
+                    <p class="text-muted">Driver & Fleet Management</p>
+                </div>
+
+                <!-- Phone Number Step -->
+                <div id="phone-step" class="phone-step">
+                    <h5 class="text-center mb-4">
+                        <i class="fas fa-mobile-alt me-2"></i>Login with OTP
+                    </h5>
+                    
+                    <form id="phone-form">
+                        <div class="form-floating mb-3">
+                            <input 
+                                type="tel" 
+                                class="form-control" 
+                                id="phone-number" 
+                                placeholder="Enter your phone number"
+                                required
+                                maxlength="15"
+                                data-testid="input-phone"
+                            >
+                            <label for="phone-number">Phone Number</label>
+                        </div>
+                        
+                        <div class="text-muted small mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Enter your registered phone number to receive an OTP
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3" id="send-otp-btn" data-testid="button-send-otp">
+                            <span class="btn-text">
+                                <i class="fas fa-paper-plane me-2"></i>Send OTP
+                            </span>
+                            <span class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Sending...
+                            </span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- OTP Verification Step -->
+                <div id="otp-step" class="otp-step step-hidden">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                        <h5>Verify OTP</h5>
+                        <p class="text-muted small mb-0">
+                            We've sent a 6-digit code to<br>
+                            <strong id="masked-phone"></strong>
+                        </p>
+                    </div>
+                    
+                    <form id="otp-form">
+                        <div class="form-floating mb-3">
+                            <input 
+                                type="text" 
+                                class="form-control otp-input" 
+                                id="otp-code" 
+                                placeholder="000000"
+                                required
+                                maxlength="6"
+                                pattern="[0-9]{6}"
+                                autocomplete="one-time-code"
+                                data-testid="input-otp"
+                            >
+                            <label for="otp-code">6-Digit OTP</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 mb-3" id="verify-otp-btn" data-testid="button-verify-otp">
+                            <span class="btn-text">
+                                <i class="fas fa-check me-2"></i>Verify & Login
+                            </span>
+                            <span class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Verifying...
+                            </span>
+                        </button>
+                    </form>
+
+                    <!-- Resend OTP -->
+                    <div class="text-center mb-3">
+                        <small class="text-muted">
+                            Didn't receive the code?
+                            <span id="resend-timer" class="resend-timer">
+                                Resend in <span id="timer-countdown">60</span>s
+                            </span>
+                            <span id="resend-link" class="resend-available d-none" data-testid="link-resend-otp">
+                                <a href="#" id="resend-otp-link">Resend OTP</a>
+                            </span>
+                        </small>
+                    </div>
+
+                    <!-- Go Back -->
+                    <div class="text-center">
+                        <small>
+                            <a href="#" id="back-to-phone-link" class="text-primary" data-testid="link-back-phone">
+                                <i class="fas fa-arrow-left me-1"></i>Use different number
+                            </a>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Alert Container -->
+                <div id="alert-container"></div>
+
+                <!-- Alternative Login Methods -->
+                <div class="text-center mt-4 pt-3 border-top">
+                    <small class="text-muted">
+                        <a href="{{ url_for('auth.login') }}" class="text-decoration-none" data-testid="link-regular-login">
+                            <i class="fas fa-key me-1"></i>Login with Username & Password
+                        </a>
+                    </small>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="success-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5>Login Successful!</h5>
+                <p class="text-muted">Redirecting to your dashboard...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let resendTimer = 60;
+    let timerInterval = null;
+    let currentPhone = '';
+    
+    // Phone form submission
+    document.getElementById('phone-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendOTP();
+    });
+    
+    // OTP form submission
+    document.getElementById('otp-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        verifyOTP();
+    });
+    
+    // Resend OTP link
+    document.getElementById('resend-otp-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        resendOTP();
+    });
+    
+    // Back to phone link
+    document.getElementById('back-to-phone-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        goBackToPhone();
+    });
+    
+    // Auto-focus and format phone input
+    document.getElementById('phone-number').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+        e.target.value = value;
+    });
+    
+    // Auto-submit OTP when 6 digits entered
+    document.getElementById('otp-code').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+        e.target.value = value;
+        
+        if (value.length === 6) {
+            setTimeout(() => verifyOTP(), 100); // Small delay for better UX
+        }
+    });
+    
+    function sendOTP() {
+        const phoneInput = document.getElementById('phone-number');
+        const phoneNumber = phoneInput.value.trim();
+        
+        if (!phoneNumber) {
+            showAlert('Please enter your phone number', 'warning');
+            return;
+        }
+        
+        if (phoneNumber.length < 10) {
+            showAlert('Please enter a valid phone number', 'warning');
+            return;
+        }
+        
+        setButtonLoading('send-otp-btn', true);
+        
+        fetch('/otp/send-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                phone_number: phoneNumber
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            setButtonLoading('send-otp-btn', false);
+            
+            if (data.success) {
+                currentPhone = phoneNumber;
+                showOTPStep();
+                showAlert(data.message, 'success');
+                startResendTimer();
+            } else {
+                showAlert(data.message || 'Failed to send OTP', 'danger');
+            }
+        })
+        .catch(error => {
+            setButtonLoading('send-otp-btn', false);
+            console.error('Error:', error);
+            showAlert('Network error. Please try again.', 'danger');
+        });
+    }
+    
+    function verifyOTP() {
+        const otpCode = document.getElementById('otp-code').value.trim();
+        
+        if (!otpCode) {
+            showAlert('Please enter the OTP code', 'warning');
+            return;
+        }
+        
+        if (otpCode.length !== 6) {
+            showAlert('Please enter a valid 6-digit OTP', 'warning');
+            return;
+        }
+        
+        setButtonLoading('verify-otp-btn', true);
+        
+        fetch('/otp/verify-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                otp_code: otpCode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            setButtonLoading('verify-otp-btn', false);
+            
+            if (data.success) {
+                showAlert('Login successful!', 'success');
+                
+                // Show success modal
+                const successModal = new bootstrap.Modal(document.getElementById('success-modal'));
+                successModal.show();
+                
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = data.redirect_url || '/';
+                }, 2000);
+            } else {
+                showAlert(data.message || 'Invalid OTP. Please try again.', 'danger');
+                document.getElementById('otp-code').value = '';
+                document.getElementById('otp-code').focus();
+            }
+        })
+        .catch(error => {
+            setButtonLoading('verify-otp-btn', false);
+            console.error('Error:', error);
+            showAlert('Network error. Please try again.', 'danger');
+        });
+    }
+    
+    function resendOTP() {
+        if (!currentPhone) {
+            showAlert('Please start over by entering your phone number', 'warning');
+            goBackToPhone();
+            return;
+        }
+        
+        fetch('/otp/resend-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('OTP resent successfully', 'success');
+                startResendTimer();
+            } else {
+                showAlert(data.message || 'Failed to resend OTP', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Network error. Please try again.', 'danger');
+        });
+    }
+    
+    function showOTPStep() {
+        document.getElementById('phone-step').classList.add('step-hidden');
+        document.getElementById('otp-step').classList.remove('step-hidden');
+        
+        // Mask phone number for display
+        const maskedPhone = maskPhoneNumber(currentPhone);
+        document.getElementById('masked-phone').textContent = maskedPhone;
+        
+        // Focus on OTP input
+        setTimeout(() => {
+            document.getElementById('otp-code').focus();
+        }, 300);
+    }
+    
+    function goBackToPhone() {
+        document.getElementById('otp-step').classList.add('step-hidden');
+        document.getElementById('phone-step').classList.remove('step-hidden');
+        
+        // Clear OTP input
+        document.getElementById('otp-code').value = '';
+        
+        // Stop timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        // Focus on phone input
+        setTimeout(() => {
+            document.getElementById('phone-number').focus();
+        }, 300);
+    }
+    
+    function startResendTimer() {
+        resendTimer = 60;
+        updateTimerDisplay();
+        
+        // Hide resend link, show timer
+        document.getElementById('resend-link').classList.add('d-none');
+        document.getElementById('resend-timer').classList.remove('d-none');
+        
+        timerInterval = setInterval(() => {
+            resendTimer--;
+            updateTimerDisplay();
+            
+            if (resendTimer <= 0) {
+                clearInterval(timerInterval);
+                // Show resend link, hide timer
+                document.getElementById('resend-timer').classList.add('d-none');
+                document.getElementById('resend-link').classList.remove('d-none');
+            }
+        }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+        document.getElementById('timer-countdown').textContent = resendTimer;
+    }
+    
+    function maskPhoneNumber(phone) {
+        if (phone.length <= 4) return phone;
+        const visibleStart = phone.slice(0, 2);
+        const visibleEnd = phone.slice(-2);
+        const maskedMiddle = '*'.repeat(phone.length - 4);
+        return visibleStart + maskedMiddle + visibleEnd;
+    }
+    
+    function setButtonLoading(buttonId, loading) {
+        const button = document.getElementById(buttonId);
+        const btnText = button.querySelector('.btn-text');
+        const spinner = button.querySelector('.loading-spinner');
+        
+        if (loading) {
+            btnText.style.display = 'none';
+            spinner.style.display = 'inline';
+            button.disabled = true;
+        } else {
+            btnText.style.display = 'inline';
+            spinner.style.display = 'none';
+            button.disabled = false;
+        }
+    }
+    
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alert-container');
+        
+        const alertHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        alertContainer.innerHTML = alertHTML;
+        
+        // Auto-dismiss success messages
+        if (type === 'success') {
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    }
+});
+</script>
+{% endblock %}
