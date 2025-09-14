@@ -1,5 +1,5 @@
 {
-  "_comment": "This is a placeholder firebase configuration file. Replace this with your actual google-services.json file from Firebase Console.",
+  "_comment": "This is a placeholder firebase configuration file. Replace this with your actual google-services.json file from Firebase Console. For production, ensure API keys are loaded from environment variables, not hardcoded.",
   "project_info": {
     "project_number": "123456789012",
     "firebase_url": "https://your-project-default-rtdb.firebaseio.com",
@@ -22,7 +22,7 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyABC123DEF456GHI789JKL012MNO345PQR678"
+          "current_key": "REPLACE_WITH_YOUR_FIREBASE_API_KEY_FROM_ENVIRONMENT"
         }
       ],
       "services": {
