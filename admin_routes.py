@@ -9,7 +9,7 @@ from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus)
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils_main import allowed_file, calculate_earnings
 import json
