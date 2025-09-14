@@ -15,6 +15,9 @@ from utils_main import allowed_file, calculate_earnings
 import json
 from timezone_utils import get_ist_time_naive
 
+# Import CSRF protection
+from app import csrf
+
 # Import scheduling functions after initial imports
 try:
     from utils.scheduling import (check_assignment_conflicts, generate_assignment_suggestions,
@@ -180,6 +183,7 @@ def drivers():
                          branch_filter=branch_filter)
 
 @admin_bp.route('/drivers/<int:driver_id>/approve', methods=['POST'])
+@csrf.exempt
 @login_required
 @admin_required
 def approve_driver(driver_id):
@@ -200,6 +204,7 @@ def approve_driver(driver_id):
     return redirect(url_for('admin.drivers'))
 
 @admin_bp.route('/drivers/<int:driver_id>/reject', methods=['POST'])
+@csrf.exempt
 @login_required
 @admin_required
 def reject_driver(driver_id):
@@ -544,6 +549,7 @@ def remove_transaction(transaction_type, transaction_id):
 
 # Driver Block/Unblock Routes
 @admin_bp.route('/drivers/<int:driver_id>/block', methods=['POST'])
+@csrf.exempt
 @login_required
 @admin_required
 def block_driver(driver_id):
@@ -753,6 +759,7 @@ def delete_driver(driver_id):
         return jsonify({'success': False, 'message': f'Error deleting driver: {str(e)}'})
 
 @admin_bp.route('/drivers/<int:driver_id>/unblock', methods=['POST'])
+@csrf.exempt
 @login_required
 @admin_required
 def unblock_driver(driver_id):
@@ -2593,6 +2600,7 @@ def pending_duties():
                          date_filter=date_filter)
 
 @admin_bp.route('/duties/<int:duty_id>/approve', methods=['POST'])
+@csrf.exempt
 @login_required
 @admin_required
 def approve_duty(duty_id):
@@ -2623,6 +2631,7 @@ def approve_duty(duty_id):
     return redirect(url_for('admin.pending_duties'))
 
 @admin_bp.route('/duties/<int:duty_id>/reject', methods=['POST'])
+@csrf.exempt
 @login_required
 @admin_required
 def reject_duty(duty_id):
