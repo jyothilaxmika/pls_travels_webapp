@@ -3,10 +3,13 @@ import logging
 from flask import Flask, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
 from flask_socketio import SocketIO
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,6 +21,7 @@ db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
 socketio = SocketIO()
 csrf = CSRFProtect()
+jwt = JWTManager()
 
 def create_app():
     # Create the app
@@ -31,6 +35,12 @@ def create_app():
     # x_proto=1: Trust one proxy for X-Forwarded-Proto header (HTTPS detection)
     # x_host=1: Trust one proxy for X-Forwarded-Host header (hostname)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    
+    # CORS Configuration for mobile apps (restricted origins for security)
+    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"], 
+         supports_credentials=False,
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
     # Configure the database - temporarily use SQLite for development
     database_url = "sqlite:///pls_travels.db"  # Force SQLite for now
@@ -141,6 +151,12 @@ def create_app():
             dt = pytz.utc.localize(dt)
         return dt.astimezone(IST)
     
+    # JWT Configuration (after imports to avoid scope issues)
+    app.config['JWT_SECRET_KEY'] = app.secret_key  # Use same secret as Flask session
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+    app.config['JWT_ALGORITHM'] = 'HS256'
+
     # Make datetime and timedelta available in templates
     app.jinja_env.globals['datetime'] = datetime
     app.jinja_env.globals['timedelta'] = timedelta
@@ -208,9 +224,18 @@ def create_app():
             return dict(pending_duties_count=pending_duties_count)
         return dict(pending_duties_count=0)
 
+    # JWT token blacklist checker
+    from mobile_auth import check_if_token_revoked as check_token_blacklist
+    
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        return check_token_blacklist(jwt_header, jwt_payload)
+
     # Register blueprints
     from auth import auth_bp
     from otp_routes import otp_bp
+    from mobile_auth import mobile_auth_bp
+    from mobile_api import mobile_api_bp
     from admin_routes import admin_bp
     from manager_routes import manager_bp
     from driver_routes import driver_bp
@@ -219,6 +244,8 @@ def create_app():
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(otp_bp, url_prefix='/otp')
+    app.register_blueprint(mobile_auth_bp)  # Mobile auth includes /api/v1/auth/*
+    app.register_blueprint(mobile_api_bp)   # Mobile API includes /api/v1/driver/*
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(manager_bp, url_prefix='/manager')
     app.register_blueprint(driver_bp, url_prefix='/driver')
