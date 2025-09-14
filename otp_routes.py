@@ -16,14 +16,30 @@ from app import csrf
 def otp_login():
     """OTP login page"""
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        # Redirect based on user role
+        if current_user.role == UserRole.ADMIN:
+            return redirect(url_for('admin.dashboard'))
+        elif current_user.role == UserRole.MANAGER:
+            return redirect(url_for('manager.dashboard'))
+        elif current_user.role == UserRole.DRIVER:
+            return redirect(url_for('driver.dashboard'))
+        else:
+            return redirect(url_for('auth.login'))
     return render_template('auth/otp_login.html')
 
 @otp_bp.route('/register/otp')
 def otp_register():
     """OTP registration page"""
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        # Redirect based on user role
+        if current_user.role == UserRole.ADMIN:
+            return redirect(url_for('admin.dashboard'))
+        elif current_user.role == UserRole.MANAGER:
+            return redirect(url_for('manager.dashboard'))
+        elif current_user.role == UserRole.DRIVER:
+            return redirect(url_for('driver.dashboard'))
+        else:
+            return redirect(url_for('auth.login'))
     return render_template('auth/otp_register.html')
 
 @otp_bp.route('/send-otp', methods=['POST'])
@@ -122,7 +138,7 @@ def verify_otp():
                 elif user.role == UserRole.DRIVER:
                     redirect_url = url_for('driver.dashboard')
                 else:
-                    redirect_url = url_for('dashboard')
+                    redirect_url = url_for('auth.login')
                 
                 return jsonify({
                     'success': True, 
@@ -268,7 +284,7 @@ def complete_registration():
         elif user.role == UserRole.DRIVER:
             redirect_url = url_for('driver.dashboard')
         else:
-            redirect_url = url_for('dashboard')
+            redirect_url = url_for('auth.login')
         
         return jsonify({
             'success': True, 
