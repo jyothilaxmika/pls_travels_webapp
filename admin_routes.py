@@ -454,10 +454,9 @@ def add_manual_transaction():
         return jsonify({'success': False, 'message': 'Missing required fields'})
     
     try:
-        # Convert to float first to catch any conversion errors
-        amount = float(amount)
-        # Prevent NaN/infinity injection - ensure only finite numbers are accepted
-        if not (isinstance(amount, (int, float)) and math.isfinite(amount)):
+        # Use safe conversion to prevent NaN/infinity injection
+        amount = safe_float_conversion(amount)
+        if amount == 0.0 and request.form.get('amount') not in ['0', '0.0', '0.00']:
             return jsonify({'success': False, 'message': 'Invalid amount value'})
         # Additional check: ensure amount is not zero for financial transactions
         if amount == 0:
