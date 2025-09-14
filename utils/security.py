@@ -209,3 +209,104 @@ def get_sanitized_audit_data(audit_log):
         'masked_ip': sanitizer.mask_ip_address(audit_log.ip_address or ""),
         'masked_session': sanitizer.mask_session_id(audit_log.session_id or "")
     }
+
+
+# JWT Authentication Utilities
+import jwt
+import os
+from datetime import datetime, timedelta
+from functools import wraps
+from flask import request, jsonify, g
+
+# JWT Configuration
+JWT_SECRET = os.environ.get('JWT_SECRET', os.environ.get('SESSION_SECRET', 'fallback-secret-key'))
+JWT_ALGORITHM = 'HS256'
+DEFAULT_EXPIRY_MINUTES = 15
+
+def create_access_token(user_id, role, expires_in_minutes=DEFAULT_EXPIRY_MINUTES):
+    """Create a JWT access token for user authentication"""
+    payload = {
+        'user_id': user_id,
+        'role': role,
+        'exp': datetime.utcnow() + timedelta(minutes=expires_in_minutes),
+        'iat': datetime.utcnow()
+    }
+    
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return {
+        'access_token': token,
+        'expires_in': expires_in_minutes * 60,  # Convert to seconds
+        'token_type': 'Bearer'
+    }
+
+def verify_jwt(token):
+    """Verify and decode JWT token, return user or None"""
+    try:
+        from models import User  # Import here to avoid circular imports
+        
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        if not user_id:
+            return None
+            
+        user = User.query.get(user_id)
+        return user
+        
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+def jwt_required(f):
+    """Decorator to protect routes with JWT authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Extract token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        
+        if not auth_header:
+            return jsonify({'success': False, 'message': 'Authorization header required'}), 401
+            
+        try:
+            # Expect format: "Bearer <token>"
+            token_type, token = auth_header.split(' ', 1)
+            if token_type.lower() != 'bearer':
+                return jsonify({'success': False, 'message': 'Invalid token format'}), 401
+                
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid Authorization header format'}), 401
+        
+        # Verify token and get user
+        user = verify_jwt(token)
+        if not user:
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+            
+        # Store user in Flask's g object for access in route handlers
+        g.current_user = user
+        
+        return f(*args, **kwargs)
+    
+    return decorated_function
+
+def role_required(required_role):
+    """Decorator to check user role (use after jwt_required)"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not hasattr(g, 'current_user') or not g.current_user:
+                return jsonify({'success': False, 'message': 'Authentication required'}), 401
+                
+            if g.current_user.role.value != required_role:
+                return jsonify({'success': False, 'message': 'Insufficient permissions'}), 403
+                
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def extract_request_info():
+    """Extract IP address and user agent for security logging"""
+    return {
+        'ip_address': request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR')),
+        'user_agent': request.headers.get('User-Agent', '')[:500]  # Limit length
+    }
