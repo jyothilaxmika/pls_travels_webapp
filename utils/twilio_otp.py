@@ -104,10 +104,16 @@ def is_valid_phone_number(phone: str) -> bool:
     return len(digits_only) == 10
 
 def _hash_otp(otp_code: str) -> str:
-    """Hash OTP for secure storage"""
-    secret_key = os.environ.get('SECRET_KEY')
+    """Hash OTP for secure storage using Flask's secret key"""
+    try:
+        from flask import current_app
+        secret_key = current_app.config.get('SECRET_KEY')
+    except RuntimeError:
+        # Fallback if no app context (e.g., testing)
+        secret_key = os.environ.get('SECRET_KEY')
+    
     if not secret_key:
-        raise RuntimeError("SECRET_KEY environment variable is required for OTP hashing")
+        raise RuntimeError("SECRET_KEY is required for OTP hashing")
     
     return hmac.new(
         secret_key.encode(),
