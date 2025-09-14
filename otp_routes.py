@@ -194,6 +194,10 @@ def send_register_otp():
             # Store phone number in session for verification
             session['otp_phone_number'] = formatted_phone
             session['registration_pending'] = True
+            session.permanent = True
+            
+            # Debug logging
+            logging.info(f"OTP sent - storing in session: phone={formatted_phone}, pending=True")
             
             log_audit('otp_registration_requested', 'registration', 0, {
                 'phone_number': phone_number,
@@ -219,6 +223,9 @@ def complete_registration():
     try:
         otp_code = request.form.get('otp_code', '').strip()
         phone_number = session.get('otp_phone_number')
+        
+        # Debug logging
+        logging.info(f"Complete registration attempt - OTP: {otp_code}, Session phone: {phone_number}, Pending: {session.get('registration_pending')}")
         
         if not otp_code:
             return jsonify({'success': False, 'message': 'OTP code is required'})
