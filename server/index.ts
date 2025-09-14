@@ -3,6 +3,7 @@ import session from "express-session";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json());
@@ -51,6 +52,10 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = createServer(app);
+  
+  // Make storage available to routes
+  app.locals.storage = storage;
+  
   await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

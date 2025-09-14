@@ -2,7 +2,9 @@ import { Request, Response, Router } from "express";
 import { z } from "zod";
 import path from "path";
 import { fileURLToPath } from "url";
-import { sendOTPSchema, verifyOTPSchema, resendOTPSchema } from "@shared/schema";
+import { sendOTPSchema, verifyOTPSchema, resendOTPSchema, insertDriverProfileSchema, DriverStatus } from "@shared/schema";
+import multer from "multer";
+import { mkdirSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,8 +61,10 @@ export function registerRoutes(app: any) {
   router.use('/auth/static', (req, res, next) => {
     // Security: Use express.static with a fixed root to prevent path traversal
     const staticPath = path.join(__dirname, 'views');
-    const staticHandler = require('express').static(staticPath, { index: false });
-    staticHandler(req, res, next);
+    import('express').then(express => {
+      const staticHandler = express.static(staticPath, { index: false });
+      staticHandler(req, res, next);
+    }).catch(next);
   });
 
   // GET route for login page
@@ -246,7 +250,36 @@ export function registerRoutes(app: any) {
         createdAt: new Date()
       };
 
-      // Store user session
+      // Upsert user to storage - check if exists first
+      let storageUser;
+      try {
+        // Try to find existing user by phone number
+        storageUser = await app.locals.storage.getUserByUsername(cleanPhone);
+        
+        if (storageUser) {
+          console.log(`Existing user found: ${storageUser.id} (${cleanPhone})`);
+          // Update session with storage user ID to maintain consistency
+          userData.id = storageUser.id;
+        } else {
+          // Create new user if doesn't exist
+          storageUser = await app.locals.storage.createUser({
+            phoneNumber: cleanPhone,
+            username: cleanPhone, // Use phone as username
+            fullName: userData.fullName,
+            email: userData.email,
+            role: userData.role as 'driver' | 'admin' | 'customer',
+            isVerified: userData.isVerified
+          });
+          console.log(`New user created: ${storageUser.id} (${cleanPhone})`);
+          // Update session with storage user ID
+          userData.id = storageUser.id;
+        }
+      } catch (error) {
+        console.error("Error upserting user to storage:", error);
+        // Continue with session-only for backward compatibility
+      }
+
+      // Store user session with consistent storage ID
       req.session.user = userData;
 
       res.json({ 
@@ -348,6 +381,207 @@ export function registerRoutes(app: any) {
       }
       res.redirect('/auth/login?message=logged-out');
     });
+  });
+
+  // Driver profile routes
+  const uploadDir = path.join(__dirname, '..', 'uploads');
+  mkdirSync(uploadDir, { recursive: true });
+  
+  const storage = multer.diskStorage({
+    destination: uploadDir,
+    filename: (req, file, cb) => {
+      const userId = (req.session as any)?.user?.id || 'unknown';
+      const timestamp = Date.now();
+      const ext = path.extname(file.originalname);
+      const baseName = path.basename(file.originalname, ext);
+      cb(null, `${userId}_${file.fieldname}_${timestamp}_${baseName}${ext}`);
+    }
+  });
+  
+  const upload = multer({
+    storage,
+    limits: { fileSize: 16 * 1024 * 1024 }, // 16MB limit
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only JPG, PNG, and PDF files are allowed.'));
+      }
+    }
+  });
+
+  // Driver profile form page
+  router.get("/driver/profile", requireAuth, requireRole(['driver']), (req: Request, res: Response) => {
+    try {
+      const profileHtmlPath = path.join(__dirname, 'views', 'driver-profile.html');
+      res.sendFile(profileHtmlPath);
+    } catch (error) {
+      console.error("Error serving driver profile page:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Driver profile API routes
+  router.get("/api/driver/profile", requireAuth, requireRole(['driver']), async (req: Request, res: Response) => {
+    try {
+      const sessionUser = (req.session as any)?.user;
+      const userId = sessionUser?.id; // Now consistent with storage ID
+      
+      const profile = await app.locals.storage.getDriverProfile(userId);
+      res.json({ profile });
+    } catch (error) {
+      console.error("Error fetching driver profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  router.post("/api/driver/profile", 
+    requireAuth, 
+    requireRole(['driver']), 
+    (req, res, next) => {
+      console.log("POST /api/driver/profile - Request received");
+      console.log("Headers:", req.headers);
+      console.log("Session user:", (req.session as any)?.user);
+      next();
+    },
+    upload.fields([
+      { name: 'aadharFront', maxCount: 1 },
+      { name: 'aadharBack', maxCount: 1 },
+      { name: 'licenseFront', maxCount: 1 },
+      { name: 'licenseBack', maxCount: 1 },
+      { name: 'profilePhoto', maxCount: 1 }
+    ]),
+    async (req: Request, res: Response) => {
+      try {
+        console.log("Processing profile save request...");
+        console.log("Request body:", req.body);
+        console.log("Request files:", req.files);
+        
+        const sessionUser = (req.session as any)?.user;
+        console.log("Session user from request:", sessionUser);
+        
+        const userId = sessionUser?.id; // Now consistent with storage ID
+        console.log("User ID extracted:", userId);
+        
+        if (!userId) {
+          console.log("ERROR: No user ID found in session");
+          return res.status(401).json({ error: "User not authenticated" });
+        }
+        
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        
+        // Construct complete profile data with userId and file paths
+        const profileData = {
+          userId,
+          fullName: req.body.fullName || '',
+          phone: req.body.phone || sessionUser.phoneNumber,
+          address: req.body.address || '',
+          aadharNumber: req.body.aadharNumber || '',
+          licenseNumber: req.body.licenseNumber || '',
+          bankName: req.body.bankName,
+          accountNumber: req.body.accountNumber,
+          ifscCode: req.body.ifscCode,
+          accountHolderName: req.body.accountHolderName,
+          branchId: req.body.branchId,
+          // Document file paths
+          aadharFrontPath: files.aadharFront?.[0]?.filename,
+          aadharBackPath: files.aadharBack?.[0]?.filename,
+          licenseFrontPath: files.licenseFront?.[0]?.filename,
+          licenseBackPath: files.licenseBack?.[0]?.filename,
+          profilePhotoPath: files.profilePhoto?.[0]?.filename,
+        };
+
+        console.log("Profile data to validate:", profileData);
+
+        // Validate with zod schema - userId is now included
+        const validatedData = insertDriverProfileSchema.parse(profileData);
+        
+        // Save to storage
+        const profile = await app.locals.storage.upsertDriverProfile(validatedData);
+        
+        console.log("Profile saved successfully:", profile.id);
+        
+        res.json({ 
+          success: true, 
+          message: "Profile saved successfully. Awaiting admin approval.",
+          profile 
+        });
+      } catch (error) {
+        console.error("Error saving driver profile:", error);
+        if (error instanceof z.ZodError) {
+          console.error("Validation errors:", error.errors);
+          res.status(400).json({ error: "Invalid form data", details: error.errors });
+        } else {
+          res.status(500).json({ error: "Failed to save profile" });
+        }
+      }
+    }
+  );
+
+  // Admin routes for driver management
+  router.get("/admin/drivers", requireAuth, requireRole(['admin']), (req: Request, res: Response) => {
+    try {
+      const adminDriversHtmlPath = path.join(__dirname, 'views', 'admin-drivers.html');
+      res.sendFile(adminDriversHtmlPath);
+    } catch (error) {
+      console.error("Error serving admin drivers page:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  router.get("/api/admin/drivers", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as DriverStatus | undefined;
+      const drivers = await app.locals.storage.listDriversByStatus(status);
+      res.json({ drivers });
+    } catch (error) {
+      console.error("Error fetching drivers:", error);
+      res.status(500).json({ error: "Failed to fetch drivers" });
+    }
+  });
+
+  router.post("/api/admin/drivers/:userId/approve", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const profile = await app.locals.storage.setDriverStatus(userId, DriverStatus.APPROVED);
+      if (!profile) {
+        return res.status(404).json({ error: "Driver profile not found" });
+      }
+      res.json({ success: true, message: "Driver approved successfully", profile });
+    } catch (error) {
+      console.error("Error approving driver:", error);
+      res.status(500).json({ error: "Failed to approve driver" });
+    }
+  });
+
+  router.post("/api/admin/drivers/:userId/reject", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const profile = await app.locals.storage.setDriverStatus(userId, DriverStatus.REJECTED);
+      if (!profile) {
+        return res.status(404).json({ error: "Driver profile not found" });
+      }
+      res.json({ success: true, message: "Driver rejected", profile });
+    } catch (error) {
+      console.error("Error rejecting driver:", error);
+      res.status(500).json({ error: "Failed to reject driver" });
+    }
+  });
+
+  // Serve uploaded files
+  router.use('/uploads', (req, res, next) => {
+    // Security: Only authenticated users can access uploads
+    if (!req.session?.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    next();
+  }, (req, res, next) => {
+    const uploadsPath = path.join(__dirname, '..', 'uploads');
+    import('express').then(express => {
+      const staticHandler = express.static(uploadsPath, { index: false });
+      staticHandler(req, res, next);
+    }).catch(next);
   });
 
   app.use(router);
