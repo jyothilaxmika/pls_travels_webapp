@@ -117,9 +117,11 @@ class BackgroundSyncWorker @AssistedInject constructor(
     
     /**
      * Schedule the next periodic sync
+     * Note: This method is now deprecated - sync scheduling should be handled by UnifiedSyncOrchestrator
      */
     private fun scheduleNextPeriodicSync() {
-        BackgroundSyncScheduler.schedulePeriodicSync(applicationContext)
+        // No longer scheduling periodic sync from worker - handled by UnifiedSyncOrchestrator
+        Log.d(TAG, "Periodic sync scheduling is now handled by UnifiedSyncOrchestrator")
     }
     
 }

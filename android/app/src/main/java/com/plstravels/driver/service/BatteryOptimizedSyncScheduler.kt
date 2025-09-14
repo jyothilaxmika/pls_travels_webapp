@@ -138,7 +138,7 @@ object BatteryOptimizedSyncScheduler {
     /**
      * Calculate flex interval for WorkManager (allows system to optimize timing)
      */
-    private fun calculateFlexInterval(syncInterval: Long): Long {
+    fun calculateFlexInterval(syncInterval: Long): Long {
         return min(syncInterval / 3, 15L) // Up to 1/3 of interval, max 15 minutes
     }
     
@@ -158,7 +158,7 @@ object BatteryOptimizedSyncScheduler {
     /**
      * Get current battery level percentage
      */
-    private fun getBatteryLevel(context: Context): Int {
+    fun getBatteryLevel(context: Context): Int {
         return try {
             val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
             batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
@@ -171,7 +171,7 @@ object BatteryOptimizedSyncScheduler {
     /**
      * Check if device is currently charging
      */
-    private fun isDeviceCharging(context: Context): Boolean {
+    fun isDeviceCharging(context: Context): Boolean {
         return try {
             val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
             batteryManager.isCharging
@@ -184,7 +184,7 @@ object BatteryOptimizedSyncScheduler {
     /**
      * Check if device is in Doze mode (Android 6+ power optimization)
      */
-    private fun isDozeMode(context: Context): Boolean {
+    fun isDozeMode(context: Context): Boolean {
         return try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                 val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager

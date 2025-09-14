@@ -17,10 +17,18 @@ import javax.inject.Singleton
 @Singleton
 class NetworkAwareSyncService @Inject constructor(
     private val connectivityRepository: ConnectivityRepository,
-    private val backgroundSyncScheduler: BatteryOptimizedSyncScheduler,
     private val networkUtils: NetworkUtils
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Reference to unified orchestrator - will be set by the orchestrator when it starts
+    private var unifiedOrchestrator: UnifiedSyncOrchestrator? = null
+    
+    /**
+     * Set the unified orchestrator reference for scheduling
+     */
+    fun setUnifiedOrchestrator(orchestrator: UnifiedSyncOrchestrator) {
+        this.unifiedOrchestrator = orchestrator
+    }
+    private var scope: CoroutineScope? = null
     private var isMonitoring = false
     
     companion object {
@@ -48,7 +56,10 @@ class NetworkAwareSyncService @Inject constructor(
         Log.d(TAG, "Starting network-aware sync monitoring")
         isMonitoring = true
         
-        scope.launch {
+        // Create fresh CoroutineScope for this monitoring session
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        
+        scope?.launch {
             connectivityRepository.isConnected
                 .distinctUntilChanged()
                 .collect { isConnected ->
@@ -60,18 +71,29 @@ class NetworkAwareSyncService @Inject constructor(
                 }
         }
         
-        // Monitor network type changes
-        scope.launch {
-            connectivityRepository.getCurrentNetworkType()
-            // Note: This would need flow support in ConnectivityRepository for real-time monitoring
+        // Monitor network type changes using flow-based approach
+        scope?.launch {
+            // If ConnectivityRepository doesn't have a flow for network type changes,
+            // we'll use a more efficient periodic check with exponential backoff
+            var lastNetworkType = connectivityRepository.getCurrentNetworkType()
+            var checkInterval = 30_000L // Start with 30 seconds
+            
             while (isActive && isMonitoring) {
                 try {
                     val currentNetworkType = connectivityRepository.getCurrentNetworkType()
-                    adaptSyncToNetworkType(context, currentNetworkType)
-                    delay(60_000) // Check every minute
+                    if (currentNetworkType != lastNetworkType) {
+                        Log.d(TAG, "Network type changed: $lastNetworkType -> $currentNetworkType")
+                        adaptSyncToNetworkType(context, currentNetworkType)
+                        lastNetworkType = currentNetworkType
+                        checkInterval = 30_000L // Reset to frequent checks after change
+                    } else {
+                        // Exponentially increase check interval up to 5 minutes when stable
+                        checkInterval = kotlin.math.min(checkInterval * 2, 300_000L)
+                    }
+                    delay(checkInterval)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error monitoring network type", e)
-                    delay(60_000)
+                    delay(60_000) // Fallback to 1 minute on error
                 }
             }
         }
@@ -83,7 +105,8 @@ class NetworkAwareSyncService @Inject constructor(
     fun stopNetworkAwareSync() {
         Log.d(TAG, "Stopping network-aware sync monitoring")
         isMonitoring = false
-        scope.cancel()
+        scope?.cancel()
+        scope = null
     }
     
     /**
@@ -98,8 +121,9 @@ class NetworkAwareSyncService @Inject constructor(
         when {
             networkType == ConnectivityRepository.NetworkType.WIFI -> {
                 // WiFi connection - schedule immediate high-priority sync
-                BackgroundSyncScheduler.scheduleImmediateSync(
-                    context, 
+                unifiedOrchestrator?.scheduleImmediateSync(
+                    context,
+                    UnifiedSyncOrchestrator.PRIORITY_MEDIUM,
                     BackgroundSyncWorker.REASON_CONNECTIVITY_RESTORED
                 )
             }
@@ -109,8 +133,9 @@ class NetworkAwareSyncService @Inject constructor(
             }
             else -> {
                 // Non-metered cellular - schedule normal sync
-                BackgroundSyncScheduler.scheduleImmediateSync(
+                unifiedOrchestrator?.scheduleImmediateSync(
                     context,
+                    UnifiedSyncOrchestrator.PRIORITY_MEDIUM,
                     BackgroundSyncWorker.REASON_CONNECTIVITY_RESTORED
                 )
             }
@@ -130,8 +155,8 @@ class NetworkAwareSyncService @Inject constructor(
         // Keep high-priority work that will retry when connection returns
         BackgroundSyncScheduler.cancelAllSync(context)
         
-        // Reschedule only essential periodic work
-        BatteryOptimizedSyncScheduler.scheduleIntelligentPeriodicSync(context)
+        // Update sync schedule for offline conditions
+        unifiedOrchestrator?.updateSyncSchedule(context, "network_disconnected")
     }
     
     /**
@@ -143,19 +168,19 @@ class NetworkAwareSyncService @Inject constructor(
         when (networkType) {
             ConnectivityRepository.NetworkType.WIFI -> {
                 // WiFi - enable full sync capabilities
-                BatteryOptimizedSyncScheduler.scheduleIntelligentPeriodicSync(context)
+                unifiedOrchestrator?.updateSyncSchedule(context, "wifi_connected")
             }
             ConnectivityRepository.NetworkType.CELLULAR -> {
                 // Cellular - check if metered
                 if (connectivityRepository.isMeteredConnection()) {
-                    scheduleBandwidthAwareSync(context)
+                    unifiedOrchestrator?.updateSyncSchedule(context, "metered_cellular")
                 } else {
-                    BatteryOptimizedSyncScheduler.scheduleIntelligentPeriodicSync(context)
+                    unifiedOrchestrator?.updateSyncSchedule(context, "cellular_connected")
                 }
             }
             ConnectivityRepository.NetworkType.NONE -> {
-                // No connection - cancel sync work
-                BackgroundSyncScheduler.cancelAllSync(context)
+                // No connection - update sync for offline
+                unifiedOrchestrator?.updateSyncSchedule(context, "network_disconnected")
             }
         }
     }
@@ -167,49 +192,16 @@ class NetworkAwareSyncService @Inject constructor(
         Log.d(TAG, "Scheduling metered connection sync")
         
         // Schedule immediate light sync for critical data only
-        BackgroundSyncScheduler.scheduleImmediateSync(
+        unifiedOrchestrator?.scheduleImmediateSync(
             context,
+            UnifiedSyncOrchestrator.PRIORITY_HIGH,
             "metered_critical_sync"
         )
         
-        // Schedule less frequent periodic sync to conserve data
-        scheduleBandwidthAwareSync(context)
+        // Update sync schedule for metered connection
+        unifiedOrchestrator?.updateSyncSchedule(context, "metered_connection")
     }
     
-    /**
-     * Schedule bandwidth-aware sync for data conservation
-     */
-    private fun scheduleBandwidthAwareSync(context: Context) {
-        Log.d(TAG, "Scheduling bandwidth-aware sync")
-        
-        // Use longer intervals and stricter constraints for metered connections
-        val constraints = androidx.work.Constraints.Builder()
-            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
-            .setRequiresBatteryNotLow(true)
-            .setRequiresStorageNotLow(true)
-            .build()
-        
-        val bandwidthAwareRequest = androidx.work.PeriodicWorkRequestBuilder<BackgroundSyncWorker>(
-            45, java.util.concurrent.TimeUnit.MINUTES, // Longer interval for metered
-            15, java.util.concurrent.TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .setInputData(
-                androidx.work.workDataOf(
-                    BackgroundSyncWorker.KEY_SYNC_REASON to "bandwidth_aware",
-                    BackgroundSyncWorker.KEY_PRIORITY to METERED_SYNC_PRIORITY,
-                    "bandwidth_limit" to LIGHT_SYNC_DATA_THRESHOLD_MB
-                )
-            )
-            .addTag("bandwidth_aware_sync")
-            .build()
-        
-        androidx.work.WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "bandwidth_aware_sync",
-            androidx.work.ExistingPeriodicWorkPolicy.REPLACE,
-            bandwidthAwareRequest
-        )
-    }
     
     /**
      * Determine sync priority based on current network conditions
