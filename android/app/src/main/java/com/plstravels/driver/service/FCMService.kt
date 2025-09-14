@@ -153,17 +153,18 @@ class FCMService : FirebaseMessagingService() {
     
     private fun displayNotification(notification: Notification) {
         val channelId = getChannelIdForNotification(notification)
-        val notificationId = getNotificationIdForType(notification.type)
+        val notificationId = generateConsistentNotificationId(notification.notificationId)
         
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("notification_id", notification.id)
+            putExtra("notification_id", notification.notificationId)
+            putExtra("notification_db_id", notification.id)
             putExtra("notification_type", notification.type.name)
         }
         
         val pendingIntent = PendingIntent.getActivity(
             this,
-            notification.id.toInt(),
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -191,7 +192,7 @@ class FCMService : FirebaseMessagingService() {
         }
         
         // Add action buttons for certain notification types
-        addNotificationActions(notificationBuilder, notification)
+        addNotificationActions(notificationBuilder, notification, notificationId)
         
         try {
             NotificationManagerCompat.from(this).notify(notificationId, notificationBuilder.build())
@@ -207,13 +208,14 @@ class FCMService : FirebaseMessagingService() {
     
     private fun addNotificationActions(
         builder: NotificationCompat.Builder,
-        notification: Notification
+        notification: Notification,
+        notificationId: Int
     ) {
         when (notification.type) {
             NotificationType.DUTY_ASSIGNMENT -> {
                 val acceptIntent = createActionIntent("ACCEPT_DUTY", notification)
                 val acceptPendingIntent = PendingIntent.getBroadcast(
-                    this, notification.id.toInt() + 1, acceptIntent,
+                    this, notificationId + 1, acceptIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 builder.addAction(R.drawable.ic_check, "Accept", acceptPendingIntent)
@@ -222,7 +224,7 @@ class FCMService : FirebaseMessagingService() {
             NotificationType.DISPATCH_MESSAGE -> {
                 val replyIntent = createActionIntent("REPLY_MESSAGE", notification)
                 val replyPendingIntent = PendingIntent.getBroadcast(
-                    this, notification.id.toInt() + 2, replyIntent,
+                    this, notificationId + 2, replyIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 builder.addAction(R.drawable.ic_reply, "Reply", replyPendingIntent)
@@ -232,7 +234,7 @@ class FCMService : FirebaseMessagingService() {
                 // Default: just mark as read
                 val readIntent = createActionIntent("MARK_READ", notification)
                 val readPendingIntent = PendingIntent.getBroadcast(
-                    this, notification.id.toInt() + 3, readIntent,
+                    this, notificationId + 3, readIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 builder.addAction(R.drawable.ic_check, "Mark Read", readPendingIntent)
@@ -243,7 +245,8 @@ class FCMService : FirebaseMessagingService() {
     private fun createActionIntent(action: String, notification: Notification): Intent {
         return Intent(this, NotificationActionReceiver::class.java).apply {
             putExtra("action", action)
-            putExtra("notification_id", notification.id)
+            putExtra("notification_id", notification.notificationId)
+            putExtra("notification_db_id", notification.id)
             putExtra("notification_type", notification.type.name)
         }
     }
@@ -271,10 +274,11 @@ class FCMService : FirebaseMessagingService() {
         }
     }
     
-    private fun getNotificationIdForType(type: NotificationType): Int {
-        return when (type) {
-            NotificationType.EMERGENCY_ALERT -> NOTIFICATION_ID_EMERGENCY
-            else -> NOTIFICATION_ID_DEFAULT + type.ordinal
+    private fun generateConsistentNotificationId(externalId: String): Int {
+        // Generate consistent notification ID from external notification ID
+        return externalId.hashCode().let { hash ->
+            // Ensure positive value and avoid collision with reserved ranges
+            Math.abs(hash) % 100000 + 10000
         }
     }
     
@@ -311,7 +315,7 @@ class FCMService : FirebaseMessagingService() {
                 description = "Critical emergency alerts"
                 enableVibration(true)
                 enableLights(true)
-                setSound(null, null) // Use default sound
+                // Use default sound for emergency alerts - don't set to null
             }
             
             // Duty channel

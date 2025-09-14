@@ -24,27 +24,31 @@ class NotificationActionReceiver : BroadcastReceiver() {
     
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.getStringExtra("action") ?: return
-        val notificationId = intent.getLongExtra("notification_id", -1)
+        val notificationId = intent.getStringExtra("notification_id") ?: return
+        val notificationDbId = intent.getLongExtra("notification_db_id", -1)
         
-        if (notificationId == -1L) return
+        if (notificationDbId == -1L) return
         
         scope.launch {
-            handleAction(action, notificationId, context)
+            handleAction(action, notificationId, notificationDbId, context)
         }
     }
     
-    private suspend fun handleAction(action: String, notificationId: Long, context: Context) {
+    private suspend fun handleAction(action: String, notificationId: String, notificationDbId: Long, context: Context) {
+        // Generate consistent display notification ID for cancellation
+        val displayNotificationId = generateConsistentNotificationId(notificationId)
+        
         when (action) {
             "MARK_READ" -> {
-                notificationRepository.markAsRead(notificationId)
-                // Cancel the notification
-                androidx.core.app.NotificationManagerCompat.from(context).cancel(notificationId.toInt())
+                notificationRepository.markAsRead(notificationDbId)
+                // Cancel the notification using the display ID
+                androidx.core.app.NotificationManagerCompat.from(context).cancel(displayNotificationId)
             }
             
             "ACCEPT_DUTY" -> {
-                notificationRepository.markAsRead(notificationId)
-                notificationRepository.handleDutyAcceptance(notificationId)
-                androidx.core.app.NotificationManagerCompat.from(context).cancel(notificationId.toInt())
+                notificationRepository.markAsRead(notificationDbId)
+                notificationRepository.handleDutyAcceptance(notificationDbId)
+                androidx.core.app.NotificationManagerCompat.from(context).cancel(displayNotificationId)
             }
             
             "REPLY_MESSAGE" -> {
@@ -53,9 +57,17 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     putExtra("action", "REPLY_MESSAGE")
                     putExtra("notification_id", notificationId)
+                    putExtra("notification_db_id", notificationDbId)
                 }
                 context.startActivity(mainIntent)
             }
+        }
+    }
+    
+    private fun generateConsistentNotificationId(externalId: String): Int {
+        // Must match the same logic in FCMService
+        return externalId.hashCode().let { hash ->
+            Math.abs(hash) % 100000 + 10000
         }
     }
 }

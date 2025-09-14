@@ -27,6 +27,9 @@
     
     <!-- Vibration for notifications -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    
+    <!-- Push notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".PLSDriverApplication"
