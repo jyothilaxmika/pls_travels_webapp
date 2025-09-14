@@ -229,11 +229,8 @@ def complete_registration():
         
         if not otp_code:
             return jsonify({'success': False, 'message': 'OTP code is required'})
-            
-        if not phone_number or not session.get('registration_pending'):
-            return jsonify({'success': False, 'message': 'Session expired. Please start registration again.'})
         
-        # If session is lost, try to find phone number from recent OTP verification
+        # Always try to find phone number from OTP verification (session-independent approach)
         if not phone_number:
             # Look for recent OTP verification with this code
             recent_otp = OTPVerification.query.filter_by(
@@ -246,9 +243,12 @@ def complete_registration():
             if recent_otp:
                 phone_number = recent_otp.phone_number
                 logging.info(f"Found phone number from OTP verification: {phone_number}")
-            
+            else:
+                logging.error(f"No valid OTP found for code: {otp_code}")
+                return jsonify({'success': False, 'message': 'Invalid or expired OTP code. Please request a new OTP.'})
+        
         if not phone_number:
-            return jsonify({'success': False, 'message': 'Session expired. Please start registration again.'})
+            return jsonify({'success': False, 'message': 'Unable to verify OTP. Please try again.'})
         
         # Verify OTP
         is_valid, message = OTPVerification.verify_otp(phone_number, otp_code)
@@ -259,13 +259,22 @@ def complete_registration():
         # Create user account
         from werkzeug.security import generate_password_hash
         
+        # Get registration data from form
+        phone_from_form = request.form.get('phone_number', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        full_name = request.form.get('full_name', '').strip()
+        role = request.form.get('role', 'driver').strip()
+        
+        # Use the verified phone number (either from session or OTP lookup)
+        final_phone = phone_from_form if phone_from_form else phone_number
+        
+        logging.info(f"Creating user with phone: {final_phone}, name: {full_name}, role: {role}")
+        
         user = User()
-        user.username = request.form.get('phone_number')  # Use phone as username
-        user.phone = request.form.get('phone_number')
-        user.email = request.form.get('email', '')
-        password = request.form.get('password', '')
-        full_name = request.form.get('full_name', '')
-        role = request.form.get('role', 'driver')
+        user.username = final_phone  # Use phone as username
+        user.phone = final_phone
+        user.email = email
         
         if not password:
             return jsonify({'success': False, 'message': 'Password is required'})
