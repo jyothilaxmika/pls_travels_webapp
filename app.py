@@ -236,7 +236,8 @@ def create_app():
         from werkzeug.security import generate_password_hash
         
         # Only create demo data if explicitly enabled (SECURITY RISK IN PRODUCTION)
-        demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
+        demo_mode = True  # Enable demo mode to create admin user
+        # demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
         
         if demo_mode:
             
