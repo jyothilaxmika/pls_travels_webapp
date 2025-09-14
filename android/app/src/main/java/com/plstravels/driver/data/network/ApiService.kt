@@ -3,6 +3,7 @@ package com.plstravels.driver.data.network
 import com.plstravels.driver.data.models.*
 import retrofit2.Response
 import retrofit2.http.*
+import com.google.gson.annotations.SerializedName
 
 /**
  * Retrofit API service interface for PLS Travels mobile API
@@ -56,6 +57,13 @@ interface ApiService {
         @Part("duty_id") dutyId: Int?,
         @Part file: okhttp3.MultipartBody.Part
     ): Response<FileUploadResponse>
+    
+    // FCM Push Notification endpoints
+    @POST("api/v1/driver/fcm/token")
+    suspend fun updateFCMToken(@Body request: FCMTokenRequest): Response<FCMTokenResponse>
+    
+    @POST("api/v1/driver/duty/{duty_id}/accept")
+    suspend fun acceptDutyAssignment(@Path("duty_id") dutyId: Int): Response<ApiResponse>
 }
 
 /**
@@ -89,3 +97,5 @@ data class FileUploadResponse(
     val fileUrl: String? = null,
     val error: String? = null
 )
+
+// FCM Token models are defined in data.models package

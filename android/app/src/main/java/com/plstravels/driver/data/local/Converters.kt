@@ -5,6 +5,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.plstravels.driver.data.models.Vehicle
 import com.plstravels.driver.data.models.PhotoType
+import com.plstravels.driver.data.models.NotificationType
+import com.plstravels.driver.data.models.NotificationPriority
 
 /**
  * Room type converters for complex data types
@@ -34,5 +36,25 @@ class Converters {
     @TypeConverter
     fun toPhotoType(photoTypeString: String?): PhotoType? {
         return photoTypeString?.let { PhotoType.valueOf(it) }
+    }
+    
+    @TypeConverter
+    fun fromNotificationType(notificationType: NotificationType?): String? {
+        return notificationType?.name
+    }
+    
+    @TypeConverter
+    fun toNotificationType(notificationTypeString: String?): NotificationType? {
+        return notificationTypeString?.let { NotificationType.valueOf(it) }
+    }
+    
+    @TypeConverter
+    fun fromNotificationPriority(priority: NotificationPriority?): String? {
+        return priority?.name
+    }
+    
+    @TypeConverter
+    fun toNotificationPriority(priorityString: String?): NotificationPriority? {
+        return priorityString?.let { NotificationPriority.valueOf(it) }
     }
 }

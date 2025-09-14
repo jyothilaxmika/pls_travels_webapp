@@ -18,6 +18,7 @@ import com.plstravels.driver.ui.auth.AuthScreen
 import com.plstravels.driver.ui.auth.AuthViewModel
 import com.plstravels.driver.ui.duty.DutyScreen
 import com.plstravels.driver.ui.camera.CameraScreen
+import com.plstravels.driver.ui.notifications.NotificationScreen
 import com.plstravels.driver.ui.theme.PLSDriverTheme
 import com.plstravels.driver.data.models.PhotoType
 import dagger.hilt.android.AndroidEntryPoint
@@ -72,6 +73,17 @@ fun PLSDriverApp(authViewModel: AuthViewModel) {
                 },
                 onNavigateToCamera = { photoType, dutyId ->
                     navController.navigate("camera/${photoType.name}/${dutyId ?: -1}")
+                },
+                onNavigateToNotifications = {
+                    navController.navigate("notifications")
+                }
+            )
+        }
+        
+        composable("notifications") {
+            NotificationScreen(
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }

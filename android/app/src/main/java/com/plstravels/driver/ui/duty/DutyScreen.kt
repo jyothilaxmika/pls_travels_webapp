@@ -27,7 +27,8 @@ fun DutyScreen(
     dutyViewModel: DutyViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     onLogout: () -> Unit,
-    onNavigateToCamera: (com.plstravels.driver.data.models.PhotoType, Int?) -> Unit
+    onNavigateToCamera: (com.plstravels.driver.data.models.PhotoType, Int?) -> Unit,
+    onNavigateToNotifications: () -> Unit
 ) {
     val uiState by dutyViewModel.uiState.collectAsState()
     val activeDuty by dutyViewModel.activeDuty.collectAsState()
@@ -55,6 +56,22 @@ fun DutyScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
+            
+            // Notification bell with badge
+            Box {
+                IconButton(onClick = onNavigateToNotifications) {
+                    Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                }
+                
+                // Notification badge - in real app this would show unread count
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.error, CircleShape)
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-4).dp, y = 4.dp)
+                )
+            }
             
             IconButton(
                 onClick = {
