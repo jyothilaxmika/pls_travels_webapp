@@ -2,7 +2,7 @@ modules = ["python-3.11", "postgresql-16", "python3"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "gitFull", "iana-etc", "libiconv", "libxcrypt", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "openjdk17"]
+packages = ["cargo", "gitFull", "iana-etc", "libiconv", "libxcrypt", "openjdk17", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc"]
 
 [deployment]
 deploymentTarget = "autoscale"
