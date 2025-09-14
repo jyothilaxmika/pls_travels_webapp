@@ -34,4 +34,5 @@ dependencies = [
     "google-genai>=1.36.0",
     "pydantic>=2.11.9",
     "sift-stack-py>=0.8.5",
+    "flask-migrate>=4.1.0",
 ]

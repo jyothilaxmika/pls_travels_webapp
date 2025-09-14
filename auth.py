@@ -8,6 +8,18 @@ import logging
 
 auth_bp = Blueprint('auth', __name__)
 
+@auth_bp.route('/login', methods=['GET'])
+def login_page():
+    """Serve the OTP login page"""
+    from flask import render_template
+    return render_template('auth/otp_login.html')
+
+@auth_bp.route('/signup', methods=['GET'])  
+def signup_page():
+    """Serve the OTP signup page"""
+    from flask import render_template
+    return render_template('auth/otp_register.html')
+
 def log_audit(action, entity_type=None, entity_id=None, details=None, user_id=None):
     """Helper function to log audit events"""
     audit = AuditLog()
