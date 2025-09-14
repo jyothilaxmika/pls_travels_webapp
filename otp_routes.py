@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify, session, render_template, redirec
 from flask_login import login_user, current_user
 import logging
 from datetime import datetime, timezone, timedelta
+from app import csrf
 
 from utils.twilio_otp import (
     generate_otp, 
@@ -32,6 +33,7 @@ def log_audit(action, phone_number=None, details=None):
     logger.info(f"OTP_AUDIT: {action} - Phone: {masked_phone} - Details: {details}")
 
 @otp_bp.route('/send-otp', methods=['POST'])
+@csrf.exempt
 def send_otp():
     """Send OTP to phone number for login"""
     try:
@@ -114,6 +116,7 @@ def send_otp():
         }), 500
 
 @otp_bp.route('/verify-otp', methods=['POST'])
+@csrf.exempt
 def verify_otp():
     """Verify OTP and log user in"""
     try:
@@ -201,6 +204,7 @@ def verify_otp():
         }), 500
 
 @otp_bp.route('/resend-otp', methods=['POST'])
+@csrf.exempt
 def resend_otp():
     """Resend OTP to the same phone number"""
     try:
@@ -270,6 +274,7 @@ def otp_login_page():
     return render_template('auth/otp_login.html')
 
 @otp_bp.route('/clear-otp-session', methods=['POST'])
+@csrf.exempt
 def clear_otp_session():
     """Clear OTP session data"""
     OTPSession.clear_otp(session)

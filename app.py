@@ -207,7 +207,6 @@ def create_app():
     # Register blueprints
     from auth import auth_bp
     from otp_routes import otp_bp
-    from replit_auth import make_replit_blueprint
     from admin_routes import admin_bp
     from manager_routes import manager_bp
     from driver_routes import driver_bp
@@ -216,7 +215,6 @@ def create_app():
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(otp_bp, url_prefix='/otp')
-    app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(manager_bp, url_prefix='/manager')
     app.register_blueprint(driver_bp, url_prefix='/driver')
