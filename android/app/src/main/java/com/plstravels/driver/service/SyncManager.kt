@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.plstravels.driver.data.repository.CommandQueueRepository
 import com.plstravels.driver.data.repository.ConnectivityRepository
+import com.plstravels.driver.utils.ProdLogger
+import com.plstravels.driver.utils.CrashReportingManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -21,7 +23,9 @@ import kotlin.math.pow
 class SyncManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val commandQueueRepository: CommandQueueRepository,
-    private val connectivityRepository: ConnectivityRepository
+    private val connectivityRepository: ConnectivityRepository,
+    private val logger: ProdLogger,
+    private val crashReportingManager: CrashReportingManager
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var syncJob: Job? = null
@@ -41,46 +45,63 @@ class SyncManager @Inject constructor(
      */
     fun initialize() {
         if (isInitialized) {
-            Log.d(TAG, "SyncManager already initialized")
+            logger.d(TAG, "SyncManager already initialized")
             return
         }
         
-        Log.d(TAG, "Initializing SyncManager")
-        
-        // Start monitoring connectivity changes
-        startConnectivityMonitoring()
-        
-        // Start periodic sync for any missed commands
-        startPeriodicSync()
-        
-        // Start periodic cleanup
-        startPeriodicCleanup()
-        
-        isInitialized = true
-        Log.d(TAG, "SyncManager initialized successfully")
+        logger.logOperation(TAG, "sync_manager_initialization") {
+            logger.d(TAG, "Initializing SyncManager")
+            crashReportingManager.setSyncStatus("initializing")
+            
+            // Start monitoring connectivity changes
+            startConnectivityMonitoring()
+            
+            // Start periodic sync for any missed commands
+            startPeriodicSync()
+            
+            // Start periodic cleanup
+            startPeriodicCleanup()
+            
+            isInitialized = true
+            crashReportingManager.setSyncStatus("active")
+            logger.i(TAG, "SyncManager initialized successfully")
+        }
     }
     
     /**
      * Shutdown the sync manager
      */
     fun shutdown() {
-        Log.d(TAG, "Shutting down SyncManager")
-        syncJob?.cancel()
-        scope.cancel()
-        isInitialized = false
+        try {
+            logger.i(TAG, "Shutting down SyncManager")
+            crashReportingManager.setSyncStatus("shutting_down")
+            
+            syncJob?.cancel()
+            scope.cancel()
+            isInitialized = false
+            
+            crashReportingManager.setSyncStatus("inactive")
+            logger.i(TAG, "SyncManager shutdown completed")
+        } catch (e: Exception) {
+            logger.e(TAG, "Error during SyncManager shutdown", throwable = e)
+            crashReportingManager.recordSyncError("shutdown", null, 0, e)
+        }
     }
     
     /**
      * Trigger immediate sync if connected
      */
     suspend fun triggerSync(): Int {
-        if (!connectivityRepository.isConnected.first()) {
-            Log.d(TAG, "No connectivity, skipping immediate sync")
-            return 0
+        return logger.logOperation(TAG, "trigger_immediate_sync") {
+            if (!connectivityRepository.isConnected.first()) {
+                logger.d(TAG, "No connectivity, skipping immediate sync")
+                crashReportingManager.setSyncStatus("no_connectivity")
+                return@logOperation 0
+            }
+            
+            logger.i(TAG, "Triggering immediate sync")
+            executeSync()
         }
-        
-        Log.d(TAG, "Triggering immediate sync")
-        return executeSync()
     }
     
     /**

@@ -3,6 +3,8 @@ package com.plstravels.driver.service
 import android.content.Context
 import android.util.Log
 import com.plstravels.driver.data.repository.CommandQueueRepository
+import com.plstravels.driver.utils.ProdLogger
+import com.plstravels.driver.utils.CrashReportingManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,7 +21,9 @@ class BackgroundSyncInitializer @Inject constructor(
     private val commandQueueRepository: CommandQueueRepository,
     private val syncConstraintManager: SyncConstraintManager,
     private val networkAwareSyncService: NetworkAwareSyncService,
-    private val unifiedSyncOrchestrator: UnifiedSyncOrchestrator
+    private val unifiedSyncOrchestrator: UnifiedSyncOrchestrator,
+    private val logger: ProdLogger,
+    private val crashReportingManager: CrashReportingManager
 ) {
     private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var isInitialized = false
@@ -34,41 +38,50 @@ class BackgroundSyncInitializer @Inject constructor(
      */
     suspend fun initialize(context: Context) {
         if (isInitialized) {
-            Log.d(TAG, "Background sync already initialized")
+            logger.d(TAG, "Background sync already initialized")
             return
         }
         
-        Log.i(TAG, "Initializing background sync system")
-        
-        try {
-            // Step 1: Initialize command queue repository (reset stuck commands)
-            commandQueueRepository.initialize()
-            Log.d(TAG, "✅ Command queue repository initialized")
+        logger.logOperation(TAG, "background_sync_system_initialization") {
+            logger.i(TAG, "Initializing background sync system")
+            crashReportingManager.setSyncStatus("initializing")
             
-            // Step 2: Start unified sync orchestration (includes network monitoring)
-            unifiedSyncOrchestrator.startUnifiedSync(context)
-            Log.d(TAG, "✅ Unified sync orchestration started")
-            
-            // Step 3: Check if there are pending commands and trigger immediate sync if needed
-            val pendingCount = commandQueueRepository.getPendingCommandCount()
-            if (pendingCount > 0) {
-                Log.i(TAG, "Found $pendingCount pending commands - triggering immediate sync")
-                unifiedSyncOrchestrator.scheduleImmediateSync(
-                    context = context,
-                    priority = UnifiedSyncOrchestrator.PRIORITY_MEDIUM,
-                    reason = "app_startup_pending_data"
-                )
+            try {
+                // Step 1: Initialize command queue repository (reset stuck commands)
+                commandQueueRepository.initialize()
+                logger.d(TAG, "✅ Command queue repository initialized")
+                
+                // Step 2: Start unified sync orchestration (includes network monitoring)
+                unifiedSyncOrchestrator.startUnifiedSync(context)
+                logger.d(TAG, "✅ Unified sync orchestration started")
+                
+                // Step 3: Check if there are pending commands and trigger immediate sync if needed
+                val pendingCount = commandQueueRepository.getPendingCommandCount()
+                if (pendingCount > 0) {
+                    logger.i(TAG, "Found $pendingCount pending commands - triggering immediate sync",
+                        mapOf("pending_commands" to pendingCount.toString()))
+                    crashReportingManager.setSyncStatus("startup_sync_needed", pendingCount)
+                    
+                    unifiedSyncOrchestrator.scheduleImmediateSync(
+                        context = context,
+                        priority = UnifiedSyncOrchestrator.PRIORITY_MEDIUM,
+                        reason = "app_startup_pending_data"
+                    )
+                } else {
+                    crashReportingManager.setSyncStatus("initialized_clean", 0)
+                }
+                
+                // Step 4: Log comprehensive sync status for debugging
+                logSyncSystemStatus(context)
+                
+                isInitialized = true
+                logger.i(TAG, "🎉 Background sync system initialization complete")
+                
+            } catch (e: Exception) {
+                logger.e(TAG, "❌ Failed to initialize background sync system", throwable = e)
+                crashReportingManager.recordSyncError("initialization", "background_sync_system", 0, e)
+                throw e
             }
-            
-            // Step 4: Log comprehensive sync status for debugging
-            logSyncSystemStatus(context)
-            
-            isInitialized = true
-            Log.i(TAG, "🎉 Background sync system initialization complete")
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to initialize background sync system", e)
-            throw e
         }
     }
     
@@ -77,17 +90,20 @@ class BackgroundSyncInitializer @Inject constructor(
      * Call this from Application.onTerminate() or when cleaning up
      */
     fun shutdown(context: Context) {
-        Log.i(TAG, "Shutting down background sync system")
-        
         try {
+            logger.i(TAG, "Shutting down background sync system")
+            crashReportingManager.setSyncStatus("shutting_down")
+            
             // Stop unified sync orchestration (includes network monitoring)
             unifiedSyncOrchestrator.stopUnifiedSync(context)
             
             isInitialized = false
-            Log.i(TAG, "Background sync system shutdown complete")
+            crashReportingManager.setSyncStatus("shutdown")
+            logger.i(TAG, "Background sync system shutdown complete")
             
         } catch (e: Exception) {
-            Log.e(TAG, "Error during background sync shutdown", e)
+            logger.e(TAG, "Error during background sync shutdown", throwable = e)
+            crashReportingManager.recordSyncError("shutdown", "background_sync_system", 0, e)
         }
     }
     

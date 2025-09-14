@@ -4,6 +4,8 @@ plugins {
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
     id 'kotlin-parcelize'
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
 }
 
 android {
@@ -128,9 +130,11 @@ dependencies {
     // Encrypted Storage
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
     
-    // Firebase (for FCM)
+    // Firebase (for FCM and Crashlytics)
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
     implementation 'com.google.firebase:firebase-messaging-ktx'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    implementation 'com.google.firebase:firebase-analytics-ktx'
     
     // JSON
     implementation 'com.google.code.gson:gson:2.10.1'

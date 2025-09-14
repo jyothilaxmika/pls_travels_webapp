@@ -4,6 +4,8 @@ import com.plstravels.driver.data.local.CommandQueueDao
 import com.plstravels.driver.data.local.DutyDao
 import com.plstravels.driver.data.models.*
 import com.plstravels.driver.data.network.ApiService
+import com.plstravels.driver.utils.ProdLogger
+import com.plstravels.driver.utils.CrashReportingManager
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -21,7 +23,9 @@ class CommandQueueRepository @Inject constructor(
     private val commandQueueDao: CommandQueueDao,
     private val apiService: ApiService,
     private val connectivityRepository: ConnectivityRepository,
-    private val dutyDao: DutyDao
+    private val dutyDao: DutyDao,
+    private val logger: ProdLogger,
+    private val crashReportingManager: CrashReportingManager
 ) {
     private val gson = Gson()
     
@@ -36,19 +40,27 @@ class CommandQueueRepository @Inject constructor(
      * Should be called on app startup to handle restart robustness
      */
     suspend fun initialize() {
-        try {
-            Log.d(TAG, "Initializing CommandQueueRepository")
-            
-            // Clean up any commands stuck in executing state after app restart
-            val stuckCommands = commandQueueDao.getExecutingCommands()
-            stuckCommands.forEach { command ->
-                commandQueueDao.updateCommandExecutionStatus(command.id, false)
-                Log.w(TAG, "Reset stuck command after app restart: ${command.type}")
+        logger.logOperation(TAG, "command_queue_initialization") {
+            try {
+                logger.d(TAG, "Initializing CommandQueueRepository")
+                
+                // Clean up any commands stuck in executing state after app restart
+                val stuckCommands = commandQueueDao.getExecutingCommands()
+                stuckCommands.forEach { command ->
+                    commandQueueDao.updateCommandExecutionStatus(command.id, false)
+                    logger.w(TAG, "Reset stuck command after app restart: ${command.type}",
+                        mapOf("command_id" to command.id.toString(), "command_type" to command.type))
+                }
+                
+                logger.logDatabaseOperation(TAG, "reset_stuck_commands", "queued_commands", stuckCommands.size)
+                logger.i(TAG, "CommandQueueRepository initialized - reset ${stuckCommands.size} stuck commands")
+                
+                crashReportingManager.setSyncStatus("queue_initialized", 0)
+            } catch (e: Exception) {
+                logger.e(TAG, "Error during CommandQueueRepository initialization", throwable = e)
+                crashReportingManager.recordDatabaseError("initialization", "queued_commands", e)
+                throw e
             }
-            
-            Log.d(TAG, "CommandQueueRepository initialized - reset ${stuckCommands.size} stuck commands")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during CommandQueueRepository initialization", e)
         }
     }
     
