@@ -7,17 +7,60 @@ import { sendOTPSchema, verifyOTPSchema, resendOTPSchema } from "@shared/schema"
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Role guard middleware functions
+function requireAuth(req: any, res: any, next: any) {
+  if (!req.session?.user) {
+    return res.redirect('/auth/login');
+  }
+  next();
+}
+
+function requireRole(roles: string[]) {
+  return (req: any, res: any, next: any) => {
+    if (!req.session?.user) {
+      return res.redirect('/auth/login');
+    }
+    
+    if (!roles.includes(req.session.user.role)) {
+      return res.status(403).send(`
+        <html>
+          <head><title>Access Denied</title></head>
+          <body>
+            <h1>Access Denied</h1>
+            <p>You don't have permission to access this page.</p>
+            <a href="/auth/login">Login</a>
+          </body>
+        </html>
+      `);
+    }
+    next();
+  };
+}
+
 export function registerRoutes(app: any) {
   const router = Router();
 
-  // Serve static assets for auth pages
+  // Root route - redirect to login
+  router.get("/", (req: Request, res: Response) => {
+    // Check if user is already authenticated
+    const user = (req.session as any)?.user;
+    if (user) {
+      // Redirect authenticated users to their dashboard
+      const redirectUrl = user.role === 'admin' ? '/admin/dashboard' : 
+                         user.role === 'manager' ? '/manager/dashboard' : 
+                         '/driver/dashboard';
+      return res.redirect(redirectUrl);
+    }
+    // Redirect unauthenticated users to login
+    res.redirect('/auth/login');
+  });
+
+  // Serve static assets for auth pages (secure)
   router.use('/auth/static', (req, res, next) => {
-    const filePath = path.join(__dirname, 'views', req.path);
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        next();
-      }
-    });
+    // Security: Use express.static with a fixed root to prevent path traversal
+    const staticPath = path.join(__dirname, 'views');
+    const staticHandler = require('express').static(staticPath, { index: false });
+    staticHandler(req, res, next);
   });
 
   // GET route for login page
@@ -38,6 +81,42 @@ export function registerRoutes(app: any) {
       res.sendFile(authHtmlPath);
     } catch (error) {
       console.error("Error serving signup page:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin dashboard route
+  router.get("/admin/dashboard", requireAuth, requireRole(['admin']), (req: Request, res: Response) => {
+    try {
+      const user = (req.session as any)?.user;
+      const adminHtmlPath = path.join(__dirname, 'views', 'admin-dashboard.html');
+      res.sendFile(adminHtmlPath);
+    } catch (error) {
+      console.error("Error serving admin dashboard:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Manager dashboard route
+  router.get("/manager/dashboard", requireAuth, requireRole(['manager', 'admin']), (req: Request, res: Response) => {
+    try {
+      const user = (req.session as any)?.user;
+      const managerHtmlPath = path.join(__dirname, 'views', 'manager-dashboard.html');
+      res.sendFile(managerHtmlPath);
+    } catch (error) {
+      console.error("Error serving manager dashboard:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Driver dashboard route
+  router.get("/driver/dashboard", requireAuth, requireRole(['driver', 'admin', 'manager']), (req: Request, res: Response) => {
+    try {
+      const user = (req.session as any)?.user;
+      const driverHtmlPath = path.join(__dirname, 'views', 'driver-dashboard.html');
+      res.sendFile(driverHtmlPath);
+    } catch (error) {
+      console.error("Error serving driver dashboard:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -149,12 +228,20 @@ export function registerRoutes(app: any) {
       delete req.session.pendingOTP;
 
       // TODO: Create or authenticate user in database
+      // Determine user role based on phone number for demo purposes
+      let userRole = 'driver'; // Default role
+      if (cleanPhone === '+919999999999' || cleanPhone === '+91999999999' || cleanPhone === '9999999999') {
+        userRole = 'admin'; // Demo admin user
+      } else if (cleanPhone === '+918888888888' || cleanPhone === '+91888888888' || cleanPhone === '8888888888') {
+        userRole = 'manager'; // Demo manager user
+      }
+      
       const userData = {
         id: generateUserId(),
         phoneNumber: cleanPhone,
         fullName: pendingOTP.fullName,
         email: pendingOTP.email,
-        role: 'customer' as const,
+        role: userRole as 'admin' | 'manager' | 'driver',
         isVerified: true,
         createdAt: new Date()
       };
@@ -172,7 +259,9 @@ export function registerRoutes(app: any) {
           email: userData.email,
           role: userData.role
         },
-        redirectUrl: '/dashboard'
+        redirectUrl: userData.role === 'admin' ? '/admin/dashboard' : 
+                    userData.role === 'manager' ? '/manager/dashboard' : 
+                    '/driver/dashboard'
       });
 
     } catch (error) {
@@ -239,7 +328,7 @@ export function registerRoutes(app: any) {
     }
   });
 
-  // Logout route
+  // Logout route (POST)
   router.post("/auth/logout", (req: Request, res: Response) => {
     req.session?.destroy((err) => {
       if (err) {
@@ -247,6 +336,17 @@ export function registerRoutes(app: any) {
         return res.status(500).json({ error: "Failed to logout" });
       }
       res.json({ success: true, message: "Logged out successfully" });
+    });
+  });
+
+  // Logout route (GET) - for convenient logout links
+  router.get("/auth/logout", (req: Request, res: Response) => {
+    req.session?.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+        return res.status(500).send("Failed to logout");
+      }
+      res.redirect('/auth/login?message=logged-out');
     });
   });
 
