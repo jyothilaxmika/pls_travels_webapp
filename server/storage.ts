@@ -1,83 +1,132 @@
-import { type User, type InsertUser, type DriverProfile, type InsertDriverProfile, DriverStatus } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { type User, type InsertUser, type DriverProfile, type InsertDriverProfile, type AuditLog, type InsertAuditLog, DriverStatus, users, driverProfiles, auditLogs } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
-// modify the interface with any CRUD methods
-// you might need
-
+// Storage interface with audit logging support
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByPhone(phoneNumber: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(phoneNumber: string, userData: Partial<InsertUser>): Promise<User>;
   // Driver profile methods
-  getDriverProfile(userId: string): Promise<DriverProfile | undefined>;
+  getDriverProfile(userId: number): Promise<DriverProfile | undefined>;
   upsertDriverProfile(input: InsertDriverProfile): Promise<DriverProfile>;
-  setDriverStatus(userId: string, status: DriverStatus): Promise<DriverProfile | undefined>;
+  setDriverStatus(userId: number, status: DriverStatus): Promise<DriverProfile | undefined>;
   listDriversByStatus(status?: DriverStatus): Promise<DriverProfile[]>;
+  // Audit log methods
+  createAuditLog(auditLog: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(limit?: number): Promise<AuditLog[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private driverProfiles: Map<string, DriverProfile>; // keyed by userId
-
-  constructor() {
-    this.users = new Map();
-    this.driverProfiles = new Map();
+// Database implementation based on javascript_database blueprint
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getUserByPhone(phoneNumber: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
-  async getDriverProfile(userId: string): Promise<DriverProfile | undefined> {
-    return this.driverProfiles.get(userId);
+  async upsertUser(phoneNumber: string, userData: Partial<InsertUser>): Promise<User> {
+    const existingUser = await this.getUserByPhone(phoneNumber);
+    
+    if (existingUser) {
+      // Update existing user
+      const [updatedUser] = await db
+        .update(users)
+        .set({ ...userData, phoneNumber })
+        .where(eq(users.phoneNumber, phoneNumber))
+        .returning();
+      return updatedUser;
+    } else {
+      // Create new user
+      const [newUser] = await db
+        .insert(users)
+        .values({ phoneNumber, ...userData })
+        .returning();
+      return newUser;
+    }
+  }
+
+  // Driver profile methods
+  async getDriverProfile(userId: number): Promise<DriverProfile | undefined> {
+    const [profile] = await db.select().from(driverProfiles).where(eq(driverProfiles.userId, userId));
+    return profile || undefined;
   }
 
   async upsertDriverProfile(input: InsertDriverProfile): Promise<DriverProfile> {
-    const id = randomUUID();
-    const now = new Date();
-    const existingProfile = this.driverProfiles.get(input.userId);
+    const existingProfile = await this.getDriverProfile(input.userId);
     
-    const profile: DriverProfile = {
-      id: existingProfile?.id || id,
-      ...input,
-      createdAt: existingProfile?.createdAt || now,
-      updatedAt: now,
-    };
-    
-    this.driverProfiles.set(input.userId, profile);
-    return profile;
+    if (existingProfile) {
+      // Update existing profile
+      const [updatedProfile] = await db
+        .update(driverProfiles)
+        .set({ ...input, updatedAt: new Date() })
+        .where(eq(driverProfiles.userId, input.userId))
+        .returning();
+      return updatedProfile;
+    } else {
+      // Create new profile
+      const [newProfile] = await db
+        .insert(driverProfiles)
+        .values(input)
+        .returning();
+      return newProfile;
+    }
   }
 
-  async setDriverStatus(userId: string, status: DriverStatus): Promise<DriverProfile | undefined> {
-    const profile = this.driverProfiles.get(userId);
-    if (!profile) return undefined;
+  async setDriverStatus(userId: number, status: DriverStatus): Promise<DriverProfile | undefined> {
+    const [updatedProfile] = await db
+      .update(driverProfiles)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(driverProfiles.userId, userId))
+      .returning();
     
-    profile.status = status;
-    profile.updatedAt = new Date();
-    this.driverProfiles.set(userId, profile);
-    return profile;
+    return updatedProfile || undefined;
   }
 
   async listDriversByStatus(status?: DriverStatus): Promise<DriverProfile[]> {
-    const profiles = Array.from(this.driverProfiles.values());
     if (status) {
-      return profiles.filter(p => p.status === status);
+      return await db.select().from(driverProfiles).where(eq(driverProfiles.status, status));
     }
-    return profiles;
+    return await db.select().from(driverProfiles);
+  }
+
+  // Audit log methods  
+  async createAuditLog(auditLog: InsertAuditLog): Promise<AuditLog> {
+    const [log] = await db.insert(auditLogs).values(auditLog).returning();
+    return log;
+  }
+
+  async getAuditLogs(limit: number = 100): Promise<AuditLog[]> {
+    return await db
+      .select({
+        id: auditLogs.id,
+        userId: auditLogs.userId,
+        action: auditLogs.action,
+        targetType: auditLogs.targetType,
+        targetId: auditLogs.targetId,
+        details: auditLogs.details,
+        ipAddress: auditLogs.ipAddress,
+        userAgent: auditLogs.userAgent,
+        createdAt: auditLogs.createdAt,
+        userFullName: users.fullName
+      })
+      .from(auditLogs)
+      .leftJoin(users, eq(auditLogs.userId, users.id))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

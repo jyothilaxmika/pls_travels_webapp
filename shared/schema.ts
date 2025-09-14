@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { pgTable, varchar, timestamp, text, pgEnum, serial, boolean } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 // Driver onboarding enums and types
 export enum DriverStatus {
@@ -7,58 +10,106 @@ export enum DriverStatus {
   REJECTED = 'rejected'
 }
 
-// Driver profile schema
-export const driverProfileSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  fullName: z.string().min(1, "Full name is required"),
-  phone: z.string().min(10, "Valid phone number required"),
-  address: z.string().optional(),
-  aadharNumber: z.string().min(12, "Valid Aadhar number required"),
-  licenseNumber: z.string().min(1, "License number is required"),
-  bankName: z.string().optional(),
-  accountNumber: z.string().optional(),
-  ifscCode: z.string().optional(),
-  accountHolderName: z.string().optional(),
-  branchId: z.string().optional(),
-  status: z.nativeEnum(DriverStatus).default(DriverStatus.PENDING),
+// Database enums
+export const driverStatusEnum = pgEnum('driver_status', ['pending', 'approved', 'rejected']);
+export const userRoleEnum = pgEnum('user_role', ['driver', 'admin', 'customer', 'manager']);
+export const auditActionEnum = pgEnum('audit_action', [
+  'driver_approved', 
+  'driver_rejected', 
+  'driver_profile_created',
+  'user_login',
+  'user_created',
+  'role_changed'
+]);
+
+// Database Tables
+export const users = pgTable('users', {
+  id: serial("id").primaryKey(),
+  phoneNumber: varchar("phone_number", { length: 20 }).unique().notNull(),
+  username: varchar("username", { length: 50 }),
+  fullName: varchar("full_name", { length: 100 }),
+  email: varchar("email", { length: 255 }),
+  role: userRoleEnum("role").default('customer').notNull(),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const driverProfiles = pgTable('driver_profiles', {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id").references(() => users.id).notNull(),
+  fullName: varchar("full_name", { length: 100 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  address: text("address"),
+  aadharNumber: varchar("aadhar_number", { length: 12 }).notNull(),
+  licenseNumber: varchar("license_number", { length: 50 }).notNull(),
+  bankName: varchar("bank_name", { length: 100 }),
+  accountNumber: varchar("account_number", { length: 50 }),
+  ifscCode: varchar("ifsc_code", { length: 15 }),
+  accountHolderName: varchar("account_holder_name", { length: 100 }),
+  branchId: varchar("branch_id", { length: 50 }),
+  status: driverStatusEnum("status").default('pending').notNull(),
   // Document file paths
-  aadharFrontPath: z.string().optional(),
-  aadharBackPath: z.string().optional(),
-  licenseFrontPath: z.string().optional(),
-  licenseBackPath: z.string().optional(),
-  profilePhotoPath: z.string().optional(),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date())
+  aadharFrontPath: varchar("aadhar_front_path", { length: 255 }),
+  aadharBackPath: varchar("aadhar_back_path", { length: 255 }),
+  licenseFrontPath: varchar("license_front_path", { length: 255 }),
+  licenseBackPath: varchar("license_back_path", { length: 255 }),
+  profilePhotoPath: varchar("profile_photo_path", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertDriverProfileSchema = driverProfileSchema.omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
+export const auditLogs = pgTable('audit_logs', {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id").references(() => users.id).notNull(),
+  action: auditActionEnum("action").notNull(),
+  targetType: varchar("target_type", { length: 50 }), // 'driver', 'user', etc.
+  targetId: varchar("target_id", { length: 50 }), // ID of the affected resource
+  details: text("details"), // JSON string with action details
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export type DriverProfile = z.infer<typeof driverProfileSchema>;
-export type InsertDriverProfile = z.infer<typeof insertDriverProfileSchema>;
+// Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  driverProfile: one(driverProfiles, {
+    fields: [users.id],
+    references: [driverProfiles.userId],
+  }),
+  auditLogs: many(auditLogs),
+}));
 
-// User schema for authentication
-export const userSchema = z.object({
-  id: z.string(),
-  phoneNumber: z.string(),
-  username: z.string().optional(),
-  fullName: z.string().optional(),
-  email: z.string().email().optional(),
-  role: z.enum(['driver', 'admin', 'customer']).default('customer'),
-  isVerified: z.boolean().default(false),
-  createdAt: z.date().default(() => new Date()),
-});
+export const driverProfilesRelations = relations(driverProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [driverProfiles.userId],
+    references: [users.id],
+  }),
+}));
 
-export const insertUserSchema = userSchema.omit({ id: true, createdAt: true });
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));
 
-export type User = z.infer<typeof userSchema>;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+// Zod schemas from Drizzle tables
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);
+export const insertDriverProfileSchema = createInsertSchema(driverProfiles);
+export const selectDriverProfileSchema = createSelectSchema(driverProfiles);
+export const insertAuditLogSchema = createInsertSchema(auditLogs);
+export const selectAuditLogSchema = createSelectSchema(auditLogs);
 
-// OTP schema
+// Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type DriverProfile = typeof driverProfiles.$inferSelect;
+export type InsertDriverProfile = typeof driverProfiles.$inferInsert;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// OTP schema (remains in-memory for now)
 export const otpSchema = z.object({
   id: z.string(),
   phoneNumber: z.string(),

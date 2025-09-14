@@ -254,7 +254,7 @@ export function registerRoutes(app: any) {
       let storageUser;
       try {
         // Try to find existing user by phone number
-        storageUser = await app.locals.storage.getUserByUsername(cleanPhone);
+        storageUser = await app.locals.storage.getUserByPhone(cleanPhone);
         
         if (storageUser) {
           console.log(`Existing user found: ${storageUser.id} (${cleanPhone})`);
@@ -271,6 +271,22 @@ export function registerRoutes(app: any) {
             isVerified: userData.isVerified
           });
           console.log(`New user created: ${storageUser.id} (${cleanPhone})`);
+          
+          // Create audit log for user creation
+          await app.locals.storage.createAuditLog({
+            userId: storageUser.id,
+            action: 'user_created',
+            targetType: 'user',
+            targetId: storageUser.id.toString(),
+            details: JSON.stringify({ 
+              phoneNumber: cleanPhone,
+              role: storageUser.role,
+              fullName: userData.fullName || null
+            }),
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent') || '',
+          });
+          
           // Update session with storage user ID
           userData.id = storageUser.id;
         }
@@ -281,6 +297,28 @@ export function registerRoutes(app: any) {
 
       // Store user session with consistent storage ID
       req.session.user = userData;
+
+      // Create audit log for user login (only if we have storage user)
+      if (storageUser) {
+        try {
+          await app.locals.storage.createAuditLog({
+            userId: storageUser.id,
+            action: 'user_login',
+            targetType: 'user',
+            targetId: storageUser.id.toString(),
+            details: JSON.stringify({ 
+              phoneNumber: cleanPhone,
+              role: storageUser.role,
+              loginType: type
+            }),
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent') || '',
+          });
+        } catch (auditError) {
+          console.error("Error creating login audit log:", auditError);
+          // Don't fail login due to audit log error
+        }
+      }
 
       res.json({ 
         success: true, 
@@ -544,10 +582,25 @@ export function registerRoutes(app: any) {
   router.post("/api/admin/drivers/:userId/approve", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      const profile = await app.locals.storage.setDriverStatus(userId, DriverStatus.APPROVED);
+      const userIdNum = parseInt(userId);
+      const currentUser = (req.session as any)?.user;
+      
+      const profile = await app.locals.storage.setDriverStatus(userIdNum, DriverStatus.APPROVED);
       if (!profile) {
         return res.status(404).json({ error: "Driver profile not found" });
       }
+      
+      // Create audit log
+      await app.locals.storage.createAuditLog({
+        userId: currentUser.id,
+        action: 'driver_approved',
+        targetType: 'driver',
+        targetId: userId,
+        details: JSON.stringify({ driverName: profile.fullName }),
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || '',
+      });
+      
       res.json({ success: true, message: "Driver approved successfully", profile });
     } catch (error) {
       console.error("Error approving driver:", error);
@@ -558,14 +611,52 @@ export function registerRoutes(app: any) {
   router.post("/api/admin/drivers/:userId/reject", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      const profile = await app.locals.storage.setDriverStatus(userId, DriverStatus.REJECTED);
+      const userIdNum = parseInt(userId);
+      const currentUser = (req.session as any)?.user;
+      
+      const profile = await app.locals.storage.setDriverStatus(userIdNum, DriverStatus.REJECTED);
       if (!profile) {
         return res.status(404).json({ error: "Driver profile not found" });
       }
+      
+      // Create audit log
+      await app.locals.storage.createAuditLog({
+        userId: currentUser.id,
+        action: 'driver_rejected',
+        targetType: 'driver',
+        targetId: userId,
+        details: JSON.stringify({ driverName: profile.fullName }),
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || '',
+      });
+      
       res.json({ success: true, message: "Driver rejected", profile });
     } catch (error) {
       console.error("Error rejecting driver:", error);
       res.status(500).json({ error: "Failed to reject driver" });
+    }
+  });
+
+  // Admin: Audit logs page
+  router.get("/admin/audit-logs", requireAuth, requireRole(['admin']), (req: Request, res: Response) => {
+    try {
+      const auditLogsHtmlPath = path.join(__dirname, 'views', 'admin-audit-logs.html');
+      res.sendFile(auditLogsHtmlPath);
+    } catch (error) {
+      console.error("Error serving audit logs page:", error);
+      res.status(500).send("Error loading audit logs page");
+    }
+  });
+
+  // Admin: Get audit logs
+  router.get("/api/admin/audit-logs", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const auditLogs = await app.locals.storage.getAuditLogs(limit);
+      res.json({ auditLogs });
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ error: "Failed to fetch audit logs" });
     }
   });
 
