@@ -17,6 +17,7 @@ import com.plstravels.driver.data.models.LocationSession
 import com.plstravels.driver.data.models.LocationTrackingConfig
 import com.plstravels.driver.data.repository.LocationRepository
 import com.plstravels.driver.utils.LocationPermissionHelper
+import com.plstravels.driver.workers.LocationSyncWorker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import javax.inject.Inject
@@ -154,8 +155,8 @@ class LocationTrackingService : Service() {
                 
                 updateNotification("Tracking duty #$dutyId")
                 
-                // Schedule periodic sync
-                schedulePeriodicSync()
+                // Schedule WorkManager for periodic sync
+                LocationSyncWorker.schedulePeriodicSync(this@LocationTrackingService)
                 
             } catch (e: Exception) {
                 // Handle error
@@ -180,8 +181,9 @@ class LocationTrackingService : Service() {
                 locationDao.updateLocationSessionStats(sessionId, totalDistance, pointCount)
             }
             
-            // Final sync attempt
-            locationRepository.syncPendingLocations()
+            // Schedule final sync attempt and cancel periodic sync
+            LocationSyncWorker.scheduleImmediateSync(this@LocationTrackingService)
+            LocationSyncWorker.cancelAllWork(this@LocationTrackingService)
         }
         
         // Stop foreground service
@@ -239,23 +241,13 @@ class LocationTrackingService : Service() {
         
         lastLocation = location
         
-        // Trigger sync if we have enough points
+        // Trigger immediate sync if we have enough points
         val unsyncedCount = locationDao.getUnsyncedCount()
         if (unsyncedCount >= config.batchSizeLimit) {
-            locationRepository.syncPendingLocations()
+            LocationSyncWorker.scheduleImmediateSync(this@LocationTrackingService)
         }
     }
     
-    private fun schedulePeriodicSync() {
-        serviceScope.launch {
-            while (isTracking) {
-                delay(config.syncIntervalMinutes * 60 * 1000) // Convert minutes to milliseconds
-                if (isTracking) {
-                    locationRepository.syncPendingLocations()
-                }
-            }
-        }
-    }
     
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

@@ -5,6 +5,7 @@ import com.plstravels.driver.data.models.*
 import com.plstravels.driver.data.network.ApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import android.location.Location
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -106,9 +107,10 @@ class LocationRepository @Inject constructor(
                 val pointIds = unsyncedPoints.map { it.id }
                 locationDao.markLocationPointsAsSynced(pointIds)
                 
-                // Clean up old synced points (older than 7 days)
+                // Clean up old synced points (older than 7 days) and failed retries
                 val cutoffTime = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
                 locationDao.deleteOldSyncedLocationPoints(cutoffTime)
+                locationDao.deleteFailedSyncLocationPoints(cutoffTime = cutoffTime)
                 
                 Result.success(unsyncedPoints.size)
             } else {
@@ -136,8 +138,68 @@ class LocationRepository @Inject constructor(
     }
     
     suspend fun getLocationStatsForDuty(dutyId: Int): LocationStats {
-        val points = locationDao.getLocationPointsForDuty(dutyId)
-        return LocationStats.empty() // TODO: Calculate from points flow
+        return try {
+            // Get location points directly as a list for calculations
+            val points = locationDao.getLocationPointsListForDuty(dutyId)
+            
+            if (points.isEmpty()) {
+                return LocationStats.empty()
+            }
+            
+            // Sort points by timestamp to ensure proper order
+            val sortedPoints = points.sortedBy { it.timestamp }
+            
+            // Calculate total distance
+            var totalDistance = 0.0
+            var maxSpeed = 0.0
+            var totalSpeed = 0.0
+            var speedCount = 0
+            
+            for (i in 1 until sortedPoints.size) {
+                val currentPoint = sortedPoints[i]
+                val previousPoint = sortedPoints[i - 1]
+                
+                // Calculate distance between consecutive points
+                val location1 = Location("").apply {
+                    latitude = previousPoint.latitude
+                    longitude = previousPoint.longitude
+                }
+                val location2 = Location("").apply {
+                    latitude = currentPoint.latitude
+                    longitude = currentPoint.longitude
+                }
+                
+                val distance = location1.distanceTo(location2).toDouble()
+                totalDistance += distance
+                
+                // Track speed statistics
+                currentPoint.speed?.let { speed ->
+                    maxSpeed = maxOf(maxSpeed, speed.toDouble())
+                    totalSpeed += speed.toDouble()
+                    speedCount++
+                }
+            }
+            
+            // Calculate average speed
+            val averageSpeed = if (speedCount > 0) totalSpeed / speedCount else 0.0
+            
+            // Get start and end times
+            val startTime = sortedPoints.first().timestamp
+            val endTime = sortedPoints.last().timestamp
+            
+            LocationStats(
+                totalDistance = totalDistance,
+                totalPoints = points.size,
+                startTime = startTime,
+                endTime = endTime,
+                averageSpeed = averageSpeed,
+                maxSpeed = maxSpeed
+            )
+            
+        } catch (e: Exception) {
+            // Return empty stats on error
+            LocationStats.empty()
+        }
     }
     
     suspend fun deleteLocationDataForDuty(dutyId: Int): Result<Unit> {
@@ -147,6 +209,36 @@ class LocationRepository @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    
+    suspend fun deleteSyncedLocationDataForDuty(dutyId: Int): Result<Unit> {
+        return try {
+            locationDao.deleteSyncedLocationPointsForDuty(dutyId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun resetSyncStatusForDuty(dutyId: Int): Result<Unit> {
+        return try {
+            locationDao.resetSyncStatusForDuty(dutyId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getCleanupStats(): Triple<Int, Int, Int> {
+        return try {
+            val cutoffTime = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
+            val oldSyncedCount = locationDao.countOldSyncedLocationPoints(cutoffTime)
+            val unsyncedCount = locationDao.getUnsyncedCount()
+            val totalCount = oldSyncedCount + unsyncedCount
+            Triple(totalCount, oldSyncedCount, unsyncedCount)
+        } catch (e: Exception) {
+            Triple(0, 0, 0)
         }
     }
 }
