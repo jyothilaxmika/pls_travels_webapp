@@ -10,6 +10,12 @@ import com.plstravels.driver.service.BackgroundSyncInitializer
 import com.plstravels.driver.utils.CrashReportingManager
 import com.plstravels.driver.utils.LoggingConfig
 import com.plstravels.driver.utils.ProdLogger
+import com.plstravels.driver.utils.MemoryManager
+import com.plstravels.driver.utils.PerformanceMonitor
+import com.plstravels.driver.utils.DatabasePerformanceOptimizer
+import com.plstravels.driver.utils.ImageOptimizer
+import com.plstravels.driver.utils.UIPerformanceOptimizer
+import com.plstravels.driver.utils.LocationTrackingOptimizer
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +49,24 @@ class PLSDriverApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var logger: ProdLogger
     
+    @Inject
+    lateinit var memoryManager: MemoryManager
+    
+    @Inject
+    lateinit var performanceMonitor: PerformanceMonitor
+    
+    @Inject
+    lateinit var databaseOptimizer: DatabasePerformanceOptimizer
+    
+    @Inject
+    lateinit var imageOptimizer: ImageOptimizer
+    
+    @Inject
+    lateinit var uiPerformanceOptimizer: UIPerformanceOptimizer
+    
+    @Inject
+    lateinit var locationTrackingOptimizer: LocationTrackingOptimizer
+    
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val sessionId = UUID.randomUUID().toString()
     
@@ -68,6 +92,22 @@ class PLSDriverApplication : Application(), Configuration.Provider {
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to initialize crash reporting and logging", e)
                 // Continue with basic logging if enhanced logging fails
+            }
+        }
+        
+        // Initialize performance optimization components
+        applicationScope.launch {
+            try {
+                initializePerformanceOptimizations()
+                logger.i(TAG, "✅ Performance optimization system initialized")
+            } catch (e: Exception) {
+                logger.e(TAG, "❌ Failed to initialize performance optimizations", throwable = e)
+                crashReportingManager.recordCustomException(
+                    "Performance optimization initialization failed", 
+                    e,
+                    mapOf("component" to "performance_optimization", "phase" to "initialization")
+                )
+                // App should continue to work even if performance optimizations fail
             }
         }
         
@@ -129,10 +169,67 @@ class PLSDriverApplication : Application(), Configuration.Provider {
         }
     }
     
+    /**
+     * Initialize performance optimization components
+     */
+    private suspend fun initializePerformanceOptimizations() {
+        try {
+            // Initialize memory manager first (other components depend on it)
+            memoryManager.initialize()
+            logger.i(TAG, "✅ Memory manager initialized")
+            
+            // Initialize performance monitor (for tracking all performance metrics)
+            performanceMonitor.initialize()
+            logger.i(TAG, "✅ Performance monitor initialized")
+            
+            // Initialize database optimizer
+            databaseOptimizer.initialize()
+            logger.i(TAG, "✅ Database optimizer initialized")
+            
+            // Initialize image optimizer
+            imageOptimizer.initialize()
+            logger.i(TAG, "✅ Image optimizer initialized")
+            
+            // Initialize UI performance optimizer
+            uiPerformanceOptimizer.initialize()
+            logger.i(TAG, "✅ UI performance optimizer initialized")
+            
+            // Initialize location tracking optimizer
+            locationTrackingOptimizer.initialize()
+            logger.i(TAG, "✅ Location tracking optimizer initialized")
+            
+            // Log performance initialization metrics
+            val memoryInfo = memoryManager.getCurrentMemoryInfo()
+            logger.i(TAG, "Performance optimization initialization complete", mapOf(
+                "memory_usage_mb" to (memoryInfo.usedHeap / 1024 / 1024).toString(),
+                "memory_percentage" to String.format("%.1f", memoryInfo.usedPercentage * 100),
+                "optimization_level" to memoryInfo.level.name,
+                "session_id" to sessionId
+            ))
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Critical error during performance optimization initialization", e)
+            throw e
+        }
+    }
+    
     override fun onTerminate() {
         super.onTerminate()
         logger.i(TAG, "PLS Driver Application terminating...")
         crashReportingManager.setAppState("terminating")
+        
+        try {
+            // Shutdown performance optimization components first
+            shutdownPerformanceOptimizations()
+            logger.i(TAG, "Performance optimization shutdown complete")
+        } catch (e: Exception) {
+            logger.e(TAG, "Error during performance optimization shutdown", throwable = e)
+            crashReportingManager.recordCustomException(
+                "Performance optimization shutdown failed", 
+                e,
+                mapOf("component" to "performance_optimization", "phase" to "shutdown")
+            )
+        }
         
         try {
             backgroundSyncInitializer.shutdown(this)
@@ -147,9 +244,43 @@ class PLSDriverApplication : Application(), Configuration.Provider {
         }
     }
     
+    /**
+     * Shutdown performance optimization components
+     */
+    private fun shutdownPerformanceOptimizations() {
+        try {
+            // Shutdown in reverse order of initialization
+            locationTrackingOptimizer.shutdown()
+            uiPerformanceOptimizer.shutdown()
+            imageOptimizer.shutdown()
+            databaseOptimizer.shutdown()
+            performanceMonitor.shutdown()
+            memoryManager.shutdown()
+            
+            logger.i(TAG, "All performance optimization components shut down successfully")
+        } catch (e: Exception) {
+            logger.e(TAG, "Error during performance optimization shutdown", throwable = e)
+        }
+    }
+    
     override fun onLowMemory() {
         super.onLowMemory()
-        logger.w(TAG, "⚠️ Low memory warning - background sync may be throttled")
+        logger.w(TAG, "⚠️ Low memory warning - triggering memory optimization")
+        
+        // Use the new MemoryManager for handling low memory conditions
+        try {
+            val memoryInfo = memoryManager.getCurrentMemoryInfo()
+            memoryManager.requestGarbageCollection(force = true)
+            
+            logger.w(TAG, "Memory optimization triggered", mapOf(
+                "memory_level" to memoryInfo.level.name,
+                "used_percentage" to String.format("%.1f", memoryInfo.usedPercentage * 100),
+                "used_heap_mb" to (memoryInfo.usedHeap / 1024 / 1024).toString()
+            ))
+        } catch (e: Exception) {
+            logger.e(TAG, "Error during low memory handling", throwable = e)
+        }
+        
         crashReportingManager.setCustomKey("memory_status", "low")
         crashReportingManager.recordCustomException(
             "Low memory condition detected",

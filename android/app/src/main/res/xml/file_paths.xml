@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internal app storage for sensitive files -->
+    <files-path name="internal_files" path="." />
+    
+    <!-- Cache directory for temporary files -->
+    <cache-path name="cache_files" path="." />
+    
+    <!-- Photos directory for duty photos -->
+    <files-path name="duty_photos" path="photos/" />
+    
+    <!-- Documents directory for driver documents -->
+    <files-path name="documents" path="documents/" />
+    
+    <!-- Temp directory for file processing -->
+    <cache-path name="temp_files" path="temp/" />
+    
+    <!-- External storage (only if absolutely necessary) -->
+    <!-- Note: Commented out for security - use internal storage only -->
+    <!-- <external-files-path name="external_files" path="." /> -->
+    <!-- <external-cache-path name="external_cache" path="." /> -->
+</paths>

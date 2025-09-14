@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Named
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -25,13 +26,65 @@ object NetworkModule {
     
     @Provides
     @Singleton
+    fun provideCertificatePinner(): CertificatePinner? {
+        // Only enable certificate pinning in release builds with actual pins configured
+        if (BuildConfig.DEBUG) {
+            // Never use certificate pinning in debug builds for development flexibility
+            return null
+        }
+        
+        // Define expected certificate pins - these should be replaced with actual values
+        val productionPins = mapOf(
+            "api.plstravels.com" to listOf(
+                "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", // Placeholder - replace with actual pin
+                "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="  // Backup pin
+            ),
+            "staging-api.plstravels.com" to listOf(
+                "sha256/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=", // Placeholder - replace with actual pin
+                "sha256/DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD="  // Backup pin
+            )
+        )
+        
+        // Check if pins are still placeholders (all A's, B's, etc.)
+        val hasPlaceholderPins = productionPins.values.flatten().any { pin ->
+            pin.contains("AAAAAAAA") || pin.contains("BBBBBBBB") || 
+            pin.contains("CCCCCCCC") || pin.contains("DDDDDDDD")
+        }
+        
+        if (hasPlaceholderPins) {
+            // In production, if pins are still placeholders, don't enable pinning
+            // Log warning in production builds (this would need a logger)
+            android.util.Log.w("NetworkModule", "Certificate pinning disabled - placeholder pins detected")
+            return null
+        }
+        
+        // Build certificate pinner with actual pins
+        val builder = CertificatePinner.Builder()
+        productionPins.forEach { (hostname, pins) ->
+            pins.forEach { pin ->
+                builder.add(hostname, pin)
+            }
+        }
+        
+        return builder.build()
+    }
+
+    @Provides
+    @Singleton
     @Named("base")
-    fun provideBaseOkHttpClient(): OkHttpClient {
+    fun provideBaseOkHttpClient(certificatePinner: CertificatePinner?): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
         
+        // Apply certificate pinning only if available and not in debug builds
+        if (!BuildConfig.DEBUG && certificatePinner != null) {
+            builder.certificatePinner(certificatePinner)
+        }
+        
+        // Add logging only in debug builds
         if (BuildConfig.DEBUG) {
             val loggingInterceptor = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY

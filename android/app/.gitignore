@@ -1,0 +1,31 @@
+# Android Build artifacts
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Keystore files - NEVER commit these
+keystore/*.keystore
+keystore/*.jks
+keystore/keystore-config.properties
+*.keystore
+*.jks
+
+# Sensitive configuration
+keystore-config.properties
+signing.properties
+
+# Android Studio
+*.iml
+.gradle
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+
+# Security files
+proguard-mapping.txt
+seeds.txt
+usage.txt
