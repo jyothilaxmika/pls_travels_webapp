@@ -26,7 +26,8 @@ import com.plstravels.driver.ui.auth.AuthViewModel
 fun DutyScreen(
     dutyViewModel: DutyViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToCamera: (com.plstravels.driver.data.models.PhotoType, Int?) -> Unit
 ) {
     val uiState by dutyViewModel.uiState.collectAsState()
     val activeDuty by dutyViewModel.activeDuty.collectAsState()
@@ -34,6 +35,8 @@ fun DutyScreen(
     val vehicles by dutyViewModel.vehicles.collectAsState()
     val locationPermissionsGranted by dutyViewModel.locationPermissionsGranted.collectAsState()
     val showLocationPermissionDialog by dutyViewModel.showLocationPermissionDialog.collectAsState()
+    val showPhotoCaptureSheet by dutyViewModel.showPhotoCaptureSheet.collectAsState()
+    val currentDutyPhotos by dutyViewModel.currentDutyPhotos.collectAsState()
     
     Column(
         modifier = Modifier
@@ -88,8 +91,24 @@ fun DutyScreen(
             },
             onEndDuty = { dutyId, odometer, revenue ->
                 dutyViewModel.endDuty(dutyId, odometer, revenue, null)
-            }
+            },
+            onCapturePhoto = { dutyViewModel.showPhotoCaptureSheet() }
         )
+        
+        // Photo management section for active duty
+        activeDuty?.let { duty ->
+            Spacer(modifier = Modifier.height(16.dp))
+            DutyPhotosSection(
+                dutyId = duty.id,
+                photos = currentDutyPhotos,
+                onCapturePhoto = { dutyViewModel.showPhotoCaptureSheet() }
+            )
+            
+            // Load photos for current duty
+            LaunchedEffect(duty.id) {
+                dutyViewModel.loadPhotosForDuty(duty.id)
+            }
+        }
         
         Spacer(modifier = Modifier.height(24.dp))
         
@@ -151,7 +170,8 @@ private fun ActiveDutySection(
     uiState: DutyUiState,
     locationPermissionsGranted: Boolean,
     onStartDuty: (Int, Double) -> Unit,
-    onEndDuty: (Int?, Double, Double) -> Unit
+    onEndDuty: (Int?, Double, Double) -> Unit,
+    onCapturePhoto: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -181,17 +201,30 @@ private fun ActiveDutySection(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Button(
-                    onClick = { onEndDuty(activeDuty.id, 0.0, 0.0) },
-                    enabled = !uiState.isLoading,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.Stop, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("End Duty")
+                    OutlinedButton(
+                        onClick = onCapturePhoto,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Photo")
+                    }
+                    
+                    Button(
+                        onClick = { onEndDuty(activeDuty.id, 0.0, 0.0) },
+                        enabled = !uiState.isLoading,
+                        modifier = Modifier.weight(2f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(Icons.Default.Stop, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("End Duty")
+                    }
                 }
             } else {
                 // Show start duty controls
@@ -336,5 +369,32 @@ private fun DutyCard(duty: Duty) {
                 )
             }
         }
+    }
+    
+    // Photo Capture Sheet
+    if (showPhotoCaptureSheet) {
+        val availablePhotoTypes = if (activeDuty != null) {
+            // During duty - show all photo types
+            listOf(
+                com.plstravels.driver.data.models.PhotoType.DUTY_END,
+                com.plstravels.driver.data.models.PhotoType.VEHICLE_INSPECTION,
+                com.plstravels.driver.data.models.PhotoType.ODOMETER_READING,
+                com.plstravels.driver.data.models.PhotoType.INCIDENT_REPORT,
+                com.plstravels.driver.data.models.PhotoType.FUEL_RECEIPT,
+                com.plstravels.driver.data.models.PhotoType.GENERAL
+            )
+        } else {
+            // Before duty - show duty start photos
+            dutyViewModel.getRequiredPhotosForDutyStart()
+        }
+        
+        PhotoCaptureSheet(
+            photoTypes = availablePhotoTypes,
+            onPhotoTypeSelected = { photoType ->
+                dutyViewModel.dismissPhotoCaptureSheet()
+                onNavigateToCamera(photoType, activeDuty?.id)
+            },
+            onDismiss = { dutyViewModel.dismissPhotoCaptureSheet() }
+        )
     }
 }

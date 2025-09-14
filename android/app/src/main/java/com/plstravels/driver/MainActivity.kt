@@ -17,7 +17,9 @@ import androidx.navigation.compose.rememberNavController
 import com.plstravels.driver.ui.auth.AuthScreen
 import com.plstravels.driver.ui.auth.AuthViewModel
 import com.plstravels.driver.ui.duty.DutyScreen
+import com.plstravels.driver.ui.camera.CameraScreen
 import com.plstravels.driver.ui.theme.PLSDriverTheme
+import com.plstravels.driver.data.models.PhotoType
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -67,6 +69,31 @@ fun PLSDriverApp(authViewModel: AuthViewModel) {
                     navController.navigate("auth") {
                         popUpTo("duty") { inclusive = true }
                     }
+                },
+                onNavigateToCamera = { photoType, dutyId ->
+                    navController.navigate("camera/${photoType.name}/${dutyId ?: -1}")
+                }
+            )
+        }
+        
+        composable("camera/{photoType}/{dutyId}") { backStackEntry ->
+            val photoTypeName = backStackEntry.arguments?.getString("photoType") ?: ""
+            val dutyId = backStackEntry.arguments?.getString("dutyId")?.toIntOrNull()
+            
+            val photoType = try {
+                PhotoType.valueOf(photoTypeName)
+            } catch (e: Exception) {
+                PhotoType.GENERAL
+            }
+            
+            CameraScreen(
+                photoType = photoType,
+                dutyId = if (dutyId == -1) null else dutyId,
+                onPhotoCapture = { photoPath ->
+                    navController.popBackStack()
+                },
+                onCancel = {
+                    navController.popBackStack()
                 }
             )
         }

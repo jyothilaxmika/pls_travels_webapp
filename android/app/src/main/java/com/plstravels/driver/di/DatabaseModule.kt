@@ -40,4 +40,7 @@ object DatabaseModule {
     
     @Provides
     fun provideLocationDao(database: PLSDatabase): LocationDao = database.locationDao()
+    
+    @Provides
+    fun providePhotoDao(database: PLSDatabase): PhotoDao = database.photoDao()
 }

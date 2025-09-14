@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.plstravels.driver.data.models.Vehicle
+import com.plstravels.driver.data.models.PhotoType
 
 /**
  * Room type converters for complex data types
@@ -23,5 +24,15 @@ class Converters {
             val type = object : TypeToken<Vehicle>() {}.type
             gson.fromJson(vehicleString, type)
         }
+    }
+    
+    @TypeConverter
+    fun fromPhotoType(photoType: PhotoType?): String? {
+        return photoType?.name
+    }
+    
+    @TypeConverter
+    fun toPhotoType(photoTypeString: String?): PhotoType? {
+        return photoTypeString?.let { PhotoType.valueOf(it) }
     }
 }

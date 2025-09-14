@@ -7,6 +7,7 @@ import com.plstravels.driver.data.models.Vehicle
 import com.plstravels.driver.data.models.LocationData
 import com.plstravels.driver.data.repository.DutyRepository
 import com.plstravels.driver.data.repository.LocationRepository
+import com.plstravels.driver.data.repository.PhotoRepository
 import com.plstravels.driver.service.LocationTrackingService
 import com.plstravels.driver.utils.LocationPermissionHelper
 import com.plstravels.driver.workers.LocationSyncWorker
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class DutyViewModel @Inject constructor(
     private val dutyRepository: DutyRepository,
     private val locationRepository: LocationRepository,
+    private val photoRepository: PhotoRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     
@@ -48,6 +50,12 @@ class DutyViewModel @Inject constructor(
     
     private val _showLocationPermissionDialog = MutableStateFlow(false)
     val showLocationPermissionDialog: StateFlow<Boolean> = _showLocationPermissionDialog.asStateFlow()
+    
+    private val _showPhotoCaptureSheet = MutableStateFlow(false)
+    val showPhotoCaptureSheet: StateFlow<Boolean> = _showPhotoCaptureSheet.asStateFlow()
+    
+    private val _currentDutyPhotos = MutableStateFlow<List<com.plstravels.driver.data.models.Photo>>(emptyList())
+    val currentDutyPhotos: StateFlow<List<com.plstravels.driver.data.models.Photo>> = _currentDutyPhotos.asStateFlow()
     
     init {
         loadInitialData()
@@ -244,6 +252,30 @@ class DutyViewModel @Inject constructor(
                 )
             }
         }
+    }
+    
+    fun showPhotoCaptureSheet() {
+        _showPhotoCaptureSheet.value = true
+    }
+    
+    fun dismissPhotoCaptureSheet() {
+        _showPhotoCaptureSheet.value = false
+    }
+    
+    fun loadPhotosForDuty(dutyId: Int) {
+        viewModelScope.launch {
+            photoRepository.getPhotosForDuty(dutyId).collect { photos ->
+                _currentDutyPhotos.value = photos
+            }
+        }
+    }
+    
+    fun getRequiredPhotosForDutyStart(): List<com.plstravels.driver.data.models.PhotoType> {
+        return photoRepository.getRequiredDutyStartPhotos()
+    }
+    
+    fun getRequiredPhotosForDutyEnd(): List<com.plstravels.driver.data.models.PhotoType> {
+        return photoRepository.getRequiredDutyEndPhotos()
     }
 }
 
