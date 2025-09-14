@@ -50,34 +50,14 @@
                     </button>
                 </form>
 
-                <!-- Alternative Login Options -->
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <a href="{{ url_for('otp.otp_login') }}" class="btn btn-outline-success w-100">
-                            <i class="fas fa-mobile-alt me-2"></i>OTP Login
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="{{ url_for('replit_auth.login') }}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-code me-2"></i>Replit
-                        </a>
-                    </div>
+                <div class="text-center mb-3">
+                    <a href="{{ url_for('replit_auth.login') }}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-code me-2"></i>Sign in with Replit
+                    </a>
                 </div>
 
                 <div class="text-center">
-                    <p class="mb-2">New user?</p>
-                    <div class="row">
-                        <div class="col-6">
-                            <a href="{{ url_for('otp.otp_register') }}" class="btn btn-outline-warning btn-sm w-100">
-                                <i class="fas fa-mobile-alt me-1"></i>Quick Register
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-sm w-100">
-                                <i class="fas fa-user-plus me-1"></i>Full Register
-                            </a>
-                        </div>
-                    </div>
+                    <p class="mb-0">New user? <a href="{{ url_for('auth.register') }}">Register here</a></p>
                 </div>
 
             </div>

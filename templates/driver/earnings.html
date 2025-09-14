@@ -209,11 +209,11 @@
                                             </div>
                                             <div class="col-3">
                                                 <small class="text-muted">BMG</small><br>
-                                                <strong>₹{{ "{:,.0f}".format(duty.bmg_applied or 0) }}</strong>
+                                                <strong>₹{{ "{:,.0f}".format(duty.bmg_applied) }}</strong>
                                             </div>
                                         </div>
                                         
-                                        {% if duty.bmg_applied and duty.bmg_applied > 0 %}
+                                        {% if duty.bmg_applied > 0 %}
                                         <div class="mt-2">
                                             <small class="badge bg-warning">BMG Applied</small>
                                         </div>
@@ -246,7 +246,7 @@
                                 {% endif %}
                             </td>
                             <td class="d-none d-md-table-cell">
-                                {% if duty.bmg_applied and duty.bmg_applied > 0 %}
+                                {% if duty.bmg_applied > 0 %}
                                     <span class="badge bg-warning">₹{{ "{:,.2f}".format(duty.bmg_applied) }}</span>
                                 {% else %}
                                     <span class="text-muted">-</span>

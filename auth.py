@@ -1,365 +1,207 @@
-from flask import Blueprint, request, jsonify
-from models import User, OTPVerification, db, UserRole, AuditLog
-from utils.security import create_access_token, extract_request_info
-from utils.twilio_otp import send_twilio_otp, generate_otp
-import re
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.security import check_password_hash, generate_password_hash
+from models import User, Branch, db, AuditLog
+from forms import LoginForm, RegisterForm
 import json
-import logging
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/login', methods=['GET'])
-def login_page():
-    """Serve the OTP login page"""
-    from flask import render_template
-    return render_template('auth/otp_login.html')
-
-@auth_bp.route('/signup', methods=['GET'])  
-def signup_page():
-    """Serve the OTP signup page"""
-    from flask import render_template
-    return render_template('auth/otp_register.html')
-
-def log_audit(action, entity_type=None, entity_id=None, details=None, user_id=None):
+def log_audit(action, entity_type=None, entity_id=None, details=None):
     """Helper function to log audit events"""
-    audit = AuditLog()
-    audit.user_id = user_id  # For OTP-based auth, we'll pass user_id explicitly
-    audit.action = action
-    audit.entity_type = entity_type
-    audit.entity_id = entity_id
-    audit.new_values = json.dumps(details) if details else None
-    audit.ip_address = request.remote_addr
-    audit.user_agent = request.headers.get('User-Agent', '')[:255]
-    db.session.add(audit)
-    
-    # Commit with retry logic for connection issues
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            db.session.commit()
-            break
-        except Exception:
-            db.session.rollback()
-            if attempt < max_retries - 1:
-                import time
-                time.sleep(0.5)
-
-def validate_phone_number(phone):
-    """Validate and format phone number"""
-    if not phone:
-        return None, "Phone number is required"
-    
-    # Remove all non-digits
-    digits_only = re.sub(r'\D', '', phone)
-    
-    # Check if it's a valid 10-digit number
-    if len(digits_only) == 10:
-        return f"+91{digits_only}", None
-    elif len(digits_only) == 12 and digits_only.startswith('91'):
-        return f"+{digits_only}", None
-    elif len(digits_only) == 13 and digits_only.startswith('91'):
-        return f"+{digits_only}", None
-    else:
-        return None, "Please enter a valid 10-digit phone number"
-
-def validate_email(email):
-    """Basic email validation"""
-    if not email:
-        return None, "Email is required"
-    
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    if re.match(email_pattern, email):
-        return email.lower(), None
-    else:
-        return None, "Please enter a valid email address"
-
-@auth_bp.route('/login', methods=['POST'])
-def login():
-    """Request OTP for existing user login"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'message': 'JSON data required'}), 400
+    if current_user.is_authenticated:
+        audit = AuditLog()
+        audit.user_id = current_user.id
+        audit.action = action
+        audit.entity_type = entity_type
+        audit.entity_id = entity_id
+        audit.new_values = json.dumps(details) if details else None
+        audit.ip_address = request.remote_addr
+        audit.user_agent = request.headers.get('User-Agent', '')[:255]
+        db.session.add(audit)
         
-        phone = data.get('phone', '').strip()
-        email = data.get('email', '').strip()
-        
-        if not phone and not email:
-            return jsonify({'success': False, 'message': 'Either phone number or email is required'}), 400
-        
-        # Process phone or email
-        target = None
-        channel = None
-        
-        if phone:
-            formatted_phone, error = validate_phone_number(phone)
-            if error:
-                return jsonify({'success': False, 'message': error}), 400
-            target = formatted_phone
-            channel = 'sms'
-        else:
-            formatted_email, error = validate_email(email)
-            if error:
-                return jsonify({'success': False, 'message': error}), 400
-            target = formatted_email
-            channel = 'email'
-        
-        # Check if user exists
-        user = None
-        if channel == 'sms':
-            user = User.query.filter_by(phone=target).first()
-        else:
-            user = User.query.filter_by(email=target).first()
-        
-        if not user:
-            # SECURITY: Generic message to prevent account enumeration
-            return jsonify({'success': False, 'message': 'Authentication failed. Please check your credentials.'}), 400
-        
-        # Generate and send OTP
-        otp_code = generate_otp()
-        request_info = extract_request_info()
-        
-        otp_entry = OTPVerification.create_otp(
-            target=target,
-            otp_code=otp_code,
-            purpose='login',
-            user_id=user.id,
-            channel=channel
-        )
-        otp_entry.ip_address = request_info['ip_address']
-        otp_entry.user_agent = request_info['user_agent']
-        
-        db.session.add(otp_entry)
-        
-        # Send OTP
-        if channel == 'sms':
-            success = send_twilio_otp(target, otp_code)
-            if not success:
+        # Commit with retry logic for connection issues
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                db.session.commit()
+                break
+            except Exception:
                 db.session.rollback()
-                return jsonify({'success': False, 'message': 'Failed to send OTP. Please try again.'}), 500
-        else:
-            # TODO: Implement email OTP sending
-            logging.warning(f"Email OTP not implemented yet for {target}")
-            db.session.rollback()
-            return jsonify({'success': False, 'message': 'Email OTP not supported yet. Please use phone number.'}), 400
-        
-        db.session.commit()
-        
-        # Mask target for response
-        if channel == 'sms':
-            masked_target = f"****{target[-4:]}"
-        else:
-            parts = target.split('@')
-            masked_target = f"{parts[0][:2]}***@{parts[1]}"
-        
-        logging.info(f"Login OTP sent to {target[:5]}***")
-        
-        return jsonify({
-            'success': True,
-            'message': f'OTP sent to {masked_target}',
-            'target': masked_target,
-            'channel': channel
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Login error: {str(e)}")
-        return jsonify({'success': False, 'message': 'Login failed. Please try again.'}), 500
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(0.5)
 
-@auth_bp.route('/signup', methods=['POST'])
-def signup():
-    """Register new user with phone/email + name"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'message': 'JSON data required'}), 400
-        
-        name = data.get('name', '').strip()
-        phone = data.get('phone', '').strip()
-        email = data.get('email', '').strip()
-        # SECURITY: Ignore client-provided role, always default to driver
-        role = 'driver'  # Only admin can elevate roles through admin interface
-        
-        # Validation
-        if not name:
-            return jsonify({'success': False, 'message': 'Name is required'}), 400
-        
-        if not phone and not email:
-            return jsonify({'success': False, 'message': 'Either phone number or email is required'}), 400
-        
-        # Process phone or email
-        target = None
-        channel = None
-        
-        if phone:
-            formatted_phone, error = validate_phone_number(phone)
-            if error:
-                return jsonify({'success': False, 'message': error}), 400
-            target = formatted_phone
-            channel = 'sms'
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        from models import UserRole
+        if current_user.role == UserRole.ADMIN:
+            return redirect(url_for('admin.dashboard'))
+        elif current_user.role == UserRole.MANAGER:
+            return redirect(url_for('manager.dashboard'))
         else:
-            formatted_email, error = validate_email(email)
-            if error:
-                return jsonify({'success': False, 'message': error}), 400
-            target = formatted_email
-            channel = 'email'
+            return redirect(url_for('driver.dashboard'))
+    
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
         
-        # Check if user already exists (prevent account enumeration)
-        existing_user = None
-        if channel == 'sms':
-            existing_user = User.query.filter_by(phone=target).first()
+        if user and user.status.name == 'ACTIVE' and user.password_hash and form.password.data and check_password_hash(user.password_hash, form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            
+            # Update last login
+            from datetime import datetime
+            user.last_login = datetime.utcnow()
+            user.login_count = (user.login_count or 0) + 1
+            user.failed_login_attempts = 0
+            
+            # Commit with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    db.session.commit()
+                    break
+                except Exception:
+                    db.session.rollback()
+                    if attempt < max_retries - 1:
+                        import time
+                        time.sleep(0.5)
+            
+            # Log successful login
+            log_audit('login_success')
+            
+            flash(f'Welcome back, {user.username}!', 'success')
+            
+            # Redirect based on role
+            from models import UserRole
+            if user.role == UserRole.ADMIN:
+                return redirect(url_for('admin.dashboard'))
+            elif user.role == UserRole.MANAGER:
+                return redirect(url_for('manager.dashboard'))
+            else:
+                return redirect(url_for('driver.dashboard'))
         else:
-            existing_user = User.query.filter_by(email=target).first()
+            # Increment failed attempts
+            if user:
+                user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+                db.session.commit()
+            flash('Invalid username or password.', 'error')
+    
+    return render_template('auth/login.html', form=form)
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    form.branch.choices = [(b.id, b.name) for b in Branch.query.filter_by(is_active=True).all()]
+    
+    if form.validate_on_submit():
+        # Check if username or email already exists
+        existing_user = User.query.filter(
+            (User.username == form.username.data) | 
+            (User.email == form.email.data)
+        ).first()
         
         if existing_user:
-            # SECURITY: Generic message to prevent account enumeration
-            return jsonify({'success': False, 'message': 'Registration failed. Please try again or contact support.'}), 400
+            flash('Username or email already exists.', 'error')
+            return render_template('auth/register.html', form=form)
         
-        # Create new user (without password)
+        # Create new user
         user = User()
-        user.username = target  # Use phone/email as username
-        user.first_name = name.split()[0] if name else ""
-        user.last_name = " ".join(name.split()[1:]) if len(name.split()) > 1 else ""
-        user.role = UserRole(role)
+        user.username = form.username.data
+        user.email = form.email.data
+        user.password_hash = generate_password_hash(form.password.data) if form.password.data else ''
         
-        if channel == 'sms':
-            user.phone = target
-            user.email = email if email else None  # Use None instead of empty string
-        else:
-            user.email = target
-            user.phone = phone if phone else None  # Use None instead of empty string
+        # Convert string role to UserRole enum
+        from models import UserRole, Driver, DriverStatus
+        role_str = form.role.data if form.role.data else 'driver'
+        user.role = UserRole.ADMIN if role_str == 'admin' else UserRole.MANAGER if role_str == 'manager' else UserRole.DRIVER
         
         db.session.add(user)
         db.session.flush()  # Get user ID
         
-        # Generate and send OTP
-        otp_code = generate_otp()
-        request_info = extract_request_info()
+        # If registering as driver, create driver profile
+        if user.role == UserRole.DRIVER:
+            driver = Driver()
+            driver.user_id = user.id
+            # Generate unique employee ID
+            from utils import generate_employee_id
+            driver.employee_id = generate_employee_id()
+            driver.full_name = form.full_name.data
+            # Note: Only set fields that exist in the Driver model
+            # Phone and address fields will be handled separately if needed
+            driver.date_of_birth = form.date_of_birth.data
+            driver.aadhar_number = form.aadhar_number.data
+            driver.license_number = form.license_number.data
+            driver.bank_name = form.bank_name.data
+            driver.account_number = form.account_number.data
+            driver.ifsc_code = form.ifsc_code.data
+            driver.account_holder_name = form.account_holder_name.data
+            driver.branch_id = form.branch.data
+            driver.status = DriverStatus.PENDING  # Default to pending approval
+            
+            # Handle file uploads - Front and Back documents
+            from utils import process_file_upload
+            if form.aadhar_photo_front.data:
+                aadhar_front_url = process_file_upload(form.aadhar_photo_front.data, user.id, 'aadhar_front', use_cloud=True)
+                if aadhar_front_url:
+                    driver.aadhar_document_front = aadhar_front_url
+            
+            if form.aadhar_photo_back.data:
+                aadhar_back_url = process_file_upload(form.aadhar_photo_back.data, user.id, 'aadhar_back', use_cloud=True)
+                if aadhar_back_url:
+                    driver.aadhar_document_back = aadhar_back_url
+            
+            if form.license_photo_front.data:
+                license_front_url = process_file_upload(form.license_photo_front.data, user.id, 'license_front', use_cloud=True)
+                if license_front_url:
+                    driver.license_document_front = license_front_url
+                    
+            if form.license_photo_back.data:
+                license_back_url = process_file_upload(form.license_photo_back.data, user.id, 'license_back', use_cloud=True)
+                if license_back_url:
+                    driver.license_document_back = license_back_url
+                    
+            if form.profile_photo.data:
+                profile_url = process_file_upload(form.profile_photo.data, user.id, 'profile', use_cloud=True)
+                if profile_url:
+                    driver.profile_photo = profile_url
+            
+            db.session.add(driver)
         
-        otp_entry = OTPVerification.create_otp(
-            target=target,
-            otp_code=otp_code,
-            purpose='signup',
-            user_id=user.id,
-            channel=channel
-        )
-        otp_entry.ip_address = request_info['ip_address']
-        otp_entry.user_agent = request_info['user_agent']
+        # If registering as manager, assign branch
+        elif user.role == UserRole.MANAGER and form.branch.data:
+            branch = Branch.query.get(form.branch.data)
+            if branch:
+                user.managed_branches.append(branch)
         
-        db.session.add(otp_entry)
-        
-        # Send OTP
-        if channel == 'sms':
-            success = send_twilio_otp(target, otp_code)
-            if not success:
+        # Commit with retry logic for database connection issues
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                db.session.commit()
+                break
+            except Exception as e:
                 db.session.rollback()
-                return jsonify({'success': False, 'message': 'Failed to send OTP. Please try again.'}), 500
-        else:
-            # TODO: Implement email OTP sending
-            logging.warning(f"Email OTP not implemented yet for {target}")
-            db.session.rollback()
-            return jsonify({'success': False, 'message': 'Email OTP not supported yet. Please use phone number.'}), 400
+                if attempt == max_retries - 1:
+                    # Last attempt failed, show error to user
+                    flash('Database connection error. Please try again later.', 'error')
+                    return render_template('auth/register.html', form=form)
+                else:
+                    # Wait briefly before retry
+                    import time
+                    time.sleep(1)
+                    continue
         
-        db.session.commit()
-        
-        # Mask target for response
-        if channel == 'sms':
-            masked_target = f"****{target[-4:]}"
-        else:
-            parts = target.split('@')
-            masked_target = f"{parts[0][:2]}***@{parts[1]}"
-        
-        logging.info(f"Signup OTP sent to {target[:5]}***")
-        
-        return jsonify({
-            'success': True,
-            'message': f'OTP sent to {masked_target}',
-            'user_id': user.id,
-            'target': masked_target,
-            'channel': channel
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Signup error: {str(e)}")
-        return jsonify({'success': False, 'message': 'Registration failed. Please try again.'}), 500
+        flash('Registration successful! Your profile has been submitted for admin approval.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/register.html', form=form)
 
-@auth_bp.route('/verify-otp', methods=['POST'])
-def verify_otp():
-    """Validate OTP and issue JWT token"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'message': 'JSON data required'}), 400
-        
-        otp_code = data.get('otp', '').strip()
-        phone = data.get('phone', '').strip()
-        email = data.get('email', '').strip()
-        purpose = data.get('purpose', '').strip().lower()
-        
-        if not otp_code:
-            return jsonify({'success': False, 'message': 'OTP code is required'}), 400
-        
-        if not phone and not email:
-            return jsonify({'success': False, 'message': 'Either phone number or email is required'}), 400
-        
-        if purpose not in ['login', 'signup']:
-            return jsonify({'success': False, 'message': 'Invalid purpose. Must be login or signup'}), 400
-        
-        # Process phone or email
-        target = None
-        
-        if phone:
-            formatted_phone, error = validate_phone_number(phone)
-            if error:
-                return jsonify({'success': False, 'message': error}), 400
-            target = formatted_phone
-        else:
-            formatted_email, error = validate_email(email)
-            if error:
-                return jsonify({'success': False, 'message': error}), 400
-            target = formatted_email
-        
-        # Verify OTP
-        is_valid, user_id, message = OTPVerification.verify_otp(target, otp_code, purpose)
-        
-        if not is_valid:
-            return jsonify({'success': False, 'message': message}), 400
-        
-        # Get user
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-        
-        # Update login tracking
-        user.last_login = db.func.now()
-        user.login_count = (user.login_count or 0) + 1
-        db.session.commit()
-        
-        # Create JWT token
-        token_data = create_access_token(user.id, user.role.value)
-        
-        # Log successful authentication
-        log_audit('otp_authentication_success', user_id=user.id)
-        
-        logging.info(f"Successful OTP verification for user {user.id}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Authentication successful',
-            'user': {
-                'id': user.id,
-                'name': user.full_name,
-                'role': user.role.value,
-                'phone': user.phone,
-                'email': user.email
-            },
-            **token_data
-        }), 200
-        
-    except Exception as e:
-        logging.error(f"OTP verification error: {str(e)}")
-        return jsonify({'success': False, 'message': 'Verification failed. Please try again.'}), 500
-
-# Add rate limiting placeholder for future implementation
-# TODO: Implement rate limiting for OTP requests per IP/phone/email
+@auth_bp.route('/logout')
+@login_required
+def logout():
+    log_audit('logout')
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('auth.login'))

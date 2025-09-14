@@ -1,8 +1,7 @@
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 import json
 import pytz
-import hashlib
 from app import db
 from flask_login import UserMixin
 from sqlalchemy import func, Index, CheckConstraint, UniqueConstraint
@@ -80,7 +79,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
-    email = db.Column(db.String(120), unique=True, nullable=True, index=True)  # Allow NULL for phone-only users
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(256), nullable=False)
     
     # Enhanced user attributes
     role = db.Column(db.Enum(UserRole), nullable=False, default=UserRole.DRIVER, index=True)
@@ -95,6 +95,13 @@ class User(UserMixin, db.Model):
     # Authentication and security
     last_login = db.Column(db.DateTime)
     login_count = db.Column(db.Integer, default=0)
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    password_changed_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    two_factor_enabled = db.Column(db.Boolean, default=False)
+    
+    # Password reset functionality
+    reset_token = db.Column(db.String(6))
+    reset_token_expiry = db.Column(db.DateTime)
     
     # Audit fields
     created_at = db.Column(db.DateTime, default=get_ist_time_naive, nullable=False)
@@ -1047,93 +1054,6 @@ class AuditLog(db.Model):
         Index('idx_audit_date_user', 'created_at', 'user_id'),
         Index('idx_audit_entity', 'entity_type', 'entity_id'),
     )
-
-class OTPVerification(db.Model):
-    """Enhanced OTP verification for secure authentication"""
-    __tablename__ = 'otp_verifications'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)  # Nullable for signup
-    target = db.Column(db.String(120), nullable=False, index=True)  # phone or email
-    channel = db.Column(db.String(10), nullable=False)  # 'sms' or 'email'
-    code_hash = db.Column(db.String(64), nullable=False)  # SHA-256 hash of OTP
-    purpose = db.Column(db.String(10), nullable=False, index=True)  # 'login' or 'signup'
-    
-    # Security and tracking
-    attempts = db.Column(db.Integer, default=0)
-    max_attempts = db.Column(db.Integer, default=5)
-    consumed_at = db.Column(db.DateTime, nullable=True)  # When OTP was successfully used
-    
-    # Timestamps (5 minute expiry)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    expires_at = db.Column(db.DateTime, nullable=False, index=True)
-    
-    # Request context for security
-    ip_address = db.Column(db.String(45))
-    user_agent = db.Column(db.String(500))
-    
-    # Relationships
-    user = db.relationship('User', backref='otp_verifications')
-    
-    # Indexes for performance and security
-    __table_args__ = (
-        Index('idx_otp_active', 'target', 'purpose', 'consumed_at'),
-        Index('idx_otp_cleanup', 'expires_at', 'consumed_at'),
-    )
-    
-    @classmethod
-    def create_otp(cls, target, otp_code, purpose, user_id=None, channel='sms', expires_in_minutes=5):
-        """Create a new secure OTP verification entry"""
-        code_hash = hashlib.sha256(otp_code.encode()).hexdigest()
-        
-        otp_entry = cls(
-            user_id=user_id,
-            target=target,
-            channel=channel,
-            code_hash=code_hash,
-            purpose=purpose,
-            expires_at=datetime.utcnow() + timedelta(minutes=expires_in_minutes)
-        )
-        return otp_entry
-    
-    @classmethod
-    def verify_otp(cls, target, otp_code, purpose):
-        """Verify OTP code for a target (phone/email) and purpose"""
-        code_hash = hashlib.sha256(otp_code.encode()).hexdigest()
-        
-        # Find active OTP entry
-        otp_entry = cls.query.filter_by(
-            target=target,
-            purpose=purpose,
-            consumed_at=None  # Not yet consumed
-        ).filter(
-            cls.expires_at > datetime.utcnow()
-        ).first()
-        
-        if not otp_entry:
-            return False, None, "OTP not found or expired"
-        
-        otp_entry.attempts += 1
-        
-        if otp_entry.attempts > otp_entry.max_attempts:
-            db.session.commit()
-            return False, None, "Maximum attempts exceeded"
-        
-        if otp_entry.code_hash == code_hash:
-            otp_entry.consumed_at = datetime.utcnow()
-            db.session.commit()
-            return True, otp_entry.user_id, "OTP verified successfully"
-        else:
-            db.session.commit()
-            return False, None, f"Invalid OTP. {otp_entry.max_attempts - otp_entry.attempts} attempts remaining"
-    
-    @classmethod
-    def cleanup_expired(cls):
-        """Clean up expired OTP entries"""
-        from datetime import datetime
-        expired_count = cls.query.filter(cls.expires_at < datetime.utcnow()).delete()
-        db.session.commit()
-        return expired_count
 
 class VehicleTracking(db.Model):
     """
