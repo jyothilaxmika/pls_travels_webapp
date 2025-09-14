@@ -201,7 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('{{ url_for("otp.send_register_otp") }}', {
                 method: 'POST',
-                body: otpFormData
+                body: otpFormData,
+                credentials: 'same-origin'
             });
             
             const result = await response.json();
@@ -249,7 +250,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('{{ url_for("otp.complete_registration") }}', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin'
             });
             
             const result = await response.json();
@@ -287,7 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const response = await fetch('{{ url_for("otp.send_register_otp") }}', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin'
             });
             
             const result = await response.json();
