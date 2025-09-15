@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, send_from_directory, session
+from flask import Flask, send_from_directory, session, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_jwt_extended import JWTManager
@@ -246,7 +246,11 @@ def create_app():
     def make_session_permanent():
         session.permanent = True
         
-        # Handle database connection issues
+        # Skip database ping for health check endpoint to allow fast responses
+        if request.path == '/health' and request.method == 'GET':
+            return
+        
+        # Handle database connection issues for other routes
         try:
             from sqlalchemy import text
             db.session.execute(text('SELECT 1'))
@@ -373,6 +377,12 @@ def create_app():
             return jsonify({"error": "Invalid input format"}), 400
 
         return jsonify(result)
+
+    # Health check endpoint for deployment
+    @app.route('/health')
+    def health():
+        """Simple health check endpoint for deployment readiness"""
+        return {'status': 'ok', 'timestamp': datetime.utcnow().isoformat()}, 200
 
     # Root route
     @app.route('/')

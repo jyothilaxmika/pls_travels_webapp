@@ -7,7 +7,6 @@ packages = ["cargo", "gitFull", "iana-etc", "libiconv", "libxcrypt", "openjdk17"
 [deployment]
 deploymentTarget = "cloudrun"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
-build = ["sh", "-c", "echo \"No build required for Flask app\""]
 
 [workflows]
 runButton = "Project"
@@ -77,10 +76,6 @@ externalPort = 5173
 [[ports]]
 localPort = 42543
 externalPort = 4200
-
-[[ports]]
-localPort = 42555
-externalPort = 9000
 
 [[ports]]
 localPort = 42793
