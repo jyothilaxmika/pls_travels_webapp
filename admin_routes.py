@@ -88,9 +88,9 @@ def create_default_branch():
         default_branch.code = "MAIN"
         default_branch.address = "Main Office"
         default_branch.city = "City"
-        default_branch.phone = "0000000000"
+        default_branch.contact_phone = "0000000000"
         default_branch.is_active = True
-        default_branch.is_head_office = True
+        # Note: is_head_office attribute not available in Branch model
         
         try:
             db.session.add(default_branch)
@@ -479,7 +479,9 @@ def add_manual_transaction():
         penalty.reason = description
         penalty.applied_by = current_user.id
         penalty.applied_at = datetime.combine(trans_date, datetime.min.time())
-        penalty.reference_number = reference
+        # Note: reference stored in reason field as reference_number not available
+        if reference:
+            penalty.reason = f"{description} (Ref: {reference})"
         db.session.add(penalty)
         
         # Update driver totals
@@ -497,7 +499,9 @@ def add_manual_transaction():
         penalty.reason = f"{transaction_type.upper()}: {description}"
         penalty.applied_by = current_user.id
         penalty.applied_at = datetime.combine(trans_date, datetime.min.time())
-        penalty.reference_number = reference
+        # Note: reference stored in reason field as reference_number not available
+        if reference:
+            penalty.reason = f"{penalty.reason} (Ref: {reference})"
         db.session.add(penalty)
         
         # Update driver totals
