@@ -881,69 +881,75 @@ class VehicleTracker {
     }
     
     initSocket() {
+        // WebSocket temporarily disabled for stability - fallback to periodic refresh
+        console.log('WebSocket temporarily disabled - using HTTP polling instead');
+        this.updateConnectionStatus('disabled');
+        return;
+        
+        // TODO: Re-enable when WebSocket is stable
         // Initialize Socket.IO connection for real-time updates with timeout and error handling
-        console.log('Initializing Socket.IO connection...');
+        // console.log('Initializing Socket.IO connection...');
         
-        this.socket = io({
-            timeout: 10000,  // 10 second timeout
-            transports: ['websocket', 'polling'],  // Allow fallback to polling
-            upgrade: true,
-            rememberUpgrade: true
-        });
+        // this.socket = io({
+        //     timeout: 10000,  // 10 second timeout
+        //     transports: ['websocket', 'polling'],  // Allow fallback to polling
+        //     upgrade: true,
+        //     rememberUpgrade: true
+        // });
         
-        this.socket.on('connect', () => {
-            console.log('Connected to real-time vehicle tracking');
-            this.updateConnectionStatus('connected');
-            this.socket.emit('join_tracking', {});
-        });
+        // this.socket.on('connect', () => {
+        //     console.log('Connected to real-time vehicle tracking');
+        //     this.updateConnectionStatus('connected');
+        //     this.socket.emit('join_tracking', {});
+        // });
         
-        this.socket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
-            this.updateConnectionStatus('error');
-            // Retry connection after 5 seconds
-            setTimeout(() => {
-                console.log('Retrying Socket.IO connection...');
-                this.socket.connect();
-            }, 5000);
-        });
+        // this.socket.on('connect_error', (error) => {
+        //     console.error('Socket connection error:', error);
+        //     this.updateConnectionStatus('error');
+        //     // Retry connection after 5 seconds
+        //     setTimeout(() => {
+        //         console.log('Retrying Socket.IO connection...');
+        //         this.socket.connect();
+        //     }, 5000);
+        // });
         
-        this.socket.on('disconnect', (reason) => {
-            console.log('Disconnected from real-time tracking:', reason);
-            this.updateConnectionStatus('disconnected');
-            
-            // Auto-reconnect if not intentional
-            if (reason === 'io server disconnect') {
-                this.socket.connect();
-            }
-        });
+        // this.socket.on('disconnect', (reason) => {
+        //     console.log('Disconnected from real-time tracking:', reason);
+        //     this.updateConnectionStatus('disconnected');
+        //     
+        //     // Auto-reconnect if not intentional
+        //     if (reason === 'io server disconnect') {
+        //         this.socket.connect();
+        //     }
+        // });
         
-        this.socket.on('reconnect', (attemptNumber) => {
-            console.log('Reconnected to real-time tracking after', attemptNumber, 'attempts');
-            this.updateConnectionStatus('connected');
-        });
+        // this.socket.on('reconnect', (attemptNumber) => {
+        //     console.log('Reconnected to real-time tracking after', attemptNumber, 'attempts');
+        //     this.updateConnectionStatus('connected');
+        // });
         
-        this.socket.on('reconnect_attempt', (attemptNumber) => {
-            console.log('Reconnection attempt:', attemptNumber);
-            this.updateConnectionStatus('reconnecting');
-        });
+        // this.socket.on('reconnect_attempt', (attemptNumber) => {
+        //     console.log('Reconnection attempt:', attemptNumber);
+        //     this.updateConnectionStatus('reconnecting');
+        // });
         
-        this.socket.on('vehicle_location_update', (data) => {
-            console.log('Real-time vehicle update received:', data);
-            this.handleRealTimeUpdate(data);
-        });
+        // this.socket.on('vehicle_location_update', (data) => {
+        //     console.log('Real-time vehicle update received:', data);
+        //     this.handleRealTimeUpdate(data);
+        // });
         
-        this.socket.on('vehicle_status_change', (data) => {
-            console.log('Vehicle status change:', data);
-            this.handleStatusChange(data);
-        });
+        // this.socket.on('vehicle_status_change', (data) => {
+        //     console.log('Vehicle status change:', data);
+        //     this.handleStatusChange(data);
+        // });
         
         // Set connecting timeout
-        setTimeout(() => {
-            if (!this.socket.connected) {
-                console.warn('Socket.IO connection taking too long, checking status...');
-                this.updateConnectionStatus('timeout');
-            }
-        }, 15000);  // 15 seconds timeout
+        // setTimeout(() => {
+        //     if (!this.socket.connected) {
+        //         console.warn('Socket.IO connection taking too long, checking status...');
+        //         this.updateConnectionStatus('timeout');
+        //     }
+        // }, 15000);  // 15 seconds timeout
         
         // Initialize mobile features
         this.initMobileFeatures();
@@ -1077,9 +1083,9 @@ class VehicleTracker {
             heading: position.coords.heading || 0
         };
         
-        // Send via WebSocket
-        if (this.socket && this.socket.connected) {
-            this.socket.emit('location_update', locationData);
+        // Send via WebSocket (disabled)
+        // if (this.socket && this.socket.connected) {
+        //     this.socket.emit('location_update', locationData);
         }
         
         // Also send via API as backup
@@ -1212,8 +1218,8 @@ class VehicleTracker {
             this.refreshInterval = null;
         }
         
-        if (this.socket) {
-            this.socket.disconnect();
+        // if (this.socket) {
+        //     this.socket.disconnect();
         }
     }
 }
