@@ -65,14 +65,18 @@ def create_app():
         
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_size": 5,
-            "pool_recycle": 300,
+            "pool_size": 10,
+            "pool_recycle": 280,  # Slightly less than 5 minutes to prevent stale connections
             "pool_pre_ping": True,
-            "max_overflow": 10,
+            "max_overflow": 15,
+            "pool_timeout": 20,  # Maximum time to wait for connection from pool
             "connect_args": {
                 "sslmode": "require",
-                "connect_timeout": 30,
-                "application_name": "pls_travels"
+                "connect_timeout": 10,  # Reduced from 30 to 10 seconds
+                "application_name": "pls_travels",
+                "keepalives_idle": 600,  # Keep connections alive
+                "keepalives_interval": 30,
+                "keepalives_count": 3
             }
         }
     else:
@@ -252,18 +256,7 @@ def create_app():
     @app.before_request
     def make_session_permanent():
         session.permanent = True
-        
-        # Skip database ping for health check endpoint to allow fast responses
-        if request.path == '/health' and request.method == 'GET':
-            return
-        
-        # Handle database connection issues for other routes
-        try:
-            from sqlalchemy import text
-            db.session.execute(text('SELECT 1'))
-        except Exception as e:
-            print(f"Database connection issue: {e}")
-            db.session.rollback()
+        # Removed redundant SELECT 1 ping - pool_pre_ping=True handles connection validation automatically
 
     # Create tables
     # Check OTP system configuration on startup

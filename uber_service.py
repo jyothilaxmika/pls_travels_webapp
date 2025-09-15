@@ -52,10 +52,27 @@ class UberFleetService:
         self._token_expires_at: Optional[datetime] = None
         self.session = requests.Session()
         
-        # Set default headers for API calls (not auth)
+        # Set default headers and timeouts for API calls
         self.session.headers.update({
             'User-Agent': 'PLS-TRAVELS/1.0'
         })
+        
+        # Configure session with timeout and retry settings
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        
+        retry_strategy = Retry(
+            total=2,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "OPTIONS"]  # Only idempotent methods to prevent duplicate requests
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+        
+        # Set default timeout for all requests
+        self.request_timeout = 15  # 15 seconds total timeout
     
     def authenticate(self) -> bool:
         """
@@ -81,7 +98,12 @@ class UberFleetService:
             auth_headers = {
                 'User-Agent': 'PLS-TRAVELS/1.0'
             }
-            response = requests.post(self.config.auth_url, data=auth_data, headers=auth_headers)
+            response = requests.post(
+                self.config.auth_url, 
+                data=auth_data, 
+                headers=auth_headers,
+                timeout=(5, 10)  # (connect_timeout, read_timeout)
+            )
             
             if response.status_code == 200:
                 token_data = response.json()
@@ -143,6 +165,9 @@ class UberFleetService:
         url = f"{self.config.base_url}{endpoint}"
         
         try:
+            # Set timeout if not already provided
+            if 'timeout' not in kwargs:
+                kwargs['timeout'] = (5, self.request_timeout)
             response = self.session.request(method, url, **kwargs)
             
             if response.status_code in [200, 201, 204]:
@@ -150,6 +175,9 @@ class UberFleetService:
             elif response.status_code == 401:
                 # Token might be expired, try to re-authenticate once
                 if self.authenticate():
+                    # Set timeout if not already provided
+                    if 'timeout' not in kwargs:
+                        kwargs['timeout'] = (5, self.request_timeout)
                     response = self.session.request(method, url, **kwargs)
                     if response.status_code in [200, 201, 204]:
                         return response.json() if response.content else {}

@@ -61,10 +61,13 @@ def send_otp_sms(phone_number: str, otp_code: str) -> Dict[str, Any]:
                     'message': 'SMS service not configured. Please contact administrator.'
                 }
         
-        # Import and use Twilio
+        # Import and use Twilio with proper timeout configuration
         from twilio.rest import Client
+        from twilio.http.http_client import TwilioHttpClient
         
-        client = Client(account_sid, auth_token)
+        # Create Twilio client with timeout-enabled HTTP client
+        http_client = TwilioHttpClient(timeout=15)  # 15 second timeout
+        client = Client(account_sid, auth_token, http_client=http_client)
         
         message_body = f"Your PLS Travels verification code is: {otp_code}. Valid for 10 minutes. Do not share this code."
         
