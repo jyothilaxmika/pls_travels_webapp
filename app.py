@@ -36,8 +36,15 @@ def create_app():
     # x_host=1: Trust one proxy for X-Forwarded-Host header (hostname)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     
-    # CORS Configuration for mobile apps (restricted origins for security)
-    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"], 
+    # CORS Configuration for production (restricted origins for security)
+    production_origins = os.environ.get('ALLOWED_ORIGINS', '').split(',')
+    allowed_origins = [origin.strip() for origin in production_origins if origin.strip()]
+    
+    # Fallback to localhost for development only if no production origins set
+    if not allowed_origins:
+        allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+        
+    CORS(app, origins=allowed_origins, 
          supports_credentials=False,
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
@@ -272,8 +279,7 @@ def create_app():
         from werkzeug.security import generate_password_hash
         
         # Only create demo data if explicitly enabled (SECURITY RISK IN PRODUCTION)
-        demo_mode = True  # Enable demo mode to create admin user
-        # demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
+        demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
         
         if demo_mode:
             
@@ -283,7 +289,10 @@ def create_app():
                 admin = User()
                 admin.username = 'admin'
                 admin.email = 'admin@plstravels.com'
-                admin.password_hash = generate_password_hash(os.environ.get('ADMIN_INITIAL_PASSWORD', 'admin123'))
+                admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD')
+                if not admin_password:
+                    raise RuntimeError("ADMIN_INITIAL_PASSWORD environment variable is required for demo mode but not set")
+                admin.password_hash = generate_password_hash(admin_password)
                 admin.role = UserRole.ADMIN
                 admin.status = UserStatus.ACTIVE
                 admin.first_name = 'System'
@@ -347,12 +356,7 @@ def create_app():
                         admin_driver.approved_at = datetime.utcnow()
                         db.session.add(admin_driver)
         
-            # Activate any pending drivers (for demo/testing purposes only)
-            pending_drivers = Driver.query.filter_by(status=DriverStatus.PENDING).all()
-            for driver in pending_drivers:
-                driver.status = DriverStatus.ACTIVE
-                driver.approved_by = admin_user.id if admin_user else None
-                driver.approved_at = datetime.utcnow()
+            # Note: Pending driver auto-activation removed for production security
         
         # Always commit changes (even if no demo data created)
         db.session.commit()
@@ -410,12 +414,26 @@ def create_app():
         from flask import redirect, url_for
         return redirect(url_for('auth.login'))
     
-    # Route to serve uploaded files
+    # Route to serve uploaded files with authentication
     @app.route('/uploads/<filename>')
     def uploaded_file(filename):
-        """Serve uploaded files from the uploads directory"""
-        upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
-        return send_from_directory(upload_folder, filename)
+        """Serve uploaded files from the uploads directory with authentication"""
+        from flask_login import login_required, current_user
+        from models import UserRole
+        
+        # Require authentication
+        if not current_user.is_authenticated:
+            return "Authentication required", 401
+            
+        # Allow admin and manager full access
+        if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
+            upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
+            return send_from_directory(upload_folder, filename)
+            
+        # Drivers cannot access uploads directly for security
+        # TODO: Implement proper file ownership verification for drivers
+        
+        return "Access denied - contact administrator", 403
 
     # SEO routes
     @app.route('/robots.txt')

@@ -5,7 +5,7 @@ channel = "stable-25_05"
 packages = ["android-tools", "cargo", "gitFull", "gradle", "iana-etc", "libiconv", "libxcrypt", "openjdk17", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc"]
 
 [deployment]
-deploymentTarget = "gce"
+deploymentTarget = "cloudrun"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
