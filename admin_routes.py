@@ -6,7 +6,7 @@ from functools import wraps
 import os
 import math
 from datetime import datetime, timedelta
-from sqlalchemy import func, desc, or_
+from sqlalchemy import func, desc, or_, and_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate, Photo, PhotoType,
