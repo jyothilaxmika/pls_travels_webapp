@@ -137,10 +137,10 @@ def dashboard():
      .group_by(Branch.id, Branch.name, Branch.target_revenue) \
      .limit(20).all()
     
-    # Recent activities - limit and optimize
+    # Recent activities - reduce to 5 items for faster loading
     recent_activities = AuditLog.query.options(
         db.joinedload(AuditLog.user)
-    ).order_by(desc(AuditLog.created_at)).limit(10).all()
+    ).order_by(desc(AuditLog.created_at)).limit(5).all()
     
     return render_template('admin/dashboard.html',
                          total_drivers=total_drivers,
@@ -173,7 +173,8 @@ def drivers():
         query = query.filter(Driver.branch_id == branch_filter)
     
     drivers = query.paginate(page=page, per_page=20, error_out=False)
-    branches = Branch.query.filter_by(is_active=True).all()
+    # Limit branches query for better performance
+    branches = Branch.query.filter_by(is_active=True).limit(50).all()
     
     return render_template('admin/drivers.html', 
                          drivers=drivers, 
