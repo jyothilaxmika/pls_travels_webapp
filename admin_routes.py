@@ -112,34 +112,46 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
-    # Get overall statistics
-    from models import DriverStatus, VehicleStatus
-    total_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).count()
-    total_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE).count()
-    total_branches = Branch.query.filter_by(is_active=True).count()
+    # Get overall statistics with optimized queries
+    from models import DriverStatus, VehicleStatus, DutyStatus
     
-    # Active duties today
+    # Use single query for multiple counts
+    stats_query = db.session.query(
+        func.count(Driver.id).filter(Driver.status == DriverStatus.ACTIVE).label('total_drivers'),
+        func.count(Vehicle.id).filter(Vehicle.status == VehicleStatus.ACTIVE).label('total_vehicles'),
+        func.count(Branch.id).filter(Branch.is_active == True).label('total_branches')
+    ).select_from(Driver).outerjoin(Vehicle).outerjoin(Branch).first()
+    
+    total_drivers = stats_query.total_drivers or 0
+    total_vehicles = stats_query.total_vehicles or 0
+    total_branches = stats_query.total_branches or 0
+    
+    # Active duties today with optimized query
     today = datetime.now().date()
-    from models import DutyStatus
-    active_duties = Duty.query.filter(
-        func.date(Duty.start_time) == today,
-        Duty.status == DutyStatus.ACTIVE
-    ).count()
+    duty_stats = db.session.query(
+        func.count(Duty.id).filter(
+            and_(func.date(Duty.start_time) == today, Duty.status == DutyStatus.ACTIVE)
+        ).label('active_duties'),
+        func.count(Duty.id).filter(Duty.status == DutyStatus.PENDING_APPROVAL).label('pending_duties')
+    ).first()
     
-    # Pending duties awaiting approval
-    pending_duties = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
+    active_duties = duty_stats.active_duties or 0
+    pending_duties = duty_stats.pending_duties or 0
     
-    # Revenue statistics
+    # Revenue statistics with limited results
     revenue_stats = db.session.query(
         Branch.name,
         Branch.target_revenue,
         func.coalesce(func.sum(Duty.revenue), 0).label('actual_revenue')
     ).outerjoin(Duty, func.date(Duty.start_time) == today) \
      .filter(Branch.is_active == True) \
-     .group_by(Branch.id, Branch.name, Branch.target_revenue).all()
+     .group_by(Branch.id, Branch.name, Branch.target_revenue) \
+     .limit(20).all()
     
-    # Recent activities
-    recent_activities = AuditLog.query.order_by(desc(AuditLog.created_at)).limit(10).all()
+    # Recent activities - limit and optimize
+    recent_activities = AuditLog.query.options(
+        db.joinedload(AuditLog.user)
+    ).order_by(desc(AuditLog.created_at)).limit(10).all()
     
     return render_template('admin/dashboard.html',
                          total_drivers=total_drivers,

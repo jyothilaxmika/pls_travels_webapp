@@ -58,13 +58,14 @@ def create_app():
         
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_size": 3,
-            "pool_recycle": 120,
+            "pool_size": 5,
+            "pool_recycle": 300,
             "pool_pre_ping": True,
-            "max_overflow": 5,
+            "max_overflow": 10,
             "connect_args": {
                 "sslmode": "require",
-                "connect_timeout": 10
+                "connect_timeout": 30,
+                "application_name": "pls_travels"
             }
         }
     else:
@@ -240,10 +241,17 @@ def create_app():
     app.register_blueprint(storage_bp)
     app.register_blueprint(tracking_bp, url_prefix='/tracking')
     
-    # Make session permanent
+    # Make session permanent and handle database timeouts
     @app.before_request
     def make_session_permanent():
         session.permanent = True
+        
+        # Handle database connection issues
+        try:
+            db.engine.execute('SELECT 1')
+        except Exception as e:
+            print(f"Database connection issue: {e}")
+            db.session.rollback()
 
     # Create tables
     # Check OTP system configuration on startup

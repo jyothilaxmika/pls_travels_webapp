@@ -4,17 +4,17 @@
 // Camera capture functionality
 function initCameraCapture(inputId, title = 'Capture Photo') {
     console.log('initCameraCapture called for:', inputId);
-    
+
     // Try multiple strategies to find the input field
     let input = null;
     let searchMethod = '';
-    
+
     // Strategy 1: Find by ID
     input = document.getElementById(inputId);
     if (input) {
         searchMethod = 'by ID';
     }
-    
+
     // Strategy 2: Find by name attribute
     if (!input) {
         input = document.querySelector(`input[name="${inputId}"]`);
@@ -22,7 +22,7 @@ function initCameraCapture(inputId, title = 'Capture Photo') {
             searchMethod = 'by name attribute';
         }
     }
-    
+
     // Strategy 3: Find by name attribute with variations
     if (!input) {
         const variations = [`${inputId}_file`, `${inputId}_input`, inputId.replace('_photo', '')];
@@ -34,7 +34,7 @@ function initCameraCapture(inputId, title = 'Capture Photo') {
             }
         }
     }
-    
+
     // Strategy 4: Find in the same container as the button clicked
     if (!input) {
         const clickedButton = event?.target;
@@ -48,7 +48,7 @@ function initCameraCapture(inputId, title = 'Capture Photo') {
             }
         }
     }
-    
+
     // Strategy 5: For duty photos, create temporary input if needed
     if (!input && (inputId === 'start_photo' || inputId === 'end_photo')) {
         input = document.createElement('input');
@@ -61,7 +61,7 @@ function initCameraCapture(inputId, title = 'Capture Photo') {
         document.body.appendChild(input);
         searchMethod = 'created temporary camera input';
     }
-    
+
     // Strategy 6: Find any visible image input as fallback
     if (!input) {
         const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]:not([style*="display: none"])');
@@ -70,14 +70,14 @@ function initCameraCapture(inputId, title = 'Capture Photo') {
             searchMethod = 'first visible image input (fallback)';
         }
     }
-    
+
     if (!input) {
         console.error('Input element not found after all search strategies for:', inputId);
         console.log('Available file inputs:', document.querySelectorAll('input[type="file"]'));
         showAlert('Photo input field not found. Please use the file upload option below instead.', 'info');
         return;
     }
-    
+
     console.log(`Found input ${searchMethod}:`, input);
 
     // Check if browser supports getUserMedia
@@ -96,7 +96,7 @@ function initCameraCapture(inputId, title = 'Capture Photo') {
 // CSV Export functionality
 function exportToCSV() {
     console.log('exportToCSV called');
-    
+
     try {
         // Find the main data table on the page
         const table = document.querySelector('table.table');
@@ -158,7 +158,7 @@ function exportToCSV() {
 function downloadCSV(csvContent, filename) {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    
+
     if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
@@ -176,7 +176,7 @@ function downloadCSV(csvContent, filename) {
 // Calendar functionality for scheduling
 function refreshCalendar() {
     console.log('refreshCalendar called');
-    
+
     try {
         const calendarContainer = document.querySelector('.calendar-container, .schedule-calendar, #calendar');
         if (!calendarContainer) {
@@ -205,11 +205,11 @@ let currentWeekOffset = 0;
 
 function previousWeek() {
     console.log('previousWeek called');
-    
+
     try {
         currentWeekOffset--;
         updateWeekDisplay();
-        
+
         // If there's a form or data to update, trigger it
         const weekForm = document.querySelector('form[data-week-form]');
         if (weekForm) {
@@ -220,12 +220,12 @@ function previousWeek() {
                 return;
             }
         }
-        
+
         // Otherwise, reload with week parameter
         const url = new URL(window.location);
         url.searchParams.set('week_offset', currentWeekOffset);
         window.location.href = url.toString();
-        
+
     } catch (error) {
         console.error('Previous week error:', error);
         showAlert('Failed to navigate to previous week', 'danger');
@@ -234,11 +234,11 @@ function previousWeek() {
 
 function nextWeek() {
     console.log('nextWeek called');
-    
+
     try {
         currentWeekOffset++;
         updateWeekDisplay();
-        
+
         // If there's a form or data to update, trigger it
         const weekForm = document.querySelector('form[data-week-form]');
         if (weekForm) {
@@ -249,12 +249,12 @@ function nextWeek() {
                 return;
             }
         }
-        
+
         // Otherwise, reload with week parameter
         const url = new URL(window.location);
         url.searchParams.set('week_offset', currentWeekOffset);
         window.location.href = url.toString();
-        
+
     } catch (error) {
         console.error('Next week error:', error);
         showAlert('Failed to navigate to next week', 'danger');
@@ -264,25 +264,25 @@ function nextWeek() {
 function updateWeekDisplay() {
     const weekDisplay = document.querySelector('.week-display, .current-week');
     if (!weekDisplay) return;
-    
+
     const today = new Date();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() + (currentWeekOffset * 7));
-    
+
     const options = { month: 'short', day: 'numeric' };
     const startStr = weekStart.toLocaleDateString('en-US', options);
-    
+
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
     const endStr = weekEnd.toLocaleDateString('en-US', options);
-    
+
     weekDisplay.textContent = `${startStr} - ${endStr}`;
 }
 
 // Quick assignment submission
 function submitQuickAssignment() {
     console.log('submitQuickAssignment called');
-    
+
     try {
         const form = document.querySelector('form[data-quick-assignment]');
         if (!form) {
@@ -316,7 +316,7 @@ function submitQuickAssignment() {
             const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-            
+
             // Reset button after timeout
             setTimeout(() => {
                 submitBtn.disabled = false;
@@ -343,7 +343,7 @@ function showAlert(message, type = 'info', duration = 5000) {
 
     // Fallback alert implementation
     console.log(`${type.toUpperCase()}: ${message}`);
-    
+
     // Try to show Bootstrap alert
     try {
         let alertContainer = document.querySelector('.alert-container');
@@ -359,13 +359,13 @@ function showAlert(message, type = 'info', duration = 5000) {
         alertDiv.setAttribute('role', 'alert');
         // Use safe DOM methods to prevent XSS
         alertDiv.textContent = message;
-        
+
         const closeButton = document.createElement('button');
         closeButton.type = 'button';
         closeButton.className = 'btn-close';
         closeButton.setAttribute('data-bs-dismiss', 'alert');
         closeButton.setAttribute('aria-label', 'Close');
-        
+
         alertDiv.appendChild(closeButton);
 
         alertContainer.appendChild(alertDiv);
@@ -388,6 +388,93 @@ function showAlert(message, type = 'info', duration = 5000) {
     }
 }
 
+// Get CSRF token from meta tag or form
+function getCSRFToken() {
+    // Try to get from meta tag first
+    const metaToken = document.querySelector('meta[name=csrf-token]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+
+    // Try to get from hidden form field
+    const hiddenToken = document.querySelector('input[name=csrf_token]');
+    if (hiddenToken) {
+        return hiddenToken.value;
+    }
+
+    // Try to get from any form
+    const formToken = document.querySelector('form input[name=csrf_token]');
+    if (formToken) {
+        return formToken.value;
+    }
+
+    return null;
+}
+
+// Add CSRF token to all AJAX requests
+function setupCSRFForAjax() {
+    const token = getCSRFToken();
+    if (token) {
+        // Setup for jQuery if available
+        if (typeof $ !== 'undefined' && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", token);
+                    }
+                }
+            });
+        }
+
+        // Setup for fetch API
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (options.method && !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(options.method)) {
+                options.headers = options.headers || {};
+                options.headers['X-CSRFToken'] = token;
+            }
+            return originalFetch(url, options);
+        };
+    }
+}
+
+// Initialize CSRF protection when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupCSRFForAjax);
+} else {
+    setupCSRFForAjax();
+}
+
+// Performance monitoring for slow page loads
+(function() {
+    const startTime = performance.now();
+
+    window.addEventListener('load', function() {
+        const loadTime = performance.now() - startTime;
+        if (loadTime > 5000) { // Log if page takes more than 5 seconds
+            console.warn('Slow page load detected:', loadTime + 'ms');
+
+            // Optional: Send performance data to server
+            if (typeof fetch !== 'undefined') {
+                fetch('/api/performance-log', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        loadTime: loadTime,
+                        url: window.location.href,
+                        userAgent: navigator.userAgent
+                    })
+                }).catch(function(error) {
+                    // Silently fail - don't disrupt user experience
+                });
+            }
+        }
+    });
+})();
+
 // Initialize any week display on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize current week offset from URL if present
@@ -396,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (weekOffset) {
         currentWeekOffset = parseInt(weekOffset) || 0;
     }
-    
+
     updateWeekDisplay();
     console.log('Missing functions script loaded successfully');
 });
