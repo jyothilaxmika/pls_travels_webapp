@@ -10,7 +10,7 @@
                 <h4><i class="fas fa-car me-2"></i>{{ title }}</h4>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
                     <!-- Basic Vehicle Information -->
@@ -127,6 +127,56 @@
                                     {{ form.device_imei.label(class="form-label") }}
                                     {{ form.device_imei(class="form-control") }}
                                     <small class="text-muted">GPS tracking device IMEI number</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vehicle Documents -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-file-alt me-2"></i>Vehicle Documents</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.registration_document.label(class="form-label") }}
+                                    {{ form.registration_document(class="form-control", accept=".jpg,.png,.jpeg,.pdf") }}
+                                    <small class="text-muted">Upload vehicle registration certificate (JPG, PNG, PDF)</small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.insurance_document.label(class="form-label") }}
+                                    {{ form.insurance_document(class="form-control", accept=".jpg,.png,.jpeg,.pdf") }}
+                                    <small class="text-muted">Upload insurance policy document (JPG, PNG, PDF)</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.fitness_document.label(class="form-label") }}
+                                    {{ form.fitness_document(class="form-control", accept=".jpg,.png,.jpeg,.pdf") }}
+                                    <small class="text-muted">Upload fitness certificate (JPG, PNG, PDF)</small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.permit_document.label(class="form-label") }}
+                                    {{ form.permit_document(class="form-control", accept=".jpg,.png,.jpeg,.pdf") }}
+                                    <small class="text-muted">Upload permit document (JPG, PNG, PDF)</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.pollution_document.label(class="form-label") }}
+                                    {{ form.pollution_document(class="form-control", accept=".jpg,.png,.jpeg,.pdf") }}
+                                    <small class="text-muted">Upload pollution certificate (JPG, PNG, PDF)</small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    {{ form.other_document.label(class="form-label") }}
+                                    {{ form.other_document(class="form-control", accept=".jpg,.png,.jpeg,.pdf") }}
+                                    <small class="text-muted">Upload other important documents (JPG, PNG, PDF)</small>
                                 </div>
                             </div>
                         </div>
