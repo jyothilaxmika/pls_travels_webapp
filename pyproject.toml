@@ -37,4 +37,6 @@ dependencies = [
     "pydantic>=2.11.9",
     "sift-stack-py>=0.8.5",
     "defusedcsv>=3.0.0",
+    "opentelemetry-api>=1.37.0",
+    "opentelemetry-instrumentation>=0.58b0",
 ]
