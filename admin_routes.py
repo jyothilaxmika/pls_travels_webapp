@@ -12,7 +12,7 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
-from utils_main import allowed_file, calculate_earnings
+from utils_main import allowed_file, calculate_earnings, process_file_upload, process_camera_capture
 import json
 from timezone_utils import get_ist_time_naive
 
@@ -1662,7 +1662,33 @@ def add_vehicle():
         vehicle.current_odometer = 0.0
         
         try:
+            # Add vehicle to session first to get the ID after flush
             db.session.add(vehicle)
+            db.session.flush()  # This assigns the ID without committing
+            
+            # Process vehicle document uploads
+            document_fields = [
+                ('registration_document', 'vehicle_registration'),
+                ('insurance_document', 'vehicle_insurance'), 
+                ('fitness_document', 'vehicle_fitness'),
+                ('permit_document', 'vehicle_permit'),
+                ('pollution_document', 'vehicle_pollution'),
+                ('other_document', 'vehicle_other')
+            ]
+            
+            for field_name, document_type in document_fields:
+                file_field = getattr(form, field_name)
+                if file_field.data and allowed_file(file_field.data.filename):
+                    # Process traditional file upload
+                    filename = process_file_upload(file_field.data, vehicle.id, document_type)
+                    if filename:
+                        setattr(vehicle, field_name, filename)
+                else:
+                    # Check for camera capture (base64 data)
+                    filename, metadata = process_camera_capture(request.form, field_name, vehicle.id, document_type)
+                    if filename:
+                        setattr(vehicle, field_name, filename)
+            
             db.session.commit()
             
             log_audit('add_vehicle', 'vehicle', vehicle.id,
