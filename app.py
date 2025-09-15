@@ -248,7 +248,8 @@ def create_app():
         
         # Handle database connection issues
         try:
-            db.engine.execute('SELECT 1')
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
         except Exception as e:
             print(f"Database connection issue: {e}")
             db.session.rollback()
