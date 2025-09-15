@@ -147,6 +147,14 @@ class VehicleForm(FlaskForm):
     
     fastag_number = StringField('FASTag Number', validators=[Optional(), Length(max=50)])
     device_imei = StringField('Device IMEI', validators=[Optional(), Length(max=20)])
+    
+    # Vehicle document uploads
+    registration_document = FileField('Registration Certificate', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    insurance_document = FileField('Insurance Document', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    fitness_document = FileField('Fitness Certificate', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    permit_document = FileField('Permit Document', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    pollution_document = FileField('Pollution Certificate', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
+    other_document = FileField('Other Document', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'pdf'], 'Images and PDFs only!')])
 
 class DutySchemeForm(FlaskForm):
     name = StringField('Scheme Name', validators=[DataRequired()])

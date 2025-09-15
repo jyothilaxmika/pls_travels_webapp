@@ -397,6 +397,14 @@ class Vehicle(db.Model):
     current_market_value = db.Column(db.Float)
     total_maintenance_cost = db.Column(db.Float, default=0.0)
     
+    # Vehicle documents storage
+    registration_document = db.Column(db.String(255))  # Vehicle registration certificate
+    insurance_document = db.Column(db.String(255))  # Insurance policy document  
+    fitness_document = db.Column(db.String(255))  # Fitness certificate document
+    permit_document = db.Column(db.String(255))  # Permit document
+    pollution_document = db.Column(db.String(255))  # Pollution certificate document
+    other_document = db.Column(db.String(255))  # Other important documents
+    
     # Uber Fleet Integration
     uber_vehicle_id = db.Column(db.String(100), unique=True, index=True)  # Uber's vehicle ID
     uber_vehicle_uuid = db.Column(db.String(100), unique=True)  # Uber's vehicle UUID
