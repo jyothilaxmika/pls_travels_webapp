@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
@@ -115,28 +115,17 @@ def dashboard():
     # Get overall statistics with optimized queries
     from models import DriverStatus, VehicleStatus, DutyStatus
     
-    # Use single query for multiple counts
-    stats_query = db.session.query(
-        func.count(Driver.id).filter(Driver.status == DriverStatus.ACTIVE).label('total_drivers'),
-        func.count(Vehicle.id).filter(Vehicle.status == VehicleStatus.ACTIVE).label('total_vehicles'),
-        func.count(Branch.id).filter(Branch.is_active == True).label('total_branches')
-    ).select_from(Driver).outerjoin(Vehicle).outerjoin(Branch).first()
+    # Separate simpler queries for counts
+    total_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).count()
+    total_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE).count()
+    total_branches = Branch.query.filter_by(is_active=True).count()
     
-    total_drivers = stats_query.total_drivers or 0
-    total_vehicles = stats_query.total_vehicles or 0
-    total_branches = stats_query.total_branches or 0
-    
-    # Active duties today with optimized query
+    # Active duties today with simple queries
     today = datetime.now().date()
-    duty_stats = db.session.query(
-        func.count(Duty.id).filter(
-            and_(func.date(Duty.start_time) == today, Duty.status == DutyStatus.ACTIVE)
-        ).label('active_duties'),
-        func.count(Duty.id).filter(Duty.status == DutyStatus.PENDING_APPROVAL).label('pending_duties')
-    ).first()
-    
-    active_duties = duty_stats.active_duties or 0
-    pending_duties = duty_stats.pending_duties or 0
+    active_duties = Duty.query.filter(
+        and_(func.date(Duty.start_time) == today, Duty.status == DutyStatus.ACTIVE)
+    ).count()
+    pending_duties = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
     
     # Revenue statistics with limited results
     revenue_stats = db.session.query(
