@@ -2961,3 +2961,63 @@ def export_audit_logs():
         mimetype='text/csv',
         headers={'Content-Disposition': f'attachment; filename=audit_logs_secure_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
     )
+
+@admin_bp.route('/vehicles/<int:vehicle_id>/documents/<document_type>')
+@login_required
+def serve_vehicle_document(vehicle_id, document_type):
+    """Serve vehicle document files with permission checks"""
+    # Check if user has permission to access vehicle documents
+    if current_user.role.name not in ['ADMIN', 'MANAGER', 'DRIVER']:
+        return "Access denied", 403
+    
+    # Get the vehicle
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    
+    # For drivers, only allow access if they are assigned to this vehicle or have an active duty
+    if current_user.role.name == 'DRIVER':
+        driver = Driver.query.filter_by(user_id=current_user.id).first()
+        if not driver:
+            return "Access denied", 403
+        
+        # Check if driver is currently assigned to this vehicle or has active duty with it
+        from datetime import datetime
+        active_assignment = VehicleAssignment.query.filter_by(
+            driver_id=driver.id,
+            vehicle_id=vehicle_id,
+            status=AssignmentStatus.ACTIVE
+        ).first()
+        
+        active_duty = Duty.query.filter_by(
+            driver_id=driver.id,
+            vehicle_id=vehicle_id,
+            status=DutyStatus.ACTIVE
+        ).first()
+        
+        if not active_assignment and not active_duty:
+            return "Access denied", 403
+    
+    # Get document filename based on type
+    document_field_map = {
+        'registration': vehicle.registration_document,
+        'insurance': vehicle.insurance_document,
+        'fitness': vehicle.fitness_document,
+        'permit': vehicle.permit_document,
+        'pollution': vehicle.pollution_document,
+        'other': vehicle.other_document
+    }
+    
+    if document_type not in document_field_map:
+        return "Invalid document type", 400
+        
+    filename = document_field_map[document_type]
+    if not filename:
+        return "Document not found", 404
+    
+    # Serve the file
+    upload_dir = os.path.join(os.getcwd(), 'uploads')
+    file_path = os.path.join(upload_dir, filename)
+    
+    if not os.path.exists(file_path):
+        return "File not found", 404
+        
+    return send_from_directory(upload_dir, filename)
