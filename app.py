@@ -42,41 +42,29 @@ def create_app():
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
-    # Configure the database - temporarily use SQLite for development
-    database_url = "sqlite:///pls_travels.db"  # Force SQLite for now
-    # database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
+    # Configure the database - use PostgreSQL in production, SQLite for development
+    database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
     
     # Configure for PostgreSQL production database
-    if database_url.startswith("postgresql://"):
-        # Use connection pooling for PostgreSQL
-        database_url = database_url.replace('.us-east-2', '-pooler.us-east-2')
+    if database_url.startswith(("postgresql://", "postgres://")):
+        # Ensure psycopg2 driver is specified
+        if database_url.startswith("postgresql://"):
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
         
-        # Fix Neon endpoint ID issue - extract endpoint ID from URL and add as parameter
-        if 'neon.tech' in database_url and 'options=endpoint' not in database_url:
-            # Extract endpoint ID from the URL (part before the first dot)
-            import re
-            match = re.search(r'@(ep-[^.]+)', database_url)
-            if match:
-                endpoint_id = match.group(1)
-                # Add endpoint parameter to URL
-                if '?' in database_url:
-                    database_url += f'&options=endpoint%3D{endpoint_id}'
-                else:
-                    database_url += f'?options=endpoint%3D{endpoint_id}'
+        # Log connection info (without password) for debugging
+        from urllib.parse import urlparse
+        parsed = urlparse(database_url)
+        print(f"🔌 Connecting to PostgreSQL: host={parsed.hostname}, db={parsed.path[1:]}, user={parsed.username}, password_present={'*' * len(parsed.password or '')}")
         
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "pool_size": 3,
-            "pool_recycle": 120,  # Recycle connections more frequently
+            "pool_recycle": 120,
             "pool_pre_ping": True,
-            "pool_timeout": 20,
             "max_overflow": 5,
             "connect_args": {
                 "sslmode": "require",
-                "connect_timeout": 10,
-                "keepalives_idle": 600,
-                "keepalives_interval": 30,
-                "keepalives_count": 3
+                "connect_timeout": 10
             }
         }
     else:
