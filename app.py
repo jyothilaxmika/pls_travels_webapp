@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flask_compress import Compress
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
@@ -22,6 +23,7 @@ login_manager = LoginManager()
 socketio = SocketIO()
 csrf = CSRFProtect()
 jwt = JWTManager()
+compress = Compress()
 
 def create_app():
     # Create the app
