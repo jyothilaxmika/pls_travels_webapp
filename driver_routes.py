@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 from timezone_utils import get_ist_time_naive
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
-                   Penalty, Asset, AuditLog, VehicleTracking, db,
-                   DriverStatus, VehicleStatus, DutyStatus, ResignationRequest, ResignationStatus)
+                   Penalty, Asset, AuditLog, VehicleTracking, VehicleAssignment, db,
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus)
 from forms import DriverProfileForm, DutyForm
 from utils import (allowed_file, calculate_earnings, calculate_advanced_salary, 
                    process_file_upload, process_camera_capture, calculate_tripsheet)
@@ -1098,3 +1098,68 @@ def cancel_resignation(request_id):
     
     flash('Your resignation request has been cancelled.', 'info')
     return redirect(url_for('driver.resignation_status'))
+
+@driver_bp.route('/vehicles/<int:vehicle_id>/documents/<document_type>')
+@login_required
+@driver_required
+def serve_vehicle_document(vehicle_id, document_type):
+    """Serve vehicle document files with proper driver authorization"""
+    driver = get_driver_profile()
+    
+    if not driver:
+        flash('Driver profile not found.', 'error')
+        return redirect(url_for('driver.profile'))
+    
+    # Validate document type against whitelist
+    allowed_document_types = {'registration', 'insurance', 'fitness', 'permit', 'pollution', 'other'}
+    if document_type not in allowed_document_types:
+        return "Invalid document type", 400
+    
+    # Get the vehicle
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    
+    # Check if driver is currently assigned to this vehicle or has active duty with it
+    from datetime import datetime
+    active_assignment = VehicleAssignment.query.filter_by(
+        driver_id=driver.id,
+        vehicle_id=vehicle_id,
+        status=AssignmentStatus.ACTIVE
+    ).first()
+    
+    active_duty = Duty.query.filter_by(
+        driver_id=driver.id,
+        vehicle_id=vehicle_id,
+        status=DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_assignment and not active_duty:
+        return "Access denied - You are not assigned to this vehicle", 403
+    
+    # Get document filename based on type
+    document_field_map = {
+        'registration': vehicle.registration_document,
+        'insurance': vehicle.insurance_document,
+        'fitness': vehicle.fitness_document,
+        'permit': vehicle.permit_document,
+        'pollution': vehicle.pollution_document,
+        'other': vehicle.other_document
+    }
+    
+    filename = document_field_map[document_type]
+    if not filename:
+        return "Document not found", 404
+    
+    # Serve the file securely
+    import os
+    from flask import send_from_directory
+    upload_dir = os.path.join(os.getcwd(), 'uploads')
+    file_path = os.path.join(upload_dir, filename)
+    
+    # Security check - ensure file is within upload directory and exists
+    if not file_path.startswith(upload_dir + os.sep) and file_path != upload_dir:
+        return "Access denied", 403
+        
+    if not os.path.exists(file_path):
+        return "File not found", 404
+        
+    return send_from_directory(upload_dir, filename)

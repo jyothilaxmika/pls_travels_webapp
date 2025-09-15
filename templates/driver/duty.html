@@ -52,6 +52,50 @@
             </div>
             {% endif %}
             
+            <!-- Vehicle Documents Section -->
+            {% if active_duty.vehicle %}
+            <div class="mb-3">
+                <strong>Vehicle Documents:</strong><br>
+                <div class="row mt-2">
+                    {% set document_types = [
+                        ('registration', 'Registration', 'fas fa-file-alt', 'success'),
+                        ('insurance', 'Insurance', 'fas fa-shield-alt', 'primary'),
+                        ('fitness', 'Fitness', 'fas fa-check-circle', 'info'),
+                        ('permit', 'Permit', 'fas fa-id-card', 'warning'),
+                        ('pollution', 'Pollution', 'fas fa-leaf', 'secondary'),
+                        ('other', 'Other', 'fas fa-file', 'dark')
+                    ] %}
+                    
+                    {% for doc_type, doc_name, icon, color in document_types %}
+                        {% set attr_name = doc_type + '_document' %}
+                        {% set document_field = active_duty.vehicle|attr(attr_name) %}
+                        <div class="col-6 col-md-4 col-lg-3 mb-2">
+                            {% if document_field %}
+                                <a href="{{ url_for('driver.serve_vehicle_document', vehicle_id=active_duty.vehicle.id, document_type=doc_type) }}" 
+                                   target="_blank" 
+                                   class="btn btn-outline-{{ color }} btn-sm d-flex align-items-center justify-content-center" 
+                                   style="min-height: 45px;">
+                                    <i class="{{ icon }} me-1"></i>
+                                    <span class="small">{{ doc_name }}</span>
+                                </a>
+                            {% else %}
+                                <button disabled class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center opacity-50" 
+                                        style="min-height: 45px;">
+                                    <i class="{{ icon }} me-1"></i>
+                                    <span class="small">{{ doc_name }}</span>
+                                    <br><small class="text-muted">N/A</small>
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="form-text mt-1">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Click on available documents to view them. Contact admin if documents are missing.
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Duration:</strong> 
