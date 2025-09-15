@@ -39,10 +39,13 @@ class CloudStorageManager:
     """Manages cloud storage operations for PLS TRAVELS"""
     
     def __init__(self):
-        self._ensure_buckets()
+        self._buckets_checked = False
     
     def _ensure_buckets(self):
-        """Ensure all required buckets exist"""
+        """Ensure all required buckets exist (lazy initialization)"""
+        if self._buckets_checked:
+            return
+            
         try:
             for bucket_name in STORAGE_BUCKETS.values():
                 try:
@@ -52,10 +55,13 @@ class CloudStorageManager:
                     print(f"Bucket ready: {bucket_name}")
                 except Exception as e:
                     print(f"Error with bucket {bucket_name}: {e}")
+            self._buckets_checked = True
         except Exception as e:
             print(f"Error checking buckets: {e}")
     
     def upload_file(self, file_data, filename, bucket_type='assets', content_type=None):
+        # Ensure buckets are checked only when actually needed
+        self._ensure_buckets()
         """
         Upload file to cloud storage (currently disabled due to API limitations)
         
