@@ -456,120 +456,120 @@ def create_app():
 
 app = create_app()
 
-# WebSocket event handlers for real-time vehicle tracking
-@socketio.on('connect')
-def handle_connect():
-    from flask_login import current_user
-    from flask_socketio import emit
-    if current_user.is_authenticated:
-        emit('status', {'msg': f'User {current_user.username} connected'})
+# WebSocket event handlers DISABLED (SocketIO temporarily disabled for stability)
+# @socketio.on('connect')
+# def handle_connect():
+#     from flask_login import current_user
+#     from flask_socketio import emit
+#     if current_user.is_authenticated:
+#         emit('status', {'msg': f'User {current_user.username} connected'})
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    from flask_login import current_user
-    if current_user.is_authenticated:
-        print(f'User {current_user.username} disconnected')
+# @socketio.on('disconnect')
+# def handle_disconnect():
+#     from flask_login import current_user
+#     if current_user.is_authenticated:
+#         print(f'User {current_user.username} disconnected')
 
-@socketio.on('join_tracking')
-def handle_join_tracking(data):
-    from flask_socketio import join_room, emit
-    from flask_login import current_user
-    from models import UserRole
-    if current_user.is_authenticated:
-        # Join user-specific room
-        user_room = f"tracking_{current_user.id}"
-        join_room(user_room)
-        
-        # Join global tracking room for real-time updates
-        join_room("tracking_global")
-        
-        # Join branch-specific rooms for managers/admins
-        if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
-            if current_user.role == UserRole.ADMIN:
-                # Admin can see all branches
-                from models import Branch
-                branches = Branch.query.all()
-                for branch in branches:
-                    join_room(f"tracking_branch_{branch.id}")
-            else:
-                # Manager sees only their branches
-                for branch in current_user.managed_branches:
-                    join_room(f"tracking_branch_{branch.id}")
-        
-        emit('status', {'msg': f'Joined tracking rooms successfully'})
+# @socketio.on('join_tracking')
+# def handle_join_tracking(data):
+#     from flask_socketio import join_room, emit
+#     from flask_login import current_user
+#     from models import UserRole
+#     if current_user.is_authenticated:
+#         # Join user-specific room
+#         user_room = f"tracking_{current_user.id}"
+#         join_room(user_room)
+#         
+#         # Join global tracking room for real-time updates
+#         join_room("tracking_global")
+#         
+#         # Join branch-specific rooms for managers/admins
+#         if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
+#             if current_user.role == UserRole.ADMIN:
+#                 # Admin can see all branches
+#                 from models import Branch
+#                 branches = Branch.query.all()
+#                 for branch in branches:
+#                     join_room(f"tracking_branch_{branch.id}")
+#             else:
+#                 # Manager sees only their branches
+#                 for branch in current_user.managed_branches:
+#                     join_room(f"tracking_branch_{branch.id}")
+#         
+#         emit('status', {'msg': f'Joined tracking rooms successfully'})
 
-@socketio.on('request_vehicle_update')
-def handle_vehicle_update_request():
-    from flask_socketio import emit
-    from flask_login import current_user
-    if current_user.is_authenticated:
-        # Trigger vehicle location update
-        emit('vehicle_update_requested', broadcast=True)
+# @socketio.on('request_vehicle_update')
+# def handle_vehicle_update_request():
+#     from flask_socketio import emit
+#     from flask_login import current_user
+#     if current_user.is_authenticated:
+#         # Trigger vehicle location update
+#         emit('vehicle_update_requested', broadcast=True)
 
-@socketio.on('location_update')
-def handle_driver_location_update(data):
-    from flask_socketio import emit
-    from flask_login import current_user
-    from models import Driver, VehicleTracking, Duty, DutyStatus, db
-    from timezone_utils import get_ist_time_naive
-    
-    if not current_user.is_authenticated:
-        return
-    
-    # Get driver profile
-    driver = Driver.query.filter_by(user_id=current_user.id).first()
-    if not driver:
-        return
-    
-    # Get active duty
-    active_duty = Duty.query.filter(
-        Duty.driver_id == driver.id,
-        Duty.status == DutyStatus.ACTIVE
-    ).first()
-    
-    if not active_duty:
-        return
-    
-    # Create tracking record
-    try:
-        tracking = VehicleTracking()
-        tracking.vehicle_id = active_duty.vehicle_id
-        tracking.duty_id = active_duty.id
-        tracking.driver_id = driver.id
-        tracking.recorded_at = get_ist_time_naive()
-        tracking.odometer_reading = 0  # Will be updated by driver later
-        tracking.odometer_type = 'gps'
-        tracking.latitude = data.get('latitude')
-        tracking.longitude = data.get('longitude')
-        tracking.location_accuracy = data.get('accuracy', 0)
-        tracking.location_name = 'GPS Location'
-        tracking.source = 'mobile_gps'
-        tracking.notes = 'Real-time GPS update from mobile device'
-        
-        db.session.add(tracking)
-        db.session.commit()
-        
-        # Broadcast to tracking room
-        broadcast_data = {
-            'vehicle_id': active_duty.vehicle_id,
-            'vehicle_number': active_duty.vehicle.number if active_duty.vehicle else 'Unknown',
-            'driver_name': driver.full_name,
-            'latitude': data.get('latitude'),
-            'longitude': data.get('longitude'),
-            'accuracy': data.get('accuracy', 0),
-            'timestamp': tracking.recorded_at.isoformat(),
-            'is_significant_move': True,
-            'location_name': 'GPS Location'
-        }
-        
-        # Broadcast to appropriate rooms
-        from flask_socketio import emit
-        emit('vehicle_location_update', broadcast_data, to='tracking_global')
-        
-        # Also broadcast to branch-specific room
-        if active_duty.vehicle and active_duty.vehicle.branch_id:
-            emit('vehicle_location_update', broadcast_data, to=f'tracking_branch_{active_duty.vehicle.branch_id}')
-        
-    except Exception as e:
-        print(f"Error handling location update: {e}")
-        db.session.rollback()
+# @socketio.on('location_update')
+# def handle_driver_location_update(data):
+#     from flask_socketio import emit
+#     from flask_login import current_user
+#     from models import Driver, VehicleTracking, Duty, DutyStatus, db
+#     from timezone_utils import get_ist_time_naive
+#     
+#     if not current_user.is_authenticated:
+#         return
+#     
+#     # Get driver profile
+#     driver = Driver.query.filter_by(user_id=current_user.id).first()
+#     if not driver:
+#         return
+#     
+#     # Get active duty
+#     active_duty = Duty.query.filter(
+#         Duty.driver_id == driver.id,
+#         Duty.status == DutyStatus.ACTIVE
+#     ).first()
+#     
+#     if not active_duty:
+#         return
+#     
+#     # Create tracking record
+#     try:
+#         tracking = VehicleTracking()
+#         tracking.vehicle_id = active_duty.vehicle_id
+#         tracking.duty_id = active_duty.id
+#         tracking.driver_id = driver.id
+#         tracking.recorded_at = get_ist_time_naive()
+#         tracking.odometer_reading = 0  # Will be updated by driver later
+#         tracking.odometer_type = 'gps'
+#         tracking.latitude = data.get('latitude')
+#         tracking.longitude = data.get('longitude')
+#         tracking.location_accuracy = data.get('accuracy', 0)
+#         tracking.location_name = 'GPS Location'
+#         tracking.source = 'mobile_gps'
+#         tracking.notes = 'Real-time GPS update from mobile device'
+#         
+#         db.session.add(tracking)
+#         db.session.commit()
+#         
+#         # Broadcast to tracking room
+#         broadcast_data = {
+#             'vehicle_id': active_duty.vehicle_id,
+#             'vehicle_number': active_duty.vehicle.number if active_duty.vehicle else 'Unknown',
+#             'driver_name': driver.full_name,
+#             'latitude': data.get('latitude'),
+#             'longitude': data.get('longitude'),
+#             'accuracy': data.get('accuracy', 0),
+#             'timestamp': tracking.recorded_at.isoformat(),
+#             'is_significant_move': True,
+#             'location_name': 'GPS Location'
+#         }
+#         
+#         # Broadcast to appropriate rooms
+#         from flask_socketio import emit
+#         emit('vehicle_location_update', broadcast_data, to='tracking_global')
+#         
+#         # Also broadcast to branch-specific room
+#         if active_duty.vehicle and active_duty.vehicle.branch_id:
+#             emit('vehicle_location_update', broadcast_data, to=f'tracking_branch_{active_duty.vehicle.branch_id}')
+#         
+#     except Exception as e:
+#         print(f"Error handling location update: {e}")
+#         db.session.rollback()
