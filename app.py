@@ -53,7 +53,7 @@ def create_app():
     
     # Configure compression for better performance
     app.config['COMPRESS_MIMETYPES'] = [
-        'text/html', 'text/css', 'text/xml', 'text/plain', 'text/javascript',
+        'text/html', 'text/css', 'text/xml', 'text/plain',
         'application/json', 'application/javascript', 'application/xml',
         'application/rss+xml', 'application/atom+xml', 'image/svg+xml'
     ]
@@ -123,17 +123,9 @@ def create_app():
         "http://localhost:5000",
         "http://127.0.0.1:5000"
     ]
-    # Disable WebSocket temporarily to fix stability issues
-    # socketio.init_app(
-    #     app, 
-    #     cors_allowed_origins="*",
-    #     async_mode='threading',  # Use threading instead of eventlet
-    #     logger=False,
-    #     engineio_logger=False,
-    #     ping_timeout=60,
-    #     ping_interval=25,
-    #     max_http_buffer_size=1e6
-    # )
+    # WebSocket/SocketIO is DISABLED for stability
+    # Real-time features temporarily unavailable
+    # To re-enable: uncomment socketio.init_app() and websocket routes below
 
     # User loader for Flask-Login
     @login_manager.user_loader
@@ -147,6 +139,9 @@ def create_app():
     
     # Configure IST timezone for the application
     IST = pytz.timezone('Asia/Kolkata')
+    
+    # SocketIO configuration (disabled for stability)
+    app.config['SOCKETIO_ENABLED'] = False
     
     def get_ist_time():
         """Get current time in IST timezone"""
