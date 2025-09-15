@@ -2913,7 +2913,7 @@ def export_audit_logs():
     audit_logs = query.order_by(desc(AuditLog.created_at)).limit(10000).all()
     
     # Generate CSV with security protections
-    import csv
+    from defusedcsv import csv
     from io import StringIO
     
     output = StringIO()
