@@ -8,6 +8,7 @@ from sqlalchemy import func, Index, CheckConstraint, UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
 from enum import Enum
 import uuid
+import time
 from timezone_utils import get_ist_time_naive
 
 # Enums for better data integrity
@@ -61,6 +62,15 @@ class ResignationStatus(Enum):
     REJECTED = 'rejected'
     COMPLETED = 'completed'
     CANCELLED = 'cancelled'
+
+class PhotoType(Enum):
+    DUTY_START = 'duty_start'
+    DUTY_END = 'duty_end'
+    VEHICLE_INSPECTION = 'vehicle_inspection'
+    INCIDENT_REPORT = 'incident'
+    ODOMETER_READING = 'odometer'
+    FUEL_RECEIPT = 'fuel_receipt'
+    GENERAL = 'general'
 
 # Association tables with additional metadata
 manager_branches = db.Table('manager_branches',
@@ -1299,6 +1309,49 @@ class UberIntegrationSettings(db.Model):
     
     def __repr__(self):
         return f'<UberIntegrationSettings enabled:{self.is_enabled}>'
+
+class Photo(db.Model):
+    """Store photos captured during duties"""
+    __tablename__ = 'photos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # File details
+    filename = db.Column(db.String(255), nullable=False)
+    local_file_path = db.Column(db.String(500))
+    server_url = db.Column(db.String(500))
+    
+    # Photo metadata
+    photo_type = db.Column(db.Enum(PhotoType), nullable=False, index=True)
+    description = db.Column(db.Text)
+    
+    # Associations
+    duty_id = db.Column(db.Integer, db.ForeignKey('duties.id'), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    
+    # Upload status
+    is_uploaded = db.Column(db.Boolean, default=False)
+    upload_retry_count = db.Column(db.Integer, default=0)
+    upload_error = db.Column(db.Text)
+    
+    # Timestamps
+    timestamp = db.Column(db.BigInteger, default=lambda: int(time.time() * 1000))  # Milliseconds
+    uploaded_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    
+    # Relationships
+    duty = db.relationship('Duty', backref='photos')
+    user = db.relationship('User', backref='photos')
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_photo_duty_type', 'duty_id', 'photo_type'),
+        Index('idx_photo_user_timestamp', 'user_id', 'timestamp'),
+    )
+    
+    def __repr__(self):
+        return f'<Photo {self.filename}:{self.photo_type.value}>'
 
 # (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 class OAuth(db.Model):

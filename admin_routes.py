@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, desc, or_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
-                   UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate,
+                   UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate, Photo, PhotoType,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils_main import allowed_file, calculate_earnings, process_file_upload, process_camera_capture
@@ -2643,6 +2643,10 @@ def pending_duties():
     
     duties = query.order_by(desc(Duty.submitted_at)).paginate(page=page, per_page=20, error_out=False)
     branches = Branch.query.filter_by(is_active=True).all()
+    
+    # Load photos for each duty
+    for duty in duties.items:
+        duty.all_photos = Photo.query.filter_by(duty_id=duty.id).order_by(Photo.timestamp.desc()).all()
     
     return render_template('admin/pending_duties.html', 
                          duties=duties, 

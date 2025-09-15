@@ -242,10 +242,54 @@
                     </div>
                 </div>
                 
-                {% if duty.start_photo or duty.end_photo %}
+                {% if duty.all_photos or duty.start_photo or duty.end_photo %}
                 <div class="row mt-3">
                     <div class="col-12">
-                        <h6 class="text-info">Photos</h6>
+                        <h6 class="text-info">
+                            <i class="fas fa-camera me-2"></i>Duty Photos 
+                            <span class="badge bg-info">{{ duty.all_photos|length if duty.all_photos else 0 }}</span>
+                        </h6>
+                        
+                        {% if duty.all_photos %}
+                        <!-- Show all photos from database -->
+                        <div class="row">
+                            {% for photo in duty.all_photos %}
+                            <div class="col-md-4 col-sm-6 mb-3">
+                                <div class="card">
+                                    <div class="card-body p-2 text-center">
+                                        <p class="small text-muted mb-1">
+                                            {% set photo_type_names = {
+                                                'DUTY_START': 'Start Photo',
+                                                'DUTY_END': 'End Photo',
+                                                'VEHICLE_INSPECTION': 'Vehicle Inspection',
+                                                'INCIDENT_REPORT': 'Incident Report',
+                                                'ODOMETER_READING': 'Odometer Reading',
+                                                'FUEL_RECEIPT': 'Fuel Receipt',
+                                                'GENERAL': 'General Photo'
+                                            } %}
+                                            <strong>{{ photo_type_names.get(photo.photo_type.name, photo.photo_type.name) }}</strong>
+                                        </p>
+                                        {% if photo.server_url %}
+                                            <img src="{{ photo.server_url }}" 
+                                                 class="img-fluid rounded border" style="max-height: 120px;"
+                                                 onerror="this.style.display='none';">
+                                        {% elif photo.filename %}
+                                            <img src="{{ url_for('uploaded_file', filename=photo.filename) }}" 
+                                                 class="img-fluid rounded border" style="max-height: 120px;"
+                                                 onerror="this.style.display='none';">
+                                        {% endif %}
+                                        {% if photo.description %}
+                                        <p class="small text-muted mt-1">{{ photo.description }}</p>
+                                        {% endif %}
+                                        <small class="text-muted">{{ moment(photo.created_at).fromNow() if photo.created_at else 'N/A' }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% else %}
+                        <!-- Fallback: Show legacy start/end photos if no database photos -->
                         <div class="row">
                             {% if duty.start_photo and duty.start_photo.strip() %}
                             <div class="col-md-6">
@@ -268,6 +312,7 @@
                             </div>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
