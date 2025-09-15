@@ -28,7 +28,7 @@ except ImportError:
     def generate_assignment_suggestions(driver_id, vehicle_id, start_date, end_date, shift_type):
         return []
         
-    def build_assignment_calendar(assignments, start_date, end_date):
+    def build_assignment_calendar(assignments, start_date_str, end_date_str):
         return {}
         
     def create_bulk_assignments(assignments_data, assigned_by_user_id):
@@ -195,7 +195,7 @@ def approve_driver(driver_id):
     db.session.commit()
     
     log_audit('approve_driver', 'driver', driver_id, 
-             {'driver_name': driver.full_name, 'branch': driver.branch.name})
+             {'driver_name': driver.full_name, 'branch': driver.branch.name if driver.branch else 'Unknown'})
     
     flash(f'Driver {driver.full_name} has been approved.', 'success')
     return redirect(url_for('admin.drivers'))
@@ -212,7 +212,7 @@ def reject_driver(driver_id):
     db.session.commit()
     
     log_audit('reject_driver', 'driver', driver_id,
-             {'driver_name': driver.full_name, 'branch': driver.branch.name})
+             {'driver_name': driver.full_name, 'branch': driver.branch.name if driver.branch else 'Unknown'})
     
     flash(f'Driver {driver.full_name} has been rejected.', 'warning')
     return redirect(url_for('admin.drivers'))
@@ -652,7 +652,7 @@ def add_driver():
             
             log_audit('add_driver', 'driver', driver.id, {
                 'driver_name': driver.full_name, 
-                'branch': driver.branch.name,
+                'branch': (lambda br: br.name if br else 'Unknown')(getattr(driver, 'branch', None)),
                 'created_by_admin': True
             })
             
@@ -1019,9 +1019,12 @@ def schedule_duty_assignments():
             return jsonify({'success': False, 'message': 'Missing required fields'})
         
         try:
-            # start_date is already checked for non-None in all() above
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
+            # start_date is already checked for non-None in all() above, add extra safety
+            if start_date and start_date.strip():
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            else:
+                return jsonify({'success': False, 'message': 'Invalid start date format'})
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date and end_date.strip() else None
             
             # Check for conflicts
             conflicts = check_assignment_conflicts(driver_id, vehicle_id, start_date, end_date, shift_type)
@@ -1302,10 +1305,10 @@ def add_assignment():
     
     # Populate form choices
     active_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).join(Branch).all()
-    form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name})") for d in active_drivers]
+    form.driver_id.choices = [(d.id, f"{d.full_name} ({d.branch.name if d.branch else 'Unknown'})") for d in active_drivers]
     
     available_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE, is_available=True).join(Branch).all()
-    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.model or v.vehicle_type.name} ({v.branch.name})") for v in available_vehicles]
+    form.vehicle_id.choices = [(v.id, f"{v.registration_number} - {v.model or v.vehicle_type.name} ({v.branch.name if v.branch else 'Unknown'})") for v in available_vehicles]
     
     if form.validate_on_submit():
         conflicts = check_assignment_conflicts(form.driver_id.data, form.vehicle_id.data, 
@@ -1463,7 +1466,11 @@ def add_assignment_template():
     """Add new assignment template"""
     form = AssignmentTemplateForm()
     branches = Branch.query.filter_by(is_active=True).all()
-    form.branch_id.choices = [(0, 'All Branches')] + [(b.id, b.name) for b in branches]
+    # Simple approach for SelectField choices to avoid typing issues
+    form.branch_id.choices = []
+    form.branch_id.choices.append(('0', 'All Branches'))
+    for b in branches:
+        form.branch_id.choices.append((str(b.id), b.name))
     
     if form.validate_on_submit():
         template = AssignmentTemplate()
@@ -1544,7 +1551,8 @@ def check_conflicts():
     if not start_date_str:
         return jsonify({'error': 'start_date is required'}), 400
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-    end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d').date() if data.get('end_date') else None
+    end_date_str = data.get('end_date')
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str and end_date_str.strip() else None
     shift_type = data.get('shift_type', 'full_day')
     
     conflicts = check_assignment_conflicts(driver_id, vehicle_id, start_date, end_date, shift_type)
@@ -1784,7 +1792,11 @@ def duty_schemes():
 def add_duty_scheme():
     form = DutySchemeForm()
     branches = Branch.query.filter_by(is_active=True).all()
-    form.branch_id.choices = [(0, 'Global')] + [(b.id, b.name) for b in branches]
+    # Simple approach for SelectField choices to avoid typing issues
+    form.branch_id.choices = []
+    form.branch_id.choices.append(('0', 'Global'))
+    for b in branches:
+        form.branch_id.choices.append((str(b.id), b.name))
     
     if form.validate_on_submit():
         # Enhanced configuration for all salary methods
@@ -1870,7 +1882,11 @@ def edit_duty_scheme(scheme_id):
     scheme = DutyScheme.query.get_or_404(scheme_id)
     form = DutySchemeForm(obj=scheme)
     branches = Branch.query.filter_by(is_active=True).all()
-    form.branch_id.choices = [(0, 'Global')] + [(b.id, b.name) for b in branches]
+    # Simple approach for SelectField choices to avoid typing issues
+    form.branch_id.choices = []
+    form.branch_id.choices.append(('0', 'Global'))
+    for b in branches:
+        form.branch_id.choices.append((str(b.id), b.name))
     
     if request.method == 'GET':
         # Pre-populate form with existing scheme data
@@ -2432,8 +2448,8 @@ def uber_settings():
             
             db.session.commit()
             
-            log_audit(current_user.id, 'UPDATE', 'UberIntegrationSettings', settings.id, 
-                     'Updated Uber integration settings')
+            log_audit('update_uber_settings', 'uber_settings', settings.id,
+                     {'action': 'Updated Uber integration settings'})
             
             flash('Uber integration settings updated successfully!', 'success')
             return redirect(url_for('admin.uber_integration'))
@@ -2492,8 +2508,8 @@ def uber_start_sync(job_type):
         else:
             flash(f"Sync failed: {result['message']}", 'error')
         
-        log_audit(current_user.id, 'CREATE', 'UberSyncJob', job.id, 
-                 f'Started {job_type} sync job')
+        log_audit('start_uber_sync', 'uber_sync_job', job.id,
+                 {'job_type': job_type, 'action': f'Started {job_type} sync job'})
         
     except Exception as e:
         flash(f'Error starting sync job: {str(e)}', 'error')
@@ -2565,8 +2581,8 @@ def uber_reset_sync(record_type, record_id):
         
         db.session.commit()
         
-        log_audit(current_user.id, 'UPDATE', record_type.capitalize(), record_id,
-                 f'Reset Uber sync status for {record_type}')
+        log_audit('reset_uber_sync', f'uber_{record_type}', record_id,
+                 {'action': f'Reset Uber sync status for {record_type}'})
         
         flash(f'Sync status reset for {record_type}', 'success')
         
