@@ -510,6 +510,15 @@ wheels = [
 ]
 
 [[package]]
+name = "defusedcsv"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/1d/0c17ea5e5f8e456515e3368aa8821fbdf094ed29ac886f0b2f0f3779ab34/defusedcsv-3.0.0.tar.gz", hash = "sha256:018678533bc375f3bf2f70f9721e48daf3800a88320dc325c1dac67ee09e2a45", size = 9083 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/79/ab/a2b9f4a1edc0828414fa4063fabe2f456e705e548dd530e0c8bc76d017e4/defusedcsv-3.0.0-py3-none-any.whl", hash = "sha256:5e5f2e940cefb5ac60580c8009388bfb154b7853784d34a8f0ff3a52c6130e87", size = 7990 },
+]
+
+[[package]]
 name = "dnspython"
 version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1879,6 +1888,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "celery" },
     { name = "cryptography" },
+    { name = "defusedcsv" },
     { name = "email-validator" },
     { name = "eventlet" },
     { name = "flask" },
@@ -1915,6 +1925,7 @@ dependencies = [
 requires-dist = [
     { name = "celery", specifier = ">=5.5.3" },
     { name = "cryptography", specifier = ">=45.0.7" },
+    { name = "defusedcsv", specifier = ">=3.0.0" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "eventlet", specifier = ">=0.40.3" },
     { name = "flask", specifier = ">=3.1.2" },

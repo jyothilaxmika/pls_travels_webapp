@@ -36,4 +36,5 @@ dependencies = [
     "flask-cors>=6.0.1",
     "pydantic>=2.11.9",
     "sift-stack-py>=0.8.5",
+    "defusedcsv>=3.0.0",
 ]
