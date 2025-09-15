@@ -1,15 +1,16 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 from functools import wraps
 import os
 import math
 from datetime import datetime, timedelta
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, or_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole)
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils_main import allowed_file, calculate_earnings
 import json
