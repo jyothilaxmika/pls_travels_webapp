@@ -115,13 +115,13 @@
                                 
                                 {% if driver.status.value == 'pending' %}
                                 <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}" class="d-inline">
-                                    {{ csrf_token() }}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')" title="Approve">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}" class="d-inline">
-                                    {{ csrf_token() }}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')" title="Reject">
                                         <i class="fas fa-times"></i>
                                     </button>
@@ -139,7 +139,7 @@
                                 <!-- Delete button -->
                                 {% if driver.status.value != 'terminated' %}
                                 <form method="POST" action="{{ url_for('admin.delete_driver', driver_id=driver.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver? This action cannot be undone.')">
-                                    {{ csrf_token() }}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Driver">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -264,13 +264,13 @@
                                 
                                 {% if driver.status.value == 'pending' %}
                                 <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}" class="d-inline">
-                                    {{ csrf_token() }}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')">
                                         <i class="fas fa-check me-1"></i>Approve
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}" class="d-inline">
-                                    {{ csrf_token() }}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')">
                                         <i class="fas fa-times me-1"></i>Reject
                                     </button>
@@ -287,7 +287,7 @@
                                 
                                 {% if driver.status.value != 'terminated' %}
                                 <form method="POST" action="{{ url_for('admin.delete_driver', driver_id=driver.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver? This action cannot be undone.')">
-                                    {{ csrf_token() }}
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash me-1"></i>Delete
                                     </button>
