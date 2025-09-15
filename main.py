@@ -1,7 +1,7 @@
 import os
 from app import create_app
 
-# Create the app instance for gunicorn
+# Create the app instance for gunicorn  
 app = create_app()
 
 if __name__ == '__main__':
