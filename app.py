@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from flask_compress import Compress
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager
@@ -23,7 +22,6 @@ login_manager = LoginManager()
 socketio = SocketIO()
 csrf = CSRFProtect()
 jwt = JWTManager()
-compress = Compress()
 
 def create_app():
     # Create the app
@@ -38,30 +36,11 @@ def create_app():
     # x_host=1: Trust one proxy for X-Forwarded-Host header (hostname)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     
-    # CORS Configuration for production (restricted origins for security)
-    production_origins = os.environ.get('ALLOWED_ORIGINS', '').split(',')
-    allowed_origins = [origin.strip() for origin in production_origins if origin.strip()]
-    
-    # Fallback to localhost for development only if no production origins set
-    if not allowed_origins:
-        allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
-        
-    CORS(app, origins=allowed_origins, 
+    # CORS Configuration for mobile apps (restricted origins for security)
+    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"], 
          supports_credentials=False,
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-    
-    # Configure compression for better performance
-    app.config['COMPRESS_MIMETYPES'] = [
-        'text/html', 'text/css', 'text/xml', 'text/plain',
-        'application/json', 'application/javascript', 'application/xml',
-        'application/rss+xml', 'application/atom+xml', 'image/svg+xml'
-    ]
-    app.config['COMPRESS_LEVEL'] = 6  # Balance between compression ratio and speed
-    app.config['COMPRESS_MIN_SIZE'] = 500  # Only compress files larger than 500 bytes
-    
-    # Initialize compression
-    compress.init_app(app)
 
     # Configure the database - use PostgreSQL in production, SQLite for development
     database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
@@ -79,18 +58,14 @@ def create_app():
         
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_size": 10,
-            "pool_recycle": 280,  # Slightly less than 5 minutes to prevent stale connections
+            "pool_size": 5,
+            "pool_recycle": 300,
             "pool_pre_ping": True,
-            "max_overflow": 15,
-            "pool_timeout": 20,  # Maximum time to wait for connection from pool
+            "max_overflow": 10,
             "connect_args": {
                 "sslmode": "require",
-                "connect_timeout": 10,  # Reduced from 30 to 10 seconds
-                "application_name": "pls_travels",
-                "keepalives_idle": 600,  # Keep connections alive
-                "keepalives_interval": 30,
-                "keepalives_count": 3
+                "connect_timeout": 30,
+                "application_name": "pls_travels"
             }
         }
     else:
@@ -123,9 +98,17 @@ def create_app():
         "http://localhost:5000",
         "http://127.0.0.1:5000"
     ]
-    # WebSocket/SocketIO is DISABLED for stability
-    # Real-time features temporarily unavailable
-    # To re-enable: uncomment socketio.init_app() and websocket routes below
+    # Disable WebSocket temporarily to fix stability issues
+    # socketio.init_app(
+    #     app, 
+    #     cors_allowed_origins="*",
+    #     async_mode='threading',  # Use threading instead of eventlet
+    #     logger=False,
+    #     engineio_logger=False,
+    #     ping_timeout=60,
+    #     ping_interval=25,
+    #     max_http_buffer_size=1e6
+    # )
 
     # User loader for Flask-Login
     @login_manager.user_loader
@@ -139,9 +122,6 @@ def create_app():
     
     # Configure IST timezone for the application
     IST = pytz.timezone('Asia/Kolkata')
-    
-    # SocketIO configuration (disabled for stability)
-    app.config['SOCKETIO_ENABLED'] = False
     
     def get_ist_time():
         """Get current time in IST timezone"""
@@ -265,7 +245,18 @@ def create_app():
     @app.before_request
     def make_session_permanent():
         session.permanent = True
-        # Removed redundant SELECT 1 ping - pool_pre_ping=True handles connection validation automatically
+        
+        # Skip database ping for health check endpoint to allow fast responses
+        if request.path == '/health' and request.method == 'GET':
+            return
+        
+        # Handle database connection issues for other routes
+        try:
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+        except Exception as e:
+            print(f"Database connection issue: {e}")
+            db.session.rollback()
 
     # Create tables
     # Check OTP system configuration on startup
@@ -281,7 +272,8 @@ def create_app():
         from werkzeug.security import generate_password_hash
         
         # Only create demo data if explicitly enabled (SECURITY RISK IN PRODUCTION)
-        demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
+        demo_mode = True  # Enable demo mode to create admin user
+        # demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
         
         if demo_mode:
             
@@ -291,10 +283,7 @@ def create_app():
                 admin = User()
                 admin.username = 'admin'
                 admin.email = 'admin@plstravels.com'
-                admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD')
-                if not admin_password:
-                    raise RuntimeError("ADMIN_INITIAL_PASSWORD environment variable is required for demo mode but not set")
-                admin.password_hash = generate_password_hash(admin_password)
+                admin.password_hash = generate_password_hash(os.environ.get('ADMIN_INITIAL_PASSWORD', 'admin123'))
                 admin.role = UserRole.ADMIN
                 admin.status = UserStatus.ACTIVE
                 admin.first_name = 'System'
@@ -358,7 +347,12 @@ def create_app():
                         admin_driver.approved_at = datetime.utcnow()
                         db.session.add(admin_driver)
         
-            # Note: Pending driver auto-activation removed for production security
+            # Activate any pending drivers (for demo/testing purposes only)
+            pending_drivers = Driver.query.filter_by(status=DriverStatus.PENDING).all()
+            for driver in pending_drivers:
+                driver.status = DriverStatus.ACTIVE
+                driver.approved_by = admin_user.id if admin_user else None
+                driver.approved_at = datetime.utcnow()
         
         # Always commit changes (even if no demo data created)
         db.session.commit()
@@ -416,26 +410,12 @@ def create_app():
         from flask import redirect, url_for
         return redirect(url_for('auth.login'))
     
-    # Route to serve uploaded files with authentication
+    # Route to serve uploaded files
     @app.route('/uploads/<filename>')
     def uploaded_file(filename):
-        """Serve uploaded files from the uploads directory with authentication"""
-        from flask_login import login_required, current_user
-        from models import UserRole
-        
-        # Require authentication
-        if not current_user.is_authenticated:
-            return "Authentication required", 401
-            
-        # Allow admin and manager full access
-        if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
-            upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
-            return send_from_directory(upload_folder, filename)
-            
-        # Drivers cannot access uploads directly for security
-        # TODO: Implement proper file ownership verification for drivers
-        
-        return "Access denied - contact administrator", 403
+        """Serve uploaded files from the uploads directory"""
+        upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
+        return send_from_directory(upload_folder, filename)
 
     # SEO routes
     @app.route('/robots.txt')
@@ -458,120 +438,120 @@ def create_app():
 
 app = create_app()
 
-# WebSocket event handlers DISABLED (SocketIO temporarily disabled for stability)
-# @socketio.on('connect')
-# def handle_connect():
-#     from flask_login import current_user
-#     from flask_socketio import emit
-#     if current_user.is_authenticated:
-#         emit('status', {'msg': f'User {current_user.username} connected'})
+# WebSocket event handlers for real-time vehicle tracking
+@socketio.on('connect')
+def handle_connect():
+    from flask_login import current_user
+    from flask_socketio import emit
+    if current_user.is_authenticated:
+        emit('status', {'msg': f'User {current_user.username} connected'})
 
-# @socketio.on('disconnect')
-# def handle_disconnect():
-#     from flask_login import current_user
-#     if current_user.is_authenticated:
-#         print(f'User {current_user.username} disconnected')
+@socketio.on('disconnect')
+def handle_disconnect():
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        print(f'User {current_user.username} disconnected')
 
-# @socketio.on('join_tracking')
-# def handle_join_tracking(data):
-#     from flask_socketio import join_room, emit
-#     from flask_login import current_user
-#     from models import UserRole
-#     if current_user.is_authenticated:
-#         # Join user-specific room
-#         user_room = f"tracking_{current_user.id}"
-#         join_room(user_room)
-#         
-#         # Join global tracking room for real-time updates
-#         join_room("tracking_global")
-#         
-#         # Join branch-specific rooms for managers/admins
-#         if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
-#             if current_user.role == UserRole.ADMIN:
-#                 # Admin can see all branches
-#                 from models import Branch
-#                 branches = Branch.query.all()
-#                 for branch in branches:
-#                     join_room(f"tracking_branch_{branch.id}")
-#             else:
-#                 # Manager sees only their branches
-#                 for branch in current_user.managed_branches:
-#                     join_room(f"tracking_branch_{branch.id}")
-#         
-#         emit('status', {'msg': f'Joined tracking rooms successfully'})
+@socketio.on('join_tracking')
+def handle_join_tracking(data):
+    from flask_socketio import join_room, emit
+    from flask_login import current_user
+    from models import UserRole
+    if current_user.is_authenticated:
+        # Join user-specific room
+        user_room = f"tracking_{current_user.id}"
+        join_room(user_room)
+        
+        # Join global tracking room for real-time updates
+        join_room("tracking_global")
+        
+        # Join branch-specific rooms for managers/admins
+        if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
+            if current_user.role == UserRole.ADMIN:
+                # Admin can see all branches
+                from models import Branch
+                branches = Branch.query.all()
+                for branch in branches:
+                    join_room(f"tracking_branch_{branch.id}")
+            else:
+                # Manager sees only their branches
+                for branch in current_user.managed_branches:
+                    join_room(f"tracking_branch_{branch.id}")
+        
+        emit('status', {'msg': f'Joined tracking rooms successfully'})
 
-# @socketio.on('request_vehicle_update')
-# def handle_vehicle_update_request():
-#     from flask_socketio import emit
-#     from flask_login import current_user
-#     if current_user.is_authenticated:
-#         # Trigger vehicle location update
-#         emit('vehicle_update_requested', broadcast=True)
+@socketio.on('request_vehicle_update')
+def handle_vehicle_update_request():
+    from flask_socketio import emit
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        # Trigger vehicle location update
+        emit('vehicle_update_requested', broadcast=True)
 
-# @socketio.on('location_update')
-# def handle_driver_location_update(data):
-#     from flask_socketio import emit
-#     from flask_login import current_user
-#     from models import Driver, VehicleTracking, Duty, DutyStatus, db
-#     from timezone_utils import get_ist_time_naive
-#     
-#     if not current_user.is_authenticated:
-#         return
-#     
-#     # Get driver profile
-#     driver = Driver.query.filter_by(user_id=current_user.id).first()
-#     if not driver:
-#         return
-#     
-#     # Get active duty
-#     active_duty = Duty.query.filter(
-#         Duty.driver_id == driver.id,
-#         Duty.status == DutyStatus.ACTIVE
-#     ).first()
-#     
-#     if not active_duty:
-#         return
-#     
-#     # Create tracking record
-#     try:
-#         tracking = VehicleTracking()
-#         tracking.vehicle_id = active_duty.vehicle_id
-#         tracking.duty_id = active_duty.id
-#         tracking.driver_id = driver.id
-#         tracking.recorded_at = get_ist_time_naive()
-#         tracking.odometer_reading = 0  # Will be updated by driver later
-#         tracking.odometer_type = 'gps'
-#         tracking.latitude = data.get('latitude')
-#         tracking.longitude = data.get('longitude')
-#         tracking.location_accuracy = data.get('accuracy', 0)
-#         tracking.location_name = 'GPS Location'
-#         tracking.source = 'mobile_gps'
-#         tracking.notes = 'Real-time GPS update from mobile device'
-#         
-#         db.session.add(tracking)
-#         db.session.commit()
-#         
-#         # Broadcast to tracking room
-#         broadcast_data = {
-#             'vehicle_id': active_duty.vehicle_id,
-#             'vehicle_number': active_duty.vehicle.number if active_duty.vehicle else 'Unknown',
-#             'driver_name': driver.full_name,
-#             'latitude': data.get('latitude'),
-#             'longitude': data.get('longitude'),
-#             'accuracy': data.get('accuracy', 0),
-#             'timestamp': tracking.recorded_at.isoformat(),
-#             'is_significant_move': True,
-#             'location_name': 'GPS Location'
-#         }
-#         
-#         # Broadcast to appropriate rooms
-#         from flask_socketio import emit
-#         emit('vehicle_location_update', broadcast_data, to='tracking_global')
-#         
-#         # Also broadcast to branch-specific room
-#         if active_duty.vehicle and active_duty.vehicle.branch_id:
-#             emit('vehicle_location_update', broadcast_data, to=f'tracking_branch_{active_duty.vehicle.branch_id}')
-#         
-#     except Exception as e:
-#         print(f"Error handling location update: {e}")
-#         db.session.rollback()
+@socketio.on('location_update')
+def handle_driver_location_update(data):
+    from flask_socketio import emit
+    from flask_login import current_user
+    from models import Driver, VehicleTracking, Duty, DutyStatus, db
+    from timezone_utils import get_ist_time_naive
+    
+    if not current_user.is_authenticated:
+        return
+    
+    # Get driver profile
+    driver = Driver.query.filter_by(user_id=current_user.id).first()
+    if not driver:
+        return
+    
+    # Get active duty
+    active_duty = Duty.query.filter(
+        Duty.driver_id == driver.id,
+        Duty.status == DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return
+    
+    # Create tracking record
+    try:
+        tracking = VehicleTracking()
+        tracking.vehicle_id = active_duty.vehicle_id
+        tracking.duty_id = active_duty.id
+        tracking.driver_id = driver.id
+        tracking.recorded_at = get_ist_time_naive()
+        tracking.odometer_reading = 0  # Will be updated by driver later
+        tracking.odometer_type = 'gps'
+        tracking.latitude = data.get('latitude')
+        tracking.longitude = data.get('longitude')
+        tracking.location_accuracy = data.get('accuracy', 0)
+        tracking.location_name = 'GPS Location'
+        tracking.source = 'mobile_gps'
+        tracking.notes = 'Real-time GPS update from mobile device'
+        
+        db.session.add(tracking)
+        db.session.commit()
+        
+        # Broadcast to tracking room
+        broadcast_data = {
+            'vehicle_id': active_duty.vehicle_id,
+            'vehicle_number': active_duty.vehicle.number if active_duty.vehicle else 'Unknown',
+            'driver_name': driver.full_name,
+            'latitude': data.get('latitude'),
+            'longitude': data.get('longitude'),
+            'accuracy': data.get('accuracy', 0),
+            'timestamp': tracking.recorded_at.isoformat(),
+            'is_significant_move': True,
+            'location_name': 'GPS Location'
+        }
+        
+        # Broadcast to appropriate rooms
+        from flask_socketio import emit
+        emit('vehicle_location_update', broadcast_data, to='tracking_global')
+        
+        # Also broadcast to branch-specific room
+        if active_duty.vehicle and active_duty.vehicle.branch_id:
+            emit('vehicle_location_update', broadcast_data, to=f'tracking_branch_{active_duty.vehicle.branch_id}')
+        
+    except Exception as e:
+        print(f"Error handling location update: {e}")
+        db.session.rollback()

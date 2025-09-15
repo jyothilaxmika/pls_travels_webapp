@@ -5,7 +5,7 @@ channel = "stable-25_05"
 packages = ["android-tools", "cargo", "gitFull", "gradle", "iana-etc", "libiconv", "libxcrypt", "openjdk17", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc"]
 
 [deployment]
-deploymentTarget = "cloudrun"
+deploymentTarget = "gce"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
@@ -80,10 +80,6 @@ externalPort = 4200
 [[ports]]
 localPort = 42793
 externalPort = 3003
-
-[[ports]]
-localPort = 45923
-externalPort = 9000
 
 [[ports]]
 localPort = 45931

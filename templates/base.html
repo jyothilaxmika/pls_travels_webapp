@@ -350,14 +350,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/missing-functions.js') }}"></script>
-    
-    <!-- Socket.IO for real-time updates (conditionally loaded) -->
-    {% if config.get('SOCKETIO_ENABLED', False) %}
-    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
-    {% else %}
-    <!-- Socket.IO disabled for stability -->
-    {% endif %}
-    
     {% block scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
 </body>

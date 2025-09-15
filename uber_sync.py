@@ -75,7 +75,7 @@ class UberDataSync:
             }
     
     def create_sync_job(self, job_type: str, sync_direction: str, user_id: int, 
-                       config: Optional[Dict[str, Any]] = None) -> UberSyncJob:
+                       config: Dict[str, Any] = None) -> UberSyncJob:
         """Create a new sync job"""
         job = UberSyncJob(
             job_type=job_type,
@@ -131,7 +131,6 @@ class UberDataSync:
             job.records_processed = len(vehicles)
             
             for vehicle in vehicles:
-                vehicle_data = None
                 try:
                     # Prepare vehicle data for Uber API
                     vehicle_data = self._prepare_vehicle_data_for_uber(vehicle)
@@ -229,7 +228,6 @@ class UberDataSync:
             job.records_processed = len(drivers)
             
             for driver in drivers:
-                driver_data = None
                 try:
                     # Prepare driver data for Uber API
                     driver_data = self._prepare_driver_data_for_uber(driver)
@@ -383,15 +381,12 @@ class UberDataSync:
     
     def _prepare_driver_data_for_uber(self, driver: Driver) -> Dict[str, Any]:
         """Prepare driver data for Uber API format"""
-        # Get user data via user_id relationship
-        user = User.query.get(driver.user_id) if driver.user_id else None
-        
         return {
             'external_id': f'pls_{driver.id}',
             'first_name': driver.full_name.split(' ')[0] if driver.full_name else '',
             'last_name': ' '.join(driver.full_name.split(' ')[1:]) if driver.full_name and ' ' in driver.full_name else '',
-            'email': user.email if user else None,
-            'phone_number': user.phone if user else None,
+            'email': driver.user.email if driver.user else None,
+            'phone_number': driver.user.phone if driver.user else None,
             'license_number': driver.license_number,
             'license_expiry': driver.license_expiry.isoformat() if driver.license_expiry else None,
             'status': 'active' if driver.status in [DriverStatus.ACTIVE, DriverStatus.PENDING] else 'inactive',

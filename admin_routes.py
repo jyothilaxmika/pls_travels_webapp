@@ -137,10 +137,10 @@ def dashboard():
      .group_by(Branch.id, Branch.name, Branch.target_revenue) \
      .limit(20).all()
     
-    # Recent activities - reduce to 5 items for faster loading
+    # Recent activities - limit and optimize
     recent_activities = AuditLog.query.options(
         db.joinedload(AuditLog.user)
-    ).order_by(desc(AuditLog.created_at)).limit(5).all()
+    ).order_by(desc(AuditLog.created_at)).limit(10).all()
     
     return render_template('admin/dashboard.html',
                          total_drivers=total_drivers,
@@ -173,8 +173,7 @@ def drivers():
         query = query.filter(Driver.branch_id == branch_filter)
     
     drivers = query.paginate(page=page, per_page=20, error_out=False)
-    # Limit branches query for better performance
-    branches = Branch.query.filter_by(is_active=True).limit(50).all()
+    branches = Branch.query.filter_by(is_active=True).all()
     
     return render_template('admin/drivers.html', 
                          drivers=drivers, 
@@ -2913,7 +2912,7 @@ def export_audit_logs():
     audit_logs = query.order_by(desc(AuditLog.created_at)).limit(10000).all()
     
     # Generate CSV with security protections
-    from defusedcsv import csv  # Using defusedcsv to prevent CSV injection attacks
+    import csv
     from io import StringIO
     
     output = StringIO()
