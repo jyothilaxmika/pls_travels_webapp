@@ -50,6 +50,18 @@ def create_app():
          supports_credentials=False,
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    
+    # Configure compression for better performance
+    app.config['COMPRESS_MIMETYPES'] = [
+        'text/html', 'text/css', 'text/xml', 'text/plain', 'text/javascript',
+        'application/json', 'application/javascript', 'application/xml',
+        'application/rss+xml', 'application/atom+xml', 'image/svg+xml'
+    ]
+    app.config['COMPRESS_LEVEL'] = 6  # Balance between compression ratio and speed
+    app.config['COMPRESS_MIN_SIZE'] = 500  # Only compress files larger than 500 bytes
+    
+    # Initialize compression
+    compress.init_app(app)
 
     # Configure the database - use PostgreSQL in production, SQLite for development
     database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
