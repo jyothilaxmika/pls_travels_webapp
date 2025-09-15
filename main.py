@@ -1,5 +1,8 @@
 import os
-from app import app  # socketio temporarily disabled
+from app import create_app
+
+# Create the app instance for gunicorn
+app = create_app()
 
 if __name__ == '__main__':
     # Use Flask directly while WebSocket is disabled
