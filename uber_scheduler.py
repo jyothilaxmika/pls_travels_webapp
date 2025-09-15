@@ -192,20 +192,20 @@ class UberScheduler:
                 db.session.rollback()
     
     def setup_schedule(self):
-        """Setup the synchronization schedule"""
-        # Schedule main sync jobs every hour (they check their own frequency)
-        schedule.every().hour.do(self.run_vehicle_sync)
-        schedule.every().hour.do(self.run_driver_sync)
+        """Setup the synchronization schedule with optimized intervals"""
+        # Schedule main sync jobs every 2 hours instead of every hour to reduce load
+        schedule.every(2).hours.do(self.run_vehicle_sync)
+        schedule.every(2).hours.do(self.run_driver_sync)
         
-        # Schedule trip sync more frequently (every 30 minutes)
-        schedule.every(30).minutes.do(self.run_trip_sync)
+        # Schedule trip sync less frequently (every hour instead of 30 minutes)
+        schedule.every().hour.do(self.run_trip_sync)
         
         # Schedule cleanup once daily at 2 AM
         schedule.every().day.at("02:00").do(self.cleanup_old_jobs)
         
-        logger.info("Uber sync scheduler configured")
-        logger.info("- Vehicle/Driver sync: Every hour (respects frequency settings)")
-        logger.info("- Trip sync: Every 30 minutes")
+        logger.info("Uber sync scheduler configured with optimized intervals")
+        logger.info("- Vehicle/Driver sync: Every 2 hours (respects frequency settings)")
+        logger.info("- Trip sync: Every hour")
         logger.info("- Cleanup: Daily at 2:00 AM")
     
     def run(self):
@@ -228,7 +228,7 @@ class UberScheduler:
         try:
             while self.running:
                 schedule.run_pending()
-                time.sleep(60)  # Check every minute
+                time.sleep(300)  # Check every 5 minutes instead of every minute to reduce CPU usage
                 
         except KeyboardInterrupt:
             logger.info("Scheduler stopped by user")
