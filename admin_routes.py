@@ -299,7 +299,7 @@ def add_driver_document():
     if file.filename == '':
         return jsonify({'success': False, 'message': 'No file selected'})
     
-    if file and allowed_file(file.filename):
+    if file and file.filename and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"{driver_id}_{document_type}_{timestamp}_{filename}"
@@ -496,7 +496,7 @@ def add_manual_transaction():
             penalty.amount = amount  # Debit
         else:
             penalty.amount = -amount  # Credit (bonus, reimbursement)
-        penalty.reason = f"{transaction_type.upper()}: {description}"
+        penalty.reason = f"{(transaction_type or 'UNKNOWN').upper()}: {description}"
         penalty.applied_by = current_user.id
         penalty.applied_at = datetime.combine(trans_date, datetime.min.time())
         # Note: reference stored in reason field as reference_number not available
@@ -614,7 +614,7 @@ def add_driver():
         try:
             # Create user account first
             user = User()
-            user.username = form.full_name.data.lower().replace(' ', '_')
+            user.username = (form.full_name.data or '').lower().replace(' ', '_')
             user.email = f"{user.username}@plstravels.com"  # Generate email if not provided
             user.password_hash = generate_password_hash('driver123')  # Default password
             user.role = UserRole.DRIVER
@@ -630,8 +630,12 @@ def add_driver():
             from utils import generate_employee_id
             driver.employee_id = generate_employee_id()
             driver.full_name = form.full_name.data
-            driver.phone = form.phone.data
-            driver.address = form.address.data
+            # Note: Driver model uses current_address instead of address
+            # Phone stored in additional_phones as JSON or consider adding phone field to model
+            if form.phone.data:
+                import json
+                driver.additional_phones = json.dumps([form.phone.data])
+            driver.current_address = form.address.data
             driver.date_of_birth = form.date_of_birth.data
             driver.aadhar_number = form.aadhar_number.data
             driver.license_number = form.license_number.data
@@ -678,8 +682,12 @@ def edit_driver(driver_id):
         try:
             # Update driver details
             driver.full_name = form.full_name.data
-            driver.phone = form.phone.data
-            driver.address = form.address.data
+            # Note: Driver model uses current_address instead of address
+            # Phone stored in additional_phones as JSON or consider adding phone field to model
+            if form.phone.data:
+                import json
+                driver.additional_phones = json.dumps([form.phone.data])
+            driver.current_address = form.address.data
             driver.date_of_birth = form.date_of_birth.data
             driver.aadhar_number = form.aadhar_number.data
             driver.license_number = form.license_number.data
@@ -1011,6 +1019,7 @@ def schedule_duty_assignments():
             return jsonify({'success': False, 'message': 'Missing required fields'})
         
         try:
+            # start_date is already checked for non-None in all() above
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
             
@@ -1319,7 +1328,7 @@ def add_assignment():
             assignment.assigned_by = current_user.id
             
             # Set status based on start date
-            if form.start_date.data <= datetime.now().date():
+            if form.start_date.data and form.start_date.data <= datetime.now().date():
                 assignment.status = AssignmentStatus.ACTIVE
                 # Update driver's current vehicle
                 driver = Driver.query.get(form.driver_id.data)
@@ -1346,7 +1355,7 @@ def handle_bulk_assignment():
     """Handle bulk assignment form submission"""
     try:
         data = request.json if request.is_json else request.form
-        assignments_data = json.loads(data.get('assignments_data', '[]'))
+        assignments_data = json.loads((data or {}).get('assignments_data', '[]'))
         result = create_bulk_assignments(assignments_data, current_user.id)
         
         if result['success']:
@@ -1528,10 +1537,13 @@ def should_apply_on_date(template, date):
 @admin_required  
 def check_conflicts():
     """API endpoint to check for assignment conflicts"""
-    data = request.json
+    data = request.json or {}
     driver_id = data.get('driver_id')
     vehicle_id = data.get('vehicle_id')
-    start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date()
+    start_date_str = data.get('start_date')
+    if not start_date_str:
+        return jsonify({'error': 'start_date is required'}), 400
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
     end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d').date() if data.get('end_date') else None
     shift_type = data.get('shift_type', 'full_day')
     
