@@ -58,10 +58,6 @@
                     <strong>Start Odometer:</strong><br>
                     <span class="badge bg-secondary fs-6">{{ "{:,.0f}".format(active_duty.start_odometer) if active_duty.start_odometer else 'N/A' }} km</span>
                 </div>
-                <div class="col-6">
-                    <strong>CNG Points:</strong><br>
-                    <span class="text-info">{{ active_duty.cng_point or 'Not specified' }}</span>
-                </div>
             </div>
 
             
@@ -462,10 +458,6 @@
                                     <small class="text-muted d-block">Last CNG Level:</small>
                                     <span id="last-cng-level" class="fw-bold">-</span>
                                 </div>
-                                <div class="col-6">
-                                    <small class="text-muted d-block">Common CNG Point:</small>
-                                    <span id="common-cng-point" class="fw-bold">-</span>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -582,7 +574,6 @@ function setupVehicleAutoFetch() {
     const autoFetchMessage = document.getElementById('auto-fetch-message');
     const cngInfoSection = document.getElementById('cng-info-section');
     const lastCngLevel = document.getElementById('last-cng-level');
-    const commonCngPoint = document.getElementById('common-cng-point');
     
     if (vehicleSelect && startOdometerInput) {
         vehicleSelect.addEventListener('change', function() {
@@ -625,13 +616,6 @@ function setupVehicleAutoFetch() {
                                 autoFetchMessage.innerHTML = 'No previous duty found for this vehicle';
                             }
                             
-                            // Show CNG information if available
-                            if (data.last_end_cng || data.most_common_cng_point) {
-                                lastCngLevel.textContent = data.last_end_cng ? `${data.last_end_cng} bars` : 'N/A';
-                                commonCngPoint.textContent = data.most_common_cng_point || 'N/A';
-                                cngInfoSection.style.display = 'block';
-                            } else {
-                                cngInfoSection.style.display = 'none';
                             }
                             
                             // Show continuity status
