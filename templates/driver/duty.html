@@ -204,10 +204,6 @@
                         <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
                                min="{{ active_duty.start_odometer if active_duty.start_odometer else 0 }}" 
                                step="0.1" required placeholder="Enter final reading">
-                        <button class="btn btn-outline-info" type="button" id="validate_odometer" 
-                                onclick="validateOdometerReading()" title="Smart validation">
-                            <i class="fas fa-check-circle me-1"></i>Validate
-                        </button>
                         <span class="input-group-text bg-danger text-white fw-bold">km</span>
                     </div>
                     <div class="form-text" id="odometer_validation_hint">
@@ -241,10 +237,6 @@
                             <option value="9">9 bars</option>
                             <option value="10">10 bars (Full)</option>
                         </select>
-                        <button class="btn btn-outline-success" type="button" id="estimate_cng" 
-                                onclick="estimateEndCNG()" title="Smart estimate based on usage">
-                            <i class="fas fa-calculator me-1"></i>Estimate
-                        </button>
                     </div>
                     <div class="form-text" id="cng_estimate_hint">
                         <i class="fas fa-info-circle me-1"></i>Started with: {{ active_duty.start_cng or 'Not recorded' }} bars
