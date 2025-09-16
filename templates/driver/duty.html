@@ -287,7 +287,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('driver.start_duty') }}" method="POST">
-                {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
                 <!-- Vehicle Selection -->
                 <div class="mb-3">
