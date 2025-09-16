@@ -111,7 +111,7 @@
         </div>
         <div class="card-body">
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
-                {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
                 <!-- Step 1: Basic Duty Information -->
                 <div class="card bg-primary bg-opacity-10 border-primary mb-3">
@@ -487,7 +487,7 @@
             {% else %}
             
             <form method="POST" action="{{ url_for('driver.start_duty') }}" enctype="multipart/form-data">
-                {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="vehicle_id" class="form-label">Select Vehicle *</label>
                     <select class="form-select" name="vehicle_id" id="vehicle_id" required>
