@@ -484,16 +484,32 @@ def start_duty():
         return redirect(url_for('driver.duty'))
 
     # Automatically select the default duty scheme for the driver's branch
+    # Priority 1: Branch-specific default scheme
     duty_scheme = DutyScheme.query.filter_by(
         branch_id=driver.branch_id, 
         is_active=True, 
         is_default=True
     ).first()
     
-    # If no default scheme found, use the first available active scheme
+    # Priority 2: Global default scheme
+    if not duty_scheme:
+        duty_scheme = DutyScheme.query.filter_by(
+            branch_id=None,  # Global schemes
+            is_active=True, 
+            is_default=True
+        ).first()
+    
+    # Priority 3: Any branch-specific active scheme
     if not duty_scheme:
         duty_scheme = DutyScheme.query.filter_by(
             branch_id=driver.branch_id, 
+            is_active=True
+        ).first()
+    
+    # Priority 4: Any global active scheme
+    if not duty_scheme:
+        duty_scheme = DutyScheme.query.filter_by(
+            branch_id=None,  # Global schemes
             is_active=True
         ).first()
     
