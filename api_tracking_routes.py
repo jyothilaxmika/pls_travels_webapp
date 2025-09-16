@@ -3,12 +3,16 @@ Mobile API routes for driver location tracking
 JWT-protected endpoints for batch GPS data ingestion and tracking configuration
 """
 
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, session
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from datetime import datetime, timedelta
 import json
 import logging
+import time
+import hashlib
 from functools import wraps
+from collections import defaultdict
+from threading import Lock
 
 from app import db
 from models import Driver, Duty, TrackingSession, DriverLocation, DutyStatus
@@ -17,6 +21,118 @@ from timezone_utils import get_ist_time_naive
 api_tracking_bp = Blueprint('api_tracking', __name__, url_prefix='/api/v1/tracking')
 
 logger = logging.getLogger(__name__)
+
+# Rate limiting and deduplication system
+class TrackingRateLimiter:
+    """Production-grade rate limiter for location tracking API"""
+    
+    def __init__(self):
+        self._lock = Lock()
+        
+        # Rate limiting per driver (driver_id -> {last_request: timestamp, request_count: int})
+        self._driver_requests = defaultdict(dict)
+        self._max_requests_per_minute = 10  # Max 10 batch requests per minute per driver
+        self._max_locations_per_hour = 3600  # Max 3600 locations per hour per driver (1 per second)
+        
+        # Deduplication cache (scoped key -> timestamp) with size limits
+        self._processed_events = {}
+        self._dedup_cache_duration = 86400  # Keep cache for 24 hours
+        self._max_dedup_cache_size = 100000  # Prevent memory DoS
+        
+        # IP-based rate limiting for additional security
+        self._ip_requests = defaultdict(dict)
+        self._max_ip_requests_per_minute = 50  # Max requests per IP per minute
+        
+        # Last cleanup time
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 300  # Cleanup every 5 minutes
+        
+    def can_submit_batch(self, driver_id, client_ip, batch_size):
+        """Check if driver can submit a location batch"""
+        with self._lock:
+            self._cleanup_expired_entries()
+            
+            current_time = time.time()
+            
+            # Check driver rate limits
+            driver_data = self._driver_requests[driver_id]
+            
+            # Reset counters if it's a new minute
+            if 'last_minute' not in driver_data or current_time - driver_data['last_minute'] >= 60:
+                driver_data['requests_this_minute'] = 0
+                driver_data['last_minute'] = current_time
+            
+            # Reset hourly counters if it's a new hour (separate from minute reset)
+            if 'last_hour' not in driver_data or current_time - driver_data['last_hour'] >= 3600:
+                driver_data['locations_this_hour'] = 0
+                driver_data['last_hour'] = current_time
+            
+            # Check per-minute request limit
+            if driver_data.get('requests_this_minute', 0) >= self._max_requests_per_minute:
+                return False, "Too many requests per minute", 60
+                
+            # Check hourly location limit
+            if driver_data.get('locations_this_hour', 0) + batch_size > self._max_locations_per_hour:
+                return False, "Location submission rate exceeded", 3600
+            
+            # Check IP rate limits
+            ip_data = self._ip_requests[client_ip]
+            if 'last_minute' not in ip_data or current_time - ip_data['last_minute'] >= 60:
+                ip_data['requests_this_minute'] = 0
+                ip_data['last_minute'] = current_time
+                
+            if ip_data.get('requests_this_minute', 0) >= self._max_ip_requests_per_minute:
+                return False, "IP rate limit exceeded", 60
+            
+            # Update counters
+            driver_data['requests_this_minute'] = driver_data.get('requests_this_minute', 0) + 1
+            driver_data['locations_this_hour'] = driver_data.get('locations_this_hour', 0) + batch_size
+            ip_data['requests_this_minute'] = ip_data.get('requests_this_minute', 0) + 1
+            
+            return True, "OK", 0
+    
+    def is_duplicate_event(self, driver_id, client_event_id):
+        """Check if event ID has already been processed (scoped by driver)"""
+        with self._lock:
+            self._cleanup_expired_entries()
+            
+            # Scope dedup key by driver to prevent cross-driver collisions
+            scoped_key = f"{driver_id}:{client_event_id}"
+            
+            if scoped_key in self._processed_events:
+                return True
+                
+            # Check cache size limit to prevent memory DoS
+            if len(self._processed_events) >= self._max_dedup_cache_size:
+                # Emergency cleanup - remove oldest 10%
+                sorted_items = sorted(self._processed_events.items(), key=lambda x: x[1])
+                for key, _ in sorted_items[:len(sorted_items) // 10]:
+                    del self._processed_events[key]
+                
+            # Mark as processed
+            self._processed_events[scoped_key] = time.time()
+            return False
+    
+    def _cleanup_expired_entries(self):
+        """Clean up expired cache entries"""
+        current_time = time.time()
+        
+        if current_time - self._last_cleanup < self._cleanup_interval:
+            return
+            
+        # Clean deduplication cache
+        expired_events = []
+        for event_id, timestamp in self._processed_events.items():
+            if current_time - timestamp > self._dedup_cache_duration:
+                expired_events.append(event_id)
+                
+        for event_id in expired_events:
+            del self._processed_events[event_id]
+        
+        self._last_cleanup = current_time
+
+# Global rate limiter instance
+tracking_rate_limiter = TrackingRateLimiter()
 
 def mobile_auth_required(f):
     """Custom authentication decorator for mobile API endpoints"""
@@ -70,13 +186,60 @@ def driver_mobile_login():
                 'code': 'MISSING_CREDENTIALS'
             }), 400
         
-        # TODO: Implement OTP verification logic here
-        # For now, create a basic JWT token for development
+        # Implement OTP verification using existing system
+        from utils.twilio_otp import OTPSession, format_phone_number
+        from utils.rate_limiter import otp_rate_limiter
+        from models import DriverStatus, User, UserStatus
+        
+        # Format phone number
+        formatted_phone = format_phone_number(phone)
+        
+        # Get client IP for OTP rate limiting  
+        client_ip = request.remote_addr or '127.0.0.1'
+        
+        # Apply OTP verification rate limiting
+        can_verify, reason, retry_after = otp_rate_limiter.can_verify_otp(
+            formatted_phone, client_ip, session.get('temp_session_id', 'unknown')
+        )
+        
+        if not can_verify:
+            logger.warning(f"OTP verification rate limited for {formatted_phone[-4:].rjust(4, '*')}: {reason}")
+            return jsonify({
+                'success': False,
+                'error': 'RATE_LIMITED',
+                'code': 'TOO_MANY_ATTEMPTS',
+                'message': reason,
+                'retry_after': retry_after
+            }), 429
+        
+        # Verify OTP using the existing session-based system
+        from flask import session
+        otp_result = OTPSession.verify_otp(session, otp)
+        
+        if not otp_result['success']:
+            return jsonify({
+                'success': False,
+                'error': 'OTP_VERIFICATION_FAILED',
+                'code': 'INVALID_OTP',
+                'message': otp_result['message']
+            }), 400
+        
+        # Ensure the phone from OTP matches the requested phone
+        if otp_result['phone'] != formatted_phone:
+            return jsonify({
+                'success': False,
+                'error': 'PHONE_MISMATCH',
+                'code': 'INVALID_REQUEST'
+            }), 400
         
         # Find driver by phone
-        from models import DriverStatus
-        driver = Driver.query.filter_by(phone=phone).first()
-        if not driver or driver.status not in [DriverStatus.ACTIVE, DriverStatus.PENDING]:
+        driver = Driver.query.join(User).filter(
+            User.phone == formatted_phone,
+            User.status == UserStatus.ACTIVE,
+            Driver.status.in_([DriverStatus.ACTIVE, DriverStatus.PENDING])
+        ).first()
+        
+        if not driver:
             return jsonify({
                 'success': False,
                 'error': 'Driver not found or inactive',
@@ -147,6 +310,25 @@ def submit_location_batch():
         duty_id = data.get('duty_id')
         locations = data.get('locations', [])
         
+        # Get client IP for rate limiting (secure with ProxyFix)
+        # ProxyFix ensures request.remote_addr is the real client IP
+        client_ip = request.remote_addr or '127.0.0.1'
+        
+        # Apply rate limiting
+        can_submit, reason, retry_after = tracking_rate_limiter.can_submit_batch(
+            driver.id, client_ip, len(locations)
+        )
+        
+        if not can_submit:
+            logger.warning(f"Rate limit exceeded for driver {driver.id}: {reason}")
+            return jsonify({
+                'success': False,
+                'error': 'RATE_LIMITED',
+                'code': 'RATE_LIMITED',
+                'message': reason,
+                'retry_after': retry_after
+            }), 429
+        
         if not duty_id or not locations:
             return jsonify({
                 'success': False,
@@ -207,9 +389,15 @@ def submit_location_batch():
                     errors.append(f"Missing required fields in location data")
                     continue
                 
-                # Check for duplicates using client_event_id
+                # Check for duplicates using client_event_id with fast cache lookup
                 client_event_id = location_data.get('client_event_id')
                 if client_event_id:
+                    # First check our fast in-memory cache (scoped by driver)
+                    if tracking_rate_limiter.is_duplicate_event(driver.id, client_event_id):
+                        duplicate_count += 1
+                        continue
+                    
+                    # Double-check database for safety (in case cache was cleared)
                     existing = DriverLocation.query.filter_by(
                         driver_id=driver.id,
                         client_event_id=client_event_id
