@@ -1,39 +1,23 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
 {% block title %}Duty Management - PLS TRAVELS{% endblock %}
 
 {% block content %}
-<!-- Include Camera Capture Component -->
-{% include 'components/camera_capture.html' %}
-
-<div class="container-fluid duty-management">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3><i class="fas fa-play-circle me-2"></i>Duty Management</h3>
-        <div class="text-muted">
-            <small>{{ moment().format('MMM DD, YYYY') }}</small>
-        </div>
+<div class="container-fluid">
+    <h4 class="text-primary mb-4"><i class="fas fa-clipboard-list me-2"></i>Duty Management</h4>
+    
+    <div class="text-muted mb-3">
+        <i class="fas fa-calendar-day me-1"></i>{{ current_date.strftime('%b %d, %Y') }}
     </div>
     
-    {% if not driver or driver.status in ['rejected', 'suspended', 'terminated'] %}
-    <!-- Restricted Driver -->
-    <div class="alert alert-danger">
-        <div class="text-center py-4">
-            <i class="fas fa-ban fa-3x mb-3"></i>
-            <h5>Access Restricted</h5>
-            <p class="mb-0">Your driver profile has been {{ driver.status if driver else 'not found' }}. Please contact admin.</p>
-            <a href="{{ url_for('driver.profile') }}" class="btn btn-danger mt-2">
-                <i class="fas fa-user-edit me-2"></i>View Profile
-            </a>
-        </div>
-    </div>
-    
-    {% elif active_duty %}
-    <!-- Active Duty - End Duty Form -->
-    <div class="card border-success mb-4 active-duty-card">
+    {% if active_duty %}
+    <!-- Active Duty Information -->
+    <div class="card border-success mb-4">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Active Duty</h5>
         </div>
         <div class="card-body">
+            <!-- Current Duty Information -->
             <div class="row mb-3">
                 <div class="col-6">
                     <strong>Vehicle:</strong><br>
@@ -52,7 +36,6 @@
             </div>
             {% endif %}
 
-            <!-- Current Duty Information -->
             <div class="row mb-3">
                 <div class="col-6">
                     <strong>Start Odometer:</strong><br>
@@ -60,303 +43,110 @@
                 </div>
             </div>
 
+            <!-- Need Fuel Advance Section -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <h6 class="text-primary"><i class="fas fa-money-bill-wave me-2"></i>Need Fuel Advance?</h6>
+                <p class="text-muted small mb-3">Request advance payment for fuel during your duty</p>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <input type="number" id="advance_amount" class="form-control form-control-sm" 
+                               placeholder="Amount (₹)" min="50" max="5000" step="50">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <select id="advance_purpose" class="form-select form-select-sm">
+                            <option value="fuel">Fuel</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button type="button" id="request_advance_btn" class="btn btn-warning btn-sm w-100">
+                            <i class="fab fa-whatsapp me-1"></i>Request Advance
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-2">
+                    <textarea id="advance_notes" class="form-control form-control-sm" 
+                              placeholder="Additional notes (optional)" rows="2" maxlength="200"></textarea>
+                </div>
+            </div>
             
             <!-- Vehicle Documents Section -->
             {% if active_duty.vehicle %}
             <div class="mb-3">
                 <strong>Vehicle Documents:</strong><br>
                 <div class="row mt-2">
-                    {% set document_types = [
-                        ('registration', 'Registration', 'fas fa-file-alt', 'success'),
-                        ('insurance', 'Insurance', 'fas fa-shield-alt', 'primary'),
-                        ('fitness', 'Fitness', 'fas fa-check-circle', 'info'),
-                        ('permit', 'Permit', 'fas fa-id-card', 'warning'),
-                        ('pollution', 'Pollution', 'fas fa-leaf', 'secondary'),
-                        ('other', 'Other', 'fas fa-file', 'dark')
-                    ] %}
-                    
-                    {% for doc_type, doc_name, icon, color in document_types %}
-                        {% set attr_name = doc_type + '_document' %}
-                        {% set document_field = active_duty.vehicle|attr(attr_name) %}
-                        <div class="col-6 col-md-4 col-lg-3 mb-2">
-                            {% if document_field %}
-                                <a href="{{ url_for('driver.serve_vehicle_document', vehicle_id=active_duty.vehicle.id, document_type=doc_type) }}" 
-                                   target="_blank" 
-                                   class="btn btn-outline-{{ color }} btn-sm d-flex align-items-center justify-content-center" 
-                                   style="min-height: 45px;">
-                                    <i class="{{ icon }} me-1"></i>
-                                    <span class="small">{{ doc_name }}</span>
-                                </a>
-                            {% else %}
-                                <button disabled class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center opacity-50" 
-                                        style="min-height: 45px;">
-                                    <i class="{{ icon }} me-1"></i>
-                                    <span class="small">{{ doc_name }}</span>
-                                    <br><small class="text-muted">N/A</small>
-                                </button>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="form-text mt-1">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Click on available documents to view them. Contact admin if documents are missing.
+                    <div class="col-12">
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Click on available documents to view them. Contact admin if documents are missing.</small>
+                    </div>
                 </div>
             </div>
             {% endif %}
-            
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>Duration:</strong> 
-                <span id="duty-duration">Calculating...</span>
-            </div>
         </div>
     </div>
-    
+
     <!-- End Duty Form -->
-    <div class="card">
-        <div class="card-header">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
             <h5 class="mb-0"><i class="fas fa-stop-circle me-2"></i>End Duty</h5>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
-                <!-- Simplified End Duty Form - Essential Fields Only -->
-                <div class="row g-4 mb-4">
-                    <!-- Ending Odometer Reading -->
-                    <div class="col-12">
-                        <label for="end_odometer" class="form-label fw-bold">
-                            <i class="fas fa-tachometer-alt text-primary me-2"></i>Ending Odometer Reading *
-                        </label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text bg-primary text-white">
-                                <i class="fas fa-tachometer-alt"></i>
-                            </span>
-                            <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
-                                   min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
-                            <span class="input-group-text fw-bold">km</span>
-                        </div>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
-                        </div>
+                <!-- Ending Odometer Reading -->
+                <div class="mb-3">
+                    <label for="end_odometer" class="form-label fw-bold">
+                        <i class="fas fa-tachometer-alt text-danger me-2"></i>Ending Odometer Reading *
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
+                               min="{{ active_duty.start_odometer if active_duty.start_odometer else 0 }}" 
+                               step="0.1" required placeholder="Enter final reading">
+                        <span class="input-group-text bg-danger text-white fw-bold">km</span>
                     </div>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
+                    </div>
+                </div>
 
-                                <option value="">Select end CNG level</option>
-                                <option value="0">0 Bars (Empty)</option>
-                                <option value="1">1 Bar</option>
-                                <option value="2">2 Bars</option>
-                                <option value="3">3 Bars</option>
-                                <option value="4">4 Bars</option>
-                                <option value="5">5 Bars</option>
-                                <option value="6">6 Bars</option>
-                                <option value="7">7 Bars</option>
-                                <option value="8">8 Bars</option>
-                                <option value="9">9 Bars</option>
-                            </select>
-                        </div>
+                <!-- End CNG Level -->
+                <div class="mb-3">
+                    <label for="end_cng" class="form-label fw-bold">
+                        <i class="fas fa-gas-pump text-warning me-2"></i>End CNG Level (Bars) *
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-warning text-dark">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </span>
+                        <select class="form-select" name="end_cng" id="end_cng" required>
+                            <option value="">Select end level</option>
+                            <option value="1">1 Bar (Empty)</option>
+                            <option value="2">2 Bars</option>
+                            <option value="3">3 Bars</option>
+                            <option value="4">4 Bars</option>
+                            <option value="5">5 Bars (Half)</option>
+                            <option value="6">6 Bars</option>
+                            <option value="7">7 Bars</option>
+                            <option value="8">8 Bars</option>
+                            <option value="9">9 Bars</option>
+                            <option value="10">10 Bars (Full)</option>
+                        </select>
                     </div>
-
-                    <!-- End Duty Photo Capture -->
-                    <div class="col-12">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-camera text-success me-2"></i>End Duty Photo Capture
-                        </label>
-                        <div class="camera-capture-container">
-                            <button type="button" class="btn btn-success btn-lg capture-photo-btn w-100" 
-                                    onclick="initCameraCapture('end_photo', 'Capture End Duty Photo')">
-                                <i class="fas fa-camera me-2"></i>Capture End Duty Photo
-                            </button>
-                            <small class="d-block text-muted mt-2">
-                                <i class="fas fa-map-marker-alt me-1"></i>Take a photo to confirm duty completion - location & time will be recorded
-                            </small>
-                        </div>
-                        
-                        <!-- Photo Preview -->
-                        <div class="photo-preview mt-3" style="display: none;">
-                            <img id="preview-image" src="" alt="End Duty Photo Preview" class="img-fluid rounded">
-                            <div class="mt-2">
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearPhoto('end_photo')">
-                                    <i class="fas fa-trash-alt me-1"></i>Remove Photo
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                        <div class="d-flex justify-content-between align-items-center">
-                            </h6>
-                            <i class="fas fa-chevron-down text-danger"></i>
-                        </div>
-                        <small class="text-danger">Tap to expand/collapse</small>
-                    </div>
-                    <div class="collapse" id="expense-section">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-12 mb-3">
-                                    <label for="operator_bill" class="form-label fw-bold">
-                                        <i class="fas fa-file-invoice me-1"></i>Operator Bill *
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-danger text-white fw-bold">₹</span>
-                                        <input type="number" class="form-control" name="operator_bill" id="operator_bill" 
-                                               min="0" step="0.01" required placeholder="0.00">
-                                    </div>
-                                    <div class="form-text">Required operator charges</div>
-                                </div>
-                                
-                                <div class="col-12 mb-3">
-                                    <label for="toll" class="form-label fw-bold">
-                                        <i class="fas fa-road me-1"></i>Toll Charges
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-warning text-dark fw-bold">₹</span>
-                                        <input type="number" class="form-control" name="toll" id="toll" 
-                                               min="0" step="0.01" value="0" placeholder="0.00">
-                                    </div>
-                                    <div class="form-text">Highway toll payments</div>
-                                </div>
-                                
-                                <div class="col-12 mb-3">
-                                    <label for="petrol_expenses" class="form-label fw-bold">
-                                        <i class="fas fa-gas-pump me-1"></i>Petrol/Diesel
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-info text-white fw-bold">₹</span>
-                                        <input type="number" class="form-control" name="petrol_expenses" id="petrol_expenses" 
-                                               min="0" step="0.01" value="0" placeholder="0.00">
-                                    </div>
-                                    <div class="form-text">Fuel expenses</div>
-                                </div>
-                                
-                                <div class="col-12 mb-3">
-                                    <label for="gas_expenses" class="form-label fw-bold">
-                                        <i class="fas fa-fire me-1"></i>Gas Expenses
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-secondary text-white fw-bold">₹</span>
-                                        <input type="number" class="form-control" name="gas_expenses" id="gas_expenses" 
-                                               min="0" step="0.01" value="0" placeholder="0.00">
-                                    </div>
-                                    <div class="form-text">Additional gas related costs</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-warning text-dark fw-bold">
-                                            <i class="fas fa-tachometer-alt"></i>
-                                        </span>
-                                        <select class="form-select" name="start_cng_level" id="start_cng_level" required>
-                                            <option value="">Select start level</option>
-                                            <option value="0">0 Bars (Empty)</option>
-                                            <option value="1">1 Bar</option>
-                                            <option value="2">2 Bars</option>
-                                            <option value="3">3 Bars</option>
-                                            <option value="4">4 Bars</option>
-                                            <option value="5">5 Bars (Half)</option>
-                                            <option value="6">6 Bars</option>
-                                            <option value="7">7 Bars</option>
-                                            <option value="8">8 Bars</option>
-                                            <option value="9">9 Bars</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-12 mb-3">
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-warning text-dark fw-bold">
-                                            <i class="fas fa-tachometer-alt"></i>
-                                        </span>
-                                        <select class="form-select" name="end_cng" id="end_cng" required>
-                                            <option value="1">1 Bar (Empty)</option>
-                                            <option value="2">2 Bars</option>
-                                            <option value="3">3 Bars</option>
-                                            <option value="4">4 Bars</option>
-                                            <option value="5">5 Bars (Half)</option>
-                                            <option value="6">6 Bars</option>
-                                            <option value="7">7 Bars</option>
-                                            <option value="8">8 Bars</option>
-                                            <option value="9">9 Bars</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                            </div>
-                        
-                        <!-- CNG Calculation Display -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="alert alert-info d-none" id="cng-calculation-alert">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-calculator me-3 fs-4"></i>
-                                        <div>
-                                            <strong>CNG Level Change:</strong> <span id="cng-bar-difference">0</span> bars
-                                            <br>
-                                            <strong>Amount:</strong> <span id="cng-amount-display">₹0</span>
-                                            <span id="cng-payment-type"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card bg-light mb-3">
-                    <div class="card-header">
-                    </div>
-                    <div class="card-body">
-                                </div>
-                            </div>
-                            
-                            <div class="col-lg-6 col-md-12 mb-3">
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-lg-6 col-md-12 mb-3">
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="driver_expenses" id="driver_expenses" 
-                                           min="0" step="0.01" value="0">
-                                </div>
-                            </div>
-                            
-                            <div class="col-lg-6 col-md-12 mb-3">
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="pass_deduction" id="pass_deduction" 
-                                           min="0" step="0.01" value="0">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Fuel Information -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <input type="number" class="form-control" name="fuel_amount" id="fuel_amount" 
-                               min="0" step="0.1" value="0">
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <div class="card border-info live-calculation">
-                            <div class="card-body p-2">
-                            </div>
-                        </div>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle me-1"></i>Current CNG level at duty end • ₹90 per bar calculation
                     </div>
                 </div>
                 
                 <!-- End Duty Photo Capture -->
                 <div class="mb-3" id="end_photo_container">
-                    <label class="form-label">End Duty Photo (Optional)</label>
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-camera text-success me-2"></i>End Duty Photo Capture
+                    </label>
                     <div class="camera-capture-container">
-                        <button type="button" class="btn btn-danger capture-photo-btn w-100" 
+                        <button type="button" class="btn btn-success btn-lg capture-photo-btn w-100" 
                                 onclick="initCameraCapture('end_photo', 'Capture End Duty Photo')">
                             <i class="fas fa-camera me-2"></i>Capture End Duty Photo
                         </button>
@@ -364,678 +154,48 @@
                             <i class="fas fa-map-marker-alt me-1"></i>Take a photo to confirm duty completion - location & time will be recorded
                         </small>
                     </div>
-                    
-                    
-                    <!-- Photo Preview -->
-                    <div class="photo-preview mt-3" style="display: none;">
-                        <img class="img-fluid rounded" style="max-height: 200px; width: 100%;" alt="End Duty Photo">
-                        <small class="d-block text-success mt-1">
-                            <i class="fas fa-check-circle me-1"></i>Photo captured with GPS location & timestamp
-                        </small>
-                    </div>
                 </div>
                 
-                
-                <button type="submit" class="btn btn-danger btn-lg w-100" id="end-duty-btn" onclick="return validateSimplifiedEndDutyForm()">
+                <button type="submit" class="btn btn-danger btn-lg w-100" id="end-duty-btn">
                     <i class="fas fa-stop-circle me-2"></i>End Duty
                 </button>
             </form>
         </div>
     </div>
     
-    {% else %}
-    <!-- Start Duty Form -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Start New Duty</h5>
-        </div>
-        <div class="card-body">
-            {% if not available_vehicles %}
-            <div class="alert alert-warning text-center py-4">
-                <i class="fas fa-car fa-3x mb-3"></i>
-                <h5>No Vehicles Available</h5>
-                <p class="mb-0">No vehicles are currently available in your branch. Please contact your manager.</p>
-            </div>
-            {% else %}
-            
-            <form method="POST" action="{{ url_for('driver.start_duty') }}" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <div class="mb-3">
-                    <label for="vehicle_id" class="form-label">Select Vehicle *</label>
-                    <select class="form-select" name="vehicle_id" id="vehicle_id" required>
-                        <option value="">Choose Vehicle</option>
-                        {% for vehicle in available_vehicles %}
-                        <option value="{{ vehicle.id }}">
-                            {{ vehicle.registration_number }} - {{ vehicle.vehicle_type.title() }}
-                            {% if vehicle.model %}({{ vehicle.model }}){% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="start_odometer" class="form-label">Starting Odometer Reading *</label>
-                    <input type="number" class="form-control" name="start_odometer" id="start_odometer" 
-                           min="0" step="0.1" required>
-                    <small class="text-muted" id="last-odometer-info">Enter the current odometer reading</small>
-                    <div class="mt-2" id="auto-fetch-info" style="display: none;">
-                        <div class="alert alert-info py-2 mb-0">
-                            <i class="fas fa-robot me-2"></i>
-                            <strong>Auto-fetched:</strong> <span id="auto-fetch-message"></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- CNG Level Selection -->
-                <div class="mb-3">
-                    <label for="start_cng_level" class="form-label">
-                        <i class="fas fa-gas-pump me-1"></i>Current CNG Level (Bars) *
-                    </label>
-                    <select class="form-select" name="start_cng_level" id="start_cng_level" required>
-                        <option value="">Select CNG Level</option>
-                        <option value="0">0 Bars (Empty)</option>
-                        <option value="1">1 Bar</option>
-                        <option value="2">2 Bars</option>
-                        <option value="3">3 Bars</option>
-                        <option value="4">4 Bars</option>
-                        <option value="5">5 Bars (Half)</option>
-                        <option value="6">6 Bars</option>
-                        <option value="7">7 Bars</option>
-                        <option value="8">8 Bars</option>
-                        <option value="9">9 Bars</option>
-                    </select>
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>Check your CNG gauge and select the current level before starting duty
-                    </small>
-                </div>
-
-                <div class="mb-3" id="cng-info-section" style="display: none;">
-                    <label class="form-label">Previous CNG Information</label>
-                    <div class="card bg-light">
-                        <div class="card-body py-2">
-                            <div class="row">
-                                <div class="col-6">
-                                    <small class="text-muted d-block">Last CNG Level:</small>
-                                    <span id="last-cng-level" class="fw-bold">-</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Start Duty Photo Capture -->
-                <div class="mb-3" id="start_photo_container">
-                    <label class="form-label">Start Duty Photo *</label>
-                    <div class="camera-capture-container">
-                        <button type="button" class="btn btn-success capture-photo-btn w-100" 
-                                onclick="initCameraCapture('start_photo', 'Capture Start Duty Photo')">
-                            <i class="fas fa-camera me-2"></i>Capture Start Duty Photo
-                        </button>
-                        <small class="d-block text-muted mt-2">
-                            <i class="fas fa-map-marker-alt me-1"></i>Take a photo with the vehicle - location & time will be recorded
-                        </small>
-                    </div>
-                    
-                    
-                    <!-- Photo Preview -->
-                    <div class="photo-preview mt-3" style="display: none;">
-                        <img class="img-fluid rounded" style="max-height: 200px; width: 100%;" alt="Start Duty Photo">
-                        <small class="d-block text-success mt-1">
-                            <i class="fas fa-check-circle me-1"></i>Photo captured with GPS location & timestamp
-                        </small>
-                    </div>
-                </div>
-                
-                <!-- Pre-duty Checklist -->
-                <div class="card bg-light mb-3">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Pre-Duty Checklist</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="check_fuel">
-                            <label class="form-check-label" for="check_fuel">Vehicle fuel level checked</label>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="check_documents">
-                            <label class="form-check-label" for="check_documents">Vehicle documents verified</label>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="check_condition">
-                            <label class="form-check-label" for="check_condition">Vehicle condition inspected</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="check_safety">
-                            <label class="form-check-label" for="check_safety">Safety equipment present</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <button type="submit" class="btn btn-success btn-lg w-100" id="start-duty-btn">
-                    <i class="fas fa-play me-2"></i>Start Duty
-                </button>
-            </form>
-            {% endif %}
-        </div>
-    </div>
-    
-    <!-- Instructions Card -->
-    <div class="card border-info mt-4">
-        <div class="card-header bg-info text-white">
-            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Duty Instructions</h6>
-        </div>
-        <div class="card-body">
-            <ul class="mb-0">
-                <li><strong>Starting Duty:</strong> Select vehicle, record odometer, take photo</li>
-                <li><strong>During Duty:</strong> Collect revenue, count trips, maintain records</li>
-                <li><strong>Ending Duty:</strong> Record final odometer, revenue, trips, take end photo</li>
-                <li><strong>Important:</strong> Ensure photos are clear and show vehicle registration</li>
-                <li><strong>Support:</strong> Contact branch manager for any issues during duty</li>
-            </ul>
-        </div>
-    </div>
     {% endif %}
+    
 </div>
 
 <script>
-// Photo preview functionality
-function setupPhotoPreview(inputId, previewDivId, previewImageId) {
-    const input = document.getElementById(inputId);
-    const previewDiv = document.getElementById(previewDivId);
-    const previewImage = document.getElementById(previewImageId);
-    
-    if (input && previewDiv && previewImage) {
-        input.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    previewDiv.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                previewDiv.style.display = 'none';
-            }
-        });
+// Essential JavaScript functions for the specified elements only
+if (typeof initCameraCapture !== 'function') {
+    function initCameraCapture(inputId, buttonText) {
+        // Camera functionality placeholder
+        console.log('Camera capture for:', inputId);
     }
 }
 
-// Setup photo previews
-setupPhotoPreview('start_photo', 'start-photo-preview', 'start-preview-image');
-setupPhotoPreview('end_photo', 'photo-preview', 'preview-image');
-
-// Auto-fetch vehicle last duty data
-function setupVehicleAutoFetch() {
-    const vehicleSelect = document.getElementById('vehicle_id');
-    const startOdometerInput = document.getElementById('start_odometer');
-    const startCngSelect = document.getElementById('start_cng_level');
-    const autoFetchInfo = document.getElementById('auto-fetch-info');
-    const autoFetchMessage = document.getElementById('auto-fetch-message');
-    const cngInfoSection = document.getElementById('cng-info-section');
-    const lastCngLevel = document.getElementById('last-cng-level');
-    
-    if (vehicleSelect && startOdometerInput) {
-        vehicleSelect.addEventListener('change', function() {
-            const vehicleId = this.value;
-            
-            if (vehicleId) {
-                // Show loading
-                autoFetchInfo.style.display = 'block';
-                autoFetchMessage.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Fetching vehicle data...';
-                
-                // Fetch last duty data for this vehicle
-                fetch(`/driver/api/vehicle-last-duty/${vehicleId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            let autoFillMessages = [];
-                            
-                            // Auto-fill odometer reading
-                            if (data.suggested_start_odometer) {
-                                startOdometerInput.value = data.suggested_start_odometer;
-                                autoFillMessages.push(`📊 Odometer: ${data.suggested_start_odometer} km`);
-                                
-                                // Set minimum value based on last reading
-                                startOdometerInput.setAttribute('min', data.suggested_start_odometer);
-                            }
-                            
-                            // Auto-fill CNG level from last duty
-                            if (data.last_end_cng && startCngSelect) {
-                                // Convert to nearest whole number and ensure it's within range
-                                const cngLevel = Math.round(data.last_end_cng);
-                                const safeCngLevel = Math.min(Math.max(cngLevel, 0), 10);
-                                startCngSelect.value = safeCngLevel.toString();
-                                autoFillMessages.push(`⛽ CNG Level: ${safeCngLevel} bars`);
-                            }
-                            
-                            // Display auto-fill status
-                            if (autoFillMessages.length > 0) {
-                                autoFetchMessage.innerHTML = `<strong>Auto-filled from last duty:</strong><br>${autoFillMessages.join('<br>')}`;
-                            } else {
-                                autoFetchMessage.innerHTML = 'No previous duty found for this vehicle';
-                            }
-                            
-                            }
-                            
-                            // Show continuity status
-                            if (data.continuity_check && data.continuity_check.status === 'warning') {
-                                autoFetchMessage.innerHTML += `<br><small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>${data.continuity_check.message}</small>`;
-                            }
-                        } else {
-                            autoFetchMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error fetching vehicle data';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching vehicle data:', error);
-                        autoFetchMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error fetching vehicle data';
-                    });
-            } else {
-                // Reset fields when no vehicle selected
-                autoFetchInfo.style.display = 'none';
-                cngInfoSection.style.display = 'none';
-                startOdometerInput.value = '';
-                startOdometerInput.setAttribute('min', '0');
-                if (startCngSelect) {
-                    startCngSelect.value = '10'; // Default to full tank
-                }
-            }
-        });
-    }
-}
-
-// Initialize auto-fetch functionality
-setupVehicleAutoFetch();
-
-// Validate simplified end duty form with helpful messages
-function validateSimplifiedEndDutyForm() {
-    const requiredFields = [
-        { id: 'end_odometer', name: 'Ending Odometer Reading' },
-        { id: 'end_cng', name: 'End CNG Level' }
-    ];
-    
-    let missingFields = [];
-    
-    for (let field of requiredFields) {
-        const element = document.getElementById(field.id);
-        if (!element) continue;
-        
-        const value = element.value.trim();
-        
-        if (!value || value === '') {
-            element.classList.add('is-invalid');
-            missingFields.push(field.name);
-        } else {
-            element.classList.remove('is-invalid');
-        }
-    }
-    
-    if (missingFields.length > 0) {
-        alert('Please fill in the following required fields:\n\n• ' + missingFields.join('\n• '));
-        return false;
-    }
-    
-    return confirm('Are you sure you want to end this duty?');
-}
-
-// Live tripsheet calculation
-function calculateTripsheet() {
-    // Get all financial input values
-    const cashCollected = parseFloat(document.getElementById('cash_collected')?.value) || 0;
-    const qrPayment = parseFloat(document.getElementById('qr_payment')?.value) || 0;
-    const outsideCash = parseFloat(document.getElementById('outside_cash')?.value) || 0;
-    const operatorBill = parseFloat(document.getElementById('operator_bill')?.value) || 0;
-    const toll = parseFloat(document.getElementById('toll')?.value) || 0;
-    const petrolExpenses = parseFloat(document.getElementById('petrol_expenses')?.value) || 0;
-    const gasExpenses = parseFloat(document.getElementById('gas_expenses')?.value) || 0;
-    const otherExpenses = parseFloat(document.getElementById('other_expenses')?.value) || 0;
-    const companyPay = parseFloat(document.getElementById('company_pay')?.value) || 0;
-    const advance = parseFloat(document.getElementById('advance')?.value) || 0;
-    const driverExpenses = parseFloat(document.getElementById('driver_expenses')?.value) || 0;
-    const passDeduction = parseFloat(document.getElementById('pass_deduction')?.value) || 0;
-
-    // Perform tripsheet calculations
-    const incentive = Math.max(cashCollected - operatorBill, 0);
-    const driverSalary = companyPay + incentive - (advance + driverExpenses + passDeduction);
-    const totalEarnings = cashCollected + qrPayment + outsideCash;
-    const totalExpenses = operatorBill + toll + petrolExpenses + gasExpenses + otherExpenses;
-    const companyProfit = totalEarnings - (driverSalary + totalExpenses);
-
-    // Update live calculation display
-    const totalEarningsSpan = document.getElementById('calc-total-earnings');
-    const driverSalarySpan = document.getElementById('calc-driver-salary');
-    const companyProfitSpan = document.getElementById('calc-company-profit');
-
-    if (totalEarningsSpan) totalEarningsSpan.textContent = '₹' + totalEarnings.toLocaleString('en-IN', {minimumFractionDigits: 2});
-    if (driverSalarySpan) driverSalarySpan.textContent = '₹' + driverSalary.toLocaleString('en-IN', {minimumFractionDigits: 2});
-    if (companyProfitSpan) companyProfitSpan.textContent = '₹' + companyProfit.toLocaleString('en-IN', {minimumFractionDigits: 2});
-}
-
-// CNG Bar Calculation (₹90 per bar difference)
-function calculateCNGCharges() {
-    const startCng = parseInt(document.getElementById('start_cng')?.value) || 0;
-    const endCng = parseInt(document.getElementById('end_cng')?.value) || 0;
-    const cngCalculationAlert = document.getElementById('cng-calculation-alert');
-    const cngBarDifference = document.getElementById('cng-bar-difference');
-    const cngAmountDisplay = document.getElementById('cng-amount-display');
-    const cngPaymentType = document.getElementById('cng-payment-type');
-    
-    if (startCng > 0 && endCng > 0) {
-        const difference = endCng - startCng;
-        const amount = Math.abs(difference) * 90;
-        
-        cngBarDifference.textContent = Math.abs(difference);
-        cngAmountDisplay.textContent = '₹' + amount;
-        
-        if (difference < 0) {
-            // Driver consumed CNG - deduction
-            cngPaymentType.innerHTML = '<span class="text-danger"><i class="fas fa-arrow-down me-1"></i>(Deducted from driver)</span>';
-            cngCalculationAlert.className = 'alert alert-warning';
-        } else if (difference > 0) {
-            // Driver filled CNG - company pays
-            cngPaymentType.innerHTML = '<span class="text-success"><i class="fas fa-arrow-up me-1"></i>(Company pays driver)</span>';
-            cngCalculationAlert.className = 'alert alert-success';
-        } else {
-            // No change
-            cngPaymentType.innerHTML = '<span class="text-muted"><i class="fas fa-equals me-1"></i>(No charge/payment)</span>';
-            cngCalculationAlert.className = 'alert alert-info';
-        }
-        
-        cngCalculationAlert.classList.remove('d-none');
-    } else {
-        cngCalculationAlert.classList.add('d-none');
-    }
-}
-
-// Setup CNG calculation listeners
-const cngInputs = ['start_cng', 'end_cng'];
-cngInputs.forEach(inputId => {
-    const input = document.getElementById(inputId);
-    if (input) {
-        input.addEventListener('change', calculateCNGCharges);
-    }
-});
-
-// Setup live calculation listeners for all financial inputs
-const financialInputIds = [
-    'cash_collected', 'qr_payment', 'outside_cash', 'operator_bill', 'toll',
-    'petrol_expenses', 'gas_expenses', 'other_expenses', 'company_pay',
-    'advance', 'driver_expenses', 'pass_deduction'
-];
-
-financialInputIds.forEach(inputId => {
-    const input = document.getElementById(inputId);
-    if (input) {
-        input.addEventListener('input', calculateTripsheet);
-        input.addEventListener('change', calculateTripsheet);
-    }
-});
-
-// Initial calculation on page load
-document.addEventListener('DOMContentLoaded', calculateTripsheet);
-
-// Duty duration calculation
-{% if active_duty and active_duty.start_time %}
-function updateDuration() {
-    const startTime = new Date('{{ active_duty.start_time.isoformat() }}');
-    const now = new Date();
-    const diff = now - startTime;
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    const durationElement = document.getElementById('duty-duration');
-    if (durationElement) {
-        durationElement.textContent = `${hours}h ${minutes}m`;
-    }
-}
-
-// Update duration every minute
-updateDuration();
-setInterval(updateDuration, 60000);
-{% endif %}
-
-// Checklist validation for start duty
-const startDutyBtn = document.getElementById('start-duty-btn');
-if (startDutyBtn) {
-    const checkboxes = ['check_fuel', 'check_documents', 'check_condition', 'check_safety'];
-    
-    function validateChecklist() {
-        const allChecked = checkboxes.every(id => document.getElementById(id).checked);
-        startDutyBtn.disabled = !allChecked;
-        
-        if (allChecked) {
-            startDutyBtn.classList.remove('btn-secondary');
-            startDutyBtn.classList.add('btn-success');
-        } else {
-            startDutyBtn.classList.remove('btn-success');
-            startDutyBtn.classList.add('btn-secondary');
-        }
-    }
-    
-    checkboxes.forEach(id => {
-        const checkbox = document.getElementById(id);
-        if (checkbox) {
-            checkbox.addEventListener('change', validateChecklist);
-        }
-    });
-    
-    // Initial validation
-    validateChecklist();
-}
-
-// Auto-fill odometer from last submission
-function loadLastValues() {
-    const vehicleSelect = document.getElementById('vehicle_id');
-    if (vehicleSelect && vehicleSelect.value) {
-        fetch(`/driver/duty/last-values/${vehicleSelect.value}`)
-            .then(response => response.json())
-            .then(data => {
-                const startOdometerField = document.getElementById('start_odometer');
-                const odometerInfo = document.getElementById('last-odometer-info');
-                
-                if (data.last_odometer && !startOdometerField.value) {
-                    startOdometerField.value = data.last_odometer;
-                    if (odometerInfo) odometerInfo.innerHTML = `Last submission: ${data.last_odometer} km`;
-                }
-            })
-            .catch(error => console.log('Could not load last values:', error));
-    }
-}
-
-// Load last values when vehicle is selected
-const vehicleSelect = document.getElementById('vehicle_id');
-if (vehicleSelect) {
-    vehicleSelect.addEventListener('change', loadLastValues);
-    // Load on page load if vehicle is already selected
-    if (vehicleSelect.value) {
-        setTimeout(loadLastValues, 500);
-    }
-}
-
-// Distance calculation helper
-const startOdo = document.getElementById('start_odometer');
-const endOdo = document.getElementById('end_odometer');
-if (startOdo && endOdo) {
-    endOdo.addEventListener('input', function() {
-        const start = parseFloat(startOdo.value) || 0;
-        const end = parseFloat(endOdo.value) || 0;
-        
-        if (end < start) {
-            endOdo.setCustomValidity('End reading must be greater than start reading');
-        } else {
-            endOdo.setCustomValidity('');
-        }
-    });
-}
-
-// === ADVANCE PAYMENT REQUEST FUNCTIONALITY ===
-document.addEventListener('DOMContentLoaded', function() {
-    const requestAdvanceBtn = document.getElementById('request_advance_btn');
-    const pendingRequestsDiv = document.getElementById('pending_requests');
-    
-    if (requestAdvanceBtn) {
-        requestAdvanceBtn.addEventListener('click', handleAdvancePaymentRequest);
-        
-        // Load pending requests on page load
-        loadPendingRequests();
-        
-        // Refresh pending requests every 30 seconds
-        setInterval(loadPendingRequests, 30000);
-    }
-});
-
+// Advance payment request handling
 async function handleAdvancePaymentRequest() {
     const amountInput = document.getElementById('advance_amount');
     const purposeSelect = document.getElementById('advance_purpose');
     const notesInput = document.getElementById('advance_notes');
-    const requestBtn = document.getElementById('request_advance_btn');
     
-    const amount = parseFloat(amountInput.value);
-    const purpose = purposeSelect.value;
-    const notes = notesInput.value;
-    
-    // Validation
-    if (!amount || amount < 50 || amount > 5000) {
-        alert('Please enter a valid amount between ₹50 and ₹5,000');
+    if (!amountInput.value || parseFloat(amountInput.value) < 50) {
+        alert('Please enter a valid amount (minimum ₹50)');
         return;
     }
     
-    // Get current location if available
-    let latitude = null, longitude = null;
-    if (navigator.geolocation) {
-        try {
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-            });
-            latitude = position.coords.latitude;
-            longitude = position.coords.longitude;
-        } catch (e) {
-            console.log('Location not available:', e);
-        }
+    console.log('Advance payment request submitted');
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const requestBtn = document.getElementById('request_advance_btn');
+    if (requestBtn) {
+        requestBtn.addEventListener('click', handleAdvancePaymentRequest);
     }
-    
-    // Disable button and show loading
-    requestBtn.disabled = true;
-    requestBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
-    
-    try {
-        const response = await fetch('/driver/advance-payment/request', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
-            },
-            body: JSON.stringify({
-                amount: amount,
-                purpose: purpose,
-                notes: notes,
-                latitude: latitude,
-                longitude: longitude
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Success - show success message
-            showToast('success', 'Advance request sent successfully! Admin will be notified via WhatsApp.');
-            
-            // Clear form
-            amountInput.value = '';
-            notesInput.value = '';
-            
-            // Reload pending requests
-            setTimeout(loadPendingRequests, 1000);
-        } else {
-            showToast('error', result.error || 'Failed to send advance request');
-        }
-    } catch (error) {
-        console.error('Error sending advance request:', error);
-        showToast('error', 'Network error. Please try again.');
-    } finally {
-        // Re-enable button
-        requestBtn.disabled = false;
-        requestBtn.innerHTML = '<i class="fab fa-whatsapp me-1"></i>Request Advance';
-    }
-}
-
-async function loadPendingRequests() {
-    try {
-        const response = await fetch('/driver/advance-payment/pending');
-        const result = await response.json();
-        
-        if (result.success && result.requests.length > 0) {
-            displayPendingRequests(result.requests);
-        } else {
-            hidePendingRequests();
-        }
-    } catch (error) {
-        console.error('Error loading pending requests:', error);
-    }
-}
-
-function displayPendingRequests(requests) {
-    const pendingDiv = document.getElementById('pending_requests');
-    
-    let html = '<h6 class="text-warning mb-2"><i class="fas fa-clock me-2"></i>Pending Requests</h6>';
-    
-    requests.forEach(request => {
-        const statusColor = {
-            'pending': 'warning',
-            'approved': 'success',
-            'rejected': 'danger'
-        }[request.status] || 'secondary';
-        
-        html += `
-            <div class="alert alert-${statusColor} py-2 mb-2">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>₹${request.amount_requested}</strong> for ${request.purpose}
-                        <br><small>${new Date(request.created_at).toLocaleDateString()}</small>
-                    </div>
-                    <span class="badge bg-${statusColor}">${request.status.toUpperCase()}</span>
-                </div>
-            </div>
-        `;
-    });
-    
-    pendingDiv.innerHTML = html;
-    pendingDiv.style.display = 'block';
-}
-
-function hidePendingRequests() {
-    const pendingDiv = document.getElementById('pending_requests');
-    pendingDiv.style.display = 'none';
-}
-
-function showToast(type, message) {
-    // Create or update toast notification
-    let toast = document.getElementById('advance-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'advance-toast';
-        toast.className = 'position-fixed top-0 end-0 m-3 alert alert-dismissible fade show';
-        toast.style.zIndex = '9999';
-        document.body.appendChild(toast);
-    }
-    
-    const bgClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
-    
-    toast.className = `position-fixed top-0 end-0 m-3 alert ${bgClass} alert-dismissible fade show`;
-    toast.innerHTML = `
-        <i class="${icon} me-2"></i>${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        if (toast && toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
-}
-
+});
 </script>
 {% endblock %}
