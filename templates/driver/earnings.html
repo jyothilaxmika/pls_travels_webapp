@@ -182,7 +182,7 @@
                                                 <span class="badge bg-info">{{ duty.vehicle.registration_number }}</span>
                                             </div>
                                             <div class="text-end">
-                                                <h5 class="text-success mb-0">₹{{ "{:,.0f}".format(duty.driver_earnings) }}</h5>
+                                                <h5 class="text-success mb-0">₹{{ "{:,.0f}".format(duty.driver_earnings or 0) }}</h5>
                                                 <small class="text-muted">Earnings</small>
                                             </div>
                                         </div>
@@ -201,7 +201,7 @@
                                             </div>
                                             <div class="col-3">
                                                 <small class="text-muted">Revenue</small><br>
-                                                <strong>₹{{ "{:,.0f}".format(duty.revenue) }}</strong>
+                                                <strong>₹{{ "{:,.0f}".format(duty.revenue or 0) }}</strong>
                                             </div>
                                             <div class="col-3">
                                                 <small class="text-muted">Trips</small><br>
@@ -209,11 +209,11 @@
                                             </div>
                                             <div class="col-3">
                                                 <small class="text-muted">BMG</small><br>
-                                                <strong>₹{{ "{:,.0f}".format(duty.bmg_applied) }}</strong>
+                                                <strong>₹{{ "{:,.0f}".format(duty.bmg_applied or 0) }}</strong>
                                             </div>
                                         </div>
                                         
-                                        {% if duty.bmg_applied > 0 %}
+                                        {% if duty.bmg_applied and duty.bmg_applied > 0 %}
                                         <div class="mt-2">
                                             <small class="badge bg-warning">BMG Applied</small>
                                         </div>
@@ -237,17 +237,17 @@
                                     N/A
                                 {% endif %}
                             </td>
-                            <td class="d-none d-md-table-cell">₹{{ "{:,.2f}".format(duty.revenue) }}</td>
+                            <td class="d-none d-md-table-cell">₹{{ "{:,.2f}".format(duty.revenue or 0) }}</td>
                             <td class="d-none d-md-table-cell">{{ duty.trip_count }}</td>
                             <td class="d-none d-md-table-cell">
-                                <strong class="text-success">₹{{ "{:,.2f}".format(duty.driver_earnings) }}</strong>
-                                {% if duty.incentive > 0 %}
-                                <br><small class="text-muted">+₹{{ "{:,.2f}".format(duty.incentive) }} incentive</small>
+                                <strong class="text-success">₹{{ "{:,.2f}".format(duty.driver_earnings or 0) }}</strong>
+                                {% if duty.incentive and duty.incentive > 0 %}
+                                <br><small class="text-muted">+₹{{ "{:,.2f}".format(duty.incentive or 0) }} incentive</small>
                                 {% endif %}
                             </td>
                             <td class="d-none d-md-table-cell">
-                                {% if duty.bmg_applied > 0 %}
-                                    <span class="badge bg-warning">₹{{ "{:,.2f}".format(duty.bmg_applied) }}</span>
+                                {% if duty.bmg_applied and duty.bmg_applied > 0 %}
+                                    <span class="badge bg-warning">₹{{ "{:,.2f}".format(duty.bmg_applied or 0) }}</span>
                                 {% else %}
                                     <span class="text-muted">-</span>
                                 {% endif %}
