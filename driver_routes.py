@@ -463,6 +463,12 @@ def start_duty():
     vehicle_id = request.form.get('vehicle_id')
     start_odometer = request.form.get('start_odometer', type=float)
     start_cng_level = request.form.get('start_cng_level', type=float)
+    
+    # Anomaly detection flags
+    odometer_anomaly_detected = request.form.get('odometer_anomaly_detected') == 'true'
+    odometer_original_value = request.form.get('odometer_original_value', type=float)
+    cng_anomaly_detected = request.form.get('cng_anomaly_detected') == 'true'
+    cng_original_value = request.form.get('cng_original_value', type=float)
 
     if not vehicle_id:
         flash('Please select a vehicle.', 'error')
@@ -591,6 +597,45 @@ def start_duty():
 
     db.session.add(duty)
     db.session.commit()
+    
+    # Log anomaly detection for admin review
+    from replit_auth import log_audit
+    
+    if odometer_anomaly_detected:
+        anomaly_details = {
+            'field': 'start_odometer',
+            'auto_filled_value': odometer_original_value,
+            'entered_value': start_odometer,
+            'difference': abs(start_odometer - odometer_original_value),
+            'vehicle_id': vehicle.id,
+            'vehicle_registration': vehicle.registration_number,
+            'duty_id': duty.id,
+            'flagged_for_review': True
+        }
+        log_audit(
+            action='ODOMETER_ANOMALY_DETECTED',
+            entity_type='duty',
+            entity_id=duty.id,
+            details=anomaly_details
+        )
+        
+    if cng_anomaly_detected:
+        anomaly_details = {
+            'field': 'start_cng_level',
+            'auto_filled_value': cng_original_value,
+            'entered_value': start_cng_level,
+            'difference': abs(start_cng_level - cng_original_value),
+            'vehicle_id': vehicle.id,
+            'vehicle_registration': vehicle.registration_number,
+            'duty_id': duty.id,
+            'flagged_for_review': True
+        }
+        log_audit(
+            action='CNG_ANOMALY_DETECTED',
+            entity_type='duty',
+            entity_id=duty.id,
+            details=anomaly_details
+        )
     
     # Create GPS tracking session for the duty
     tracking_session = TrackingSession(

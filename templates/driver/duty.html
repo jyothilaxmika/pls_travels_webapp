@@ -487,8 +487,14 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Duty form loaded');
 });
 
-// Global variables to store fetched duty data
+// Global variables to store fetched duty data and anomaly tracking
 let lastDutyData = null;
+let autoFilledValues = {
+    odometer: null,
+    cng: null,
+    odometerUsedAutoFill: false,
+    cngUsedAutoFill: false
+};
 
 // Load last duty values when vehicle is selected
 async function loadLastDutyValues(vehicleId) {
@@ -552,11 +558,18 @@ function autoFillPreviousOdometer() {
             odometerInput.value = lastDutyData.suggested_start_odometer;
             odometerInput.focus();
             
+            // Track auto-fill usage for anomaly detection
+            autoFilledValues.odometer = lastDutyData.suggested_start_odometer;
+            autoFilledValues.odometerUsedAutoFill = true;
+            
             // Show success feedback
             const hint = document.getElementById('odometer_hint');
             if (hint) {
                 hint.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Auto-filled with previous reading: ${lastDutyData.suggested_start_odometer} km`;
             }
+            
+            // Add anomaly detection listener
+            setupAnomalyDetection(odometerInput, 'odometer');
         }
     }
 }
@@ -569,12 +582,136 @@ function autoFillPreviousCNG() {
             cngSelect.value = lastDutyData.last_end_cng;
             cngSelect.focus();
             
+            // Track auto-fill usage for anomaly detection
+            autoFilledValues.cng = lastDutyData.last_end_cng;
+            autoFilledValues.cngUsedAutoFill = true;
+            
             // Show success feedback
             const hint = document.getElementById('cng_hint');
             if (hint) {
                 hint.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Auto-filled with previous end level: ${lastDutyData.last_end_cng} bars`;
             }
+            
+            // Add anomaly detection listener
+            setupAnomalyDetection(cngSelect, 'cng');
         }
+    }
+}
+
+// Anomaly Detection System
+function setupAnomalyDetection(input, type) {
+    let changeTimeout;
+    
+    input.addEventListener('input', function() {
+        // Clear previous timeout
+        clearTimeout(changeTimeout);
+        
+        // Set timeout to detect final value after user stops typing
+        changeTimeout = setTimeout(function() {
+            detectAnomaly(input, type);
+        }, 1000); // 1 second delay after user stops typing
+    });
+    
+    input.addEventListener('blur', function() {
+        // Also check when field loses focus
+        clearTimeout(changeTimeout);
+        detectAnomaly(input, type);
+    });
+}
+
+function detectAnomaly(input, type) {
+    const currentValue = parseFloat(input.value) || 0;
+    let originalValue, usedAutoFill, fieldName, unit;
+    
+    if (type === 'odometer') {
+        originalValue = autoFilledValues.odometer;
+        usedAutoFill = autoFilledValues.odometerUsedAutoFill;
+        fieldName = 'Odometer Reading';
+        unit = 'km';
+    } else if (type === 'cng') {
+        originalValue = autoFilledValues.cng;
+        usedAutoFill = autoFilledValues.cngUsedAutoFill;
+        fieldName = 'CNG Level';
+        unit = 'bars';
+    }
+    
+    // Only check for anomaly if auto-fill was used
+    if (usedAutoFill && originalValue !== null) {
+        const isAnomalous = Math.abs(currentValue - originalValue) > 0.01; // Allow for minor rounding
+        
+        if (isAnomalous) {
+            showAnomalyWarning(input, type, fieldName, originalValue, currentValue, unit);
+            console.warn(`ANOMALY DETECTED: ${fieldName} changed from auto-filled ${originalValue}${unit} to ${currentValue}${unit}`);
+            
+            // Mark field with anomaly flag for backend
+            if (!input.parentElement.querySelector('.anomaly-flag')) {
+                const anomalyFlag = document.createElement('input');
+                anomalyFlag.type = 'hidden';
+                anomalyFlag.name = `${type}_anomaly_detected`;
+                anomalyFlag.value = 'true';
+                anomalyFlag.className = 'anomaly-flag';
+                input.parentElement.appendChild(anomalyFlag);
+                
+                const originalValueFlag = document.createElement('input');
+                originalValueFlag.type = 'hidden';
+                originalValueFlag.name = `${type}_original_value`;
+                originalValueFlag.value = originalValue;
+                originalValueFlag.className = 'anomaly-flag';
+                input.parentElement.appendChild(originalValueFlag);
+            }
+        } else {
+            // Remove anomaly warning if values match again
+            removeAnomalyWarning(input);
+            // Remove anomaly flags
+            const anomalyFlags = input.parentElement.querySelectorAll('.anomaly-flag');
+            anomalyFlags.forEach(flag => flag.remove());
+        }
+    }
+}
+
+function showAnomalyWarning(input, type, fieldName, originalValue, currentValue, unit) {
+    // Remove existing warning
+    removeAnomalyWarning(input);
+    
+    // Create anomaly warning
+    const warningDiv = document.createElement('div');
+    warningDiv.className = 'alert alert-warning anomaly-warning mt-2 py-2 px-3';
+    warningDiv.style.fontSize = '0.85rem';
+    
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-exclamation-triangle me-2';
+    
+    const message = document.createTextNode(`Anomaly Detected: ${fieldName} adjusted from auto-filled ${originalValue}${unit} to ${currentValue}${unit}. This will be flagged for admin review.`);
+    
+    warningDiv.appendChild(icon);
+    warningDiv.appendChild(message);
+    
+    // Add visual indicator to input field
+    input.classList.add('border-warning', 'anomaly-detected');
+    input.parentElement.appendChild(warningDiv);
+    
+    // Update hint text
+    const hint = input.parentElement.querySelector('.text-muted');
+    if (hint) {
+        hint.innerHTML = `<i class="fas fa-flag text-warning me-1"></i><strong>ANOMALY:</strong> Value manually adjusted - will require admin verification`;
+        hint.classList.add('text-warning');
+    }
+}
+
+function removeAnomalyWarning(input) {
+    // Remove warning message
+    const warning = input.parentElement.querySelector('.anomaly-warning');
+    if (warning) {
+        warning.remove();
+    }
+    
+    // Remove visual indicators
+    input.classList.remove('border-warning', 'anomaly-detected');
+    
+    // Reset hint text
+    const hint = input.parentElement.querySelector('.text-muted');
+    if (hint) {
+        hint.classList.remove('text-warning');
     }
 }
 
