@@ -856,14 +856,17 @@ City: ${city}`;
             window.open(whatsappURL, '_blank');
         });
         
-        // Smooth scrolling for navigation links
+        // Smooth scrolling for navigation links (only internal anchor links)
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 const href = this.getAttribute('href');
-                if (href === '#' || href === '#!') {
-                    e.preventDefault();
-                    return;
+                
+                // Skip empty or invalid anchors
+                if (href === '#' || href === '#!' || !href.startsWith('#')) {
+                    return; // Don't prevent default, let the browser handle it
                 }
+                
+                // Only handle internal anchor links
                 e.preventDefault();
                 const target = document.querySelector(href);
                 if (target) {
