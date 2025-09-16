@@ -11,8 +11,9 @@ import uuid
 import os
 from werkzeug.utils import secure_filename
 
-from models import User, Duty, Vehicle, DutyStatus, db
+from models import User, Duty, Vehicle, DutyStatus, db, AdvancePaymentRequest
 from app import csrf
+from whatsapp_utils import send_advance_payment_request
 
 logger = logging.getLogger(__name__)
 
