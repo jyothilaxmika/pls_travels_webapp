@@ -8,7 +8,8 @@ from timezone_utils import get_ist_time_naive
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleTracking, VehicleAssignment, db,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus)
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus,
+                   TrackingSession)
 from forms import DriverProfileForm, DutyForm
 from utils import (allowed_file, calculate_earnings, calculate_advanced_salary, 
                    process_file_upload, process_camera_capture, calculate_tripsheet)
@@ -521,6 +522,16 @@ def start_duty():
     db.session.add(duty)
     db.session.commit()
     
+    # Create GPS tracking session for the duty
+    tracking_session = TrackingSession(
+        duty_id=duty.id,
+        driver_id=driver.id,
+        device_info='{"source": "web", "platform": "desktop"}',
+        app_version='web-1.0'
+    )
+    db.session.add(tracking_session)
+    db.session.commit()
+    
     # Create vehicle tracking record for duty start
     tracking_record = VehicleTracking()
     tracking_record.vehicle_id = vehicle.id
@@ -685,6 +696,19 @@ def end_duty():
             end_tracking_record.distance_traveled = max(0, end_odometer - active_duty.start_odometer)
         
         db.session.add(end_tracking_record)
+        
+        # End GPS tracking session when duty ends
+        active_tracking_session = TrackingSession.query.filter_by(
+            duty_id=active_duty.id,
+            driver_id=driver.id,
+            is_active=True
+        ).first()
+        
+        if active_tracking_session:
+            active_tracking_session.is_active = False
+            active_tracking_session.session_end = get_ist_time_naive()
+            active_tracking_session.duration = int((active_tracking_session.session_end - active_tracking_session.session_start).total_seconds())
+        
         db.session.commit()
 
         log_audit('end_duty', 'duty', active_duty.id,
