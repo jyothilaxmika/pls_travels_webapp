@@ -771,6 +771,38 @@ def get_whatsapp_contact():
             'fallback_message': True
         })
 
+@admin_bp.route('/api/public/whatsapp-contact', methods=['GET'])
+def get_public_whatsapp_contact():
+    """Public API endpoint to get WhatsApp contact number for landing page"""
+    from models import WhatsAppSettings
+    
+    try:
+        settings = WhatsAppSettings.get_settings()
+        contact_numbers = settings.get_contact_numbers()
+        
+        if not contact_numbers:
+            return jsonify({
+                'success': False,
+                'error': 'No WhatsApp contact numbers configured.',
+                'fallback_message': True
+            })
+        
+        # Return the primary contact number
+        primary_contact = contact_numbers[0]
+        
+        return jsonify({
+            'success': True,
+            'contact_number': primary_contact,
+            'has_whatsapp': True
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': 'Error getting WhatsApp contact',
+            'fallback_message': True
+        })
+
 # === TRIP APPROVAL MANAGEMENT ROUTES ===
 
 @admin_bp.route('/approval-settings')

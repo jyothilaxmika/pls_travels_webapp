@@ -591,7 +591,7 @@
                 <a href="#apply" class="btn btn-primary btn-lg px-5 py-3 me-3">
                     <i class="fas fa-car me-2"></i>Apply Now | விண்ணப்பிக்கவும்
                 </a>
-                <a href="https://wa.me/919787247132" class="btn btn-whatsapp btn-lg px-5 py-3" target="_blank">
+                <a href="#" id="whatsappBtn" class="btn btn-whatsapp btn-lg px-5 py-3" target="_blank">
                     <i class="fab fa-whatsapp me-2"></i>WhatsApp Us
                 </a>
             </div>
@@ -798,6 +798,38 @@
     
     <!-- Application Form Script -->
     <script>
+        // Global variable to store admin WhatsApp number
+        let adminWhatsAppNumber = '919787247132'; // fallback number
+        
+        // Function to load admin-configured WhatsApp number
+        async function loadWhatsAppNumber() {
+            try {
+                const response = await fetch('/admin/api/public/whatsapp-contact');
+                const data = await response.json();
+                
+                if (data.success && data.contact_number) {
+                    // Use admin-configured number
+                    adminWhatsAppNumber = data.contact_number;
+                    console.log('WhatsApp number loaded from admin settings:', data.contact_number);
+                } else {
+                    console.log('Using fallback WhatsApp number');
+                }
+                
+                // Update the main WhatsApp button
+                const whatsappBtn = document.getElementById('whatsappBtn');
+                if (whatsappBtn) {
+                    whatsappBtn.href = `https://wa.me/${adminWhatsAppNumber}`;
+                }
+                
+            } catch (error) {
+                console.error('Error loading WhatsApp number:', error);
+                console.log('Using fallback WhatsApp number');
+            }
+        }
+        
+        // Load WhatsApp number when page loads
+        document.addEventListener('DOMContentLoaded', loadWhatsAppNumber);
+        
         document.getElementById('applicationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -815,7 +847,7 @@ Name: ${name}
 Phone: ${phone}
 City: ${city}`;
             
-            const whatsappURL = `https://wa.me/919787247132?text=${encodeURIComponent(message)}`;
+            const whatsappURL = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappURL, '_blank');
         });
         
