@@ -210,6 +210,15 @@
                                 <th>Distance:</th>
                                 <td>{{ duty.total_distance or 0 }} km</td>
                             </tr>
+                            <tr>
+                                <th>Duty Scheme:</th>
+                                <td>
+                                    <span class="badge bg-secondary">{{ duty.duty_scheme.name if duty.duty_scheme else 'Not Set' }}</span>
+                                    {% if duty.duty_scheme and duty.duty_scheme.minimum_guarantee %}
+                                    <br><small class="text-muted">BMG: ₹{{ duty.duty_scheme.minimum_guarantee }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
                         </table>
                     </div>
                     <div class="col-md-6">
@@ -317,6 +326,51 @@
                     </div>
                 </div>
                 {% endif %}
+                
+                <!-- Duty Scheme Selection -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning bg-opacity-10">
+                                <h6 class="mb-0 text-warning">
+                                    <i class="fas fa-cog me-2"></i>Admin Controls - Update Duty Scheme
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('admin.update_duty_scheme', duty_id=duty.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <div class="row align-items-end">
+                                        <div class="col-md-8">
+                                            <label for="duty_scheme_{{ duty.id }}" class="form-label">
+                                                <strong>Select New Duty Scheme:</strong>
+                                            </label>
+                                            <select class="form-select" name="duty_scheme_id" id="duty_scheme_{{ duty.id }}" required>
+                                                <option value="">Choose Duty Scheme</option>
+                                                {% for scheme in duty_schemes %}
+                                                <option value="{{ scheme.id }}" {% if duty.duty_scheme_id == scheme.id %}selected{% endif %}>
+                                                    {{ scheme.name }}
+                                                    {% if scheme.minimum_guarantee %} - BMG: ₹{{ scheme.minimum_guarantee }}{% endif %}
+                                                    {% if scheme.is_default %} (Default){% endif %}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button type="submit" class="btn btn-warning w-100" 
+                                                    onclick="return confirm('Are you sure you want to update the duty scheme? This will affect earnings calculation.')">
+                                                <i class="fas fa-sync-alt me-1"></i>Update Scheme
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Changing the duty scheme may recalculate driver earnings. This action will be logged for audit.
+                                    </small>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

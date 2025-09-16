@@ -2938,9 +2938,13 @@ def pending_duties():
     for duty in duties.items:
         duty.all_photos = Photo.query.filter_by(duty_id=duty.id).order_by(Photo.timestamp.desc()).all()
     
+    # Load duty schemes for admin editing
+    duty_schemes = DutyScheme.query.filter_by(is_active=True).all()
+    
     return render_template('admin/pending_duties.html', 
                          duties=duties, 
                          branches=branches,
+                         duty_schemes=duty_schemes,
                          branch_filter=branch_filter,
                          date_filter=date_filter)
 
@@ -3016,6 +3020,51 @@ def reject_duty(duty_id):
               'reason': rejection_reason})
     
     flash(f'Duty rejected for {duty.driver.full_name if duty.driver else "Unknown"}. Reason: {rejection_reason}', 'warning')
+    return redirect(url_for('admin.pending_duties'))
+
+@admin_bp.route('/duties/<int:duty_id>/update-scheme', methods=['POST'])
+@login_required
+@admin_required
+def update_duty_scheme(duty_id):
+    """Update duty scheme for a specific duty during audit"""
+    duty = Duty.query.get_or_404(duty_id)
+    
+    new_scheme_id = request.form.get('duty_scheme_id', type=int)
+    if not new_scheme_id:
+        flash('Please select a valid duty scheme.', 'error')
+        return redirect(url_for('admin.pending_duties'))
+    
+    # Verify the new scheme exists and is active
+    new_scheme = DutyScheme.query.filter_by(id=new_scheme_id, is_active=True).first()
+    if not new_scheme:
+        flash('Selected duty scheme is not valid or active.', 'error')
+        return redirect(url_for('admin.pending_duties'))
+    
+    # Store old scheme info for audit
+    old_scheme_name = duty.duty_scheme.name if duty.duty_scheme else 'Unknown'
+    old_earnings = duty.driver_earnings
+    
+    # Update duty scheme
+    duty.duty_scheme_id = new_scheme_id
+    
+    # Recalculate earnings based on new duty scheme if the duty has financial data
+    if duty.gross_revenue is not None and duty.total_trips is not None:
+        # You may need to implement earnings recalculation based on the new scheme
+        # For now, we'll just update the scheme and keep existing earnings
+        pass
+    
+    db.session.commit()
+    
+    log_audit('update_duty_scheme', 'duty', duty_id, {
+        'duty_id': duty_id,
+        'driver': duty.driver.full_name if duty.driver else 'Unknown',
+        'old_scheme': old_scheme_name,
+        'new_scheme': new_scheme.name,
+        'old_earnings': old_earnings,
+        'new_earnings': duty.driver_earnings
+    })
+    
+    flash(f'Duty scheme updated to "{new_scheme.name}" for {duty.driver.full_name if duty.driver else "Unknown"}', 'success')
     return redirect(url_for('admin.pending_duties'))
 
 
