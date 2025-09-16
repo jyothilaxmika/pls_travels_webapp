@@ -1441,6 +1441,7 @@ class DriverLocation(db.Model):
     # Processing status
     is_processed = db.Column(db.Boolean, default=False, index=True)
     processed_at = db.Column(db.DateTime, nullable=True)
+    is_anonymized = db.Column(db.Boolean, default=False, index=True)  # For privacy compliance
     
     created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     

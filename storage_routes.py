@@ -33,7 +33,7 @@ def get_storage_stats():
 @admin_required  
 def cleanup_storage():
     """Cleanup old temporary files"""
-    hours = request.json.get('hours', 168)  # Default 1 week
+    hours = (request.json or {}).get('hours', 168)  # Default 1 week
     
     try:
         StorageIntegration.cleanup_old_files(hours)
@@ -83,7 +83,7 @@ def get_user_files_api(user_id):
         if current_user.role.name != 'ADMIN' and current_user.id != user_id:
             return jsonify({'error': 'Access denied'}), 403
         
-        file_type = request.args.get('type')
+        file_type = request.args.get('type') or 'documents'  # Default to 'documents' if None
         files = StorageIntegration.get_user_documents(user_id, file_type)
         
         return jsonify({'files': files})
@@ -181,7 +181,7 @@ def file_gallery(category):
     user_filter = request.args.get('user_id', type=int)
     
     try:
-        files = app_storage.get_files_by_category(category, user_filter, page)
+        files = app_storage.get_files_by_category(category, user_filter or 0, page)  # Use 0 as default for no filter
         return render_template('admin/file_gallery.html', 
                              files=files, 
                              category=category,

@@ -143,9 +143,9 @@ def mobile_auth_required(f):
         current_user_id = get_jwt_identity()
         
         # Get driver profile from user ID  
-        from models import DriverStatus
-        driver = Driver.query.join(Driver.user).filter(
-            Driver.user.has(id=current_user_id),
+        from models import DriverStatus, User
+        driver = Driver.query.join(User, Driver.user_id == User.id).filter(
+            User.id == current_user_id,
             Driver.status.in_([DriverStatus.ACTIVE, DriverStatus.PENDING])
         ).first()
         
@@ -156,8 +156,9 @@ def mobile_auth_required(f):
                 'code': 'DRIVER_NOT_FOUND'
             }), 404
             
-        # Attach driver to request context
-        request.current_driver = driver
+        # Store driver in request context using g
+        from flask import g
+        g.current_driver = driver
         return f(*args, **kwargs)
     
     return decorated_function
@@ -198,9 +199,12 @@ def driver_mobile_login():
         # Get client IP for OTP rate limiting  
         client_ip = request.remote_addr or '127.0.0.1'
         
+        # Import session at the top if not already imported
+        from flask import session as flask_session
+        
         # Apply OTP verification rate limiting
         can_verify, reason, retry_after = otp_rate_limiter.can_verify_otp(
-            formatted_phone, client_ip, session.get('temp_session_id', 'unknown')
+            formatted_phone, client_ip, flask_session.get('temp_session_id', 'unknown')
         )
         
         if not can_verify:
@@ -214,8 +218,7 @@ def driver_mobile_login():
             }), 429
         
         # Verify OTP using the existing session-based system
-        from flask import session
-        otp_result = OTPSession.verify_otp(session, otp)
+        otp_result = OTPSession.verify_otp(flask_session, otp)
         
         if not otp_result['success']:
             return jsonify({
@@ -307,7 +310,8 @@ def submit_location_batch():
                 'code': 'INVALID_PAYLOAD'
             }), 400
         
-        driver = request.current_driver
+        from flask import g
+        driver = g.current_driver
         duty_id = data.get('duty_id')
         locations = data.get('locations', [])
         
@@ -510,7 +514,8 @@ def get_tracking_config(duty_id):
     Returns sampling intervals, accuracy thresholds, etc.
     """
     try:
-        driver = request.current_driver
+        from flask import g
+        driver = g.current_driver
         
         # Verify duty belongs to driver
         duty = Duty.query.filter_by(
@@ -577,7 +582,8 @@ def start_tracking_session(duty_id):
     Called when duty starts or app reconnects
     """
     try:
-        driver = request.current_driver
+        from flask import g
+        driver = g.current_driver
         data = request.get_json() or {}
         
         # Verify duty belongs to driver and is active
@@ -644,7 +650,8 @@ def stop_tracking_session(duty_id):
     Called when duty ends or tracking is manually stopped
     """
     try:
-        driver = request.current_driver
+        from flask import g
+        driver = g.current_driver
         
         # Find active session for this duty
         session = TrackingSession.query.filter_by(

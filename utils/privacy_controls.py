@@ -258,7 +258,7 @@ class PrivacySettings:
         return 'full'
     
     @classmethod
-    def should_track_location(cls, driver_id: int, duty_status: str = None) -> bool:
+    def should_track_location(cls, driver_id: int, duty_status: Optional[str] = None) -> bool:
         """Check if location tracking is allowed for driver"""
         
         privacy_level = cls.get_driver_privacy_level(driver_id)
