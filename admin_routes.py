@@ -10,7 +10,7 @@ from sqlalchemy import func, desc, or_, and_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate, Photo, PhotoType,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus)
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus, AdvancePaymentRequest)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
 from utils_main import allowed_file, calculate_earnings, process_file_upload, process_camera_capture
 import json
@@ -546,6 +546,295 @@ def remove_transaction(transaction_type, transaction_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+# === ADVANCE PAYMENT REQUEST MANAGEMENT ROUTES ===
+
+@admin_bp.route('/advance-payments')
+@login_required
+@admin_required
+def advance_payments():
+    """View and manage advance payment requests"""
+    # Filter parameters
+    status_filter = request.args.get('status', '')
+    branch_filter = request.args.get('branch', '', type=int)
+    page = request.args.get('page', 1, type=int)
+    
+    # Base query with joins
+    query = AdvancePaymentRequest.query.join(Driver).join(Duty).join(Vehicle)
+    
+    # Filter by status
+    if status_filter:
+        query = query.filter(AdvancePaymentRequest.status == status_filter)
+    
+    # Filter by branch (admin can see all, managers only their branches)
+    if current_user.role == UserRole.MANAGER:
+        # Get manager's branches
+        manager_branches = [b.id for b in current_user.managed_branches]
+        if manager_branches:
+            query = query.join(Branch, Driver.branch_id == Branch.id).filter(Branch.id.in_(manager_branches))
+    elif branch_filter:
+        query = query.join(Branch, Driver.branch_id == Branch.id).filter(Branch.id == branch_filter)
+    
+    # Order by newest first
+    query = query.order_by(desc(AdvancePaymentRequest.created_at))
+    
+    # Pagination
+    per_page = 20
+    advance_requests = query.paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    # Get branches for filter dropdown
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    # Get statistics
+    total_pending = AdvancePaymentRequest.query.filter_by(status='pending').count()
+    total_approved = AdvancePaymentRequest.query.filter_by(status='approved').count()
+    total_rejected = AdvancePaymentRequest.query.filter_by(status='rejected').count()
+    
+    return render_template('admin/advance_payments.html',
+                         advance_requests=advance_requests,
+                         branches=branches,
+                         status_filter=status_filter,
+                         branch_filter=branch_filter,
+                         total_pending=total_pending,
+                         total_approved=total_approved,
+                         total_rejected=total_rejected)
+
+@admin_bp.route('/advance-payments/<int:request_id>/respond', methods=['POST'])
+@login_required
+@admin_required
+def respond_to_advance_request(request_id):
+    """Approve or reject an advance payment request"""
+    from whatsapp_utils import respond_to_advance_request as handle_response
+    
+    advance_request = AdvancePaymentRequest.query.get_or_404(request_id)
+    
+    action = request.form.get('action')  # 'approve' or 'reject'
+    approved_amount = request.form.get('approved_amount', type=float)
+    response_notes = request.form.get('response_notes', '')
+    
+    if action not in ['approve', 'reject']:
+        flash('Invalid action', 'error')
+        return redirect(url_for('admin.advance_payments'))
+    
+    # For approval, validate amount
+    if action == 'approve':
+        if not approved_amount or approved_amount <= 0:
+            flash('Please enter a valid approved amount', 'error')
+            return redirect(url_for('admin.advance_payments'))
+        
+        if approved_amount > advance_request.amount_requested:
+            flash('Approved amount cannot exceed requested amount', 'error')
+            return redirect(url_for('admin.advance_payments'))
+    
+    try:
+        # Use the WhatsApp utils function to handle the response
+        result = handle_response(
+            request_id=request_id,
+            admin_user_id=current_user.id,
+            status='approved' if action == 'approve' else 'rejected',
+            approved_amount=float(approved_amount) if action == 'approve' and approved_amount else 0.0,
+            response_notes=response_notes
+        )
+        
+        if result['success']:
+            action_text = 'approved' if action == 'approve' else 'rejected'
+            flash(f'Advance payment request has been {action_text}', 'success')
+            
+            log_audit('respond_advance_payment', 'advance_payment_request', request_id, {
+                'action': action,
+                'approved_amount': approved_amount if action == 'approve' else 0,
+                'driver_id': advance_request.driver_id
+            })
+        else:
+            flash(f'Error: {result.get("error", "Unknown error")}', 'error')
+    
+    except Exception as e:
+        flash(f'Error processing request: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.advance_payments'))
+
+@admin_bp.route('/advance-payments/<int:request_id>/details')
+@login_required
+@admin_required
+def advance_payment_details(request_id):
+    """View detailed information about an advance payment request"""
+    advance_request = AdvancePaymentRequest.query.get_or_404(request_id)
+    
+    # Check if manager has access to this request
+    if current_user.role == UserRole.MANAGER:
+        manager_branches = [b.id for b in current_user.managed_branches]
+        if advance_request.driver.branch_id not in manager_branches:
+            flash('Access denied', 'error')
+            return redirect(url_for('admin.advance_payments'))
+    
+    return render_template('admin/advance_payment_details.html',
+                         advance_request=advance_request)
+
+# === TRIP APPROVAL MANAGEMENT ROUTES ===
+
+@admin_bp.route('/approval-settings')
+@login_required
+@admin_required
+def approval_settings():
+    """Manage trip approval settings across duty schemes"""
+    # Get all duty schemes with their approval settings
+    duty_schemes = DutyScheme.query.filter_by(is_active=True).all()
+    
+    # Get branches for filtering
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    # Statistics
+    schemes_requiring_approval = DutyScheme.query.filter_by(
+        is_active=True, 
+        requires_approval=True
+    ).count()
+    
+    auto_approve_schemes = DutyScheme.query.filter_by(
+        is_active=True, 
+        requires_approval=False
+    ).count()
+    
+    return render_template('admin/approval_settings.html',
+                         duty_schemes=duty_schemes,
+                         branches=branches,
+                         schemes_requiring_approval=schemes_requiring_approval,
+                         auto_approve_schemes=auto_approve_schemes)
+
+@admin_bp.route('/approval-settings/<int:scheme_id>/update', methods=['POST'])
+@login_required
+@admin_required
+def update_approval_settings(scheme_id):
+    """Update approval settings for a specific duty scheme"""
+    scheme = DutyScheme.query.get_or_404(scheme_id)
+    
+    try:
+        # Update approval control settings
+        scheme.requires_approval = request.form.get('requires_approval') == 'on'
+        
+        # Update thresholds
+        scheme.auto_approve_max_revenue = float(request.form.get('auto_approve_max_revenue', 10000))
+        scheme.auto_approve_max_trips = int(request.form.get('auto_approve_max_trips', 50))
+        scheme.auto_approve_max_hours = float(request.form.get('auto_approve_max_hours', 12))
+        
+        # Update risk factors
+        scheme.require_approval_on_anomaly = request.form.get('require_approval_on_anomaly') == 'on'
+        scheme.require_approval_weekend = request.form.get('require_approval_weekend') == 'on'
+        scheme.require_approval_night_shift = request.form.get('require_approval_night_shift') == 'on'
+        
+        # Update notes and priority
+        scheme.approval_notes = request.form.get('approval_notes', '')
+        scheme.approval_priority = request.form.get('approval_priority', 'normal')
+        
+        db.session.commit()
+        
+        log_audit('update_approval_settings', 'duty_scheme', scheme_id, {
+            'requires_approval': scheme.requires_approval,
+            'max_revenue': scheme.auto_approve_max_revenue,
+            'max_trips': scheme.auto_approve_max_trips
+        })
+        
+        flash(f'Approval settings updated for duty scheme "{scheme.name}"', 'success')
+        
+    except ValueError as e:
+        flash(f'Invalid input values: {str(e)}', 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating approval settings: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.approval_settings'))
+
+@admin_bp.route('/approval-settings/bulk-update', methods=['POST'])
+@login_required
+@admin_required
+def bulk_update_approval_settings():
+    """Bulk update approval settings across multiple duty schemes"""
+    try:
+        action = request.form.get('bulk_action')
+        scheme_ids = request.form.getlist('selected_schemes')
+        
+        if not scheme_ids:
+            flash('Please select at least one duty scheme', 'warning')
+            return redirect(url_for('admin.approval_settings'))
+        
+        schemes = DutyScheme.query.filter(
+            DutyScheme.id.in_(scheme_ids),
+            DutyScheme.is_active == True
+        ).all()
+        
+        if action == 'enable_approval':
+            for scheme in schemes:
+                scheme.requires_approval = True
+            flash(f'Enabled approval requirement for {len(schemes)} duty schemes', 'success')
+            
+        elif action == 'disable_approval':
+            for scheme in schemes:
+                scheme.requires_approval = False
+            flash(f'Disabled approval requirement for {len(schemes)} duty schemes', 'success')
+            
+        elif action == 'set_high_priority':
+            for scheme in schemes:
+                scheme.approval_priority = 'high'
+            flash(f'Set high priority for {len(schemes)} duty schemes', 'success')
+            
+        elif action == 'reset_thresholds':
+            for scheme in schemes:
+                scheme.auto_approve_max_revenue = 10000.0
+                scheme.auto_approve_max_trips = 50
+                scheme.auto_approve_max_hours = 12.0
+            flash(f'Reset approval thresholds for {len(schemes)} duty schemes', 'success')
+        
+        db.session.commit()
+        
+        log_audit('bulk_update_approval_settings', 'duty_scheme', 0, {
+            'action': action,
+            'affected_schemes': len(schemes)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error performing bulk update: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.approval_settings'))
+
+@admin_bp.route('/approval-settings/test-duty', methods=['POST'])
+@login_required
+@admin_required
+def test_duty_approval():
+    """Test if a duty would require approval based on current settings"""
+    try:
+        scheme_id = int(request.form.get('scheme_id'))
+        revenue = float(request.form.get('test_revenue', 0))
+        trips = int(request.form.get('test_trips', 0))
+        hours = float(request.form.get('test_hours', 0))
+        is_weekend = request.form.get('test_weekend') == 'on'
+        is_night = request.form.get('test_night') == 'on'
+        
+        scheme = DutyScheme.query.get_or_404(scheme_id)
+        
+        duty_data = {
+            'revenue': revenue,
+            'trips': trips,
+            'hours': hours,
+            'is_weekend': is_weekend,
+            'is_night_shift': is_night,
+            'has_anomaly': False
+        }
+        
+        needs_approval, reason = scheme.needs_approval(duty_data)
+        
+        result = {
+            'needs_approval': needs_approval,
+            'reason': reason,
+            'scheme_name': scheme.name
+        }
+        
+        return jsonify({'success': True, 'result': result})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 
 # Driver Block/Unblock Routes
 @admin_bp.route('/drivers/<int:driver_id>/block', methods=['POST'])

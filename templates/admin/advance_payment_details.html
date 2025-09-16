@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}Advance Payment Details - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin.advance_payments') }}">Advance Payments</a></li>
+                <li class="breadcrumb-item active">Request #{{ advance_request.id }}</li>
+            </ol>
+        </nav>
+        <h2><i class="fas fa-money-bill-wave me-2"></i>Advance Payment Details</h2>
+    </div>
+    <div class="text-muted">
+        <i class="fas fa-clock me-1"></i>{{ moment().format('MMMM DD, YYYY') }}
+    </div>
+</div>
+
+<!-- Request Status Alert -->
+<div class="alert {% if advance_request.status == 'pending' %}alert-warning{% elif advance_request.status == 'approved' %}alert-success{% elif advance_request.status == 'rejected' %}alert-danger{% else %}alert-secondary{% endif %} mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="alert-heading mb-1">
+                <i class="fas {% if advance_request.status == 'pending' %}fa-clock{% elif advance_request.status == 'approved' %}fa-check-circle{% elif advance_request.status == 'rejected' %}fa-times-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                Request Status: {{ advance_request.status.title() }}
+            </h5>
+            {% if advance_request.responded_at %}
+            <small>Responded on {{ advance_request.responded_at.strftime('%Y-%m-%d at %H:%M') }}</small>
+            {% endif %}
+        </div>
+        {% if advance_request.status == 'pending' %}
+        <div>
+            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approveModal">
+                <i class="fas fa-check me-1"></i>Approve
+            </button>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                <i class="fas fa-times me-1"></i>Reject
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Request Information -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Request Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Request ID</h6>
+                        <p class="mb-0"><strong>#{{ advance_request.id }}</strong></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Request Date & Time</h6>
+                        <p class="mb-0">{{ advance_request.created_at.strftime('%Y-%m-%d at %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Requested Amount</h6>
+                        <p class="mb-0"><strong class="text-primary fs-5">₹{{ "{:,.2f}".format(advance_request.amount_requested) }}</strong></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Purpose</h6>
+                        <p class="mb-0"><span class="badge bg-secondary fs-6">{{ advance_request.purpose.title() }}</span></p>
+                    </div>
+                    {% if advance_request.approved_amount %}
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Approved Amount</h6>
+                        <p class="mb-0"><strong class="text-success fs-5">₹{{ "{:,.2f}".format(advance_request.approved_amount) }}</strong></p>
+                    </div>
+                    {% endif %}
+                    {% if advance_request.notes %}
+                    <div class="col-12 mb-3">
+                        <h6 class="text-muted">Driver Notes</h6>
+                        <p class="mb-0">{{ advance_request.notes }}</p>
+                    </div>
+                    {% endif %}
+                    {% if advance_request.response_notes %}
+                    <div class="col-12 mb-3">
+                        <h6 class="text-muted">Admin Response Notes</h6>
+                        <p class="mb-0 alert alert-info">{{ advance_request.response_notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Driver Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Driver Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Driver Name</h6>
+                        <p class="mb-0">
+                            <strong>{{ advance_request.driver.full_name }}</strong>
+                            <a href="{{ url_for('admin.driver_details', driver_id=advance_request.driver.id) }}" class="btn btn-sm btn-outline-primary ms-2">
+                                <i class="fas fa-external-link-alt"></i> View Profile
+                            </a>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Employee ID</h6>
+                        <p class="mb-0">{{ advance_request.driver.employee_id or 'N/A' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Branch</h6>
+                        <p class="mb-0">{{ advance_request.driver.branch.name if advance_request.driver.branch else 'N/A' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Driver Status</h6>
+                        <p class="mb-0">
+                            <span class="badge {% if advance_request.driver.status.value == 'active' %}bg-success{% else %}bg-warning{% endif %}">
+                                {{ advance_request.driver.status.value.title() }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duty Information -->
+        {% if advance_request.duty %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-car me-2"></i>Duty Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Duty ID</h6>
+                        <p class="mb-0">
+                            <strong>#{{ advance_request.duty.id }}</strong>
+                            <a href="{{ url_for('admin.duty_detail', duty_id=advance_request.duty.id) }}" class="btn btn-sm btn-outline-primary ms-2">
+                                <i class="fas fa-external-link-alt"></i> View Duty
+                            </a>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Vehicle</h6>
+                        <p class="mb-0">
+                            {% if advance_request.duty.vehicle %}
+                            <span class="badge bg-info fs-6">{{ advance_request.duty.vehicle.registration_number }}</span>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Duty Status</h6>
+                        <p class="mb-0">
+                            <span class="badge {% if advance_request.duty.status.value == 'active' %}bg-success{% elif advance_request.duty.status.value == 'completed' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                {{ advance_request.duty.status.value.title() }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted">Duty Start Time</h6>
+                        <p class="mb-0">{{ advance_request.duty.start_time.strftime('%Y-%m-%d at %H:%M') if advance_request.duty.start_time else 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- WhatsApp Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fab fa-whatsapp me-2"></i>WhatsApp Status</h5>
+            </div>
+            <div class="card-body">
+                {% if advance_request.whatsapp_message_sent %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>Message sent successfully
+                    {% if advance_request.whatsapp_sent_at %}
+                    <br><small class="text-muted">Sent: {{ advance_request.whatsapp_sent_at.strftime('%Y-%m-%d at %H:%M') }}</small>
+                    {% endif %}
+                    {% if advance_request.admin_phone %}
+                    <br><small class="text-muted">To: {{ advance_request.admin_phone }}</small>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Message failed to send
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Location Information -->
+        {% if advance_request.location_latitude and advance_request.location_longitude %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Request Location</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Coordinates:</strong><br>
+                    {{ "{:.6f}".format(advance_request.location_latitude) }}, {{ "{:.6f}".format(advance_request.location_longitude) }}
+                </p>
+                <a href="https://maps.google.com/maps?q={{ advance_request.location_latitude }},{{ advance_request.location_longitude }}" 
+                   target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-external-link-alt me-1"></i>View on Maps
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Request Created</h6>
+                            <p class="timeline-text">{{ advance_request.created_at.strftime('%Y-%m-%d at %H:%M') }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if advance_request.whatsapp_sent_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">WhatsApp Sent</h6>
+                            <p class="timeline-text">{{ advance_request.whatsapp_sent_at.strftime('%Y-%m-%d at %H:%M') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if advance_request.responded_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if advance_request.status == 'approved' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">{{ advance_request.status.title() }}</h6>
+                            <p class="timeline-text">{{ advance_request.responded_at.strftime('%Y-%m-%d at %H:%M') }}</p>
+                            {% if advance_request.responded_by %}
+                            <small class="text-muted">by {{ advance_request.responded_by.username if advance_request.responded_by else 'Unknown' }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Modals -->
+{% if advance_request.status == 'pending' %}
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Approve Advance Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.respond_to_advance_request', request_id=advance_request.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="action" value="approve">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="approved_amount" class="form-label">Approved Amount *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" id="approved_amount" 
+                                   name="approved_amount" value="{{ advance_request.amount_requested }}" 
+                                   max="{{ advance_request.amount_requested }}" min="50" step="50" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="response_notes" class="form-label">Admin Notes (Optional)</label>
+                        <textarea class="form-control" id="response_notes" name="response_notes" rows="3" 
+                                  placeholder="Any additional notes for the driver"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i>Approve Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Reject Advance Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.respond_to_advance_request', request_id=advance_request.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="action" value="reject">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reject_notes" class="form-label">Rejection Reason *</label>
+                        <textarea class="form-control" id="reject_notes" name="response_notes" rows="3" required
+                                  placeholder="Please provide a reason for rejection"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-1"></i>Reject Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.timeline {
+    position: relative;
+    padding: 0;
+    list-style: none;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 15px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 40px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 8px;
+    top: 0;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.timeline-text {
+    color: #6c757d;
+    margin: 0;
+}
+</style>
+{% endblock %}

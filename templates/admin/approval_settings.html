@@ -1,0 +1,431 @@
+{% extends "admin/base.html" %}
+{% from "macros/_pagination.html" import render_pagination %}
+
+{% block title %}Trip Approval Settings{% endblock %}
+
+{% block extra_head %}
+<style>
+    .settings-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .settings-header {
+        background: #f8f9fa;
+        padding: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .approval-badge {
+        font-size: 0.8em;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+    .approval-required { background: #fff3cd; color: #856404; }
+    .auto-approve { background: #d1edff; color: #0c5460; }
+    .threshold-input {
+        width: 120px;
+        display: inline-block;
+        margin: 0 5px;
+    }
+    .priority-high { border-left: 4px solid #dc3545; }
+    .priority-normal { border-left: 4px solid #28a745; }
+    .priority-low { border-left: 4px solid #6c757d; }
+    .test-panel {
+        background: #e3f2fd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-shield-alt"></i> Trip Approval Settings</h1>
+                    <p class="text-muted mb-0">Configure when trips require admin approval based on business rules</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bulkActionsModal">
+                        <i class="fas fa-cogs"></i> Bulk Actions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ schemes_requiring_approval }}</h4>
+                            <p class="mb-0">Schemes Requiring Approval</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ auto_approve_schemes }}</h4>
+                            <p class="mb-0">Auto-Approve Schemes</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duty Schemes List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Duty Scheme Approval Settings</h5>
+                </div>
+                <div class="card-body">
+                    {% for scheme in duty_schemes %}
+                    <div class="settings-card priority-{{ scheme.approval_priority or 'normal' }}">
+                        <div class="settings-header">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <h6 class="mb-1">{{ scheme.name }}</h6>
+                                    <small class="text-muted">{{ scheme.description or 'No description' }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    {% if scheme.requires_approval %}
+                                        <span class="badge approval-required">
+                                            <i class="fas fa-exclamation-circle"></i> Requires Approval
+                                        </span>
+                                    {% else %}
+                                        <span class="badge auto-approve">
+                                            <i class="fas fa-check-circle"></i> Auto-Approve
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">
+                                        Branch: {{ scheme.branch.name if scheme.branch else 'Global' }}
+                                    </small>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="toggleSettings({{ scheme.id }})">
+                                        <i class="fas fa-cog"></i> Configure
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Expandable Settings Panel -->
+                        <div id="settings-{{ scheme.id }}" class="collapse">
+                            <form method="POST" action="{{ url_for('admin.update_approval_settings', scheme_id=scheme.id) }}">
+                                <div class="p-3">
+                                    <div class="row">
+                                        <!-- Basic Approval Settings -->
+                                        <div class="col-md-6">
+                                            <h6>Basic Settings</h6>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="requires_approval" id="approval_{{ scheme.id }}"
+                                                       {% if scheme.requires_approval %}checked{% endif %}>
+                                                <label class="form-check-label" for="approval_{{ scheme.id }}">
+                                                    Require admin approval for this scheme
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Approval Priority</label>
+                                                <select name="approval_priority" class="form-select form-select-sm">
+                                                    <option value="low" {% if scheme.approval_priority == 'low' %}selected{% endif %}>Low</option>
+                                                    <option value="normal" {% if scheme.approval_priority == 'normal' or not scheme.approval_priority %}selected{% endif %}>Normal</option>
+                                                    <option value="high" {% if scheme.approval_priority == 'high' %}selected{% endif %}>High</option>
+                                                    <option value="critical" {% if scheme.approval_priority == 'critical' %}selected{% endif %}>Critical</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Auto-Approval Thresholds -->
+                                        <div class="col-md-6">
+                                            <h6>Auto-Approval Thresholds</h6>
+                                            <div class="mb-2">
+                                                <label class="form-label">Max Revenue</label>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">₹</span>
+                                                    <input type="number" name="auto_approve_max_revenue" 
+                                                           class="form-control" step="0.01"
+                                                           value="{{ scheme.auto_approve_max_revenue }}"
+                                                           placeholder="10000">
+                                                </div>
+                                                <small class="form-text text-muted">Trips above this revenue need approval</small>
+                                            </div>
+                                            
+                                            <div class="mb-2">
+                                                <label class="form-label">Max Trips</label>
+                                                <input type="number" name="auto_approve_max_trips" 
+                                                       class="form-control form-control-sm"
+                                                       value="{{ scheme.auto_approve_max_trips }}"
+                                                       placeholder="50">
+                                                <small class="form-text text-muted">More than this many trips need approval</small>
+                                            </div>
+                                            
+                                            <div class="mb-2">
+                                                <label class="form-label">Max Hours</label>
+                                                <input type="number" name="auto_approve_max_hours" 
+                                                       class="form-control form-control-sm" step="0.5"
+                                                       value="{{ scheme.auto_approve_max_hours }}"
+                                                       placeholder="12">
+                                                <small class="form-text text-muted">Duties longer than this need approval</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <!-- Risk Factors -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Risk Factors</h6>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="require_approval_on_anomaly" id="anomaly_{{ scheme.id }}"
+                                                       {% if scheme.require_approval_on_anomaly %}checked{% endif %}>
+                                                <label class="form-check-label" for="anomaly_{{ scheme.id }}">
+                                                    Require approval for detected anomalies
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="require_approval_weekend" id="weekend_{{ scheme.id }}"
+                                                       {% if scheme.require_approval_weekend %}checked{% endif %}>
+                                                <label class="form-check-label" for="weekend_{{ scheme.id }}">
+                                                    Require approval for weekend duties
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="require_approval_night_shift" id="night_{{ scheme.id }}"
+                                                       {% if scheme.require_approval_night_shift %}checked{% endif %}>
+                                                <label class="form-check-label" for="night_{{ scheme.id }}">
+                                                    Require approval for night shifts (10pm-6am)
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <h6>Approval Notes</h6>
+                                            <textarea name="approval_notes" class="form-control form-control-sm" 
+                                                      rows="4" placeholder="Instructions for approvers...">{{ scheme.approval_notes or '' }}</textarea>
+                                        </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="d-flex justify-content-between">
+                                        <button type="button" class="btn btn-info btn-sm" 
+                                                onclick="testApproval({{ scheme.id }}, '{{ scheme.name }}')">
+                                            <i class="fas fa-flask"></i> Test Settings
+                                        </button>
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-save"></i> Update Settings
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if not duty_schemes %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h5>No Duty Schemes Found</h5>
+                        <p class="text-muted">Create duty schemes to configure approval settings.</p>
+                        <a href="{{ url_for('admin.duty_schemes') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Manage Duty Schemes
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Panel -->
+<div class="test-panel" id="testPanel" style="display: none;">
+    <h5><i class="fas fa-flask"></i> Test Approval Logic</h5>
+    <div class="row">
+        <div class="col-md-8">
+            <form id="testForm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Revenue</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" name="test_revenue" class="form-control" step="0.01" placeholder="5000">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Trips</label>
+                        <input type="number" name="test_trips" class="form-control form-control-sm" placeholder="25">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Hours</label>
+                        <input type="number" name="test_hours" class="form-control form-control-sm" step="0.5" placeholder="8">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Conditions</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="test_weekend" id="testWeekend">
+                            <label class="form-check-label" for="testWeekend">Weekend</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="test_night" id="testNight">
+                            <label class="form-check-label" for="testNight">Night</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-info btn-sm d-block" onclick="runTest()">
+                            <i class="fas fa-play"></i> Test
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="scheme_id" id="testSchemeId">
+            </form>
+        </div>
+        <div class="col-md-4">
+            <div id="testResult" class="alert" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Approval Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.bulk_update_approval_settings') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Action</label>
+                        <select name="bulk_action" class="form-select" required>
+                            <option value="">Select action...</option>
+                            <option value="enable_approval">Enable approval requirement</option>
+                            <option value="disable_approval">Disable approval requirement</option>
+                            <option value="set_high_priority">Set high priority</option>
+                            <option value="reset_thresholds">Reset to default thresholds</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Select Duty Schemes</label>
+                        <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            {% for scheme in duty_schemes %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="selected_schemes" value="{{ scheme.id }}"
+                                       id="bulk_scheme_{{ scheme.id }}">
+                                <label class="form-check-label" for="bulk_scheme_{{ scheme.id }}">
+                                    {{ scheme.name }} - {{ scheme.branch.name if scheme.branch else 'Global' }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSettings(schemeId) {
+    const element = document.getElementById(`settings-${schemeId}`);
+    if (element.classList.contains('show')) {
+        element.classList.remove('show');
+    } else {
+        // Close all other settings panels
+        document.querySelectorAll('.collapse.show').forEach(el => {
+            el.classList.remove('show');
+        });
+        element.classList.add('show');
+    }
+}
+
+function testApproval(schemeId, schemeName) {
+    document.getElementById('testSchemeId').value = schemeId;
+    document.getElementById('testPanel').style.display = 'block';
+    document.getElementById('testPanel').scrollIntoView({behavior: 'smooth'});
+}
+
+function runTest() {
+    const form = document.getElementById('testForm');
+    const formData = new FormData(form);
+    
+    fetch('{{ url_for("admin.test_duty_approval") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('testResult');
+        resultDiv.style.display = 'block';
+        
+        if (data.success) {
+            const result = data.result;
+            if (result.needs_approval) {
+                resultDiv.className = 'alert alert-warning';
+                resultDiv.innerHTML = `
+                    <strong>❌ Approval Required</strong><br>
+                    <strong>Scheme:</strong> ${result.scheme_name}<br>
+                    <strong>Reason:</strong> ${result.reason}
+                `;
+            } else {
+                resultDiv.className = 'alert alert-success';
+                resultDiv.innerHTML = `
+                    <strong>✅ Auto-Approved</strong><br>
+                    <strong>Scheme:</strong> ${result.scheme_name}<br>
+                    <strong>Reason:</strong> ${result.reason}
+                `;
+            }
+        } else {
+            resultDiv.className = 'alert alert-danger';
+            resultDiv.innerHTML = `<strong>Error:</strong> ${data.error}`;
+        }
+    })
+    .catch(error => {
+        const resultDiv = document.getElementById('testResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'alert alert-danger';
+        resultDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+    });
+}
+</script>
+{% endblock %}

@@ -514,8 +514,60 @@ class DutyScheme(db.Model):
     updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
+    # === APPROVAL CONTROL SETTINGS ===
+    # Whether duties using this scheme require admin approval
+    requires_approval = db.Column(db.Boolean, default=False, index=True)
+    
+    # Auto-approval thresholds (if any threshold is exceeded, approval is required)
+    auto_approve_max_revenue = db.Column(db.Float, default=10000.0)  # Max revenue for auto-approval
+    auto_approve_max_trips = db.Column(db.Integer, default=50)  # Max trips for auto-approval  
+    auto_approve_max_hours = db.Column(db.Float, default=12.0)  # Max duty hours for auto-approval
+    
+    # Risk factors that trigger approval requirements
+    require_approval_on_anomaly = db.Column(db.Boolean, default=True)  # Unusual patterns
+    require_approval_weekend = db.Column(db.Boolean, default=False)  # Weekend duties
+    require_approval_night_shift = db.Column(db.Boolean, default=False)  # Night shifts (10pm-6am)
+    
+    # Approval notes and settings
+    approval_notes = db.Column(db.Text)  # Instructions for approvers
+    approval_priority = db.Column(db.String(20), default='normal')  # low, normal, high, critical
+    
     # Relationships
     duties = db.relationship('Duty', backref='duty_scheme', lazy=True)
+    
+    def needs_approval(self, duty_data):
+        """Check if a duty with given data needs approval based on this scheme's settings"""
+        if not self.requires_approval:
+            return False, "Scheme doesn't require approval"
+            
+        # Check revenue threshold
+        revenue = duty_data.get('revenue', 0)
+        if revenue > self.auto_approve_max_revenue:
+            return True, f"Revenue ₹{revenue:,.2f} exceeds threshold ₹{self.auto_approve_max_revenue:,.2f}"
+            
+        # Check trip count threshold
+        trips = duty_data.get('trips', 0)
+        if trips > self.auto_approve_max_trips:
+            return True, f"Trip count {trips} exceeds threshold {self.auto_approve_max_trips}"
+            
+        # Check duty hours threshold
+        hours = duty_data.get('hours', 0)
+        if hours > self.auto_approve_max_hours:
+            return True, f"Duty hours {hours:.1f} exceeds threshold {self.auto_approve_max_hours:.1f}"
+            
+        # Check weekend requirement
+        if self.require_approval_weekend and duty_data.get('is_weekend', False):
+            return True, "Weekend duty requires approval"
+            
+        # Check night shift requirement
+        if self.require_approval_night_shift and duty_data.get('is_night_shift', False):
+            return True, "Night shift duty requires approval"
+            
+        # Check for anomalies
+        if self.require_approval_on_anomaly and duty_data.get('has_anomaly', False):
+            return True, "Duty has detected anomalies"
+            
+        return False, "Auto-approved based on scheme settings"
     
     def get_configuration(self):
         return json.loads(self.configuration) if self.configuration else {}
