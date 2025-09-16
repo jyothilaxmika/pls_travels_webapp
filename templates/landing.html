@@ -55,7 +55,7 @@
             "addressRegion": ["Tamil Nadu", "Karnataka"]
         },
         "sameAs": [
-            "https://wa.me/919787247132"
+            "https://wa.me/+918610693364"
         ]
     }
     </script>
@@ -742,7 +742,7 @@
                         <a href="tel:+919787247132" class="btn btn-primary btn-lg me-3 mb-3" aria-label="Call PLS TRAVELS at +91 9787 247 132">
                             <i class="fas fa-phone me-2" aria-hidden="true"></i>Call Now | இப்போது அழைக்கவும்
                         </a>
-                        <a href="https://wa.me/919787247132" class="btn btn-whatsapp btn-lg mb-3" target="_blank" rel="noopener noreferrer" aria-label="Contact PLS TRAVELS on WhatsApp">
+                        <a href="#" id="whatsappBtnContact" class="btn btn-whatsapp btn-lg mb-3" target="_blank" rel="noopener noreferrer" aria-label="Contact PLS TRAVELS on WhatsApp">
                             <i class="fab fa-whatsapp me-2" aria-hidden="true"></i>WhatsApp Us | WhatsApp செய்யவும்
                         </a>
                     </div>
@@ -815,10 +815,15 @@
                     console.log('Using fallback WhatsApp number');
                 }
                 
-                // Update the main WhatsApp button
+                // Update both WhatsApp buttons
                 const whatsappBtn = document.getElementById('whatsappBtn');
+                const whatsappBtnContact = document.getElementById('whatsappBtnContact');
+                
                 if (whatsappBtn) {
                     whatsappBtn.href = `https://wa.me/${adminWhatsAppNumber}`;
+                }
+                if (whatsappBtnContact) {
+                    whatsappBtnContact.href = `https://wa.me/${adminWhatsAppNumber}`;
                 }
                 
             } catch (error) {
