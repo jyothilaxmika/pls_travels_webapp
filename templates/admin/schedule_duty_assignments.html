@@ -508,6 +508,7 @@ function checkConflicts() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
         },
         body: JSON.stringify(data)
     })
@@ -537,8 +538,17 @@ function checkConflicts() {
 function createAssignment() {
     const formData = new FormData(document.getElementById('assignmentForm'));
     
+    // Add CSRF token to form data
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        formData.append('csrf_token', csrfToken);
+    }
+    
     fetch('/admin/schedule-duty-assignments', {
         method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
         body: formData
     })
     .then(response => response.json())

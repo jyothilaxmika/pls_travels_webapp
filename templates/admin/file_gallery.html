@@ -234,7 +234,10 @@ function showMetadata(filename, category) {
 function deleteFile(filename, category) {
     if (confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
         fetch(`/api/storage/file/${filename}?type=${category}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
         })
         .then(response => response.json())
         .then(data => {

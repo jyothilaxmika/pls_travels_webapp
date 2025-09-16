@@ -426,23 +426,73 @@ function setupCSRFForAjax() {
             });
         }
 
-        // Setup for fetch API
-        const originalFetch = window.fetch;
+        // Setup for fetch API with improved token handling
+        if (!window.originalFetch) {
+            window.originalFetch = window.fetch;
+        }
+        
         window.fetch = function(url, options = {}) {
+            // Get fresh token for each request
+            const currentToken = getCSRFToken();
+            
+            // Only add CSRF token for non-GET requests and non-CORS requests
             if (options.method && !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(options.method)) {
                 options.headers = options.headers || {};
-                options.headers['X-CSRFToken'] = token;
+                if (currentToken) {
+                    options.headers['X-CSRFToken'] = currentToken;
+                }
             }
-            return originalFetch(url, options);
+            // Also add for POST requests without explicit method
+            else if (!options.method && options.body) {
+                options.headers = options.headers || {};
+                if (currentToken) {
+                    options.headers['X-CSRFToken'] = currentToken;
+                }
+            }
+            
+            return window.originalFetch(url, options);
         };
     }
 }
 
-// Initialize CSRF protection when DOM is ready
+// Helper function to add CSRF token to FormData
+function addCSRFToFormData(formData) {
+    const token = getCSRFToken();
+    if (token && formData instanceof FormData) {
+        formData.append('csrf_token', token);
+    }
+    return formData;
+}
+
+// Initialize CSRF protection immediately and when DOM is ready
+setupCSRFForAjax();
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupCSRFForAjax);
 } else {
     setupCSRFForAjax();
+}
+
+// Re-setup CSRF after any dynamic content changes
+if (typeof MutationObserver !== 'undefined') {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                // Check if new forms were added
+                for (let node of mutation.addedNodes) {
+                    if (node.nodeType === 1 && (node.tagName === 'FORM' || node.querySelector('form'))) {
+                        setupCSRFForAjax();
+                        break;
+                    }
+                }
+            }
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 }
 
 // Performance monitoring for slow page loads

@@ -968,7 +968,10 @@ function toggleVerification(type, driverId, currentStatus) {
     
     if (confirm(confirmMsg)) {
         fetch(`/admin/drivers/${driverId}/documents/${type}/${action}`, {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
         })
         .then(response => response.json())
         .then(data => {
@@ -989,8 +992,17 @@ function submitDocumentForm() {
     const form = document.getElementById('addDocumentForm');
     const formData = new FormData(form);
     
+    // Add CSRF token to form data
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        formData.append('csrf_token', csrfToken);
+    }
+    
     fetch('/admin/drivers/documents/add', {
         method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
         body: formData
     })
     .then(response => response.json())
@@ -1039,7 +1051,10 @@ function editTransaction(type, id) {
 function removeTransaction(type, id) {
     if (confirm('Are you sure you want to remove this transaction?')) {
         fetch(`/admin/transactions/${type}/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
         })
         .then(response => response.json())
         .then(data => {
@@ -1060,8 +1075,17 @@ function submitTransactionForm() {
     const form = document.getElementById('addTransactionForm');
     const formData = new FormData(form);
     
+    // Add CSRF token to form data
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        formData.append('csrf_token', csrfToken);
+    }
+    
     fetch('/admin/transactions/add', {
         method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
         body: formData
     })
     .then(response => response.json())
