@@ -236,66 +236,7 @@
                     </div>
                 </div>
                 
-                <!-- Step 2: Revenue & Collections -->
-                <div class="card bg-success bg-opacity-10 border-success mb-3 revenue-section">
-                    <div class="card-header bg-success bg-opacity-25" data-bs-toggle="collapse" data-bs-target="#revenue-section" role="button">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 text-success">
-                                <i class="fas fa-money-bill-wave me-2"></i>Step 2: Revenue & Collections
-                            </h6>
-                            <i class="fas fa-chevron-down text-success"></i>
-                        </div>
-                        <small class="text-success">Tap to expand/collapse</small>
-                    </div>
-                    <div class="collapse show" id="revenue-section">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-12 mb-3">
-                                    <label for="cash_collected" class="form-label fw-bold">
-                                        <i class="fas fa-coins me-1"></i>Cash Collected *
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-success text-white fw-bold">₹</span>
-                                        <input type="number" class="form-control" name="cash_collected" id="cash_collected" 
-                                               min="0" step="0.01" required placeholder="0.00">
-                                    </div>
-                                    <div class="form-text">Main cash collection from passengers</div>
-                                </div>
-                                
-                                <div class="col-12 mb-3">
-                                    <label for="qr_payment" class="form-label fw-bold">
-                                        <i class="fas fa-qrcode me-1"></i>QR/UPI Payments
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-info text-white fw-bold">₹</span>
-                                        <input type="number" class="form-control" name="qr_payment" id="qr_payment" 
-                                               min="0" step="0.01" value="0" placeholder="0.00">
-                                    </div>
-                                    <div class="form-text">Digital payments received</div>
-                                </div>
-                                
-                                <div class="col-12 mb-3">
-                                    <label for="outside_cash" class="form-label fw-bold">
-                                        <i class="fas fa-hand-holding-usd me-1"></i>Outside Cash
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-warning text-dark fw-bold">₹</span>
-                                        <input type="number" class="form-control" name="outside_cash" id="outside_cash" 
-                                               min="0" step="0.01" value="0" placeholder="0.00">
-                                    </div>
-                                    <div class="form-text">Additional cash from other sources</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Step 3: Company Expenses -->
-                <div class="card bg-danger bg-opacity-10 border-danger mb-3 expense-section">
-                    <div class="card-header bg-danger bg-opacity-25" data-bs-toggle="collapse" data-bs-target="#expense-section" role="button">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 text-danger">
-                                <i class="fas fa-receipt me-2"></i>Step 3: Company Expenses
                             </h6>
                             <i class="fas fa-chevron-down text-danger"></i>
                         </div>
@@ -356,23 +297,6 @@
                     </div>
                 </div>
                 
-                <!-- Step 4: CNG Tracking -->
-                <div class="card bg-warning bg-opacity-10 border-warning mb-3 cng-section">
-                    <div class="card-header bg-warning bg-opacity-25" data-bs-toggle="collapse" data-bs-target="#cng-section" role="button">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 text-dark">
-                                <i class="fas fa-gas-pump me-2"></i>Step 4: CNG Level Tracking
-                            </h6>
-                            <i class="fas fa-chevron-down text-dark"></i>
-                        </div>
-                        <small class="text-dark">₹90 per bar • Tap to expand/collapse</small>
-                    </div>
-                    <div class="collapse" id="cng-section">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-12 mb-3">
-                                    <label for="start_cng_level" class="form-label fw-bold">
-                                        <i class="fas fa-play me-1"></i>Start CNG Level (Bars) *
                                     </label>
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text bg-warning text-dark fw-bold">
@@ -457,10 +381,8 @@
                     </div>
                 </div>
                 
-                <!-- Driver Salary & Deductions Section -->
                 <div class="card bg-light mb-3">
                     <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-user-tie me-2"></i>Driver Salary & Deductions</h6>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -518,7 +440,6 @@
                     <div class="col-md-6 mb-3">
                         <div class="card border-info live-calculation">
                             <div class="card-body p-2">
-                                <h6 class="text-info mb-1"><i class="fas fa-calculator me-2"></i>Live Calculation</h6>
                                 <div id="live-calculation">
                                     <small>
                                         <div>Total Earnings: <span id="calc-total-earnings">₹0.00</span></div>
@@ -555,7 +476,7 @@
                 </div>
                 
                 
-                <button type="submit" class="btn btn-danger btn-lg w-100" id="end-duty-btn" onclick="return validateEndDutyForm()">
+                <button type="submit" class="btn btn-danger btn-lg w-100" id="end-duty-btn" onclick="return validateSimplifiedEndDutyForm()">
                     <i class="fas fa-stop-circle me-2"></i>End Duty
                 </button>
             </form>
@@ -976,7 +897,10 @@ function updateDuration() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     
-    document.getElementById('duty-duration').textContent = `${hours}h ${minutes}m`;
+    const durationElement = document.getElementById('duty-duration');
+    if (durationElement) {
+        durationElement.textContent = `${hours}h ${minutes}m`;
+    }
 }
 
 // Update duration every minute
