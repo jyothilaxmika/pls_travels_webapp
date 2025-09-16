@@ -100,6 +100,7 @@ class User(UserMixin, db.Model):
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
     phone = db.Column(db.String(20), unique=True, index=True)
+    whatsapp_number = db.Column(db.String(20), index=True)  # Dedicated WhatsApp number
     profile_picture = db.Column(db.String(255))
     
     # Authentication and security
