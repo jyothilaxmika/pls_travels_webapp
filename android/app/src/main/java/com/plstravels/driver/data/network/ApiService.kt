@@ -45,9 +45,15 @@ interface ApiService {
     @GET("api/v1/driver/vehicles")
     suspend fun getAvailableVehicles(): Response<VehiclesResponse>
     
-    // Location tracking endpoints
-    @POST("api/v1/driver/location")
-    suspend fun uploadLocation(@Body locations: List<LocationUpdate>): Response<ApiResponse>
+    // Location tracking endpoints - Updated for new GPS tracking system
+    @POST("api/v1/tracking/locations/batch")
+    suspend fun uploadLocationBatch(@Body request: LocationBatchRequest): Response<ApiResponse>
+    
+    @POST("api/v1/tracking/session/start")
+    suspend fun startTrackingSession(@Body request: StartTrackingRequest): Response<TrackingSessionResponse>
+    
+    @POST("api/v1/tracking/session/end")
+    suspend fun endTrackingSession(@Body request: EndTrackingRequest): Response<ApiResponse>
     
     // File upload endpoints
     @Multipart
@@ -81,13 +87,44 @@ data class DriverProfileResponse(
     val error: String? = null
 )
 
+// Updated location models to match backend GPS tracking system
 data class LocationUpdate(
     val latitude: Double,
     val longitude: Double,
     val accuracy: Float,
-    val timestamp: Long,
+    val altitude: Double? = null,
+    val speed: Float? = null,
+    val bearing: Float? = null,
+    val timestamp: Long, // Unix timestamp in milliseconds
+    @SerializedName("provider")
+    val provider: String = "gps"
+)
+
+data class LocationBatchRequest(
+    @SerializedName("locations")
+    val locations: List<LocationUpdate>,
+    @SerializedName("session_id")
+    val sessionId: String? = null
+)
+
+data class StartTrackingRequest(
     @SerializedName("duty_id")
-    val dutyId: Int? = null
+    val dutyId: Int,
+    @SerializedName("vehicle_id") 
+    val vehicleId: Int? = null
+)
+
+data class EndTrackingRequest(
+    @SerializedName("session_id")
+    val sessionId: String
+)
+
+data class TrackingSessionResponse(
+    val success: Boolean,
+    @SerializedName("session_id")
+    val sessionId: String? = null,
+    val message: String? = null,
+    val error: String? = null
 )
 
 data class FileUploadResponse(

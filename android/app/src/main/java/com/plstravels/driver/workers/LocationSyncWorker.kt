@@ -95,8 +95,8 @@ class LocationSyncWorker @AssistedInject constructor(
                 return Result.success()
             }
             
-            // Attempt to sync pending locations
-            val syncResult = locationRepository.syncPendingLocations()
+            // Attempt to sync pending locations using new batch endpoint
+            val syncResult = locationRepository.syncPendingLocationsBatch()
             
             if (syncResult.isSuccess) {
                 val syncedCount = syncResult.getOrNull() ?: 0

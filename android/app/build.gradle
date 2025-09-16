@@ -83,7 +83,7 @@ android {
             applicationIdSuffix ".debug"
             versionNameSuffix "-debug"
             
-            buildConfigField "String", "API_BASE_URL", '"http://10.0.2.2:5000"'
+            buildConfigField "String", "API_BASE_URL", '"https://7917f897-6783-43ff-8628-ff4eefebb5ec-00-2i1qladnxhkgn.spock.replit.dev"'
             buildConfigField "boolean", "ENABLE_LOGGING", "true"
             buildConfigField "boolean", "SECURITY_CHECKS_ENABLED", "false"
             
@@ -101,7 +101,7 @@ android {
             versionNameSuffix "-staging"
             signingConfig signingConfigs.staging
             
-            buildConfigField "String", "API_BASE_URL", '"https://staging-api.plstravels.com"'
+            buildConfigField "String", "API_BASE_URL", '"https://7917f897-6783-43ff-8628-ff4eefebb5ec-00-2i1qladnxhkgn.spock.replit.dev"'
             buildConfigField "boolean", "ENABLE_LOGGING", "true"
             buildConfigField "boolean", "SECURITY_CHECKS_ENABLED", "true"
             
@@ -118,7 +118,7 @@ android {
             shrinkResources true
             signingConfig signingConfigs.release
             
-            buildConfigField "String", "API_BASE_URL", '"https://api.plstravels.com"'
+            buildConfigField "String", "API_BASE_URL", '"https://7917f897-6783-43ff-8628-ff4eefebb5ec-00-2i1qladnxhkgn.spock.replit.dev"'
             buildConfigField "boolean", "ENABLE_LOGGING", "false"
             buildConfigField "boolean", "SECURITY_CHECKS_ENABLED", "true"
             
