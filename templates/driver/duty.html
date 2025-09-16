@@ -549,23 +549,6 @@
                 </div>
                 
                 <div class="mb-3">
-                    <label for="duty_scheme_id" class="form-label">Duty Scheme (for salary calculation) *</label>
-                    <select class="form-select" name="duty_scheme_id" id="duty_scheme_id" required>
-                        <option value="">Choose Duty Scheme</option>
-                        {% for scheme in available_schemes %}
-                        <option value="{{ scheme.id }}" {% if scheme.is_default %}selected{% endif %}>
-                            {{ scheme.name }}
-                            {% if scheme.minimum_guarantee %} - BMG: ₹{{ scheme.minimum_guarantee }}{% endif %}
-                            {% if scheme.is_default %} (Default){% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>This determines how your earnings will be calculated for this duty
-                    </small>
-                </div>
-                
-                <div class="mb-3">
                     <label for="start_odometer" class="form-label">Starting Odometer Reading *</label>
                     <input type="number" class="form-control" name="start_odometer" id="start_odometer" 
                            min="0" step="0.1" required>

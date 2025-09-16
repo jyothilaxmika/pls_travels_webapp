@@ -428,16 +428,11 @@ def start_duty():
         return redirect(url_for('driver.duty'))
 
     vehicle_id = request.form.get('vehicle_id')
-    duty_scheme_id = request.form.get('duty_scheme_id', type=int)
     start_odometer = request.form.get('start_odometer', type=float)
     start_cng_level = request.form.get('start_cng_level', type=float)
 
     if not vehicle_id:
         flash('Please select a vehicle.', 'error')
-        return redirect(url_for('driver.duty'))
-    
-    if not duty_scheme_id:
-        flash('Please select a duty scheme for salary calculation.', 'error')
         return redirect(url_for('driver.duty'))
 
     # Get last duty data for validation and auto-fill
@@ -488,11 +483,22 @@ def start_duty():
         flash('Selected vehicle is not available.', 'error')
         return redirect(url_for('driver.duty'))
 
-    # Get the selected duty scheme
-    duty_scheme = DutyScheme.query.filter_by(id=duty_scheme_id, is_active=True).first()
+    # Automatically select the default duty scheme for the driver's branch
+    duty_scheme = DutyScheme.query.filter_by(
+        branch_id=driver.branch_id, 
+        is_active=True, 
+        is_default=True
+    ).first()
+    
+    # If no default scheme found, use the first available active scheme
+    if not duty_scheme:
+        duty_scheme = DutyScheme.query.filter_by(
+            branch_id=driver.branch_id, 
+            is_active=True
+        ).first()
     
     if not duty_scheme:
-        flash('Invalid duty scheme selected.', 'error')
+        flash('No duty scheme available. Please contact your manager.', 'error')
         return redirect(url_for('driver.duty'))
 
     # Create new duty
