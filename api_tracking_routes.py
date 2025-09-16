@@ -17,6 +17,7 @@ from threading import Lock
 from app import db
 from models import Driver, Duty, TrackingSession, DriverLocation, DutyStatus
 from timezone_utils import get_ist_time_naive
+from utils.privacy_controls import LocationPrivacyValidator, PrivacySettings
 
 api_tracking_bp = Blueprint('api_tracking', __name__, url_prefix='/api/v1/tracking')
 
@@ -233,7 +234,7 @@ def driver_mobile_login():
             }), 400
         
         # Find driver by phone
-        driver = Driver.query.join(User).filter(
+        driver = Driver.query.join(User, Driver.user_id == User.id).filter(
             User.phone == formatted_phone,
             User.status == UserStatus.ACTIVE,
             Driver.status.in_([DriverStatus.ACTIVE, DriverStatus.PENDING])
@@ -359,6 +360,15 @@ def submit_location_batch():
                 'code': 'DUTY_NOT_FOUND'
             }), 404
         
+        # Check privacy settings - ensure tracking is allowed
+        if not PrivacySettings.should_track_location(driver.id, duty.status.value):
+            logger.info(f"Location tracking blocked by privacy settings for driver {driver.id}")
+            return jsonify({
+                'success': False,
+                'error': 'Location tracking not permitted by privacy settings',
+                'code': 'PRIVACY_RESTRICTED'
+            }), 403
+        
         # Get or create tracking session
         session = TrackingSession.query.filter_by(
             duty_id=duty_id,
@@ -389,6 +399,13 @@ def submit_location_batch():
                     errors.append(f"Missing required fields in location data")
                     continue
                 
+                # Privacy and accuracy validation
+                is_valid, validation_reason = LocationPrivacyValidator.validate_location_accuracy(location_data)
+                if not is_valid:
+                    error_count += 1
+                    errors.append(f"Location validation failed: {validation_reason}")
+                    continue
+                
                 # Check for duplicates using client_event_id with fast cache lookup
                 client_event_id = location_data.get('client_event_id')
                 if client_event_id:
@@ -415,6 +432,11 @@ def submit_location_batch():
                 except (ValueError, TypeError):
                     error_count += 1
                     errors.append(f"Invalid captured_at timestamp")
+                    continue
+                
+                # Check location frequency to prevent spam
+                if not LocationPrivacyValidator.validate_location_frequency(driver.id, captured_at):
+                    duplicate_count += 1  # Count as duplicate since it's too frequent
                     continue
                 
                 # Validate coordinate ranges (will be caught by DB constraints too)

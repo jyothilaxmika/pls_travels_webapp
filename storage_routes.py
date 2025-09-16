@@ -142,10 +142,10 @@ def delete_file_api(filename):
 @admin_required
 def document_manager():
     """Document management dashboard for admins"""
-    from models import Driver, User
+    from models import Driver, User, UserStatus
     
     # Get all drivers with their documents
-    drivers = Driver.query.join(User).filter(User.is_active == True).all()
+    drivers = Driver.query.join(User, Driver.user_id == User.id).filter(User.status == UserStatus.ACTIVE).all()
     document_stats = StorageIntegration.get_storage_statistics()
     
     return render_template('admin/document_manager.html', 
@@ -162,7 +162,7 @@ def duty_photo_manager():
     
     # Get recent duties with photos
     page = request.args.get('page', 1, type=int)
-    duties = Duty.query.join(Driver).join(User).join(Vehicle)\
+    duties = Duty.query.join(Driver).join(User, Driver.user_id == User.id).join(Vehicle)\
         .filter(Duty.start_photo.isnot(None) | Duty.end_photo.isnot(None))\
         .order_by(desc(Duty.start_time))\
         .paginate(page=page, per_page=20, error_out=False)

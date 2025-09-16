@@ -2744,7 +2744,7 @@ def audit_logs():
     success_filter = request.args.get('success', '')
     
     # Build query
-    query = AuditLog.query.join(User)
+    query = AuditLog.query.join(User, AuditLog.user_id == User.id)
     
     if user_filter:
         query = query.filter(AuditLog.user_id == user_filter)
@@ -2870,7 +2870,7 @@ def export_audit_logs():
     search_term = request.args.get('search', '')
     success_filter = request.args.get('success', '')
     
-    query = AuditLog.query.join(User)
+    query = AuditLog.query.join(User, AuditLog.user_id == User.id)
     
     if user_filter:
         query = query.filter(AuditLog.user_id == user_filter)
