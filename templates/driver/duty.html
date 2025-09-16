@@ -64,40 +64,6 @@
                 </div>
             </div>
 
-            <!-- Advance Payment Request Section -->
-            <div class="mb-4 p-3 bg-light rounded">
-                <h6 class="text-primary"><i class="fas fa-money-bill-wave me-2"></i>Need Fuel Advance?</h6>
-                <p class="text-muted small mb-3">Request advance payment for fuel during your duty</p>
-                
-                <div class="row">
-                    <div class="col-md-4 mb-2">
-                        <input type="number" id="advance_amount" class="form-control form-control-sm" 
-                               placeholder="Amount (₹)" min="50" max="5000" step="50">
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <select id="advance_purpose" class="form-select form-select-sm">
-                            <option value="fuel">Fuel</option>
-                            <option value="maintenance">Maintenance</option>
-                            <option value="emergency">Emergency</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <button type="button" id="request_advance_btn" class="btn btn-warning btn-sm w-100">
-                            <i class="fab fa-whatsapp me-1"></i>Request Advance
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="mt-2">
-                    <textarea id="advance_notes" class="form-control form-control-sm" 
-                              placeholder="Additional notes (optional)" rows="2" maxlength="200"></textarea>
-                </div>
-                
-                <!-- Pending Requests Display -->
-                <div id="pending_requests" class="mt-3" style="display: none;">
-                    <small class="text-muted">Pending requests will appear here</small>
-                </div>
-            </div>
             
             <!-- Vehicle Documents Section -->
             {% if active_duty.vehicle %}
@@ -180,12 +146,6 @@
                         </div>
                     </div>
 
-                    <!-- End CNG Level -->
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text bg-warning text-dark">
-                                <i class="fas fa-tachometer-alt"></i>
-                            </span>
-                            <select class="form-select" name="end_cng" id="end_cng" required>
                                 <option value="">Select end CNG level</option>
                                 <option value="0">0 Bars (Empty)</option>
                                 <option value="1">1 Bar</option>
@@ -311,9 +271,6 @@
                                 </div>
                                 
                                 <div class="col-12 mb-3">
-                                    <label for="end_cng" class="form-label fw-bold">
-                                        <i class="fas fa-stop me-1"></i>End CNG Level (Bars) *
-                                    </label>
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text bg-warning text-dark fw-bold">
                                             <i class="fas fa-tachometer-alt"></i>
@@ -361,12 +318,6 @@
                             </div>
                             
                             <div class="col-lg-6 col-md-12 mb-3">
-                                <label for="advance" class="form-label">Advance</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="advance" id="advance" 
-                                           min="0" step="0.01" value="0">
-                                </div>
                             </div>
                         </div>
                         
@@ -395,7 +346,6 @@
                     <div class="col-md-6 mb-3">
                         <input type="number" class="form-control" name="fuel_amount" id="fuel_amount" 
                                min="0" step="0.1" value="0">
-                        <small class="text-muted">Amount of fuel filled during duty</small>
                     </div>
                     
                     <div class="col-md-6 mb-3">
