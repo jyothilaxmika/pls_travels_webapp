@@ -330,16 +330,17 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-12 mb-3">
-                                    <label for="start_cng" class="form-label fw-bold">
+                                    <label for="start_cng_level" class="form-label fw-bold">
                                         <i class="fas fa-play me-1"></i>Start CNG Level (Bars) *
                                     </label>
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text bg-warning text-dark fw-bold">
                                             <i class="fas fa-tachometer-alt"></i>
                                         </span>
-                                        <select class="form-select" name="start_cng" id="start_cng" required>
+                                        <select class="form-select" name="start_cng_level" id="start_cng_level" required>
                                             <option value="">Select start level</option>
-                                            <option value="1">1 Bar (Empty)</option>
+                                            <option value="0">0 Bars (Empty)</option>
+                                            <option value="1">1 Bar</option>
                                             <option value="2">2 Bars</option>
                                             <option value="3">3 Bars</option>
                                             <option value="4">4 Bars</option>
@@ -348,10 +349,12 @@
                                             <option value="7">7 Bars</option>
                                             <option value="8">8 Bars</option>
                                             <option value="9">9 Bars</option>
-                                            <option value="10">10 Bars (Full)</option>
+                                            <option value="10" selected>10 Bars (Full)</option>
                                         </select>
                                     </div>
-                                    <div class="form-text">CNG level when you started duty</div>
+                                    <div class="form-text">
+                                        <i class="fas fa-robot me-1"></i>Auto-filled from previous duty when vehicle selected
+                                    </div>
                                 </div>
                                 
                                 <div class="col-12 mb-3">
@@ -709,6 +712,7 @@ setupPhotoPreview('end_photo', 'photo-preview', 'preview-image');
 function setupVehicleAutoFetch() {
     const vehicleSelect = document.getElementById('vehicle_id');
     const startOdometerInput = document.getElementById('start_odometer');
+    const startCngSelect = document.getElementById('start_cng_level');
     const autoFetchInfo = document.getElementById('auto-fetch-info');
     const autoFetchMessage = document.getElementById('auto-fetch-message');
     const cngInfoSection = document.getElementById('cng-info-section');
@@ -729,20 +733,36 @@ function setupVehicleAutoFetch() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
+                            let autoFillMessages = [];
+                            
                             // Auto-fill odometer reading
                             if (data.suggested_start_odometer) {
                                 startOdometerInput.value = data.suggested_start_odometer;
-                                autoFetchMessage.innerHTML = `Odometer auto-filled: ${data.suggested_start_odometer} km from last duty`;
+                                autoFillMessages.push(`📊 Odometer: ${data.suggested_start_odometer} km`);
                                 
                                 // Set minimum value based on last reading
                                 startOdometerInput.setAttribute('min', data.suggested_start_odometer);
+                            }
+                            
+                            // Auto-fill CNG level from last duty
+                            if (data.last_end_cng && startCngSelect) {
+                                // Convert to nearest whole number and ensure it's within range
+                                const cngLevel = Math.round(data.last_end_cng);
+                                const safeCngLevel = Math.min(Math.max(cngLevel, 0), 10);
+                                startCngSelect.value = safeCngLevel.toString();
+                                autoFillMessages.push(`⛽ CNG Level: ${safeCngLevel} bars`);
+                            }
+                            
+                            // Display auto-fill status
+                            if (autoFillMessages.length > 0) {
+                                autoFetchMessage.innerHTML = `<strong>Auto-filled from last duty:</strong><br>${autoFillMessages.join('<br>')}`;
                             } else {
                                 autoFetchMessage.innerHTML = 'No previous duty found for this vehicle';
                             }
                             
                             // Show CNG information if available
                             if (data.last_end_cng || data.most_common_cng_point) {
-                                lastCngLevel.textContent = data.last_end_cng ? `${data.last_end_cng} kg` : 'N/A';
+                                lastCngLevel.textContent = data.last_end_cng ? `${data.last_end_cng} bars` : 'N/A';
                                 commonCngPoint.textContent = data.most_common_cng_point || 'N/A';
                                 cngInfoSection.style.display = 'block';
                             } else {
@@ -750,10 +770,8 @@ function setupVehicleAutoFetch() {
                             }
                             
                             // Show continuity status
-                            if (data.continuity_check) {
-                                if (data.continuity_check.status === 'warning') {
-                                    autoFetchMessage.innerHTML += `<br><small class="text-warning">${data.continuity_check.message}</small>`;
-                                }
+                            if (data.continuity_check && data.continuity_check.status === 'warning') {
+                                autoFetchMessage.innerHTML += `<br><small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>${data.continuity_check.message}</small>`;
                             }
                         } else {
                             autoFetchMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error fetching vehicle data';
@@ -769,6 +787,9 @@ function setupVehicleAutoFetch() {
                 cngInfoSection.style.display = 'none';
                 startOdometerInput.value = '';
                 startOdometerInput.setAttribute('min', '0');
+                if (startCngSelect) {
+                    startCngSelect.value = '10'; // Default to full tank
+                }
             }
         });
     }
