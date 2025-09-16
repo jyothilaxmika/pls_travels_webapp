@@ -685,11 +685,13 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this driver?')">
                             <i class="fas fa-check me-2"></i>Approve Driver
                         </button>
                     </form>
                     <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Reject this driver?')">
                             <i class="fas fa-times me-2"></i>Reject Driver
                         </button>

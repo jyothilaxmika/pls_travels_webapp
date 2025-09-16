@@ -75,11 +75,13 @@
                             {% if driver.status == 'pending' %}
                             <div class="btn-group" role="group">
                                 <form method="POST" action="{{ url_for('manager.approve_driver', driver_id=driver.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')" title="Approve">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ url_for('manager.reject_driver', driver_id=driver.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')" title="Reject">
                                         <i class="fas fa-times"></i>
                                     </button>
