@@ -883,11 +883,38 @@ def earnings():
         Duty.status == DutyStatus.COMPLETED
     ).order_by(desc(Duty.start_time)).all()
 
-    # Calculate totals
-    total_earnings = sum(duty.driver_earnings or 0 for duty in duties)
+    # Import manual calculations model
+    from models import ManualEarningsCalculation
+    
+    # Calculate totals with manual calculations override
+    total_earnings = 0
+    total_manual_earnings = 0
     total_revenue = sum(duty.revenue or 0 for duty in duties)
     total_bmg = 0  # BMG applied data not stored in Duty model
     total_incentive = sum(duty.incentive_payment or 0 for duty in duties)
+    
+    # Enhanced earnings calculation with manual overrides
+    duties_with_manual = []
+    for duty in duties:
+        # Check if manual calculation exists for this duty
+        manual_calc = ManualEarningsCalculation.query.filter_by(
+            duty_id=duty.id, 
+            status='approved'
+        ).first()
+        
+        if manual_calc:
+            # Use manual calculation earnings
+            duty_earnings = manual_calc.net_earnings or 0
+            total_manual_earnings += duty_earnings
+            # Add manual calculation info to duty object for template
+            duty.manual_calculation = manual_calc
+        else:
+            # Use regular duty earnings
+            duty_earnings = duty.driver_earnings or 0
+            duty.manual_calculation = None
+        
+        total_earnings += duty_earnings
+        duties_with_manual.append(duty)
 
     # Get penalties in date range
     penalties = Penalty.query.filter(
@@ -900,9 +927,10 @@ def earnings():
 
     return render_template('driver/earnings.html',
                          driver=driver,
-                         duties=duties,
+                         duties=duties_with_manual,
                          penalties=penalties,
                          total_earnings=total_earnings,
+                         total_manual_earnings=total_manual_earnings,
                          total_revenue=total_revenue,
                          total_bmg=total_bmg,
                          total_incentive=total_incentive,

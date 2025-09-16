@@ -10,8 +10,8 @@ from sqlalchemy import func, desc, or_, and_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate, Photo, PhotoType,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus, AdvancePaymentRequest)
-from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus, AdvancePaymentRequest, ManualEarningsCalculation)
+from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm, ManualEarningsCalculationForm
 from utils_main import allowed_file, calculate_earnings, process_file_upload, process_camera_capture
 import json
 from timezone_utils import get_ist_time_naive
@@ -3570,3 +3570,304 @@ def test_user_whatsapp_number():
             
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error sending test message: {str(e)}'})
+
+# Manual Earnings Calculation Routes
+@admin_bp.route('/manual-earnings')
+@login_required
+@admin_required
+def manual_earnings_list():
+    """List all manual earnings calculations"""
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status', '')
+    driver_filter = request.args.get('driver', '')
+    
+    from models import ManualEarningsCalculation
+    query = ManualEarningsCalculation.query.join(Duty).join(Driver)
+    
+    if status_filter:
+        query = query.filter(ManualEarningsCalculation.status == status_filter)
+    if driver_filter:
+        query = query.filter(Driver.full_name.ilike(f'%{driver_filter}%'))
+    
+    calculations = query.order_by(desc(ManualEarningsCalculation.created_at)).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    return render_template('admin/manual_earnings_list.html', calculations=calculations,
+                         status_filter=status_filter, driver_filter=driver_filter)
+
+@admin_bp.route('/manual-earnings/create/<int:duty_id>')
+@login_required
+@admin_required
+def create_manual_earnings_calculation(duty_id):
+    """Create manual earnings calculation for a specific duty"""
+    duty = Duty.query.get_or_404(duty_id)
+    
+    # Check if manual calculation already exists for this duty
+    from models import ManualEarningsCalculation
+    existing = ManualEarningsCalculation.query.filter_by(duty_id=duty_id).first()
+    
+    form = ManualEarningsCalculationForm()
+    form.duty_id.data = duty_id
+    
+    # Auto-fetch data from duty (pre-populate form)
+    if duty:
+        form.uber_trips.data = duty.uber_trips or 0
+        form.cash_collected.data = duty.cash_collection or 0.0
+        form.qr_payment.data = duty.qr_payment or 0.0
+        form.operator_bill.data = duty.operator_out or 0.0
+        form.advance_deduction.data = duty.advance_deduction or 0.0
+        form.toll_expense.data = duty.toll_expense or 0.0
+        form.start_cng.data = duty.start_cng or 0.0
+        form.end_cng.data = duty.end_cng or 0.0
+    
+    return render_template('admin/manual_earnings_form.html', 
+                         form=form, duty=duty, existing=existing)
+
+@admin_bp.route('/manual-earnings/auto-fetch/<int:duty_id>')
+@login_required
+@admin_required  
+def auto_fetch_duty_data(duty_id):
+    """Auto-fetch duty data for manual calculation"""
+    duty = Duty.query.get_or_404(duty_id)
+    
+    # Prepare auto-fetched data
+    auto_fetched_data = {
+        'uber_trips': duty.uber_trips or 0,
+        'cash_collected': duty.cash_collection or 0.0,
+        'qr_payment': duty.qr_payment or 0.0,
+        'operator_bill': duty.operator_out or 0.0,
+        'outside_cash_amount': duty.digital_payments or 0.0,
+        'advance_deduction': duty.advance_deduction or 0.0,
+        'toll_expense': duty.toll_expense or 0.0,
+        'start_cng': duty.start_cng or 0.0,
+        'end_cng': duty.end_cng or 0.0,
+        'online_hours': 0.0  # Calculate from duty duration if available
+    }
+    
+    # Calculate online hours from duty duration
+    if duty.actual_start and duty.actual_end:
+        duration = duty.actual_end - duty.actual_start
+        auto_fetched_data['online_hours'] = round(duration.total_seconds() / 3600, 2)
+    
+    return jsonify({
+        'success': True, 
+        'data': auto_fetched_data,
+        'auto_fetched_fields': list(auto_fetched_data.keys())
+    })
+
+@admin_bp.route('/manual-earnings/calculate', methods=['POST'])
+@login_required
+@admin_required
+def process_manual_earnings_calculation():
+    """Process manual earnings calculation form submission"""
+    form = ManualEarningsCalculationForm()
+    
+    if not form.validate_on_submit():
+        return jsonify({'success': False, 'errors': form.errors})
+    
+    duty_id = form.duty_id.data
+    duty = Duty.query.get_or_404(duty_id)
+    
+    try:
+        from models import ManualEarningsCalculation
+        
+        # Check if calculation already exists
+        existing = ManualEarningsCalculation.query.filter_by(duty_id=duty_id).first()
+        if existing:
+            calculation = existing
+        else:
+            calculation = ManualEarningsCalculation()
+            calculation.duty_id = duty_id
+            calculation.calculated_by = current_user.id
+        
+        # Update calculation fields from form
+        calculation.scheme_type = form.scheme_type.data
+        calculation.online_hours = form.online_hours.data
+        calculation.uber_trips = form.uber_trips.data
+        calculation.cash_collected = form.cash_collected.data
+        calculation.cash_collected_2 = form.cash_collected_2.data
+        calculation.operator_bill = form.operator_bill.data
+        calculation.operator_bill_2 = form.operator_bill_2.data
+        calculation.outside_cash_amount = form.outside_cash_amount.data
+        calculation.outside_operator_bill = form.outside_operator_bill.data
+        calculation.qr_payment = form.qr_payment.data
+        calculation.pass_deduction = form.pass_deduction.data
+        calculation.advance_deduction = form.advance_deduction.data
+        calculation.toll_expense = form.toll_expense.data
+        calculation.start_cng = form.start_cng.data
+        calculation.end_cng = form.end_cng.data
+        calculation.driver_share_percentage = form.driver_share_percentage.data
+        calculation.calculation_notes = form.calculation_notes.data
+        
+        # Calculate earnings based on scheme
+        earnings_result = calculate_manual_earnings(calculation)
+        calculation.gross_earnings = earnings_result['gross_earnings']
+        calculation.total_deductions = earnings_result['total_deductions']
+        calculation.net_earnings = earnings_result['net_earnings']
+        calculation.company_share = earnings_result['company_share']
+        
+        # Set status
+        if 'save_draft' in request.form:
+            calculation.status = 'draft'
+        else:
+            calculation.status = 'pending'
+        
+        if not existing:
+            db.session.add(calculation)
+        
+        db.session.commit()
+        
+        log_audit('manual_earnings_calculation', 'calculation', calculation.id, {
+            'duty_id': duty_id,
+            'driver_name': duty.driver.full_name,
+            'net_earnings': calculation.net_earnings,
+            'scheme_type': calculation.scheme_type
+        })
+        
+        flash(f'Manual earnings calculation {"saved as draft" if calculation.status == "draft" else "calculated"} successfully!', 'success')
+        return redirect(url_for('admin.manual_earnings_list'))
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error processing calculation: {str(e)}'})
+
+def calculate_manual_earnings(calculation):
+    """Calculate earnings based on manual input data with enhanced logic"""
+    
+    # Safely convert all values to float to prevent errors
+    def safe_float(value):
+        try:
+            return float(value) if value is not None else 0.0
+        except (ValueError, TypeError):
+            return 0.0
+    
+    # Calculate total income from all sources
+    total_income = (
+        safe_float(calculation.cash_collected) + 
+        safe_float(calculation.cash_collected_2) +
+        safe_float(calculation.operator_bill) + 
+        safe_float(calculation.operator_bill_2) +
+        safe_float(calculation.outside_cash_amount) + 
+        safe_float(calculation.outside_operator_bill) +
+        safe_float(calculation.qr_payment)
+    )
+    
+    # Calculate base deductions
+    base_deductions = (
+        safe_float(calculation.pass_deduction) +
+        safe_float(calculation.advance_deduction) +
+        safe_float(calculation.toll_expense)
+    )
+    
+    # Calculate CNG deduction (if CNG was consumed)
+    cng_deduction = 0.0
+    start_cng = safe_float(calculation.start_cng)
+    end_cng = safe_float(calculation.end_cng)
+    
+    if start_cng > 0 and end_cng >= 0:
+        if start_cng > end_cng:
+            cng_consumed = start_cng - end_cng
+            # CNG rate: ₹90 per kg (industry standard)
+            cng_deduction = cng_consumed * 90.0
+    
+    total_deductions = base_deductions + cng_deduction
+    
+    # Apply scheme-based calculation
+    driver_share_percentage = safe_float(calculation.driver_share_percentage) or 70.0
+    driver_share_percentage = driver_share_percentage / 100.0  # Convert to decimal
+    
+    # Calculate driver share based on scheme type
+    if calculation.scheme_type == 'revenue_share':
+        # Driver gets percentage share of total income
+        driver_share = total_income * driver_share_percentage
+        
+    elif calculation.scheme_type == 'fixed_daily':
+        # Fixed daily amount based on online hours or trips
+        online_hours = safe_float(calculation.online_hours)
+        uber_trips = safe_float(calculation.uber_trips)
+        
+        # Base daily rate
+        base_daily_rate = 2500.0
+        
+        # Bonus for high performance
+        if online_hours >= 12 or uber_trips >= 15:
+            driver_share = base_daily_rate + 500.0  # Performance bonus
+        elif online_hours >= 8 or uber_trips >= 10:
+            driver_share = base_daily_rate + 200.0  # Moderate bonus
+        else:
+            driver_share = base_daily_rate
+            
+    elif calculation.scheme_type == 'hybrid_commission':
+        # Base amount + commission on income above threshold
+        base_amount = 1500.0
+        threshold = 3000.0
+        commission_rate = driver_share_percentage
+        
+        if total_income > threshold:
+            commission = (total_income - threshold) * commission_rate
+            driver_share = base_amount + commission
+        else:
+            driver_share = base_amount
+            
+    else:  # custom calculation
+        # Default to revenue share if scheme type is unknown
+        driver_share = total_income * driver_share_percentage
+    
+    # Final calculations with validation
+    gross_earnings = max(0.0, driver_share)  # Cannot be negative
+    net_earnings = max(0.0, gross_earnings - total_deductions)  # Cannot be negative
+    company_share = max(0.0, total_income - driver_share)  # Company's portion
+    
+    # Return detailed calculation results
+    return {
+        'gross_earnings': round(gross_earnings, 2),
+        'total_deductions': round(total_deductions, 2),
+        'net_earnings': round(net_earnings, 2),
+        'company_share': round(company_share, 2),
+        'total_income': round(total_income, 2),
+        'cng_deduction': round(cng_deduction, 2),
+        'scheme_type': calculation.scheme_type,
+        'driver_share_percentage': driver_share_percentage * 100  # Convert back to percentage for display
+    }
+
+@admin_bp.route('/manual-earnings/update-status', methods=['POST'])
+@login_required
+@admin_required
+def update_manual_earnings_status():
+    """Update manual earnings calculation status (approve/reject)"""
+    calculation_id = request.form.get('calculation_id', type=int)
+    status = request.form.get('status')
+    reason = request.form.get('reason', '')
+    
+    if not calculation_id or status not in ['approved', 'rejected']:
+        return jsonify({'success': False, 'message': 'Invalid parameters'})
+    
+    try:
+        from models import ManualEarningsCalculation
+        calculation = ManualEarningsCalculation.query.get_or_404(calculation_id)
+        
+        # Update status and approval details
+        calculation.status = status
+        calculation.approved_by = current_user.id
+        calculation.approved_at = get_ist_time_naive()
+        
+        if status == 'rejected' and reason:
+            calculation.rejection_reason = reason
+        
+        db.session.commit()
+        
+        # Log the action
+        log_audit('manual_earnings_status_update', 'calculation', calculation_id, {
+            'status': status,
+            'driver_name': calculation.duty.driver.full_name if calculation.duty and calculation.duty.driver else 'Unknown',
+            'net_earnings': calculation.net_earnings,
+            'reason': reason if status == 'rejected' else None
+        })
+        
+        flash(f'Manual earnings calculation {status} successfully!', 'success')
+        return jsonify({'success': True, 'message': f'Calculation {status} successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error updating status: {str(e)}'})

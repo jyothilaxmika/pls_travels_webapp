@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, BooleanField, SelectField, FloatField, IntegerField, DateField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, SelectField, FloatField, IntegerField, DateField, TextAreaField, HiddenField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, NumberRange, ValidationError
 from datetime import date
 
@@ -307,6 +307,47 @@ class AssignmentTemplateForm(FlaskForm):
                                        description='JSON format assignment pattern or leave empty to configure manually')
     
     is_default = BooleanField('Set as Default Template', default=False)
+
+class ManualEarningsCalculationForm(FlaskForm):
+    """Gamified earnings calculation form for admin/manager audit review"""
+    
+    # Basic duty information (auto-filled)
+    duty_id = HiddenField(validators=[DataRequired()])
+    scheme_type = SelectField('Scheme Type', choices=[
+        ('revenue_share', 'Revenue Share (70/30 Split)'),
+        ('fixed_daily', 'Fixed Daily Rate'),
+        ('hybrid_commission', 'Base + Commission'),
+        ('custom', 'Custom Calculation')
+    ], default='revenue_share', validators=[DataRequired()])
+    
+    # Income fields - main earnings sources
+    online_hours = FloatField('Online Hours', validators=[Optional(), NumberRange(min=0, max=24)], default=0.0)
+    uber_trips = IntegerField('No of Uber Trips', validators=[Optional(), NumberRange(min=0)], default=0)
+    cash_collected = FloatField('Cash Collected', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    cash_collected_2 = FloatField('Cash Collected 2', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    operator_bill = FloatField('Operator Bill', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    operator_bill_2 = FloatField('Operator Bill 2', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    outside_cash_amount = FloatField('Outside Cash Amount', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    outside_operator_bill = FloatField('Outside Operator Bill', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    qr_payment = FloatField('QR Payment', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    
+    # Deduction fields
+    pass_deduction = FloatField('Pass Deduction', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    advance_deduction = FloatField('Advance', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    toll_expense = FloatField('Toll', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    
+    # CNG fields
+    start_cng = FloatField('Start CNG', validators=[Optional(), NumberRange(min=0)], default=0.0, render_kw={'readonly': True})
+    end_cng = FloatField('End CNG', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    
+    # Additional configuration
+    driver_share_percentage = FloatField('Driver Share %', validators=[Optional(), NumberRange(min=0, max=100)], default=70.0)
+    calculation_notes = TextAreaField('Calculation Notes', validators=[Optional(), Length(max=500)])
+    
+    # Submit options
+    submit = SubmitField('Calculate Earnings')
+    save_draft = SubmitField('Save as Draft')
+    auto_fetch = SubmitField('Auto-Fetch from Duty')
 
 class DutyForm(FlaskForm):
     vehicle_id = SelectField('Select Vehicle', coerce=int, validators=[DataRequired()])

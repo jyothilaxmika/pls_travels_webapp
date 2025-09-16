@@ -1,0 +1,194 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Manual Earnings Calculation{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="fas fa-calculator"></i> Manual Earnings Calculation
+                        {% if existing %}
+                        <span class="badge badge-warning">Updating Existing</span>
+                        {% endif %}
+                    </h4>
+                    <p class="text-muted">
+                        Driver: <strong>{{ duty.driver.full_name }}</strong> | 
+                        Duty Date: <strong>{{ duty.start_time.strftime('%Y-%m-%d') }}</strong> |
+                        Vehicle: <strong>{{ duty.vehicle.registration_number if duty.vehicle else 'N/A' }}</strong>
+                    </p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.process_manual_earnings_calculation') }}" id="manualEarningsForm">
+                        {{ form.hidden_tag() }}
+                        {{ form.duty_id }}
+                        
+                        <!-- Auto-fetch button -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <button type="button" class="btn btn-info btn-sm" id="autoFetchBtn">
+                                    <i class="fas fa-sync"></i> Auto-Fetch from Duty Data
+                                </button>
+                                <small class="form-text text-muted">Automatically populate fields from duty record</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Scheme Type Selection -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.scheme_type.label }}</label>
+                                {{ form.scheme_type(class="form-control") }}
+                                {% if form.scheme_type.errors %}
+                                    <div class="text-danger">{{ form.scheme_type.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.driver_share_percentage.label }}</label>
+                                {{ form.driver_share_percentage(class="form-control") }}
+                                {% if form.driver_share_percentage.errors %}
+                                    <div class="text-danger">{{ form.driver_share_percentage.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Income Fields -->
+                        <h5 class="text-primary">📈 Income Sources</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.online_hours.label }}</label>
+                                {{ form.online_hours(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.uber_trips.label }}</label>
+                                {{ form.uber_trips(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.cash_collected.label }}</label>
+                                {{ form.cash_collected(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.cash_collected_2.label }}</label>
+                                {{ form.cash_collected_2(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.operator_bill.label }}</label>
+                                {{ form.operator_bill(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.operator_bill_2.label }}</label>
+                                {{ form.operator_bill_2(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.outside_cash_amount.label }}</label>
+                                {{ form.outside_cash_amount(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.outside_operator_bill.label }}</label>
+                                {{ form.outside_operator_bill(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.qr_payment.label }}</label>
+                                {{ form.qr_payment(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <!-- Deduction Fields -->
+                        <h5 class="text-warning">📉 Deductions</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.pass_deduction.label }}</label>
+                                {{ form.pass_deduction(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.advance_deduction.label }}</label>
+                                {{ form.advance_deduction(class="form-control") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.toll_expense.label }}</label>
+                                {{ form.toll_expense(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <!-- CNG Fields -->
+                        <h5 class="text-success">⛽ CNG Tracking</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.start_cng.label }}</label>
+                                {{ form.start_cng(class="form-control") }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.end_cng.label }}</label>
+                                {{ form.end_cng(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">{{ form.calculation_notes.label }}</label>
+                                {{ form.calculation_notes(class="form-control", rows="3") }}
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary" name="calculate">
+                                    <i class="fas fa-calculator"></i> Calculate & Save
+                                </button>
+                                <button type="submit" class="btn btn-secondary" name="save_draft">
+                                    <i class="fas fa-save"></i> Save Draft
+                                </button>
+                                <a href="{{ url_for('admin.manual_earnings_list') }}" class="btn btn-light">
+                                    <i class="fas fa-arrow-left"></i> Back to List
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-fetch functionality
+    document.getElementById('autoFetchBtn').addEventListener('click', function() {
+        const dutyId = document.querySelector('input[name="duty_id"]').value;
+        
+        fetch(`{{ url_for('admin.auto_fetch_duty_data', duty_id=0) }}`.replace('0', dutyId))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Populate form fields with auto-fetched data
+                Object.keys(data.data).forEach(fieldName => {
+                    const field = document.querySelector(`[name="${fieldName}"]`);
+                    if (field) {
+                        field.value = data.data[fieldName];
+                        field.style.backgroundColor = '#e8f5e8'; // Highlight auto-fetched fields
+                    }
+                });
+                
+                // Show success message
+                alert('Data auto-fetched successfully from duty record!');
+            } else {
+                alert('Error auto-fetching data: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Auto-fetch error:', error);
+            alert('Error auto-fetching data');
+        });
+    });
+});
+</script>
+{% endblock %}

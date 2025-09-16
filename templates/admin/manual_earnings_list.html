@@ -1,0 +1,234 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Manual Earnings Calculations{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title">
+                        <i class="fas fa-calculator"></i> Manual Earnings Calculations
+                    </h4>
+                    <div>
+                        <a href="{{ url_for('admin.duties') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Select Duty to Calculate
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="card-body">
+                    <form method="GET" class="row mb-3">
+                        <div class="col-md-4">
+                            <select name="status" class="form-control">
+                                <option value="">All Statuses</option>
+                                <option value="draft" {{ 'selected' if status_filter == 'draft' }}>Draft</option>
+                                <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending Review</option>
+                                <option value="approved" {{ 'selected' if status_filter == 'approved' }}>Approved</option>
+                                <option value="rejected" {{ 'selected' if status_filter == 'rejected' }}>Rejected</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="driver" class="form-control" 
+                                   placeholder="Search by driver name..." value="{{ driver_filter }}">
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <a href="{{ url_for('admin.manual_earnings_list') }}" class="btn btn-light">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Driver</th>
+                                <th>Duty Date</th>
+                                <th>Scheme Type</th>
+                                <th>Net Earnings</th>
+                                <th>Status</th>
+                                <th>Calculated By</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if calculations.items %}
+                                {% for calculation in calculations.items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ calculation.duty.driver.full_name }}</strong><br>
+                                        <small class="text-muted">{{ calculation.duty.driver.employee_id }}</small>
+                                    </td>
+                                    <td>
+                                        {{ calculation.duty.start_time.strftime('%Y-%m-%d') }}<br>
+                                        <small class="text-muted">{{ calculation.duty.start_time.strftime('%H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">
+                                            {{ calculation.scheme_type.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">₹{{ "{:,.2f}".format(calculation.net_earnings or 0) }}</strong><br>
+                                        <small class="text-muted">
+                                            Gross: ₹{{ "{:,.2f}".format(calculation.gross_earnings or 0) }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if calculation.status == 'draft' %}
+                                            <span class="badge badge-secondary">Draft</span>
+                                        {% elif calculation.status == 'pending' %}
+                                            <span class="badge badge-warning">Pending Review</span>
+                                        {% elif calculation.status == 'approved' %}
+                                            <span class="badge badge-success">Approved</span>
+                                        {% elif calculation.status == 'rejected' %}
+                                            <span class="badge badge-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ calculation.calculated_by_user.full_name if calculation.calculated_by_user else 'System' }}<br>
+                                        <small class="text-muted">{{ calculation.calculated_by_user.username if calculation.calculated_by_user else '' }}</small>
+                                    </td>
+                                    <td>
+                                        {{ calculation.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin.create_manual_earnings_calculation', duty_id=calculation.duty_id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            
+                                            {% if calculation.status == 'pending' %}
+                                            <button class="btn btn-outline-success btn-sm approve-btn" 
+                                                    data-id="{{ calculation.id }}">
+                                                <i class="fas fa-check"></i> Approve
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm reject-btn" 
+                                                    data-id="{{ calculation.id }}">
+                                                <i class="fas fa-times"></i> Reject
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-calculator fa-2x mb-2"></i><br>
+                                            No manual earnings calculations found.<br>
+                                            <a href="{{ url_for('admin.duties') }}" class="btn btn-primary btn-sm mt-2">
+                                                <i class="fas fa-plus"></i> Create First Calculation
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if calculations.pages > 1 %}
+                <div class="card-footer">
+                    <nav aria-label="Manual calculations pagination">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            {% if calculations.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.manual_earnings_list', page=calculations.prev_num, status=status_filter, driver=driver_filter) }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in calculations.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != calculations.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin.manual_earnings_list', page=page_num, status=status_filter, driver=driver_filter) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if calculations.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.manual_earnings_list', page=calculations.next_num, status=status_filter, driver=driver_filter) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Approve button handlers
+    document.querySelectorAll('.approve-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const calcId = this.dataset.id;
+            if (confirm('Are you sure you want to approve this manual calculation?')) {
+                updateCalculationStatus(calcId, 'approved');
+            }
+        });
+    });
+    
+    // Reject button handlers
+    document.querySelectorAll('.reject-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const calcId = this.dataset.id;
+            const reason = prompt('Enter rejection reason (optional):');
+            if (reason !== null) { // User didn't cancel
+                updateCalculationStatus(calcId, 'rejected', reason);
+            }
+        });
+    });
+    
+    function updateCalculationStatus(calcId, status, reason = '') {
+        const formData = new FormData();
+        formData.append('calculation_id', calcId);
+        formData.append('status', status);
+        formData.append('reason', reason);
+        formData.append('csrf_token', document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '');
+        
+        fetch('{{ url_for("admin.update_manual_earnings_status") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating status');
+        });
+    }
+});
+</script>
+{% endblock %}

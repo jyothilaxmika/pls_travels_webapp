@@ -1086,6 +1086,98 @@ class Asset(db.Model):
     assigner = db.relationship('User', foreign_keys=[assigned_by])
     returner = db.relationship('User', foreign_keys=[returned_by])
 
+class ManualEarningsCalculation(db.Model):
+    """
+    Manual earnings calculation form for admin/manager audit review
+    Stores gamified salary calculation data with auto-fetch from duty
+    """
+    __tablename__ = 'manual_earnings_calculations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Links to duty and user
+    duty_id = db.Column(db.Integer, db.ForeignKey('duties.id'), nullable=False, index=True)
+    calculated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)  # Admin/Manager who filled form
+    
+    # Scheme configuration
+    scheme_type = db.Column(db.String(50), nullable=False, default='revenue_share')  # revenue_share, fixed_daily, custom
+    
+    # Income fields
+    online_hours = db.Column(db.Float, default=0.0)  # Online hours worked
+    uber_trips = db.Column(db.Integer, default=0)    # No of Uber Trips
+    cash_collected = db.Column(db.Float, default=0.0)  # Cash collected
+    cash_collected_2 = db.Column(db.Float, default=0.0)  # Cash collected 2
+    operator_bill = db.Column(db.Float, default=0.0)    # Operator bill
+    operator_bill_2 = db.Column(db.Float, default=0.0)  # Operator bill 2
+    outside_cash_amount = db.Column(db.Float, default=0.0)  # Outside cash Amount
+    outside_operator_bill = db.Column(db.Float, default=0.0)  # Outside operator bill
+    qr_payment = db.Column(db.Float, default=0.0)      # QR payment
+    
+    # Deduction fields
+    pass_deduction = db.Column(db.Float, default=0.0)  # PASS DEDUCTION
+    advance_deduction = db.Column(db.Float, default=0.0)  # ADVANCE
+    toll_expense = db.Column(db.Float, default=0.0)    # TOLL
+    
+    # CNG fields
+    end_cng = db.Column(db.Float, default=0.0)         # END CNG
+    start_cng = db.Column(db.Float, default=0.0)       # Auto-fetched from duty
+    
+    # Calculation results
+    gross_earnings = db.Column(db.Float, default=0.0)     # Total before deductions
+    total_deductions = db.Column(db.Float, default=0.0)   # Sum of all deductions
+    net_earnings = db.Column(db.Float, default=0.0)       # Final driver earnings
+    company_share = db.Column(db.Float, default=0.0)      # Company portion
+    
+    # Additional calculation details
+    driver_share_percentage = db.Column(db.Float, default=70.0)  # Driver share %
+    calculation_notes = db.Column(db.Text)                       # Manual notes
+    
+    # Auto-fetch indicators
+    auto_fetched_fields = db.Column(db.Text)  # JSON list of fields auto-populated from duty
+    
+    # Status and workflow
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected, draft
+    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    approved_at = db.Column(db.DateTime)
+    rejection_reason = db.Column(db.Text)  # Reason for rejection
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive, index=True)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
+    
+    # Relationships
+    duty = db.relationship('Duty', backref='manual_calculations')
+    calculated_by_user = db.relationship('User', foreign_keys=[calculated_by])  # Primary relationship for template compatibility
+    approver = db.relationship('User', foreign_keys=[approved_by])
+    
+    def __repr__(self):
+        return f'<ManualEarningsCalculation {self.duty.driver.full_name if self.duty else "Unknown"} - ₹{self.net_earnings}>'
+    
+    @hybrid_property
+    def driver_name(self):
+        return self.duty.driver.full_name if self.duty and self.duty.driver else 'Unknown'
+    
+    @hybrid_property 
+    def vehicle_number(self):
+        return self.duty.vehicle.registration_number if self.duty and self.duty.vehicle else 'Unknown'
+        
+    @hybrid_property
+    def total_income(self):
+        """Calculate total income from all sources"""
+        return (self.cash_collected + self.cash_collected_2 + 
+                self.operator_bill + self.operator_bill_2 + 
+                self.outside_cash_amount + self.outside_operator_bill + 
+                self.qr_payment)
+    
+    def set_auto_fetched_fields(self, fields_list):
+        """Store list of auto-fetched field names as JSON"""
+        self.auto_fetched_fields = json.dumps(fields_list) if fields_list else None
+    
+    def get_auto_fetched_fields(self):
+        """Get list of auto-fetched field names"""
+        return json.loads(self.auto_fetched_fields) if self.auto_fetched_fields else []
+
 class AuditLog(db.Model):
     __tablename__ = 'audit_logs'
     
