@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude sensitive files from backup -->
+    <exclude domain="sharedpref" path="auth_prefs.xml"/>
+    <exclude domain="sharedpref" path="user_prefs.xml"/>
+    <exclude domain="database" path="pls_travels_driver.db"/>
+    
+    <!-- Exclude temporary files -->
+    <exclude domain="file" path="temp/"/>
+    <exclude domain="file" path="cache/"/>
+    
+    <!-- Include app settings and non-sensitive data -->
+    <include domain="sharedpref" path="app_settings.xml"/>
+</full-backup-content>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext traffic for debug builds only -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">plstravels.replit.app</domain>
+        <!-- Add other production domains here -->
+    </domain-config>
+    
+    <!-- Debug configuration - allows all traffic in debug builds -->
+    <debug-overrides>
+        <trust-anchors>
+            <!-- Trust user added CAs while debugging -->
+            <certificates src="user"/>
+            <!-- Trust system CAs -->
+            <certificates src="system"/>
+        </trust-anchors>
+    </debug-overrides>
+    
+    <!-- Base configuration for release builds -->
+    <base-config>
+        <trust-anchors>
+            <!-- Only trust system CAs in release builds -->
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Internal storage for app data -->
+    <files-path name="internal_files" path="." />
+    
+    <!-- External storage for photos and temporary files -->
+    <external-files-path name="external_files" path="." />
+    
+    <!-- Cache directory for temporary files -->
+    <cache-path name="cache" path="." />
+    
+    <!-- Photos directory -->
+    <external-files-path name="photos" path="Photos/" />
+    
+    <!-- Temporary uploads -->
+    <cache-path name="temp_uploads" path="uploads/" />
+</paths>
