@@ -3718,6 +3718,38 @@ def process_manual_earnings_calculation():
         
         db.session.commit()
         
+        # Automatically approve duty when earnings calculation is completed (not draft)
+        if calculation.status == 'pending':
+            from models import DutyStatus
+            if duty.status == DutyStatus.PENDING_APPROVAL:
+                # Approve the duty automatically
+                duty.status = DutyStatus.COMPLETED
+                duty.reviewed_by = current_user.id
+                duty.reviewed_at = datetime.utcnow()
+                duty.approved_at = datetime.utcnow()
+                
+                # Update driver earnings based on manual calculation
+                if duty.driver:
+                    duty.driver_earnings = calculation.net_earnings
+                    duty.driver.total_earnings += calculation.net_earnings
+                
+                # Auto-approve the manual calculation as well
+                calculation.status = 'approved'
+                calculation.approved_by = current_user.id
+                calculation.approved_at = get_ist_time_naive()
+                
+                db.session.commit()
+                
+                log_audit('auto_approve_duty_with_manual_earnings', 'duty', duty_id, {
+                    'duty_id': duty_id,
+                    'driver_name': duty.driver.full_name,
+                    'manual_net_earnings': calculation.net_earnings,
+                    'scheme_type': calculation.scheme_type
+                })
+                
+                flash(f'Manual earnings calculated and duty approved for {duty.driver.full_name}! Net Earnings: ₹{calculation.net_earnings:.2f}', 'success')
+                return redirect(url_for('admin.pending_duties'))
+        
         log_audit('manual_earnings_calculation', 'calculation', calculation.id, {
             'duty_id': duty_id,
             'driver_name': duty.driver.full_name,
