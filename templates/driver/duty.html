@@ -160,36 +160,77 @@
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
-                <!-- Step 1: Basic Duty Information -->
-                <div class="card bg-primary bg-opacity-10 border-primary mb-3">
-                    <div class="card-header bg-primary bg-opacity-25">
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-play-circle me-2"></i>Step 1: Basic Duty Information
-                        </h6>
+                <!-- Simplified End Duty Form - Essential Fields Only -->
+                <div class="row g-4 mb-4">
+                    <!-- Ending Odometer Reading -->
+                    <div class="col-12">
+                        <label for="end_odometer" class="form-label fw-bold">
+                            <i class="fas fa-tachometer-alt text-primary me-2"></i>Ending Odometer Reading *
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-primary text-white">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </span>
+                            <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
+                                   min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
+                            <span class="input-group-text fw-bold">km</span>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <label for="end_odometer" class="form-label fw-bold">Ending Odometer Reading *</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text"><i class="fas fa-tachometer-alt text-primary"></i></span>
-                                    <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
-                                           min="{{ active_duty.start_odometer or 0 }}" step="0.1" required>
-                                    <span class="input-group-text fw-bold">km</span>
-                                </div>
-                                <div class="form-text">
-                                    <i class="fas fa-info-circle me-1"></i>Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
-                                </div>
-                            </div>
-                            
-                            <div class="col-12 mb-3">
-                                <label for="trip_count" class="form-label fw-bold">Number of Trips *</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text"><i class="fas fa-route text-primary"></i></span>
-                                    <input type="number" class="form-control" name="trip_count" id="trip_count" 
-                                           min="0" required>
-                                    <span class="input-group-text fw-bold">trips</span>
-                                </div>
+
+                    <!-- End CNG Level -->
+                    <div class="col-12">
+                        <label for="end_cng" class="form-label fw-bold">
+                            <i class="fas fa-gas-pump text-warning me-2"></i>End CNG Level (Bars) *
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-warning text-dark">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </span>
+                            <select class="form-select" name="end_cng" id="end_cng" required>
+                                <option value="">Select end CNG level</option>
+                                <option value="0">0 Bars (Empty)</option>
+                                <option value="1">1 Bar</option>
+                                <option value="2">2 Bars</option>
+                                <option value="3">3 Bars</option>
+                                <option value="4">4 Bars</option>
+                                <option value="5">5 Bars</option>
+                                <option value="6">6 Bars</option>
+                                <option value="7">7 Bars</option>
+                                <option value="8">8 Bars</option>
+                                <option value="9">9 Bars</option>
+                                <option value="10">10 Bars (Full)</option>
+                            </select>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Current CNG level at duty end • ₹90 per bar calculation
+                        </div>
+                    </div>
+
+                    <!-- End Duty Photo Capture -->
+                    <div class="col-12">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-camera text-success me-2"></i>End Duty Photo Capture
+                        </label>
+                        <div class="camera-capture-container">
+                            <button type="button" class="btn btn-success btn-lg capture-photo-btn w-100" 
+                                    onclick="initCameraCapture('end_photo', 'Capture End Duty Photo')">
+                                <i class="fas fa-camera me-2"></i>Capture End Duty Photo
+                            </button>
+                            <small class="d-block text-muted mt-2">
+                                <i class="fas fa-map-marker-alt me-1"></i>Take a photo to confirm duty completion - location & time will be recorded
+                            </small>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div class="photo-preview mt-3" style="display: none;">
+                            <img id="preview-image" src="" alt="End Duty Photo Preview" class="img-fluid rounded">
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearPhoto('end_photo')">
+                                    <i class="fas fa-trash-alt me-1"></i>Remove Photo
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -798,14 +839,11 @@ function setupVehicleAutoFetch() {
 // Initialize auto-fetch functionality
 setupVehicleAutoFetch();
 
-// Validate end duty form with helpful messages
-function validateEndDutyForm() {
+// Validate simplified end duty form with helpful messages
+function validateSimplifiedEndDutyForm() {
     const requiredFields = [
         { id: 'end_odometer', name: 'Ending Odometer Reading' },
-        { id: 'trip_count', name: 'Number of Trips' },
-        { id: 'cash_collected', name: 'Cash Collected' },
-        { id: 'operator_bill', name: 'Operator Bill' },
-        { id: 'petrol_expenses', name: 'Petrol Expenses' }
+        { id: 'end_cng', name: 'End CNG Level' }
     ];
     
     let missingFields = [];

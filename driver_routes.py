@@ -617,30 +617,28 @@ def end_duty():
             flash('No active duty found.', 'error')
             return redirect(url_for('driver.duty'))
 
-        # Get financial data from form
+        # Get essential data from simplified form
         end_odometer = request.form.get('end_odometer', type=float)
-        trip_count = request.form.get('trip_count', type=int, default=0)
-        fuel_amount = request.form.get('fuel_amount', type=float, default=0.0)
-
-        # Comprehensive financial data
-        active_duty.cash_collection = request.form.get('cash_collected', type=float, default=0.0)
-        active_duty.qr_payment = request.form.get('qr_payment', type=float, default=0.0)
-        active_duty.digital_payments = request.form.get('outside_cash', type=float, default=0.0)
-        active_duty.operator_out = request.form.get('operator_bill', type=float, default=0.0)
-        active_duty.toll_expense = request.form.get('toll', type=float, default=0.0)
-        active_duty.fuel_expense = request.form.get('petrol_expenses', type=float, default=0.0)
-        active_duty.other_expenses = request.form.get('gas_expenses', type=float, default=0.0)
-        active_duty.maintenance_expense = request.form.get('other_expenses', type=float, default=0.0)
-        active_duty.company_pay = request.form.get('company_pay', type=float, default=0.0)
-        active_duty.advance_deduction = request.form.get('advance', type=float, default=0.0)
-        active_duty.fuel_deduction = request.form.get('driver_expenses', type=float, default=0.0)
-        active_duty.penalty_deduction = request.form.get('pass_deduction', type=float, default=0.0)
+        
+        # Simplified form defaults - admin/manager can modify during audit
+        active_duty.cash_collection = 0.0  # To be set during audit
+        active_duty.qr_payment = 0.0       # To be set during audit
+        active_duty.digital_payments = 0.0  # To be set during audit
+        active_duty.operator_out = 0.0      # To be set during audit
+        active_duty.toll_expense = 0.0      # To be set during audit
+        active_duty.fuel_expense = 0.0      # To be set during audit
+        active_duty.other_expenses = 0.0    # To be set during audit
+        active_duty.maintenance_expense = 0.0  # To be set during audit
+        active_duty.company_pay = 0.0       # To be set during audit
+        active_duty.advance_deduction = 0.0  # To be set during audit
+        active_duty.fuel_deduction = 0.0    # To be set during audit
+        active_duty.penalty_deduction = 0.0  # To be set during audit
+        active_duty.total_trips = 0         # To be set during audit
 
         # Update basic duty info
         active_duty.actual_end = get_ist_time_naive()
         active_duty.end_odometer = end_odometer
-        active_duty.total_trips = trip_count
-        active_duty.fuel_consumed = fuel_amount
+        active_duty.fuel_consumed = 0.0  # To be set during audit
         active_duty.status = DutyStatus.PENDING_APPROVAL
         active_duty.submitted_at = get_ist_time_naive()
 
