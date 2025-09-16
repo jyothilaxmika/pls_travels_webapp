@@ -190,7 +190,91 @@ async function handleAdvancePaymentRequest() {
         return;
     }
     
-    console.log('Advance payment request submitted');
+    const amount = parseFloat(amountInput.value);
+    const purpose = purposeSelect.value;
+    const notes = notesInput.value || 'No additional notes';
+    
+    try {
+        // Get WhatsApp contact number from admin settings
+        const response = await fetch('/admin/api/whatsapp-contact');
+        const result = await response.json();
+        
+        if (!result.success) {
+            alert(result.error || 'WhatsApp contact not configured. Please contact admin directly.');
+            return;
+        }
+        
+        // Create advance request record in database first
+        const recordResponse = await fetch('/driver/create-advance-request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                amount: amount,
+                purpose: purpose,
+                notes: notes,
+                duty_id: {{ active_duty.id if active_duty else 'null' }}
+            })
+        });
+        
+        const recordResult = await recordResponse.json();
+        
+        if (!recordResult.success) {
+            alert('Error creating advance request: ' + (recordResult.error || 'Unknown error'));
+            return;
+        }
+        
+        // Generate WhatsApp message
+        const currentTime = new Date().toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const driverName = '{{ current_user.username }}';
+        const vehicleNumber = '{{ active_duty.vehicle.registration_number if active_duty and active_duty.vehicle else "N/A" }}';
+        
+        const message = `🚗 *PLS TRAVELS - ADVANCE PAYMENT REQUEST*
+
+👤 *Driver:* ${driverName}
+🚙 *Vehicle:* ${vehicleNumber}
+💰 *Amount:* ₹${amount.toLocaleString()}
+🎯 *Purpose:* ${purpose.charAt(0).toUpperCase() + purpose.slice(1)}
+📅 *Time:* ${currentTime}
+
+📝 *Notes:* ${notes}
+
+🆔 *Request ID:* #${recordResult.request_id}
+📍 *Duty ID:* #{{ active_duty.id if active_duty else 'N/A' }}
+
+Please respond with approval/rejection
+
+---
+PLS Travels Fleet Management System`;
+
+        // Open WhatsApp with prefilled message
+        const whatsappUrl = `https://wa.me/91${result.contact_number}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Clear form
+        amountInput.value = '';
+        notesInput.value = '';
+        purposeSelect.value = 'fuel';
+        
+        // Show success message
+        alert('Advance request created! WhatsApp opened with prefilled message. Please send the message to admin.');
+        
+        console.log('Advance payment request submitted');
+        
+    } catch (error) {
+        console.error('Error submitting advance request:', error);
+        alert('Error submitting advance request. Please try again or contact admin directly.');
+    }
 }
 
 // Essential JavaScript functions for the duty form

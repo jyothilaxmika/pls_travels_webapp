@@ -237,11 +237,11 @@ def respond_to_advance_request(request_id: int, admin_user_id: int,
         advance_request.responded_by = admin_user_id
         advance_request.responded_at = datetime.now()
         
-        # If approved, update the duty's advance deduction
+        # If approved, update the duty's company pay (advance is company expense)
         if status == 'approved' and approved_amount > 0:
             duty = advance_request.duty
             if duty:
-                duty.advance_deduction = (duty.advance_deduction or 0) + approved_amount
+                duty.company_pay = (duty.company_pay or 0) + approved_amount
         
         db.session.commit()
         

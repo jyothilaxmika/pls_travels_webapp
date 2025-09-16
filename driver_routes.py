@@ -906,6 +906,85 @@ def request_advance_payment():
         print(f"Error requesting advance payment: {str(e)}")
         return jsonify({'error': 'Failed to process request'}), 500
 
+@driver_bp.route('/create-advance-request', methods=['POST'])
+@login_required
+@driver_required
+def create_advance_request():
+    """Create advance payment request record"""
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'success': False, 'error': 'Driver profile not found'}), 404
+    
+    try:
+        # CSRF Protection - validate token from request
+        csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+        if not csrf_token:
+            return jsonify({'success': False, 'error': 'Missing CSRF token'}), 403
+            
+        try:
+            validate_csrf(csrf_token)
+        except Exception:
+            return jsonify({'success': False, 'error': 'Invalid CSRF token'}), 403
+        
+        data = request.get_json()
+        amount = float(data.get('amount', 0))
+        purpose = data.get('purpose', 'fuel')
+        notes = data.get('notes', '')
+        duty_id = data.get('duty_id')
+        
+        if amount < 50:
+            return jsonify({'success': False, 'error': 'Minimum amount is ₹50'})
+        
+        if amount > 5000:
+            return jsonify({'success': False, 'error': 'Maximum amount is ₹5000'})
+        
+        if not duty_id:
+            return jsonify({'success': False, 'error': 'No active duty found'})
+            
+        # CRITICAL SECURITY: Verify duty ownership and status
+        duty = Duty.query.get(duty_id)
+        if not duty:
+            return jsonify({'success': False, 'error': 'Duty not found'}), 404
+            
+        if duty.driver_id != driver.id:
+            return jsonify({'success': False, 'error': 'Unauthorized: Duty does not belong to current driver'}), 403
+            
+        if duty.status != DutyStatus.ACTIVE:
+            return jsonify({'success': False, 'error': 'Can only request advance for active duties'}), 400
+        
+        # Create advance payment request
+        advance_request = AdvancePaymentRequest(
+            duty_id=duty_id,
+            driver_id=driver.id,
+            amount_requested=amount,
+            purpose=purpose,
+            notes=notes,
+            status='pending',
+            created_at=get_ist_time_naive(),
+            whatsapp_message_sent=False
+        )
+        
+        db.session.add(advance_request)
+        db.session.commit()
+        
+        # Log the advance request creation
+        log_audit('create_advance_request', 'advance_payment_request', advance_request.id, {
+            'amount': amount,
+            'purpose': purpose,
+            'duty_id': duty_id,
+            'driver_id': driver.id
+        })
+        
+        return jsonify({
+            'success': True,
+            'request_id': advance_request.id,
+            'message': 'Advance request created successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @driver_bp.route('/advance-payment/pending')
 @login_required
 @driver_required
