@@ -36,8 +36,21 @@ def create_app():
     # x_host=1: Trust one proxy for X-Forwarded-Host header (hostname)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     
-    # CORS Configuration for mobile apps (restricted origins for security)
-    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"], 
+    # CORS Configuration for mobile apps and production deployment
+    # Allow requests from Replit domains and localhost for development
+    allowed_origins = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://*.replit.app",
+        "https://*.repl.co"
+    ]
+    
+    # In production, allow the deployed domain
+    if os.environ.get('REPL_DEPLOYMENT') == 'true':
+        # For production deployment, allow all origins from the same domain
+        allowed_origins = ["*"]
+    
+    CORS(app, origins=allowed_origins, 
          supports_credentials=False,
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
