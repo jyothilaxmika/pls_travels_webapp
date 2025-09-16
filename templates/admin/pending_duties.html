@@ -103,6 +103,7 @@
                                 <form method="POST" action="{{ url_for('admin.approve_duty', duty_id=duty.id) }}" 
                                       class="d-inline" 
                                       onsubmit="return confirm('Are you sure you want to approve this duty?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button type="submit" class="btn btn-sm btn-success" title="Approve">
                                         <i class="fas fa-check"></i>
                                     </button>
@@ -335,6 +336,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('admin.reject_duty', duty_id=duty.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-body">
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle"></i>

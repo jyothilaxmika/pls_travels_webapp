@@ -2655,12 +2655,17 @@ def pending_duties():
                          branch_filter=branch_filter,
                          date_filter=date_filter)
 
-@admin_bp.route('/duties/<int:duty_id>/approve', methods=['POST'])
+@admin_bp.route('/duties/<int:duty_id>/approve', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def approve_duty(duty_id):
     """Approve a duty submission"""
     duty = Duty.query.get_or_404(duty_id)
+    
+    if request.method == 'GET':
+        # Handle GET requests by redirecting with a message
+        flash('Please use the approve button from the pending duties page.', 'warning')
+        return redirect(url_for('admin.pending_duties'))
     
     if duty.status != DutyStatus.PENDING_APPROVAL:
         flash('Duty is not pending approval.', 'error')
