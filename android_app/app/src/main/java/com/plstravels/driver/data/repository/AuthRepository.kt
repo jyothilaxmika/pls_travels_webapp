@@ -10,6 +10,7 @@ import com.plstravels.driver.data.model.OtpSendResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -172,8 +173,7 @@ class AuthRepository @Inject constructor(
      */
     suspend fun getCurrentAccessToken(): String? {
         return try {
-            val preferences = dataStore.data.map { it[PreferenceKeys.ACCESS_TOKEN] }
-            preferences.collect { return it }
+            dataStore.data.map { it[PreferenceKeys.ACCESS_TOKEN] }.first()
         } catch (e: Exception) {
             Timber.e(e, "Failed to get access token")
             null
@@ -182,8 +182,7 @@ class AuthRepository @Inject constructor(
 
     private suspend fun getRefreshToken(): String? {
         return try {
-            val preferences = dataStore.data.map { it[PreferenceKeys.REFRESH_TOKEN] }
-            preferences.collect { return it }
+            dataStore.data.map { it[PreferenceKeys.REFRESH_TOKEN] }.first()
         } catch (e: Exception) {
             Timber.e(e, "Failed to get refresh token")
             null

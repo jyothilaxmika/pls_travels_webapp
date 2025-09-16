@@ -24,7 +24,7 @@ class AuthInterceptor @Inject constructor(
         }
         
         // Add access token to requests
-        val accessToken = runBlocking { authRepository.getAccessToken() }
+        val accessToken = runBlocking { authRepository.getCurrentAccessToken() }
         
         return if (!accessToken.isNullOrEmpty()) {
             val authenticatedRequest = originalRequest.newBuilder()

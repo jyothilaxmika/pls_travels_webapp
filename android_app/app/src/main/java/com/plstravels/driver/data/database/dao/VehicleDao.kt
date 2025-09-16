@@ -21,11 +21,17 @@ interface VehicleDao {
     @Query("SELECT * FROM vehicles")
     suspend fun getAllVehicles(): List<VehicleEntity>
     
+    @Query("SELECT * FROM vehicles")
+    fun getAllVehiclesSync(): List<VehicleEntity>
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVehicle(vehicle: VehicleEntity)
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertVehicles(vehicles: List<VehicleEntity>)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(vehicles: List<VehicleEntity>)
     
     @Update
     suspend fun updateVehicle(vehicle: VehicleEntity)

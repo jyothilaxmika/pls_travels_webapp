@@ -1,6 +1,7 @@
 package com.plstravels.driver.data.database.dao
 
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 import com.plstravels.driver.data.database.entity.DutyEntity
 
 /**
@@ -28,13 +29,25 @@ interface DutyDao {
     suspend fun getUnsyncedDuties(): List<DutyEntity>
     
     @Query("SELECT * FROM duties ORDER BY dutyDate DESC, id DESC")
-    suspend fun getAllDuties(): List<DutyEntity>
+    fun getAllDuties(): Flow<List<DutyEntity>>
+    
+    @Query("SELECT * FROM duties ORDER BY dutyDate DESC, id DESC")
+    fun getAllDutiesSync(): List<DutyEntity>
+    
+    @Query("SELECT * FROM duties WHERE status = 'ACTIVE' LIMIT 1")
+    suspend fun getActiveDuty(): DutyEntity?
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDuty(duty: DutyEntity)
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(duty: DutyEntity)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDuties(duties: List<DutyEntity>)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(duties: List<DutyEntity>)
     
     @Update
     suspend fun updateDuty(duty: DutyEntity)
@@ -47,6 +60,9 @@ interface DutyDao {
     
     @Query("UPDATE duties SET isSynced = :isSynced WHERE id = :dutyId")
     suspend fun updateSyncStatus(dutyId: Int, isSynced: Boolean)
+    
+    @Query("UPDATE duties SET isSynced = 1 WHERE id = :dutyId")
+    suspend fun markAsSynced(dutyId: Int)
     
     @Query("UPDATE duties SET updatedAt = :timestamp WHERE id = :dutyId")
     suspend fun updateTimestamp(dutyId: Int, timestamp: Long = System.currentTimeMillis())
