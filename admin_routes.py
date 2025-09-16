@@ -672,6 +672,72 @@ def advance_payment_details(request_id):
     return render_template('admin/advance_payment_details.html',
                          advance_request=advance_request)
 
+# === WHATSAPP SETTINGS ROUTES ===
+
+@admin_bp.route('/whatsapp-settings')
+@login_required
+@admin_required
+def whatsapp_settings():
+    """Manage WhatsApp settings for advance payment requests"""
+    from models import WhatsAppSettings
+    settings = WhatsAppSettings.get_settings()
+    return render_template('admin/whatsapp_settings.html', settings=settings)
+
+@admin_bp.route('/whatsapp-settings/update', methods=['POST'])
+@login_required
+@admin_required
+def update_whatsapp_settings():
+    """Update WhatsApp configuration settings"""
+    from models import WhatsAppSettings
+    
+    try:
+        settings = WhatsAppSettings.get_settings()
+        
+        # Update phone numbers (validate 10-digit format)
+        primary_admin = request.form.get('primary_admin_whatsapp', '').strip()
+        secondary_admin = request.form.get('secondary_admin_whatsapp', '').strip()
+        manager = request.form.get('manager_whatsapp', '').strip()
+        
+        # Validate phone numbers
+        def validate_phone(phone):
+            return phone and phone.isdigit() and len(phone) == 10
+        
+        if primary_admin and not validate_phone(primary_admin):
+            flash('Primary admin WhatsApp number must be a 10-digit number', 'error')
+            return redirect(url_for('admin.whatsapp_settings'))
+        
+        if secondary_admin and not validate_phone(secondary_admin):
+            flash('Secondary admin WhatsApp number must be a 10-digit number', 'error')
+            return redirect(url_for('admin.whatsapp_settings'))
+            
+        if manager and not validate_phone(manager):
+            flash('Manager WhatsApp number must be a 10-digit number', 'error')
+            return redirect(url_for('admin.whatsapp_settings'))
+        
+        # Update settings
+        settings.primary_admin_whatsapp = primary_admin if primary_admin else None
+        settings.secondary_admin_whatsapp = secondary_admin if secondary_admin else None
+        settings.manager_whatsapp = manager if manager else None
+        settings.priority_contact = request.form.get('priority_contact', 'admin')
+        settings.updated_by = current_user.id
+        
+        db.session.commit()
+        
+        log_audit('update_whatsapp_settings', 'whatsapp_settings', settings.id, {
+            'priority_contact': settings.priority_contact,
+            'has_primary_admin': bool(settings.primary_admin_whatsapp),
+            'has_secondary_admin': bool(settings.secondary_admin_whatsapp),
+            'has_manager': bool(settings.manager_whatsapp)
+        })
+        
+        flash('WhatsApp settings updated successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating WhatsApp settings: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.whatsapp_settings'))
+
 # === TRIP APPROVAL MANAGEMENT ROUTES ===
 
 @admin_bp.route('/approval-settings')

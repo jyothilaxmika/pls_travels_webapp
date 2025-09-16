@@ -1,0 +1,217 @@
+{% extends "admin/base.html" %}
+
+{% block title %}WhatsApp Settings - PLS TRAVELS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .settings-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .settings-header {
+        background: #f8f9fa;
+        padding: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .whatsapp-preview {
+        background: #e3f2fd;
+        border-radius: 8px;
+        padding: 15px;
+        border: 1px solid #2196f3;
+    }
+    .phone-input {
+        font-family: 'Courier New', monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fab fa-whatsapp text-success"></i> WhatsApp Settings</h1>
+                    <p class="text-muted mb-0">Configure WhatsApp numbers for advance payment requests</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Configuration -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog"></i> WhatsApp Admin/Manager Numbers</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.update_whatsapp_settings') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4">
+                            <label for="primary_admin_whatsapp" class="form-label fw-bold">
+                                <i class="fas fa-user-shield text-primary me-2"></i>Primary Admin WhatsApp Number *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">+91</span>
+                                <input type="tel" class="form-control phone-input" 
+                                       name="primary_admin_whatsapp" id="primary_admin_whatsapp"
+                                       value="{{ settings.primary_admin_whatsapp or '' }}" 
+                                       pattern="[0-9]{10}" maxlength="10" required
+                                       placeholder="9876543210">
+                            </div>
+                            <small class="text-muted">Primary contact for advance payment requests</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="secondary_admin_whatsapp" class="form-label fw-bold">
+                                <i class="fas fa-user-cog text-secondary me-2"></i>Secondary Admin WhatsApp Number
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">+91</span>
+                                <input type="tel" class="form-control phone-input" 
+                                       name="secondary_admin_whatsapp" id="secondary_admin_whatsapp"
+                                       value="{{ settings.secondary_admin_whatsapp or '' }}" 
+                                       pattern="[0-9]{10}" maxlength="10"
+                                       placeholder="9876543210">
+                            </div>
+                            <small class="text-muted">Backup contact (optional)</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="manager_whatsapp" class="form-label fw-bold">
+                                <i class="fas fa-user-tie text-info me-2"></i>Manager WhatsApp Number
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">+91</span>
+                                <input type="tel" class="form-control phone-input" 
+                                       name="manager_whatsapp" id="manager_whatsapp"
+                                       value="{{ settings.manager_whatsapp or '' }}" 
+                                       pattern="[0-9]{10}" maxlength="10"
+                                       placeholder="9876543210">
+                            </div>
+                            <small class="text-muted">Branch manager contact (optional)</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Advance Request Priority</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="priority_contact" 
+                                       value="admin" id="priority_admin" 
+                                       {% if not settings.priority_contact or settings.priority_contact == 'admin' %}checked{% endif %}>
+                                <label class="form-check-label" for="priority_admin">
+                                    Send to Admin first, then Manager
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="priority_contact" 
+                                       value="manager" id="priority_manager"
+                                       {% if settings.priority_contact == 'manager' %}checked{% endif %}>
+                                <label class="form-check-label" for="priority_manager">
+                                    Send to Manager first, then Admin
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="priority_contact" 
+                                       value="both" id="priority_both"
+                                       {% if settings.priority_contact == 'both' %}checked{% endif %}>
+                                <label class="form-check-label" for="priority_both">
+                                    Send to both simultaneously
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-info" onclick="testWhatsAppMessage()">
+                                <i class="fas fa-flask me-1"></i>Test Message
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i>Save WhatsApp Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-eye"></i> Message Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="whatsapp-preview">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fab fa-whatsapp text-success me-2"></i>
+                            <strong>WhatsApp Message</strong>
+                        </div>
+                        <div class="small" style="line-height: 1.4;">
+                            🚗 <strong>PLS TRAVELS - ADVANCE PAYMENT REQUEST</strong><br><br>
+                            👤 <strong>Driver:</strong> John Driver<br>
+                            🚙 <strong>Vehicle:</strong> TN45AS5468<br>
+                            💰 <strong>Amount:</strong> ₹2,000<br>
+                            🎯 <strong>Purpose:</strong> Fuel<br>
+                            📅 <strong>Time:</strong> Sep 16, 2025 16:30<br><br>
+                            📝 <strong>Notes:</strong> Emergency fuel needed<br><br>
+                            🆔 <strong>Request ID:</strong> #123<br>
+                            📍 <strong>Duty ID:</strong> #456<br><br>
+                            <em>Please respond with approval/rejection</em><br><br>
+                            ---<br>
+                            PLS Travels Fleet Management System
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6><i class="fas fa-info-circle text-info"></i> How it works:</h6>
+                        <ul class="small">
+                            <li>Driver clicks "Request Advance"</li>
+                            <li>Opens WhatsApp with pre-filled message</li>
+                            <li>Message sent to configured admin/manager</li>
+                            <li>Amount tracked in trip audit as company_pay</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function testWhatsAppMessage() {
+    const adminPhone = document.getElementById('primary_admin_whatsapp').value;
+    if (!adminPhone) {
+        alert('Please enter primary admin WhatsApp number first');
+        return;
+    }
+    
+    const message = `🚗 *PLS TRAVELS - TEST MESSAGE*
+
+This is a test message from the admin panel to verify WhatsApp configuration is working properly.
+
+📅 *Time:* ${new Date().toLocaleString()}
+👤 *Sent by:* {{ current_user.username }}
+
+---
+PLS Travels Fleet Management System`;
+
+    const whatsappUrl = `https://wa.me/91${adminPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+
+// Phone number formatting
+document.querySelectorAll('.phone-input').forEach(input => {
+    input.addEventListener('input', function(e) {
+        // Remove non-digits
+        let value = e.target.value.replace(/\D/g, '');
+        // Limit to 10 digits
+        if (value.length > 10) {
+            value = value.slice(0, 10);
+        }
+        e.target.value = value;
+    });
+});
+</script>
+{% endblock %}

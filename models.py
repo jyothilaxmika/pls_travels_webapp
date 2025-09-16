@@ -1358,6 +1358,80 @@ class UberIntegrationSettings(db.Model):
     
     # Relationships
     updater = db.relationship('User', foreign_keys=[updated_by])
+
+class WhatsAppSettings(db.Model):
+    """Configuration settings for WhatsApp integration"""
+    __tablename__ = 'whatsapp_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # WhatsApp contact numbers (10-digit Indian numbers)
+    primary_admin_whatsapp = db.Column(db.String(10))  # Main admin contact
+    secondary_admin_whatsapp = db.Column(db.String(10))  # Backup admin contact
+    manager_whatsapp = db.Column(db.String(10))  # Manager contact
+    
+    # Priority settings for advance requests
+    priority_contact = db.Column(db.String(20), default='admin')  # admin, manager, both
+    
+    # Message settings
+    is_enabled = db.Column(db.Boolean, default=True)
+    include_location = db.Column(db.Boolean, default=True)  # Include GPS location in messages
+    include_duty_details = db.Column(db.Boolean, default=True)  # Include duty info
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Relationships
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    @classmethod
+    def get_settings(cls):
+        """Get the current WhatsApp settings (singleton pattern)"""
+        settings = cls.query.first()
+        if not settings:
+            # Create default settings
+            settings = cls(
+                primary_admin_whatsapp=None,
+                priority_contact='admin',
+                is_enabled=True,
+                include_location=True,
+                include_duty_details=True
+            )
+            db.session.add(settings)
+            db.session.commit()
+        return settings
+    
+    def get_contact_numbers(self):
+        """Get list of contact numbers based on priority"""
+        numbers = []
+        
+        if self.priority_contact == 'admin':
+            if self.primary_admin_whatsapp:
+                numbers.append(self.primary_admin_whatsapp)
+            if self.secondary_admin_whatsapp:
+                numbers.append(self.secondary_admin_whatsapp)
+            if self.manager_whatsapp:
+                numbers.append(self.manager_whatsapp)
+        elif self.priority_contact == 'manager':
+            if self.manager_whatsapp:
+                numbers.append(self.manager_whatsapp)
+            if self.primary_admin_whatsapp:
+                numbers.append(self.primary_admin_whatsapp)
+            if self.secondary_admin_whatsapp:
+                numbers.append(self.secondary_admin_whatsapp)
+        else:  # both
+            contacts = []
+            if self.primary_admin_whatsapp:
+                contacts.append(self.primary_admin_whatsapp)
+            if self.manager_whatsapp:
+                contacts.append(self.manager_whatsapp)
+            if self.secondary_admin_whatsapp:
+                contacts.append(self.secondary_admin_whatsapp)
+            numbers = contacts
+            
+        return [num for num in numbers if num]  # Filter out None values
     
     def __repr__(self):
         return f'<UberIntegrationSettings enabled:{self.is_enabled}>'
