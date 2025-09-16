@@ -522,46 +522,14 @@ def start_duty():
         flash('Selected vehicle is not available.', 'error')
         return redirect(url_for('driver.duty'))
 
-    # Automatically select the default duty scheme for the driver's branch
-    # Priority 1: Branch-specific default scheme
-    duty_scheme = DutyScheme.query.filter_by(
-        branch_id=driver.branch_id, 
-        is_active=True, 
-        is_default=True
-    ).first()
-    
-    # Priority 2: Global default scheme
-    if not duty_scheme:
-        duty_scheme = DutyScheme.query.filter_by(
-            branch_id=None,  # Global schemes
-            is_active=True, 
-            is_default=True
-        ).first()
-    
-    # Priority 3: Any branch-specific active scheme
-    if not duty_scheme:
-        duty_scheme = DutyScheme.query.filter_by(
-            branch_id=driver.branch_id, 
-            is_active=True
-        ).first()
-    
-    # Priority 4: Any global active scheme
-    if not duty_scheme:
-        duty_scheme = DutyScheme.query.filter_by(
-            branch_id=None,  # Global schemes
-            is_active=True
-        ).first()
-    
-    if not duty_scheme:
-        flash('No duty scheme available. Please contact your manager.', 'error')
-        return redirect(url_for('driver.duty'))
+    # No duty scheme required for starting duties - removed automatic assignment
 
     # Create new duty
     duty = Duty()
     duty.driver_id = driver.id
     duty.vehicle_id = vehicle.id
     duty.branch_id = driver.branch_id
-    duty.duty_scheme_id = duty_scheme.id
+    duty.duty_scheme_id = None  # No duty scheme required
     duty.actual_start = get_ist_time_naive()
     duty.start_odometer = start_odometer or 0.0
     duty.start_cng = start_cng_level or 0.0  # Store the starting CNG level
