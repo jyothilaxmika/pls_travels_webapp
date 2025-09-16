@@ -157,6 +157,9 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = app.secret_key  # Use same secret as Flask session
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+    
+    # Initialize JWT manager
+    jwt.init_app(app)
     app.config['JWT_ALGORITHM'] = 'HS256'
 
     # Make datetime and timedelta available in templates
@@ -243,6 +246,7 @@ def create_app():
     from driver_routes import driver_bp
     from storage_routes import storage_bp
     from vehicle_tracking_routes import tracking_bp
+    from api_tracking_routes import api_tracking_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(otp_bp, url_prefix='/otp')
@@ -253,6 +257,7 @@ def create_app():
     app.register_blueprint(driver_bp, url_prefix='/driver')
     app.register_blueprint(storage_bp)
     app.register_blueprint(tracking_bp, url_prefix='/tracking')
+    app.register_blueprint(api_tracking_bp)  # Mobile tracking API includes /api/v1/tracking/*
     
     # Make session permanent and handle database timeouts
     @app.before_request
