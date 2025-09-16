@@ -11,6 +11,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 
 /**
  * Login screen with OTP authentication
@@ -23,11 +25,31 @@ fun LoginScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState = viewModel.uiState
+    val context = LocalContext.current
+    val isBiometricEnabled by viewModel.authRepository.isBiometricEnabled.collectAsState(initial = false)
     
     // Navigate on successful login
     LaunchedEffect(uiState.loginSuccessful) {
         if (uiState.loginSuccessful) {
             onLoginSuccess()
+        }
+    }
+
+    // Initialize biometric availability and session validation on screen start
+    LaunchedEffect(Unit) {
+        viewModel.checkBiometricAvailability()
+        viewModel.validateSession()
+    }
+
+    // Show biometric prompt if user has biometric setup and session exists
+    LaunchedEffect(uiState.biometricSetup, isBiometricEnabled) {
+        if (uiState.biometricAvailable && uiState.biometricSetup && isBiometricEnabled && context is FragmentActivity) {
+            // Only show biometric prompt if user has existing session
+            viewModel.authRepository.currentUser.collect { user ->
+                if (user != null) {
+                    viewModel.authenticateWithBiometric(context)
+                }
+            }
         }
     }
 
@@ -55,6 +77,8 @@ fun LoginScreen(
 
         if (!uiState.otpSent) {
             PhoneNumberInput(
+                viewModel = viewModel,
+                uiState = uiState,
                 onSendOtp = viewModel::sendOtp,
                 isLoading = uiState.isLoading,
                 error = uiState.error,
@@ -62,6 +86,8 @@ fun LoginScreen(
             )
         } else {
             OtpVerification(
+                viewModel = viewModel,
+                uiState = uiState,
                 phone = uiState.currentPhone,
                 onVerifyOtp = viewModel::verifyOtp,
                 onResendOtp = { viewModel.sendOtp(uiState.currentPhone) },
@@ -72,6 +98,66 @@ fun LoginScreen(
                 onClearError = viewModel::clearError,
                 onClearMessage = viewModel::clearMessage
             )
+            
+            // Show biometric setup option after successful login
+            if (uiState.biometricAvailable && !uiState.biometricSetup && message?.contains("successful", ignoreCase = true) == true) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🔒 Enable Biometric Login",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        
+                        Text(
+                            text = "Set up fingerprint or face unlock for faster, secure access",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                        )
+                        
+                        val context = LocalContext.current
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            OutlinedButton(
+                                onClick = { /* Skip for now */ },
+                                enabled = !isLoading,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Skip")
+                            }
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            Button(
+                                onClick = {
+                                    if (context is FragmentActivity) {
+                                        viewModel.setupBiometric(context)
+                                    }
+                                },
+                                enabled = !isLoading,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Enable")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -79,6 +165,8 @@ fun LoginScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PhoneNumberInput(
+    viewModel: AuthViewModel,
+    uiState: AuthUiState,
     onSendOtp: (String) -> Unit,
     isLoading: Boolean,
     error: String?,
@@ -140,6 +228,38 @@ private fun PhoneNumberInput(
                     Text("Send OTP")
                 }
             }
+
+            val context = LocalContext.current
+            
+            // Show biometric authentication option only if available and previously set up
+            if (uiState.biometricAvailable && uiState.biometricSetup) {
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedButton(
+                    onClick = {
+                        if (context is FragmentActivity) {
+                            viewModel.authenticateWithBiometric(context)
+                        }
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Use Biometric Authentication")
+                }
+            }
+            
+            // Show biometric setup hint if available but not set up
+            if (uiState.biometricAvailable && !uiState.biometricSetup) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "💡 Enable biometric login after signing in",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -147,6 +267,8 @@ private fun PhoneNumberInput(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OtpVerification(
+    viewModel: AuthViewModel,
+    uiState: AuthUiState,
     phone: String,
     onVerifyOtp: (String) -> Unit,
     onResendOtp: () -> Unit,
@@ -237,11 +359,17 @@ private fun OtpVerification(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TextButton(onClick = onBackToPhone) {
+                TextButton(
+                    onClick = onBackToPhone,
+                    enabled = !isLoading
+                ) {
                     Text("Change Number")
                 }
                 
-                TextButton(onClick = onResendOtp) {
+                TextButton(
+                    onClick = onResendOtp,
+                    enabled = !isLoading
+                ) {
                     Text("Resend OTP")
                 }
             }
