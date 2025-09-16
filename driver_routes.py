@@ -430,6 +430,7 @@ def start_duty():
     vehicle_id = request.form.get('vehicle_id')
     duty_scheme_id = request.form.get('duty_scheme_id', type=int)
     start_odometer = request.form.get('start_odometer', type=float)
+    start_cng_level = request.form.get('start_cng_level', type=float)
 
     if not vehicle_id:
         flash('Please select a vehicle.', 'error')
@@ -464,6 +465,18 @@ def start_duty():
     if not start_odometer:
         flash('Please enter a valid starting odometer reading.', 'error')
         return redirect(url_for('driver.duty'))
+    
+    # Validate CNG level if provided
+    if start_cng_level is not None:
+        if not (0.0 <= start_cng_level <= 10.0):
+            flash('Please select a valid CNG level between 0 and 10 bars.', 'error')
+            return redirect(url_for('driver.duty'))
+    else:
+        # Default to last end CNG level if available, otherwise 10 bars (full tank assumption)
+        if last_duty_data and 'last_end_cng' in last_duty_data and last_duty_data['last_end_cng']:
+            start_cng_level = last_duty_data['last_end_cng']
+        else:
+            start_cng_level = 10.0  # Assume full tank for new drivers
 
     vehicle = Vehicle.query.filter(
         Vehicle.id == vehicle_id,
@@ -490,6 +503,7 @@ def start_duty():
     duty.duty_scheme_id = duty_scheme.id
     duty.actual_start = get_ist_time_naive()
     duty.start_odometer = start_odometer or 0.0
+    duty.start_cng = start_cng_level or 0.0  # Store the starting CNG level
     duty.status = DutyStatus.ACTIVE
 
     # Handle start photo camera capture
