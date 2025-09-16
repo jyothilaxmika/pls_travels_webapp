@@ -181,10 +181,6 @@
                     </div>
 
                     <!-- End CNG Level -->
-                    <div class="col-12">
-                        <label for="end_cng" class="form-label fw-bold">
-                            <i class="fas fa-gas-pump text-warning me-2"></i>End CNG Level (Bars) *
-                        </label>
                         <div class="input-group input-group-lg">
                             <span class="input-group-text bg-warning text-dark">
                                 <i class="fas fa-tachometer-alt"></i>
@@ -201,11 +197,7 @@
                                 <option value="7">7 Bars</option>
                                 <option value="8">8 Bars</option>
                                 <option value="9">9 Bars</option>
-                                <option value="10">10 Bars (Full)</option>
                             </select>
-                        </div>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>Current CNG level at duty end • ₹90 per bar calculation
                         </div>
                     </div>
 
@@ -314,11 +306,7 @@
                                             <option value="7">7 Bars</option>
                                             <option value="8">8 Bars</option>
                                             <option value="9">9 Bars</option>
-                                            <option value="10" selected>10 Bars (Full)</option>
                                         </select>
-                                    </div>
-                                    <div class="form-text">
-                                        <i class="fas fa-robot me-1"></i>Auto-filled from previous duty when vehicle selected
                                     </div>
                                 </div>
                                 
@@ -331,7 +319,6 @@
                                             <i class="fas fa-tachometer-alt"></i>
                                         </span>
                                         <select class="form-select" name="end_cng" id="end_cng" required>
-                                            <option value="">Select end level</option>
                                             <option value="1">1 Bar (Empty)</option>
                                             <option value="2">2 Bars</option>
                                             <option value="3">3 Bars</option>
@@ -341,25 +328,10 @@
                                             <option value="7">7 Bars</option>
                                             <option value="8">8 Bars</option>
                                             <option value="9">9 Bars</option>
-                                            <option value="10">10 Bars (Full)</option>
                                         </select>
                                     </div>
-                                    <div class="form-text">Current CNG level at duty end</div>
                                 </div>
                                 
-                                <div class="col-12 mb-3">
-                                    <label for="cng_point" class="form-label fw-bold">
-                                        <i class="fas fa-map-marker-alt me-1"></i>CNG Station (Optional)
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text bg-info text-white fw-bold">
-                                            <i class="fas fa-map-marker-alt"></i>
-                                        </span>
-                                        <input type="text" class="form-control" name="cng_point" id="cng_point" 
-                                               placeholder="CNG station name/location" maxlength="100">
-                                    </div>
-                                    <div class="form-text">Where did you fill CNG? (if applicable)</div>
-                                </div>
                             </div>
                         
                         <!-- CNG Calculation Display -->
@@ -385,15 +357,7 @@
                     <div class="card-header">
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-6 col-md-12 mb-3">
-                                <label for="company_pay" class="form-label">Company Pay *</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">₹</span>
-                                    <input type="number" class="form-control" name="company_pay" id="company_pay" 
-                                           min="0" step="0.01" required>
                                 </div>
-                                <small class="text-muted">Base salary/guarantee</small>
                             </div>
                             
                             <div class="col-lg-6 col-md-12 mb-3">
@@ -408,7 +372,6 @@
                         
                         <div class="row">
                             <div class="col-lg-6 col-md-12 mb-3">
-                                <label for="driver_expenses" class="form-label">Driver Expenses</label>
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="driver_expenses" id="driver_expenses" 
@@ -417,7 +380,6 @@
                             </div>
                             
                             <div class="col-lg-6 col-md-12 mb-3">
-                                <label for="pass_deduction" class="form-label">Pass Deduction</label>
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text">₹</span>
                                     <input type="number" class="form-control" name="pass_deduction" id="pass_deduction" 
@@ -431,7 +393,6 @@
                 <!-- Fuel Information -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="fuel_amount" class="form-label">Fuel Filled (Liters)</label>
                         <input type="number" class="form-control" name="fuel_amount" id="fuel_amount" 
                                min="0" step="0.1" value="0">
                         <small class="text-muted">Amount of fuel filled during duty</small>
@@ -440,13 +401,6 @@
                     <div class="col-md-6 mb-3">
                         <div class="card border-info live-calculation">
                             <div class="card-body p-2">
-                                <div id="live-calculation">
-                                    <small>
-                                        <div>Total Earnings: <span id="calc-total-earnings">₹0.00</span></div>
-                                        <div>Driver Salary: <span id="calc-driver-salary">₹0.00</span></div>
-                                        <div>Company Profit: <span id="calc-company-profit">₹0.00</span></div>
-                                    </small>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -543,7 +497,6 @@
                         <option value="7">7 Bars</option>
                         <option value="8">8 Bars</option>
                         <option value="9">9 Bars</option>
-                        <option value="10" selected>10 Bars (Full)</option>
                     </select>
                     <small class="text-muted">
                         <i class="fas fa-info-circle me-1"></i>Check your CNG gauge and select the current level before starting duty
