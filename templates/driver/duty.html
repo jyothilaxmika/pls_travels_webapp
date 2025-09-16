@@ -379,12 +379,6 @@
 
 <script>
 // Essential JavaScript functions for the specified elements only
-if (typeof initCameraCapture !== 'function') {
-    function initCameraCapture(inputId, buttonText) {
-        // Camera functionality placeholder
-        console.log('Camera capture for:', inputId);
-    }
-}
 
 // Advance payment request handling
 async function handleAdvancePaymentRequest() {
@@ -422,7 +416,7 @@ async function handleAdvancePaymentRequest() {
                 amount: amount,
                 purpose: purpose,
                 notes: notes,
-                duty_id: {{ active_duty.id if active_duty else 'null' }}
+                duty_id: {% if active_duty %}{{ active_duty.id }}{% else %}null{% endif %}
             })
         });
         
@@ -457,7 +451,7 @@ async function handleAdvancePaymentRequest() {
 📝 *Notes:* ${notes}
 
 🆔 *Request ID:* #${recordResult.request_id}
-📍 *Duty ID:* #{{ active_duty.id if active_duty else 'N/A' }}
+📍 *Duty ID:* #{% if active_duty %}{{ active_duty.id }}{% else %}N/A{% endif %}
 
 Please respond with approval/rejection
 

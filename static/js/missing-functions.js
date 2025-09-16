@@ -1,96 +1,80 @@
 // Missing JavaScript functions that are referenced in template onclick handlers
 // These functions were missing and causing JavaScript errors
 
-// Camera capture functionality
-function initCameraCapture(inputId, title = 'Capture Photo') {
-    console.log('initCameraCapture called for:', inputId);
-
-    // Try multiple strategies to find the input field
-    let input = null;
-    let searchMethod = '';
-
-    // Strategy 1: Find by ID
-    input = document.getElementById(inputId);
-    if (input) {
-        searchMethod = 'by ID';
-    }
-
-    // Strategy 2: Find by name attribute
-    if (!input) {
-        input = document.querySelector(`input[name="${inputId}"]`);
-        if (input) {
-            searchMethod = 'by name attribute';
+// Enhanced camera capture functionality for mobile devices
+function initCameraCapture(inputId, buttonText) {
+    console.log('Initializing camera capture for:', inputId);
+    
+    // Check if we're on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+        // Mobile device with camera support
+        const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
+        const captureContainer = captureButton ? captureButton.parentElement : null;
+        
+        if (!captureContainer) {
+            console.error('Could not find capture container for:', inputId);
+            return;
         }
-    }
-
-    // Strategy 3: Find by name attribute with variations
-    if (!input) {
-        const variations = [`${inputId}_file`, `${inputId}_input`, inputId.replace('_photo', '')];
-        for (const variation of variations) {
-            input = document.querySelector(`input[name="${variation}"]`);
-            if (input) {
-                searchMethod = `by name variation "${variation}"`;
-                break;
-            }
-        }
-    }
-
-    // Strategy 4: Find in the same container as the button clicked
-    if (!input) {
-        const clickedButton = event?.target;
-        if (clickedButton) {
-            const container = clickedButton.closest('.card-body, .form-group, .mb-3, .col-md-4');
-            if (container) {
-                input = container.querySelector('input[type="file"]');
-                if (input) {
-                    searchMethod = 'in button container';
+        
+        // Create file input for camera
+        let fileInput = captureContainer.querySelector('input[type="file"]');
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.capture = 'camera';
+            fileInput.style.display = 'none';
+            fileInput.id = `${inputId}_file_input`;
+            captureContainer.appendChild(fileInput);
+            
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleCameraPhoto(e.target.files[0], inputId);
                 }
+            });
+        }
+        
+        // Trigger camera
+        fileInput.click();
+    } else {
+        // Fallback for desktop or non-camera devices
+        showAlert('Camera capture is optimized for mobile devices. Please use your mobile device to capture photos.', 'info');
+    }
+}
+
+// Handle captured photo
+function handleCameraPhoto(file, inputId) {
+    if (file && file.type.startsWith('image/')) {
+        console.log('Photo captured for:', inputId);
+        
+        // Find the hidden input field for the photo
+        const hiddenInput = document.getElementById(inputId);
+        if (hiddenInput) {
+            // Store file reference or process for upload
+            hiddenInput.file = file;
+            console.log('Photo stored in hidden input:', inputId);
+            
+            // Show success message
+            showAlert('Photo captured successfully!', 'success');
+            
+            // Update button text to show photo captured
+            const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
+            if (captureButton) {
+                const icon = captureButton.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-check-circle me-2';
+                }
+                captureButton.innerHTML = captureButton.innerHTML.replace(/Capture.*Photo/, 'Photo Captured ✓');
+                captureButton.classList.remove('btn-info', 'btn-danger');
+                captureButton.classList.add('btn-success');
             }
+        } else {
+            console.error('Hidden input not found for:', inputId);
+            showAlert('Error storing photo. Please try again.', 'warning');
         }
     }
-
-    // Strategy 5: For duty photos, create temporary input if needed
-    if (!input && (inputId === 'start_photo' || inputId === 'end_photo')) {
-        input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.capture = 'camera';
-        input.style.display = 'none';
-        input.id = inputId;
-        input.name = inputId;
-        document.body.appendChild(input);
-        searchMethod = 'created temporary camera input';
-    }
-
-    // Strategy 6: Find any visible image input as fallback
-    if (!input) {
-        const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]:not([style*="display: none"])');
-        if (imageInputs.length > 0) {
-            input = imageInputs[0];
-            searchMethod = 'first visible image input (fallback)';
-        }
-    }
-
-    if (!input) {
-        console.error('Input element not found after all search strategies for:', inputId);
-        console.log('Available file inputs:', document.querySelectorAll('input[type="file"]'));
-        showAlert('Photo input field not found. Please use the file upload option below instead.', 'info');
-        return;
-    }
-
-    console.log(`Found input ${searchMethod}:`, input);
-
-    // Check if browser supports getUserMedia
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showAlert('Camera not supported on this device', 'warning');
-        // Fallback to regular file input
-        input.click();
-        return;
-    }
-
-    // Trigger the file input (which should trigger camera on mobile)
-    input.setAttribute('capture', 'camera');
-    input.click();
 }
 
 // CSV Export functionality

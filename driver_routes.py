@@ -407,6 +407,39 @@ def duty():
                          available_vehicles=available_vehicles,
                          available_schemes=available_schemes)
 
+@driver_bp.route('/vehicle-last-duty-data/<int:vehicle_id>')
+@login_required
+@driver_required
+def get_vehicle_last_duty_data(vehicle_id):
+    """API endpoint to get last duty data for a vehicle"""
+    driver = get_driver_profile()
+    
+    if not driver:
+        return jsonify({'success': False, 'error': 'Driver profile not found'})
+    
+    try:
+        last_duty_data = get_last_duty_values(driver.id, vehicle_id)
+        
+        # Calculate suggested start odometer (adding a small buffer)
+        suggested_start_odometer = None
+        if last_duty_data['last_odometer']:
+            suggested_start_odometer = last_duty_data['last_odometer']
+        elif last_duty_data['vehicle_current_odometer']:
+            suggested_start_odometer = last_duty_data['vehicle_current_odometer']
+            
+        return jsonify({
+            'success': True,
+            'last_end_odometer': last_duty_data['last_odometer'],
+            'last_duty_date': last_duty_data['last_duty_date'],
+            'last_end_cng': last_duty_data['last_end_cng'],
+            'most_common_cng_point': last_duty_data['most_common_cng_point'],
+            'suggested_start_odometer': suggested_start_odometer,
+            'vehicle_current_odometer': last_duty_data['vehicle_current_odometer']
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @driver_bp.route('/duty/start', methods=['POST'])
 @login_required
 @driver_required
