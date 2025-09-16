@@ -25,7 +25,7 @@
                 </div>
                 <div class="col-6">
                     <strong>Started:</strong><br>
-                    <span class="text-success">{{ active_duty.start_time.strftime('%H:%M') if active_duty.start_time else 'N/A' }}</span>
+                    <span class="text-success">{{ active_duty.actual_start.strftime('%H:%M') if active_duty.actual_start else 'N/A' }}</span>
                 </div>
             </div>
             
@@ -42,8 +42,8 @@
                     <span class="badge bg-secondary fs-6">{{ "{:,.0f}".format(active_duty.start_odometer) if active_duty.start_odometer else 'N/A' }} km</span>
                 </div>
                 <div class="col-6">
-                    <strong>CNG Points:</strong><br>
-                    <span class="text-info">{{ active_duty.cng_point or 'Not specified' }}</span>
+                    <strong>Start CNG Level:</strong><br>
+                    <span class="badge bg-warning text-dark fs-6">{{ active_duty.start_cng or 'Not specified' }} bars</span>
                 </div>
             </div>
 
@@ -79,62 +79,88 @@
             
             <!-- Vehicle Documents Section -->
             {% if active_duty.vehicle %}
-            <div class="mb-3">
-                <strong><i class="fas fa-folder me-2"></i>Vehicle Documents:</strong><br>
-                <div class="row mt-2">
+            <div class="mb-4 p-3 bg-light rounded border">
+                <h6 class="text-primary mb-3"><i class="fas fa-folder-open me-2"></i>Vehicle Documents</h6>
+                <div class="row">
                     {% set vehicle = active_duty.vehicle %}
                     
                     {% if vehicle.registration_document %}
-                    <div class="col-md-6 col-lg-4 mb-2">
-                        <a href="/uploads/{{ vehicle.registration_document }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="fas fa-file-alt me-1"></i>Registration
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <a href="/uploads/{{ vehicle.registration_document }}" target="_blank" class="btn btn-primary btn-lg w-100 shadow-sm">
+                            <i class="fas fa-file-alt me-2"></i>📄 Registration
                         </a>
+                        <small class="text-muted d-block mt-1">Vehicle registration certificate</small>
+                    </div>
+                    {% else %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <button class="btn btn-outline-secondary btn-lg w-100" disabled>
+                            <i class="fas fa-file-alt me-2"></i>📄 Registration
+                        </button>
+                        <small class="text-danger d-block mt-1">Document not uploaded</small>
                     </div>
                     {% endif %}
                     
                     {% if vehicle.insurance_document %}
-                    <div class="col-md-6 col-lg-4 mb-2">
-                        <a href="/uploads/{{ vehicle.insurance_document }}" target="_blank" class="btn btn-outline-success btn-sm w-100">
-                            <i class="fas fa-shield-alt me-1"></i>Insurance
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <a href="/uploads/{{ vehicle.insurance_document }}" target="_blank" class="btn btn-success btn-lg w-100 shadow-sm">
+                            <i class="fas fa-shield-alt me-2"></i>🛡️ Insurance
                         </a>
+                        <small class="text-muted d-block mt-1">Vehicle insurance policy</small>
+                    </div>
+                    {% else %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <button class="btn btn-outline-secondary btn-lg w-100" disabled>
+                            <i class="fas fa-shield-alt me-2"></i>🛡️ Insurance
+                        </button>
+                        <small class="text-danger d-block mt-1">Document not uploaded</small>
                     </div>
                     {% endif %}
                     
                     {% if vehicle.fitness_document %}
-                    <div class="col-md-6 col-lg-4 mb-2">
-                        <a href="/uploads/{{ vehicle.fitness_document }}" target="_blank" class="btn btn-outline-info btn-sm w-100">
-                            <i class="fas fa-check-circle me-1"></i>Fitness
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <a href="/uploads/{{ vehicle.fitness_document }}" target="_blank" class="btn btn-info btn-lg w-100 shadow-sm">
+                            <i class="fas fa-check-circle me-2"></i>✅ Fitness
                         </a>
+                        <small class="text-muted d-block mt-1">Vehicle fitness certificate</small>
+                    </div>
+                    {% else %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <button class="btn btn-outline-secondary btn-lg w-100" disabled>
+                            <i class="fas fa-check-circle me-2"></i>✅ Fitness
+                        </button>
+                        <small class="text-danger d-block mt-1">Document not uploaded</small>
                     </div>
                     {% endif %}
                     
                     {% if vehicle.permit_document %}
-                    <div class="col-md-6 col-lg-4 mb-2">
-                        <a href="/uploads/{{ vehicle.permit_document }}" target="_blank" class="btn btn-outline-warning btn-sm w-100">
-                            <i class="fas fa-id-card me-1"></i>Permit
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <a href="/uploads/{{ vehicle.permit_document }}" target="_blank" class="btn btn-warning btn-lg w-100 shadow-sm">
+                            <i class="fas fa-id-card me-2"></i>🆔 Permit
                         </a>
+                        <small class="text-muted d-block mt-1">Commercial vehicle permit</small>
+                    </div>
+                    {% else %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <button class="btn btn-outline-secondary btn-lg w-100" disabled>
+                            <i class="fas fa-id-card me-2"></i>🆔 Permit
+                        </button>
+                        <small class="text-danger d-block mt-1">Document not uploaded</small>
                     </div>
                     {% endif %}
                     
                     {% if vehicle.pollution_document %}
-                    <div class="col-md-6 col-lg-4 mb-2">
-                        <a href="/uploads/{{ vehicle.pollution_document }}" target="_blank" class="btn btn-outline-secondary btn-sm w-100">
-                            <i class="fas fa-leaf me-1"></i>Pollution Certificate
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <a href="/uploads/{{ vehicle.pollution_document }}" target="_blank" class="btn btn-secondary btn-lg w-100 shadow-sm">
+                            <i class="fas fa-leaf me-2"></i>🌿 Pollution Certificate
                         </a>
+                        <small class="text-muted d-block mt-1">Pollution under control certificate</small>
                     </div>
-                    {% endif %}
-                    
-                    {% if vehicle.other_document %}
-                    <div class="col-md-6 col-lg-4 mb-2">
-                        <a href="/uploads/{{ vehicle.other_document }}" target="_blank" class="btn btn-outline-dark btn-sm w-100">
-                            <i class="fas fa-paperclip me-1"></i>Other Documents
-                        </a>
-                    </div>
-                    {% endif %}
-                    
-                    {% if not (vehicle.registration_document or vehicle.insurance_document or vehicle.fitness_document or vehicle.permit_document or vehicle.pollution_document or vehicle.other_document) %}
-                    <div class="col-12">
-                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>No documents uploaded yet. Contact admin if documents are missing.</small>
+                    {% else %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <button class="btn btn-outline-secondary btn-lg w-100" disabled>
+                            <i class="fas fa-leaf me-2"></i>🌿 Pollution Certificate
+                        </button>
+                        <small class="text-danger d-block mt-1">Document not uploaded</small>
                     </div>
                     {% endif %}
                 </div>
@@ -152,6 +178,23 @@
             <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 
+                <!-- End Odometer Photo Capture -->
+                <div class="mb-3" id="end_odometer_photo_container">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-camera text-danger me-2"></i>End Odometer Photo
+                    </label>
+                    <div class="camera-capture-container">
+                        <button type="button" class="btn btn-danger btn-lg capture-photo-btn w-100" 
+                                onclick="initCameraCapture('end_odometer_photo', 'Capture End Odometer Photo')">
+                            <i class="fas fa-camera me-2"></i>Capture Final Odometer Photo
+                        </button>
+                        <small class="d-block text-muted mt-2">
+                            <i class="fas fa-camera me-1"></i>Take a clear photo of the final odometer reading
+                        </small>
+                    </div>
+                    <input type="hidden" name="end_odometer_photo" id="end_odometer_photo">
+                </div>
+
                 <!-- Ending Odometer Reading -->
                 <div class="mb-3">
                     <label for="end_odometer" class="form-label fw-bold">
@@ -161,10 +204,17 @@
                         <input type="number" class="form-control" name="end_odometer" id="end_odometer" 
                                min="{{ active_duty.start_odometer if active_duty.start_odometer else 0 }}" 
                                step="0.1" required placeholder="Enter final reading">
+                        <button class="btn btn-outline-info" type="button" id="validate_odometer" 
+                                onclick="validateOdometerReading()" title="Smart validation">
+                            <i class="fas fa-check-circle me-1"></i>Validate
+                        </button>
                         <span class="input-group-text bg-danger text-white fw-bold">km</span>
                     </div>
-                    <div class="form-text">
-                        <i class="fas fa-info-circle me-1"></i>Started at: {{ active_duty.start_odometer or 'Not recorded' }} km
+                    <div class="form-text" id="odometer_validation_hint">
+                        <i class="fas fa-info-circle me-1"></i>Started at: {{ "{:,.0f}".format(active_duty.start_odometer) if active_duty.start_odometer else 'Not recorded' }} km
+                        {% if active_duty.start_odometer %}
+                        • Minimum acceptable: {{ "{:,.0f}".format(active_duty.start_odometer) }} km
+                        {% endif %}
                     </div>
                 </div>
 
@@ -179,19 +229,28 @@
                         </span>
                         <select class="form-select" name="end_cng" id="end_cng" required>
                             <option value="">Select end CNG level</option>
-                            <option value="1">1 Bar (Empty)</option>
-                            <option value="2">2 Bars</option>
-                            <option value="3">3 Bars</option>
-                            <option value="4">4 Bars</option>
-                            <option value="5">5 Bars (Half)</option>
-                            <option value="6">6 Bars</option>
-                            <option value="7">7 Bars</option>
-                            <option value="8">8 Bars</option>
-                            <option value="9">9 Bars</option>
+                            <option value="0">0 bars (Empty)</option>
+                            <option value="1">1 bar</option>
+                            <option value="2">2 bars</option>
+                            <option value="3">3 bars</option>
+                            <option value="4">4 bars</option>
+                            <option value="5">5 bars (Half)</option>
+                            <option value="6">6 bars</option>
+                            <option value="7">7 bars</option>
+                            <option value="8">8 bars</option>
+                            <option value="9">9 bars</option>
+                            <option value="10">10 bars (Full)</option>
                         </select>
+                        <button class="btn btn-outline-success" type="button" id="estimate_cng" 
+                                onclick="estimateEndCNG()" title="Smart estimate based on usage">
+                            <i class="fas fa-calculator me-1"></i>Estimate
+                        </button>
                     </div>
-                    <div class="form-text">
-                        <i class="fas fa-info-circle me-1"></i>Current CNG level at duty end • ₹90 per bar calculation
+                    <div class="form-text" id="cng_estimate_hint">
+                        <i class="fas fa-info-circle me-1"></i>Started with: {{ active_duty.start_cng or 'Not recorded' }} bars
+                        {% if active_duty.start_cng %}
+                        • Fuel cost calculation: ₹90 per bar
+                        {% endif %}
                     </div>
                 </div>
                 
@@ -269,12 +328,31 @@
                     <label for="vehicle_id" class="form-label fw-bold">
                         <i class="fas fa-car text-primary me-2"></i>Select Vehicle
                     </label>
-                    <select class="form-select form-select-lg" id="vehicle_id" name="vehicle_id" required>
+                    <select class="form-select form-select-lg" id="vehicle_id" name="vehicle_id" required 
+                            onchange="loadLastDutyValues(this.value)">
                         <option value="">Choose a vehicle...</option>
                         {% for vehicle in available_vehicles %}
                         <option value="{{ vehicle.id }}">{{ vehicle.registration_number }} - {{ vehicle.make }} {{ vehicle.model }}</option>
                         {% endfor %}
                     </select>
+                    <small class="text-muted">Select vehicle to auto-load previous readings</small>
+                </div>
+                
+                <!-- Start Odometer Photo Capture -->
+                <div class="mb-3" id="start_odometer_photo_container">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-camera text-success me-2"></i>Start Odometer Photo
+                    </label>
+                    <div class="camera-capture-container">
+                        <button type="button" class="btn btn-info btn-lg capture-photo-btn w-100" 
+                                onclick="initCameraCapture('start_odometer_photo', 'Capture Start Odometer Photo')">
+                            <i class="fas fa-camera me-2"></i>Capture Odometer Photo
+                        </button>
+                        <small class="d-block text-muted mt-2">
+                            <i class="fas fa-camera me-1"></i>Take a clear photo of the odometer reading
+                        </small>
+                    </div>
+                    <input type="hidden" name="start_odometer_photo" id="start_odometer_photo">
                 </div>
                 
                 <!-- Start Odometer Reading -->
@@ -282,10 +360,16 @@
                     <label for="start_odometer" class="form-label fw-bold">
                         <i class="fas fa-tachometer-alt text-info me-2"></i>Starting Odometer Reading (km)
                     </label>
-                    <input type="number" class="form-control form-control-lg" id="start_odometer" 
-                           name="start_odometer" step="0.1" min="0" required
-                           placeholder="Enter current odometer reading">
-                    <small class="text-muted">Enter the current odometer reading from the vehicle dashboard</small>
+                    <div class="input-group">
+                        <input type="number" class="form-control form-control-lg" id="start_odometer" 
+                               name="start_odometer" step="0.1" min="0" required
+                               placeholder="Enter current odometer reading">
+                        <button class="btn btn-outline-secondary" type="button" id="auto_fill_odometer" 
+                                onclick="autoFillPreviousOdometer()" disabled>
+                            <i class="fas fa-magic me-1"></i>Auto-fill
+                        </button>
+                    </div>
+                    <small class="text-muted" id="odometer_hint">Enter the current odometer reading from the vehicle dashboard</small>
                 </div>
                 
                 <!-- Start CNG Level -->
@@ -293,21 +377,27 @@
                     <label for="start_cng_level" class="form-label fw-bold">
                         <i class="fas fa-gas-pump text-warning me-2"></i>Starting CNG Level (bars)
                     </label>
-                    <select class="form-select form-select-lg" id="start_cng_level" name="start_cng_level" required>
-                        <option value="">Select CNG level...</option>
-                        <option value="0">0 bars (Empty)</option>
-                        <option value="1">1 bar</option>
-                        <option value="2">2 bars</option>
-                        <option value="3">3 bars</option>
-                        <option value="4">4 bars</option>
-                        <option value="5">5 bars</option>
-                        <option value="6">6 bars</option>
-                        <option value="7">7 bars</option>
-                        <option value="8">8 bars</option>
-                        <option value="9">9 bars</option>
-                        <option value="10" selected>10 bars (Full)</option>
-                    </select>
-                    <small class="text-muted">Check the CNG pressure gauge in your vehicle</small>
+                    <div class="input-group">
+                        <select class="form-select form-select-lg" id="start_cng_level" name="start_cng_level" required>
+                            <option value="">Select CNG level...</option>
+                            <option value="0">0 bars (Empty)</option>
+                            <option value="1">1 bar</option>
+                            <option value="2">2 bars</option>
+                            <option value="3">3 bars</option>
+                            <option value="4">4 bars</option>
+                            <option value="5">5 bars</option>
+                            <option value="6">6 bars</option>
+                            <option value="7">7 bars</option>
+                            <option value="8">8 bars</option>
+                            <option value="9">9 bars</option>
+                            <option value="10" selected>10 bars (Full)</option>
+                        </select>
+                        <button class="btn btn-outline-secondary" type="button" id="auto_fill_cng" 
+                                onclick="autoFillPreviousCNG()" disabled>
+                            <i class="fas fa-magic me-1"></i>Auto-fill
+                        </button>
+                    </div>
+                    <small class="text-muted" id="cng_hint">Check the CNG pressure gauge in your vehicle</small>
                 </div>
                 
                 <button type="submit" class="btn btn-success btn-lg w-100">
@@ -436,5 +526,323 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     console.log('Duty form loaded');
 });
+
+// Global variables to store fetched duty data
+let lastDutyData = null;
+
+// Load last duty values when vehicle is selected
+async function loadLastDutyValues(vehicleId) {
+    if (!vehicleId) {
+        // Reset auto-fill buttons when no vehicle selected
+        const autoFillOdometerBtn = document.getElementById('auto_fill_odometer');
+        const autoFillCngBtn = document.getElementById('auto_fill_cng');
+        if (autoFillOdometerBtn) autoFillOdometerBtn.disabled = true;
+        if (autoFillCngBtn) autoFillCngBtn.disabled = true;
+        
+        const odometerHint = document.getElementById('odometer_hint');
+        const cngHint = document.getElementById('cng_hint');
+        if (odometerHint) odometerHint.textContent = 'Enter the current odometer reading from the vehicle dashboard';
+        if (cngHint) cngHint.textContent = 'Check the CNG pressure gauge in your vehicle';
+        
+        lastDutyData = null;
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/driver/vehicle-last-duty-data/${vehicleId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            lastDutyData = result;
+            
+            // Enable auto-fill buttons
+            const autoFillOdometerBtn = document.getElementById('auto_fill_odometer');
+            const autoFillCngBtn = document.getElementById('auto_fill_cng');
+            if (autoFillOdometerBtn) autoFillOdometerBtn.disabled = false;
+            if (autoFillCngBtn) autoFillCngBtn.disabled = false;
+            
+            // Update hints with previous values
+            const odometerHint = document.getElementById('odometer_hint');
+            const cngHint = document.getElementById('cng_hint');
+            
+            if (result.suggested_start_odometer && odometerHint) {
+                odometerHint.innerHTML = `<i class="fas fa-info-circle text-info me-1"></i>Previous reading: ${result.suggested_start_odometer} km - Click Auto-fill to use`;
+            }
+            
+            if (result.last_end_cng && cngHint) {
+                cngHint.innerHTML = `<i class="fas fa-info-circle text-warning me-1"></i>Previous end level: ${result.last_end_cng} bars - Click Auto-fill to use`;
+            }
+            
+            console.log('Loaded last duty data:', result);
+        } else {
+            console.error('Failed to load last duty data:', result.error);
+            lastDutyData = null;
+        }
+    } catch (error) {
+        console.error('Error loading last duty data:', error);
+        lastDutyData = null;
+    }
+}
+
+// Auto-fill previous odometer reading
+function autoFillPreviousOdometer() {
+    if (lastDutyData && lastDutyData.suggested_start_odometer) {
+        const odometerInput = document.getElementById('start_odometer');
+        if (odometerInput) {
+            odometerInput.value = lastDutyData.suggested_start_odometer;
+            odometerInput.focus();
+            
+            // Show success feedback
+            const hint = document.getElementById('odometer_hint');
+            if (hint) {
+                hint.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Auto-filled with previous reading: ${lastDutyData.suggested_start_odometer} km`;
+            }
+        }
+    }
+}
+
+// Auto-fill previous CNG level
+function autoFillPreviousCNG() {
+    if (lastDutyData && lastDutyData.last_end_cng !== null && lastDutyData.last_end_cng !== undefined) {
+        const cngSelect = document.getElementById('start_cng_level');
+        if (cngSelect) {
+            cngSelect.value = lastDutyData.last_end_cng;
+            cngSelect.focus();
+            
+            // Show success feedback
+            const hint = document.getElementById('cng_hint');
+            if (hint) {
+                hint.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Auto-filled with previous end level: ${lastDutyData.last_end_cng} bars`;
+            }
+        }
+    }
+}
+
+// Enhanced camera capture function
+function initCameraCapture(inputId, buttonText) {
+    console.log('Initializing camera capture for:', inputId);
+    
+    // Check if we're on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+        // Mobile device with camera support
+        const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
+        const captureContainer = captureButton ? captureButton.parentElement : null;
+        
+        if (!captureContainer) {
+            console.error('Could not find capture container for:', inputId);
+            return;
+        }
+        
+        // Create file input for camera
+        let fileInput = captureContainer.querySelector('input[type="file"]');
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.capture = 'camera';
+            fileInput.style.display = 'none';
+            fileInput.id = `${inputId}_file_input`;
+            captureContainer.appendChild(fileInput);
+            
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleCameraPhoto(e.target.files[0], inputId);
+                }
+            });
+        }
+        
+        // Trigger camera
+        fileInput.click();
+    } else {
+        // Fallback for desktop or non-camera devices
+        alert('Camera capture is optimized for mobile devices. Please use your mobile device to capture photos.');
+    }
+}
+
+// Handle captured photo
+function handleCameraPhoto(file, inputId) {
+    if (file && file.type.startsWith('image/')) {
+        console.log('Photo captured for:', inputId);
+        
+        // Store the file reference
+        const hiddenInput = document.getElementById(inputId);
+        if (hiddenInput) {
+            hiddenInput.setAttribute('data-photo-file', file.name);
+            hiddenInput.value = 'captured';
+        }
+        
+        // Create preview
+        const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
+        const captureContainer = captureButton ? captureButton.parentElement : null;
+        
+        if (captureContainer) {
+            let previewContainer = captureContainer.querySelector('.photo-preview');
+            
+            if (!previewContainer) {
+                previewContainer = document.createElement('div');
+                previewContainer.className = 'photo-preview mt-2';
+                captureContainer.appendChild(previewContainer);
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewContainer.innerHTML = `
+                    <div class="position-relative d-inline-block">
+                        <img src="${e.target.result}" class="img-fluid rounded shadow" style="max-height: 150px;">
+                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
+                                onclick="removePhoto('${inputId}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <small class="d-block text-success mt-1">
+                        <i class="fas fa-check-circle me-1"></i>Photo captured successfully
+                    </small>
+                `;
+            };
+            reader.readAsDataURL(file);
+            
+            // Update button text
+            if (captureButton) {
+                captureButton.innerHTML = '<i class="fas fa-camera me-2"></i>Retake Photo';
+                captureButton.classList.replace('btn-info', 'btn-success');
+            }
+        }
+    }
+}
+
+// Remove captured photo
+function removePhoto(inputId) {
+    const hiddenInput = document.getElementById(inputId);
+    if (hiddenInput) {
+        hiddenInput.removeAttribute('data-photo-file');
+        hiddenInput.value = '';
+    }
+    
+    const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
+    const captureContainer = captureButton ? captureButton.parentElement : null;
+    
+    if (captureContainer) {
+        const previewContainer = captureContainer.querySelector('.photo-preview');
+        if (previewContainer) {
+            previewContainer.remove();
+        }
+        
+        // Reset button
+        if (captureButton) {
+            captureButton.innerHTML = '<i class="fas fa-camera me-2"></i>Capture Odometer Photo';
+            captureButton.classList.replace('btn-success', 'btn-info');
+        }
+    }
+}
+
+// Enhanced end duty validation and estimation functions
+function validateOdometerReading() {
+    const odometerInput = document.getElementById('end_odometer');
+    const startOdometer = {{ active_duty.start_odometer if active_duty.start_odometer else 0 }};
+    const hint = document.getElementById('odometer_validation_hint');
+    const validateBtn = document.getElementById('validate_odometer');
+    
+    if (!odometerInput.value) {
+        hint.innerHTML = '<i class="fas fa-exclamation-circle text-warning me-1"></i>Please enter an odometer reading first';
+        return;
+    }
+    
+    const endReading = parseFloat(odometerInput.value);
+    const distance = endReading - startOdometer;
+    
+    if (endReading < startOdometer) {
+        hint.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Invalid: End reading cannot be less than start reading (' + startOdometer.toLocaleString() + ' km)';
+        odometerInput.classList.add('is-invalid');
+        validateBtn.classList.replace('btn-outline-info', 'btn-outline-danger');
+        validateBtn.innerHTML = '<i class="fas fa-times-circle me-1"></i>Invalid';
+    } else if (distance < 5) {
+        hint.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Very short duty: Only ' + distance.toFixed(1) + ' km driven. Please verify reading.';
+        odometerInput.classList.remove('is-invalid');
+        odometerInput.classList.add('is-valid');
+        validateBtn.classList.replace('btn-outline-danger', 'btn-outline-warning');
+        validateBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Check';
+    } else if (distance > 300) {
+        hint.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Very long duty: ' + distance.toFixed(1) + ' km driven. Please verify reading.';
+        odometerInput.classList.remove('is-invalid');
+        odometerInput.classList.add('is-valid');
+        validateBtn.classList.replace('btn-outline-danger', 'btn-outline-warning');
+        validateBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Long Trip';
+    } else {
+        hint.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>Valid reading: ' + distance.toFixed(1) + ' km driven during duty';
+        odometerInput.classList.remove('is-invalid');
+        odometerInput.classList.add('is-valid');
+        validateBtn.classList.replace('btn-outline-danger', 'btn-outline-success');
+        validateBtn.classList.replace('btn-outline-warning', 'btn-outline-success');
+        validateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Valid';
+    }
+}
+
+// Smart CNG estimation based on distance and typical consumption
+function estimateEndCNG() {
+    const odometerInput = document.getElementById('end_odometer');
+    const cngSelect = document.getElementById('end_cng');
+    const startOdometer = {{ active_duty.start_odometer if active_duty.start_odometer else 0 }};
+    const startCng = {{ active_duty.start_cng if active_duty.start_cng else 10 }};
+    const hint = document.getElementById('cng_estimate_hint');
+    const estimateBtn = document.getElementById('estimate_cng');
+    
+    if (!odometerInput.value) {
+        hint.innerHTML = '<i class="fas fa-exclamation-circle text-warning me-1"></i>Please enter odometer reading first for accurate estimation';
+        return;
+    }
+    
+    const endReading = parseFloat(odometerInput.value);
+    const distance = endReading - startOdometer;
+    
+    if (distance <= 0) {
+        hint.innerHTML = '<i class="fas fa-exclamation-circle text-warning me-1"></i>Invalid distance for estimation';
+        return;
+    }
+    
+    // Typical CNG consumption: ~25-30 km per bar for taxi/auto
+    const kmPerBar = 27; // Average consumption
+    const estimatedConsumption = distance / kmPerBar;
+    const estimatedEndCng = Math.max(0, Math.round(startCng - estimatedConsumption));
+    
+    // Auto-select the estimated CNG level
+    if (estimatedEndCng >= 0 && estimatedEndCng <= 10) {
+        cngSelect.value = estimatedEndCng.toString();
+        cngSelect.classList.add('is-valid');
+        
+        const fuelUsed = startCng - estimatedEndCng;
+        const fuelCost = fuelUsed * 90; // ₹90 per bar
+        
+        hint.innerHTML = `<i class="fas fa-calculator text-success me-1"></i>Smart estimate: ${estimatedEndCng} bars remaining (${distance.toFixed(1)} km ÷ ${kmPerBar} km/bar = ${fuelUsed.toFixed(1)} bars used, ~₹${fuelCost.toFixed(0)} fuel cost)`;
+        
+        estimateBtn.classList.replace('btn-outline-success', 'btn-success');
+        estimateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Estimated';
+        
+        // Focus on the CNG select for final adjustment if needed
+        cngSelect.focus();
+    } else {
+        hint.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Unable to estimate - distance may be too long for single tank';
+    }
+}
+
+// Auto-validate odometer when value changes
+document.addEventListener('DOMContentLoaded', function() {
+    const endOdometerInput = document.getElementById('end_odometer');
+    if (endOdometerInput) {
+        endOdometerInput.addEventListener('blur', validateOdometerReading);
+        endOdometerInput.addEventListener('input', function() {
+            // Reset validation styling when user types
+            this.classList.remove('is-valid', 'is-invalid');
+            const validateBtn = document.getElementById('validate_odometer');
+            if (validateBtn) {
+                validateBtn.classList.remove('btn-outline-success', 'btn-outline-warning', 'btn-outline-danger');
+                validateBtn.classList.add('btn-outline-info');
+                validateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Validate';
+            }
+        });
+    }
+});
+
 </script>
 {% endblock %}
