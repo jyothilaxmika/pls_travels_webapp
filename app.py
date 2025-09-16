@@ -55,8 +55,8 @@ def create_app():
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
-    # Configure the database - use PostgreSQL in production, SQLite for development
-    database_url = os.environ.get("DATABASE_URL") or "sqlite:///pls_travels.db"
+    # Configure the database - force SQLite for development
+    database_url = "sqlite:///pls_travels_dev.db"  # Force local SQLite for development
     
     # Configure for PostgreSQL production database
     if database_url.startswith(("postgresql://", "postgres://")):
