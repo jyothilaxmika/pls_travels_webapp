@@ -3468,3 +3468,105 @@ def serve_vehicle_document(vehicle_id, document_type):
         return "File not found", 404
         
     return send_from_directory(upload_dir, filename)
+
+# User WhatsApp Number Management Routes
+
+@admin_bp.route('/user-whatsapp-settings')
+@login_required
+@admin_required
+def user_whatsapp_settings():
+    """Manage WhatsApp numbers for admin and manager users"""
+    # Get all admin and manager users
+    admin_users = User.query.filter_by(role=UserRole.ADMIN).all()
+    manager_users = User.query.filter_by(role=UserRole.MANAGER).all()
+    
+    return render_template('admin/user_whatsapp_settings.html', 
+                         admin_users=admin_users,
+                         manager_users=manager_users)
+
+@admin_bp.route('/user-whatsapp-settings/update', methods=['POST'])
+@login_required
+@admin_required
+def update_user_whatsapp_settings():
+    """Update WhatsApp numbers for users"""
+    user_id = request.form.get('user_id', type=int)
+    whatsapp_number = request.form.get('whatsapp_number', '').strip()
+    
+    if not user_id:
+        return jsonify({'success': False, 'message': 'User ID is required'})
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Validate user role (only admin/manager)
+    if user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        return jsonify({'success': False, 'message': 'Can only set WhatsApp numbers for admin and manager users'})
+    
+    # Validate WhatsApp number format (basic validation)
+    if whatsapp_number and not whatsapp_number.startswith('+'):
+        return jsonify({'success': False, 'message': 'WhatsApp number must include country code (e.g., +91XXXXXXXXXX)'})
+    
+    try:
+        # Update WhatsApp number
+        user.whatsapp_number = whatsapp_number if whatsapp_number else None
+        db.session.commit()
+        
+        # Log the update
+        from replit_auth import log_audit
+        log_audit('update_whatsapp_number', 'user', user_id, {
+            'user_name': user.full_name,
+            'role': user.role.value,
+            'whatsapp_number': whatsapp_number or 'removed'
+        })
+        
+        return jsonify({
+            'success': True, 
+            'message': f'WhatsApp number {"updated" if whatsapp_number else "removed"} for {user.full_name}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error updating WhatsApp number: {str(e)}'})
+
+@admin_bp.route('/user-whatsapp-settings/test', methods=['POST'])
+@login_required
+@admin_required
+def test_user_whatsapp_number():
+    """Test WhatsApp number by sending a test message"""
+    user_id = request.form.get('user_id', type=int)
+    
+    if not user_id:
+        return jsonify({'success': False, 'message': 'User ID is required'})
+    
+    user = User.query.get_or_404(user_id)
+    
+    if not user.whatsapp_number:
+        return jsonify({'success': False, 'message': 'No WhatsApp number configured for this user'})
+    
+    try:
+        from whatsapp_utils import send_twilio_message
+        
+        test_message = f"🔧 Test message from PLS Travels admin panel. WhatsApp number configuration successful for {user.full_name}."
+        
+        result = send_twilio_message(user.whatsapp_number, test_message)
+        
+        if result.get('success'):
+            # Log the test
+            from replit_auth import log_audit
+            log_audit('test_whatsapp_number', 'user', user_id, {
+                'user_name': user.full_name,
+                'whatsapp_number': user.whatsapp_number,
+                'message_type': result.get('type', 'unknown')
+            })
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Test message sent successfully via {result.get("type", "WhatsApp")} to {user.full_name}'
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'message': f'Failed to send test message: {result.get("error", "Unknown error")}'
+            })
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error sending test message: {str(e)}'})

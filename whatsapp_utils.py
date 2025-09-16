@@ -5,8 +5,11 @@ Handles advance payment requests and driver-admin communication
 import os
 import logging
 from datetime import datetime
+from typing import Optional
 from models import AdvancePaymentRequest, Driver, User, Duty, Branch, UserRole
 from app import db
+from sqlalchemy import or_
+from auth import log_audit
 # From twilio_send_message integration
 import os
 from twilio.rest import Client
@@ -43,26 +46,40 @@ def send_twilio_message(to_phone_number: str, message: str) -> dict:
         return {'success': False, 'error': str(e)}
 
 def get_branch_admins_phones(branch_id: int) -> list:
-    """Get phone numbers of all admins/managers for a branch"""
+    """Get WhatsApp numbers of all admins/managers for a branch"""
     try:
-        # Get branch managers
-        branch_managers = db.session.query(User.phone).join(
-            User.managed_branches
-        ).filter(
+        # Get branch managers - prioritize WhatsApp number, fallback to regular phone  
+        from models import manager_branches
+        branch_managers = db.session.query(
+            User.whatsapp_number, User.phone
+        ).join(manager_branches).join(Branch).filter(
             User.role == UserRole.MANAGER,
-            User.phone.isnot(None)
-        ).filter(Branch.id == branch_id).all()
-        
-        # Get system admins
-        system_admins = db.session.query(User.phone).filter(
-            User.role == UserRole.ADMIN,
-            User.phone.isnot(None)
+            or_(User.whatsapp_number.isnot(None), User.phone.isnot(None)),
+            Branch.id == branch_id
         ).all()
         
+        # Get system admins - prioritize WhatsApp number, fallback to regular phone
+        system_admins = db.session.query(
+            User.whatsapp_number, User.phone
+        ).filter(
+            User.role == UserRole.ADMIN,
+            or_(User.whatsapp_number.isnot(None), User.phone.isnot(None))
+        ).all()
+        
+        # Combine and extract phone numbers (prefer WhatsApp numbers)
         phone_numbers = []
-        for phone_tuple in branch_managers + system_admins:
-            if phone_tuple[0]:
-                phone_numbers.append(phone_tuple[0])
+        
+        # Process branch managers
+        for manager in branch_managers:
+            preferred_number = manager.whatsapp_number or manager.phone
+            if preferred_number:
+                phone_numbers.append(preferred_number)
+        
+        # Process system admins
+        for admin in system_admins:
+            preferred_number = admin.whatsapp_number or admin.phone
+            if preferred_number:
+                phone_numbers.append(preferred_number)
         
         return phone_numbers
     except Exception as e:
@@ -71,7 +88,7 @@ def get_branch_admins_phones(branch_id: int) -> list:
 
 def send_advance_payment_request(duty_id: int, driver_id: int, amount: float, 
                                 purpose: str = 'fuel', notes: str = '', 
-                                location_lat: float = None, location_lng: float = None) -> dict:
+                                location_lat: Optional[float] = None, location_lng: Optional[float] = None) -> dict:
     """
     Send advance payment request to admins via WhatsApp
     
@@ -96,18 +113,17 @@ def send_advance_payment_request(duty_id: int, driver_id: int, amount: float,
             return {'success': False, 'error': 'Driver or duty not found'}
         
         # Create advance payment request record with proper defaults
-        advance_request = AdvancePaymentRequest(
-            duty_id=duty_id,
-            driver_id=driver_id,
-            amount_requested=amount,
-            purpose=purpose,
-            notes=notes,
-            request_lat=location_lat,
-            request_lng=location_lng,
-            status='pending',
-            created_at=datetime.now(),
-            whatsapp_message_sent=False
-        )
+        advance_request = AdvancePaymentRequest()
+        advance_request.duty_id = duty_id
+        advance_request.driver_id = driver_id
+        advance_request.amount_requested = amount
+        advance_request.purpose = purpose
+        advance_request.notes = notes
+        advance_request.request_lat = location_lat
+        advance_request.request_lng = location_lng
+        advance_request.status = 'pending'
+        advance_request.created_at = datetime.now()
+        advance_request.whatsapp_message_sent = False
         
         db.session.add(advance_request)
         db.session.flush()  # Get the ID
@@ -117,6 +133,14 @@ def send_advance_payment_request(duty_id: int, driver_id: int, amount: float,
         
         # Always commit the request first to ensure it's saved, even if messaging fails
         db.session.commit()
+        
+        # Log the advance payment request
+        log_audit('create_advance_payment_request', 'advance_payment_request', advance_request.id, {
+            'driver_id': driver_id,
+            'duty_id': duty_id,
+            'amount_requested': amount,
+            'purpose': purpose
+        })
         
         if not admin_phones:
             return {'success': True, 'error': 'No admin contacts found for branch', 'request_id': advance_request.id, 'message_sent_to': []}
@@ -179,14 +203,10 @@ PLS Travels Fleet Management System
             }
             
     except Exception as e:
-        # Don't rollback if the request was already committed
-        if 'advance_request' in locals() and advance_request.id:
-            logging.error(f"Error sending advance payment request messages: {str(e)}")
-            return {'success': True, 'request_id': advance_request.id, 'error': f'Request saved but messaging failed: {str(e)}'}
-        else:
-            db.session.rollback()
-            logging.error(f"Error creating advance payment request: {str(e)}")
-            return {'success': False, 'error': str(e)}
+        # Handle error gracefully
+        db.session.rollback()
+        logging.error(f"Error creating advance payment request: {str(e)}")
+        return {'success': False, 'error': str(e)}
 
 def get_pending_advance_requests(driver_id: int) -> list:
     """Get pending advance payment requests for a driver"""
@@ -244,6 +264,13 @@ def respond_to_advance_request(request_id: int, admin_user_id: int,
                 duty.company_pay = (duty.company_pay or 0) + approved_amount
         
         db.session.commit()
+        
+        # Log the admin response
+        log_audit('respond_advance_payment_request', 'advance_payment_request', request_id, {
+            'status': status,
+            'approved_amount': approved_amount,
+            'admin_user_id': admin_user_id
+        })
         
         # Send confirmation message to driver
         driver = advance_request.driver
