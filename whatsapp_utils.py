@@ -95,15 +95,18 @@ def send_advance_payment_request(duty_id: int, driver_id: int, amount: float,
         if not driver or not duty:
             return {'success': False, 'error': 'Driver or duty not found'}
         
-        # Create advance payment request record
+        # Create advance payment request record with proper defaults
         advance_request = AdvancePaymentRequest(
             duty_id=duty_id,
             driver_id=driver_id,
             amount_requested=amount,
             purpose=purpose,
             notes=notes,
-            request_lat=location_lat,
-            request_lng=location_lng
+            location_latitude=location_lat,
+            location_longitude=location_lng,
+            status='pending',
+            created_at=datetime.now(),
+            whatsapp_message_sent=False
         )
         
         db.session.add(advance_request)
@@ -154,6 +157,9 @@ PLS Travels Fleet Management System
                     advance_request.whatsapp_message_sent = True
                     advance_request.whatsapp_sent_at = datetime.now()
                     advance_request.admin_phone = phone
+        
+        # Commit metadata updates
+        db.session.commit()
         
         # Return success regardless of messaging status since request is already saved
         if successful_sends > 0:
