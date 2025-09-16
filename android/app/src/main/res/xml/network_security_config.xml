@@ -2,29 +2,27 @@
 <network-security-config>
     <!-- Production Configuration -->
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">api.plstravels.com</domain>
-        <pin-set expiration="2026-12-31">
-            <!-- Primary certificate pin (replace with your actual certificate hash) -->
-            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
-            <!-- Backup certificate pin -->
-            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
-        </pin-set>
+        <domain includeSubdomains="true">plstravelswebapp.replit.app</domain>
+        <!-- Certificate pinning disabled for Replit infrastructure -->
+        <!-- Will be enabled when migrating to controlled domain -->
+        <!-- <pin-set expiration="2026-12-31">
+            <pin digest="SHA-256">[ACTUAL_CERTIFICATE_HASH]</pin>
+            <pin digest="SHA-256">[BACKUP_CERTIFICATE_HASH]</pin>
+        </pin-set> -->
         <trust-anchors>
             <!-- Trust only system CAs, no user-added CAs -->
             <certificates src="system"/>
         </trust-anchors>
     </domain-config>
     
-    <!-- Staging Configuration -->
-    <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">staging-api.plstravels.com</domain>
-        <pin-set expiration="2026-12-31">
-            <!-- Staging certificate pins -->
-            <pin digest="SHA-256">CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=</pin>
-            <pin digest="SHA-256">DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD=</pin>
-        </pin-set>
+    <!-- Development Configuration (Debug builds only) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
         <trust-anchors>
             <certificates src="system"/>
+            <certificates src="user"/>
         </trust-anchors>
     </domain-config>
     

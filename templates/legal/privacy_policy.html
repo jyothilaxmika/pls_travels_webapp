@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy - PLS Travels Driver App{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h1 class="text-primary mb-4">Privacy Policy</h1>
+                    <p class="text-muted mb-4">
+                        <strong>Effective Date:</strong> {{ moment().format('MMMM DD, YYYY') }}<br>
+                        <strong>Last Updated:</strong> {{ moment().format('MMMM DD, YYYY') }}
+                    </p>
+
+                    <div class="privacy-content">
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">1. Introduction</h2>
+                            <p>PLS Travels ("we," "our," or "us") is committed to protecting the privacy and security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard information when you use our Driver mobile application ("App") and related services.</p>
+                            <p>By using our App, you consent to the data practices described in this policy.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">2. Information We Collect</h2>
+                            
+                            <h5 class="text-secondary mb-3">2.1 Personal Information</h5>
+                            <ul class="mb-3">
+                                <li><strong>Phone Number:</strong> Used for account verification and OTP authentication</li>
+                                <li><strong>Driver Information:</strong> Name, license details, vehicle information as provided during registration</li>
+                                <li><strong>Employment Details:</strong> Branch assignment, role, and work schedule information</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">2.2 Location Information</h5>
+                            <ul class="mb-3">
+                                <li><strong>Precise Location:</strong> GPS coordinates collected during active duty periods only</li>
+                                <li><strong>Route Data:</strong> Travel paths, stops, and mileage for duty compliance and analytics</li>
+                                <li><strong>Geofencing:</strong> Location monitoring for work area compliance</li>
+                            </ul>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Important:</strong> Location data is only collected during active duty periods. Background location access is used solely for duty-related tracking when you are working.
+                            </div>
+
+                            <h5 class="text-secondary mb-3">2.3 Photos and Media</h5>
+                            <ul class="mb-3">
+                                <li><strong>Duty Photos:</strong> Images captured during duty for compliance and documentation</li>
+                                <li><strong>Vehicle Documents:</strong> Photos of vehicle registration, insurance, and maintenance records</li>
+                                <li><strong>Metadata:</strong> Timestamp and location data embedded in photos</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">2.4 Device and Technical Information</h5>
+                            <ul class="mb-3">
+                                <li><strong>Device Identifiers:</strong> Unique device ID for authentication and security</li>
+                                <li><strong>App Usage Data:</strong> Feature usage, session duration, and app performance metrics</li>
+                                <li><strong>Technical Logs:</strong> Error reports, crash logs, and debugging information</li>
+                                <li><strong>Network Information:</strong> IP address, connection type, and network quality data</li>
+                            </ul>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">3. How We Use Your Information</h2>
+                            
+                            <h5 class="text-secondary mb-3">3.1 Primary Purposes</h5>
+                            <ul class="mb-3">
+                                <li><strong>Duty Management:</strong> Track work hours, routes, and duty compliance</li>
+                                <li><strong>Safety Monitoring:</strong> Ensure driver and vehicle safety during operations</li>
+                                <li><strong>Performance Analytics:</strong> Generate reports on duty performance and efficiency</li>
+                                <li><strong>Authentication:</strong> Secure login and account verification via OTP</li>
+                                <li><strong>Communication:</strong> Send duty assignments, notifications, and updates</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">3.2 Operational Purposes</h5>
+                            <ul class="mb-3">
+                                <li><strong>Route Optimization:</strong> Improve route planning and reduce travel time</li>
+                                <li><strong>Compliance Verification:</strong> Ensure adherence to company policies and regulations</li>
+                                <li><strong>Maintenance Scheduling:</strong> Track vehicle usage for maintenance planning</li>
+                                <li><strong>Emergency Response:</strong> Locate drivers in case of emergencies</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">3.3 Technical Purposes</h5>
+                            <ul class="mb-3">
+                                <li><strong>App Improvement:</strong> Enhance app functionality and user experience</li>
+                                <li><strong>Security:</strong> Prevent fraud, unauthorized access, and security breaches</li>
+                                <li><strong>Technical Support:</strong> Provide customer support and troubleshooting</li>
+                            </ul>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">4. Information Sharing and Disclosure</h2>
+                            
+                            <h5 class="text-secondary mb-3">4.1 Internal Sharing</h5>
+                            <ul class="mb-3">
+                                <li><strong>Management:</strong> Duty reports, performance metrics, and compliance data shared with supervisors</li>
+                                <li><strong>Operations Team:</strong> Route data and vehicle information for operational planning</li>
+                                <li><strong>HR Department:</strong> Employment-related information for payroll and records</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">4.2 Third-Party Services</h5>
+                            <ul class="mb-3">
+                                <li><strong>SMS Service (Twilio):</strong> Phone numbers for OTP delivery</li>
+                                <li><strong>Cloud Storage:</strong> Encrypted data storage for backup and synchronization</li>
+                                <li><strong>Analytics Services:</strong> Anonymized app usage data for performance monitoring</li>
+                                <li><strong>Mapping Services:</strong> Location data for route display and navigation</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">4.3 Legal Requirements</h5>
+                            <p>We may disclose your information when required by law, court order, or regulatory authority, or to protect our rights, property, or safety.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">5. Data Security</h2>
+                            
+                            <h5 class="text-secondary mb-3">5.1 Security Measures</h5>
+                            <ul class="mb-3">
+                                <li><strong>Encryption:</strong> All sensitive data encrypted in transit and at rest</li>
+                                <li><strong>Authentication:</strong> Multi-factor authentication and secure login procedures</li>
+                                <li><strong>Access Control:</strong> Restricted access to personal data on a need-to-know basis</li>
+                                <li><strong>Regular Audits:</strong> Periodic security assessments and vulnerability testing</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">5.2 Data Storage</h5>
+                            <p>Your data is stored on secure servers with appropriate physical and digital safeguards. We use industry-standard security measures to protect against unauthorized access, alteration, or destruction of data.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">6. Data Retention</h2>
+                            <ul class="mb-3">
+                                <li><strong>Active Employment:</strong> Data retained throughout your employment period</li>
+                                <li><strong>Historical Records:</strong> Duty and performance data retained for 3 years for compliance</li>
+                                <li><strong>Photos and Documents:</strong> Vehicle and duty photos retained for 2 years</li>
+                                <li><strong>Account Deletion:</strong> Personal data deleted within 30 days of account closure request</li>
+                            </ul>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">7. Your Rights</h2>
+                            
+                            <h5 class="text-secondary mb-3">7.1 Access and Control</h5>
+                            <ul class="mb-3">
+                                <li><strong>View Data:</strong> Request access to your personal information</li>
+                                <li><strong>Update Information:</strong> Correct or update your profile details</li>
+                                <li><strong>Location Control:</strong> Disable location services (may affect app functionality)</li>
+                                <li><strong>Notification Settings:</strong> Manage push notification preferences</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">7.2 Data Requests</h5>
+                            <p>To exercise your rights or request data deletion, contact us at <a href="mailto:privacy@plstravels.com">privacy@plstravels.com</a> or through the app's settings.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">8. Permissions</h2>
+                            
+                            <h5 class="text-secondary mb-3">8.1 Required Permissions</h5>
+                            <ul class="mb-3">
+                                <li><strong>Location:</strong> Essential for duty tracking and route monitoring</li>
+                                <li><strong>Camera:</strong> Required for capturing duty-related photos</li>
+                                <li><strong>Storage:</strong> Needed for photo storage and app functionality</li>
+                                <li><strong>Network:</strong> Required for data synchronization and communication</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">8.2 Optional Permissions</h5>
+                            <ul class="mb-3">
+                                <li><strong>Notifications:</strong> For duty alerts and app updates (can be disabled)</li>
+                                <li><strong>Background Location:</strong> For continuous duty tracking (can be limited)</li>
+                            </ul>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">9. Children's Privacy</h2>
+                            <p>Our App is not intended for use by individuals under 18 years of age. We do not knowingly collect personal information from children under 18. If we discover that we have collected information from a child under 18, we will delete it immediately.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">10. Changes to This Privacy Policy</h2>
+                            <p>We may update this Privacy Policy periodically. We will notify you of any material changes through the App or by email. Your continued use of the App after such modifications constitutes your acceptance of the updated policy.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">11. Contact Information</h2>
+                            <div class="bg-light p-4 rounded">
+                                <h5 class="mb-3">PLS Travels</h5>
+                                <p class="mb-2"><strong>Email:</strong> <a href="mailto:privacy@plstravels.com">privacy@plstravels.com</a></p>
+                                <p class="mb-2"><strong>Support:</strong> <a href="mailto:support@plstravels.com">support@plstravels.com</a></p>
+                                <p class="mb-2"><strong>Data Protection Officer:</strong> <a href="mailto:dpo@plstravels.com">dpo@plstravels.com</a></p>
+                                <p class="mb-0"><strong>Address:</strong> [Company Address]</p>
+                            </div>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">12. Data Safety Summary</h2>
+                            <div class="alert alert-success">
+                                <h6 class="alert-heading">Data Collection Summary</h6>
+                                <ul class="mb-0">
+                                    <li><strong>Location:</strong> Collected during duty only, used for tracking and safety</li>
+                                    <li><strong>Photos:</strong> Duty-related images, stored securely for compliance</li>
+                                    <li><strong>Personal Info:</strong> Phone number and profile data for authentication</li>
+                                    <li><strong>Device Info:</strong> Technical data for security and app improvement</li>
+                                    <li><strong>Sharing:</strong> Limited to operational needs and trusted service providers</li>
+                                    <li><strong>Encryption:</strong> All data encrypted in transit and at rest</li>
+                                </ul>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service - PLS Travels Driver App{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h1 class="text-primary mb-4">Terms of Service</h1>
+                    <p class="text-muted mb-4">
+                        <strong>Effective Date:</strong> {{ moment().format('MMMM DD, YYYY') }}<br>
+                        <strong>Last Updated:</strong> {{ moment().format('MMMM DD, YYYY') }}
+                    </p>
+
+                    <div class="terms-content">
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">1. Acceptance of Terms</h2>
+                            <p>By downloading, installing, or using the PLS Travels Driver mobile application ("App"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the App.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">2. Eligibility</h2>
+                            <p>The App is exclusively for authorized PLS Travels drivers. You must:</p>
+                            <ul>
+                                <li>Be at least 18 years of age</li>
+                                <li>Have a valid employment agreement with PLS Travels</li>
+                                <li>Possess a valid driver's license</li>
+                                <li>Have authorization to use company vehicles</li>
+                            </ul>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">3. App Usage</h2>
+                            <h5 class="text-secondary mb-3">3.1 Permitted Use</h5>
+                            <ul>
+                                <li>Track duty hours and routes as assigned</li>
+                                <li>Submit required documentation and photos</li>
+                                <li>Receive duty assignments and notifications</li>
+                                <li>Access work-related information and resources</li>
+                            </ul>
+
+                            <h5 class="text-secondary mb-3">3.2 Prohibited Use</h5>
+                            <ul>
+                                <li>Using the App for personal or unauthorized purposes</li>
+                                <li>Sharing login credentials with others</li>
+                                <li>Attempting to circumvent security measures</li>
+                                <li>Using the App while off-duty without authorization</li>
+                                <li>Modifying, reverse engineering, or tampering with the App</li>
+                            </ul>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">4. Account Responsibilities</h2>
+                            <p>You are responsible for:</p>
+                            <ul>
+                                <li>Maintaining the security of your account credentials</li>
+                                <li>Ensuring accurate location tracking during duties</li>
+                                <li>Timely submission of required photos and documentation</li>
+                                <li>Reporting any technical issues or security concerns</li>
+                                <li>Keeping your device and App updated</li>
+                            </ul>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">5. Privacy and Data</h2>
+                            <p>Your use of the App is subject to our Privacy Policy. By using the App, you consent to the collection and use of your information as described in the Privacy Policy.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">6. Intellectual Property</h2>
+                            <p>The App and all related content, features, and functionality are owned by PLS Travels and are protected by copyright, trademark, and other intellectual property laws.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">7. Disclaimer of Warranties</h2>
+                            <p>THE APP IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. PLS TRAVELS DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">8. Limitation of Liability</h2>
+                            <p>PLS TRAVELS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE APP.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">9. Termination</h2>
+                            <p>These Terms remain in effect until terminated. Your access may be terminated immediately upon termination of employment or violation of these Terms.</p>
+                        </section>
+
+                        <section class="mb-5">
+                            <h2 class="h4 text-primary mb-3">10. Contact Information</h2>
+                            <p>For questions about these Terms, contact us at <a href="mailto:legal@plstravels.com">legal@plstravels.com</a></p>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

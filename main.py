@@ -1,8 +1,18 @@
 import os
 from app import create_app
+from flask import render_template
 
 # Create the app instance for gunicorn
 app = create_app()
+
+# Legal pages for Play Store compliance
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('legal/privacy_policy.html')
+
+@app.route('/terms-of-service')
+def terms_of_service():
+    return render_template('legal/terms_of_service.html')
 
 if __name__ == '__main__':
     # Use Flask directly while WebSocket is disabled

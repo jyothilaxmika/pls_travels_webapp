@@ -33,28 +33,26 @@ object NetworkModule {
             return null
         }
         
-        // Define expected certificate pins - these should be replaced with actual values
-        val productionPins = mapOf(
-            "api.plstravels.com" to listOf(
-                "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", // Placeholder - replace with actual pin
-                "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="  // Backup pin
-            ),
-            "staging-api.plstravels.com" to listOf(
-                "sha256/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=", // Placeholder - replace with actual pin
-                "sha256/DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD="  // Backup pin
-            )
+        // Certificate pinning disabled for production due to infrastructure constraints
+        // Relit infrastructure uses dynamic certificates that change frequently
+        // Enable certificate pinning only when migrating to a controlled domain
+        val productionPins = mapOf<String, List<String>>(
+            // Pins will be added when using a controlled domain with stable certificates
+            // "api.plstravels.com" to listOf(
+            //     "sha256/[ACTUAL_CERTIFICATE_HASH]",
+            //     "sha256/[BACKUP_CERTIFICATE_HASH]"
+            // )
         )
         
-        // Check if pins are still placeholders (all A's, B's, etc.)
-        val hasPlaceholderPins = productionPins.values.flatten().any { pin ->
-            pin.contains("AAAAAAAA") || pin.contains("BBBBBBBB") || 
-            pin.contains("CCCCCCCC") || pin.contains("DDDDDDDD")
+        // Check if pins are valid (not placeholders)
+        val hasValidPins = productionPins.values.flatten().all { pin ->
+            pin.length >= 44 && pin.startsWith("sha256/") && !pin.contains("AAAAAAAA")
         }
         
-        if (hasPlaceholderPins) {
-            // In production, if pins are still placeholders, don't enable pinning
-            // Log warning in production builds (this would need a logger)
-            android.util.Log.w("NetworkModule", "Certificate pinning disabled - placeholder pins detected")
+        if (!hasValidPins) {
+            // In production, if pins are invalid, don't enable pinning
+            // Log warning in production builds
+            android.util.Log.w("NetworkModule", "Certificate pinning disabled - invalid pins detected")
             return null
         }
         

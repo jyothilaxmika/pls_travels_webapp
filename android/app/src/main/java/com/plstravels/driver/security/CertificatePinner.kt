@@ -16,13 +16,14 @@ class CertificatePinnerConfig @Inject constructor() {
      */
     fun createCertificatePinner(): CertificatePinner {
         return CertificatePinner.Builder()
-            // Production API pins (replace with your actual certificate hashes)
-            .add("api.plstravels.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-            .add("api.plstravels.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
+            // Certificate pinning disabled for Replit infrastructure
+            // Replit uses dynamic CDN certificates that change frequently
+            // .add("plstravelswebapp.replit.app", "sha256/[ACTUAL_HASH]")
+            // .add("api.plstravels.com", "sha256/[ACTUAL_HASH]") // Enable for controlled domain
             
-            // Staging API pins
-            .add("staging-api.plstravels.com", "sha256/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=")
-            .add("staging-api.plstravels.com", "sha256/DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD=")
+            // Development/staging pins disabled
+            // Enable only for controlled infrastructure
+            // .add("staging.plstravels.com", "sha256/[ACTUAL_HASH]")
             
             // Firebase/Google Services pins
             .add("firebase.googleapis.com", "sha256/WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=")
