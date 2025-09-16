@@ -578,8 +578,32 @@
                     </div>
                 </div>
                 
+                <!-- CNG Level Selection -->
+                <div class="mb-3">
+                    <label for="start_cng_level" class="form-label">
+                        <i class="fas fa-gas-pump me-1"></i>Current CNG Level (Bars) *
+                    </label>
+                    <select class="form-select" name="start_cng_level" id="start_cng_level" required>
+                        <option value="">Select CNG Level</option>
+                        <option value="0">0 Bars (Empty)</option>
+                        <option value="1">1 Bar</option>
+                        <option value="2">2 Bars</option>
+                        <option value="3">3 Bars</option>
+                        <option value="4">4 Bars</option>
+                        <option value="5">5 Bars (Half)</option>
+                        <option value="6">6 Bars</option>
+                        <option value="7">7 Bars</option>
+                        <option value="8">8 Bars</option>
+                        <option value="9">9 Bars</option>
+                        <option value="10" selected>10 Bars (Full)</option>
+                    </select>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>Check your CNG gauge and select the current level before starting duty
+                    </small>
+                </div>
+
                 <div class="mb-3" id="cng-info-section" style="display: none;">
-                    <label class="form-label">CNG Information</label>
+                    <label class="form-label">Previous CNG Information</label>
                     <div class="card bg-light">
                         <div class="card-body py-2">
                             <div class="row">
