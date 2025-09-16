@@ -82,9 +82,61 @@
             <div class="mb-3">
                 <strong>Vehicle Documents:</strong><br>
                 <div class="row mt-2">
-                    <div class="col-12">
-                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Click on available documents to view them. Contact admin if documents are missing.</small>
+                    {% set vehicle = active_duty.vehicle %}
+                    
+                    {% if vehicle.registration_document %}
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <a href="/uploads/{{ vehicle.registration_document }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-file-alt me-1"></i>Registration
+                        </a>
                     </div>
+                    {% endif %}
+                    
+                    {% if vehicle.insurance_document %}
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <a href="/uploads/{{ vehicle.insurance_document }}" target="_blank" class="btn btn-outline-success btn-sm w-100">
+                            <i class="fas fa-shield-alt me-1"></i>Insurance
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if vehicle.fitness_document %}
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <a href="/uploads/{{ vehicle.fitness_document }}" target="_blank" class="btn btn-outline-info btn-sm w-100">
+                            <i class="fas fa-check-circle me-1"></i>Fitness
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if vehicle.permit_document %}
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <a href="/uploads/{{ vehicle.permit_document }}" target="_blank" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="fas fa-id-card me-1"></i>Permit
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if vehicle.pollution_document %}
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <a href="/uploads/{{ vehicle.pollution_document }}" target="_blank" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="fas fa-leaf me-1"></i>Pollution Certificate
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if vehicle.other_document %}
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <a href="/uploads/{{ vehicle.other_document }}" target="_blank" class="btn btn-outline-dark btn-sm w-100">
+                            <i class="fas fa-paperclip me-1"></i>Other Documents
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not (vehicle.registration_document or vehicle.insurance_document or vehicle.fitness_document or vehicle.permit_document or vehicle.pollution_document or vehicle.other_document) %}
+                    <div class="col-12">
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>No documents uploaded yet. Contact admin if documents are missing.</small>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
