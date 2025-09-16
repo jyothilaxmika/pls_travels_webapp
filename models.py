@@ -1353,6 +1353,153 @@ class Photo(db.Model):
     def __repr__(self):
         return f'<Photo {self.filename}:{self.photo_type.value}>'
 
+class TrackingSession(db.Model):
+    __tablename__ = 'tracking_sessions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Foreign keys
+    duty_id = db.Column(db.Integer, db.ForeignKey('duties.id'), nullable=False, index=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False, index=True)
+    
+    # Session details
+    session_start = db.Column(db.DateTime, nullable=False, default=get_ist_time_naive)
+    session_end = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    
+    # Tracking configuration
+    sampling_interval = db.Column(db.Integer, default=30)  # seconds
+    min_distance = db.Column(db.Float, default=10.0)  # meters
+    accuracy_threshold = db.Column(db.Float, default=50.0)  # meters
+    
+    # Session metadata
+    total_points = db.Column(db.Integer, default=0)
+    distance_covered = db.Column(db.Float, default=0.0)  # kilometers
+    duration = db.Column(db.Integer, default=0)  # seconds
+    
+    # Device info
+    device_info = db.Column(db.Text)  # JSON string with device details
+    app_version = db.Column(db.String(20))
+    
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
+    
+    # Relationships
+    duty = db.relationship('Duty', backref='tracking_sessions')
+    driver = db.relationship('Driver', backref='tracking_sessions')
+    
+    # Indexes and constraints
+    __table_args__ = (
+        Index('idx_tracking_session_active', 'is_active', 'session_start'),
+        Index('idx_tracking_session_duty_driver', 'duty_id', 'driver_id'),
+        # Prevent multiple active sessions per duty
+        UniqueConstraint('duty_id', 'driver_id', 'is_active', name='uq_active_session_per_duty'),
+    )
+    
+    def __repr__(self):
+        return f'<TrackingSession duty:{self.duty_id} driver:{self.driver_id}>'
+
+class DriverLocation(db.Model):
+    __tablename__ = 'driver_locations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Foreign keys
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False, index=True)
+    duty_id = db.Column(db.Integer, db.ForeignKey('duties.id'), nullable=True, index=True)
+    tracking_session_id = db.Column(db.Integer, db.ForeignKey('tracking_sessions.id'), nullable=True, index=True)
+    
+    # Location data
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    altitude = db.Column(db.Float, nullable=True)
+    accuracy = db.Column(db.Float, nullable=True)  # meters
+    speed = db.Column(db.Float, nullable=True)  # m/s
+    bearing = db.Column(db.Float, nullable=True)  # degrees
+    
+    # Timestamps
+    captured_at = db.Column(db.DateTime, nullable=False, index=True)
+    received_at = db.Column(db.DateTime, nullable=False, default=get_ist_time_naive, index=True)
+    
+    # Device and source info
+    source = db.Column(db.String(20), default='mobile')  # mobile, web, manual
+    client_event_id = db.Column(db.String(100), nullable=True)  # for deduplication
+    battery_level = db.Column(db.Integer, nullable=True)  # percentage
+    is_mocked = db.Column(db.Boolean, default=False, index=True)
+    
+    # Additional metadata
+    address = db.Column(db.String(500), nullable=True)  # reverse geocoded address
+    city = db.Column(db.String(100), nullable=True)
+    state = db.Column(db.String(100), nullable=True)
+    country = db.Column(db.String(100), nullable=True)
+    
+    # Network and signal info
+    network_type = db.Column(db.String(20), nullable=True)  # wifi, cellular, etc.
+    signal_strength = db.Column(db.Integer, nullable=True)
+    
+    # Processing status
+    is_processed = db.Column(db.Boolean, default=False, index=True)
+    processed_at = db.Column(db.DateTime, nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    
+    # Relationships
+    driver = db.relationship('Driver', backref='locations')
+    duty = db.relationship('Duty', backref='location_points')
+    tracking_session = db.relationship('TrackingSession', backref='location_points')
+    
+    # Indexes and constraints for performance and data integrity
+    __table_args__ = (
+        # Performance indexes for time-series queries
+        Index('idx_driver_locations_driver_captured_desc', 'driver_id', 'captured_at'),
+        Index('idx_driver_locations_duty_captured', 'duty_id', 'captured_at'),
+        Index('idx_driver_locations_session_captured', 'tracking_session_id', 'captured_at'),
+        Index('idx_driver_locations_source_mocked', 'source', 'is_mocked'),
+        Index('idx_driver_locations_coords', 'latitude', 'longitude'),
+        Index('idx_driver_locations_received_processed', 'received_at', 'is_processed'),
+        
+        # Data integrity constraints
+        CheckConstraint('latitude >= -90 AND latitude <= 90', name='check_latitude_range'),
+        CheckConstraint('longitude >= -180 AND longitude <= 180', name='check_longitude_range'),
+        CheckConstraint('accuracy IS NULL OR accuracy >= 0', name='check_accuracy_positive'),
+        CheckConstraint('speed IS NULL OR speed >= 0', name='check_speed_positive'),
+        CheckConstraint('bearing IS NULL OR (bearing >= 0 AND bearing <= 360)', name='check_bearing_range'),
+        CheckConstraint('battery_level IS NULL OR (battery_level >= 0 AND battery_level <= 100)', name='check_battery_range'),
+        
+        # Deduplication per driver
+        UniqueConstraint('driver_id', 'client_event_id', name='uq_driver_event_id'),
+    )
+    
+    def __repr__(self):
+        return f'<DriverLocation driver:{self.driver_id} at {self.latitude},{self.longitude}>'
+    
+    @property
+    def coordinates(self):
+        """Return coordinates as [lat, lng] for mapping libraries"""
+        return [self.latitude, self.longitude]
+    
+    def distance_from(self, other_location):
+        """Calculate distance from another location in kilometers using Haversine formula"""
+        from math import radians, cos, sin, asin, sqrt
+        
+        if not other_location:
+            return 0
+            
+        # Convert to radians
+        lat1, lon1 = radians(self.latitude), radians(self.longitude)
+        lat2, lon2 = radians(other_location.latitude), radians(other_location.longitude)
+        
+        # Haversine formula
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+        
+        # Radius of earth in kilometers
+        r = 6371
+        return c * r
+
 # (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 class OAuth(db.Model):
     __tablename__ = 'oauth_tokens'
