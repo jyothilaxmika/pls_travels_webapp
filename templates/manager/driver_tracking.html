@@ -1,0 +1,642 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Location Tracking - PLS Travels{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet Heat plugin -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.min.css" />
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    
+    .tracking-controls {
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .driver-list {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        background: #f8f9fa;
+    }
+    
+    .driver-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        margin: 4px 0;
+        background: white;
+        border-radius: 4px;
+        border-left: 4px solid #007bff;
+    }
+    
+    .driver-item.active {
+        border-left-color: #28a745;
+        background: #f0fff4;
+    }
+    
+    .driver-item.inactive {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+    }
+    
+    .driver-status {
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        color: white;
+    }
+    
+    .status-active { background-color: #28a745; }
+    .status-inactive { background-color: #dc3545; }
+    .status-offline { background-color: #6c757d; }
+    
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-size: 12px;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 4px 0;
+    }
+    
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .stats-number {
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stats-label {
+        font-size: 0.9em;
+        opacity: 0.9;
+    }
+    
+    .filter-section {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #f8f9fa;
+    }
+    
+    .filter-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-primary">
+                <i class="fas fa-map-marked-alt"></i>
+                Driver Location Tracking & Heatmap
+            </h2>
+            <p class="text-muted">Real-time tracking and historical analysis of driver locations</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Controls Panel -->
+        <div class="col-md-3">
+            <div class="tracking-controls">
+                <!-- Stats Cards -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="stats-card">
+                            <div class="stats-number" id="active-drivers">0</div>
+                            <div class="stats-label">Active Drivers</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time Range Filter -->
+                <div class="filter-section">
+                    <div class="filter-title">Time Range</div>
+                    <select class="form-select mb-2" id="time-range">
+                        <option value="live">Live Tracking</option>
+                        <option value="1h">Last 1 Hour</option>
+                        <option value="6h">Last 6 Hours</option>
+                        <option value="1d">Last 24 Hours</option>
+                        <option value="3d">Last 3 Days</option>
+                        <option value="1w">Last Week</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                    
+                    <div id="custom-range" style="display: none;">
+                        <input type="datetime-local" class="form-control mb-2" id="start-time">
+                        <input type="datetime-local" class="form-control" id="end-time">
+                    </div>
+                </div>
+
+                <!-- Driver Filter -->
+                <div class="filter-section">
+                    <div class="filter-title">Drivers</div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show-all-drivers" checked>
+                        <label class="form-check-label" for="show-all-drivers">
+                            Show All Drivers
+                        </label>
+                    </div>
+                    <div class="driver-list mt-2" id="driver-filter-list">
+                        <!-- Driver checkboxes will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Branch Filter -->
+                <div class="filter-section">
+                    <div class="filter-title">Branch</div>
+                    <select class="form-select" id="branch-filter">
+                        <option value="">All Branches</option>
+                        {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Map Display Options -->
+                <div class="filter-section">
+                    <div class="filter-title">Display Options</div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show-heatmap" checked>
+                        <label class="form-check-label" for="show-heatmap">
+                            Show Heatmap
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show-markers" checked>
+                        <label class="form-check-label" for="show-markers">
+                            Show Driver Markers
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show-routes">
+                        <label class="form-check-label" for="show-routes">
+                            Show Routes
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Update Controls -->
+                <div class="filter-section">
+                    <div class="filter-title">Updates</div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="auto-refresh" checked>
+                        <label class="form-check-label" for="auto-refresh">
+                            Auto Refresh (30s)
+                        </label>
+                    </div>
+                    <button class="btn btn-primary btn-sm w-100 mt-2" onclick="refreshMap()">
+                        <i class="fas fa-sync-alt"></i> Refresh Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Panel -->
+        <div class="col-md-9">
+            <div class="position-relative">
+                <!-- Map -->
+                <div id="map"></div>
+                
+                <!-- Map Controls -->
+                <div class="map-controls">
+                    <button class="btn btn-sm btn-outline-primary mb-2" onclick="centerMap()">
+                        <i class="fas fa-crosshairs"></i> Center
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary mb-2" onclick="fitAllMarkers()">
+                        <i class="fas fa-expand-arrows-alt"></i> Fit All
+                    </button>
+                    <div class="legend mt-3">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #28a745;"></div>
+                            <span>Active Driver</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #ffc107;"></div>
+                            <span>Recent Location</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #dc3545;"></div>
+                            <span>Offline Driver</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location History Table -->
+            <div class="mt-4">
+                <h5>Recent Location Updates</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm" id="location-history">
+                        <thead>
+                            <tr>
+                                <th>Driver</th>
+                                <th>Location</th>
+                                <th>Accuracy</th>
+                                <th>Speed</th>
+                                <th>Battery</th>
+                                <th>Last Update</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Location history will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet Heat plugin -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.min.js"></script>
+
+<script>
+// Global variables
+let map;
+let heatmapLayer;
+let markersLayer;
+let routesLayer;
+let autoRefreshInterval;
+let driverMarkers = {};
+let locationData = [];
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+    setupEventListeners();
+    loadInitialData();
+    startAutoRefresh();
+});
+
+function initializeMap() {
+    // Initialize map centered on Chennai (default location)
+    map = L.map('map').setView([13.0827, 80.2707], 11);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Initialize layers
+    heatmapLayer = L.heatLayer([], {
+        radius: 25,
+        blur: 15,
+        maxZoom: 17,
+        gradient: {
+            0.0: 'blue',
+            0.2: 'cyan',
+            0.4: 'lime',
+            0.6: 'yellow',
+            0.8: 'orange',
+            1.0: 'red'
+        }
+    }).addTo(map);
+    
+    markersLayer = L.layerGroup().addTo(map);
+    routesLayer = L.layerGroup().addTo(map);
+}
+
+function setupEventListeners() {
+    // Time range filter
+    document.getElementById('time-range').addEventListener('change', function() {
+        const customRange = document.getElementById('custom-range');
+        if (this.value === 'custom') {
+            customRange.style.display = 'block';
+        } else {
+            customRange.style.display = 'none';
+        }
+        refreshMap();
+    });
+    
+    // Display options
+    document.getElementById('show-heatmap').addEventListener('change', toggleHeatmap);
+    document.getElementById('show-markers').addEventListener('change', toggleMarkers);
+    document.getElementById('show-routes').addEventListener('change', toggleRoutes);
+    
+    // Auto refresh toggle
+    document.getElementById('auto-refresh').addEventListener('change', function() {
+        if (this.checked) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
+    
+    // Branch filter
+    document.getElementById('branch-filter').addEventListener('change', refreshMap);
+    
+    // Show all drivers toggle
+    document.getElementById('show-all-drivers').addEventListener('change', function() {
+        const driverList = document.getElementById('driver-filter-list');
+        const checkboxes = driverList.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        refreshMap();
+    });
+}
+
+function loadInitialData() {
+    // Load available drivers for filtering
+    fetch('/manager/api/drivers')
+        .then(response => response.json())
+        .then(data => {
+            populateDriverFilter(data.drivers);
+        })
+        .catch(error => {
+            console.error('Error loading drivers:', error);
+        });
+    
+    // Load initial location data
+    refreshMap();
+}
+
+function populateDriverFilter(drivers) {
+    const driverList = document.getElementById('driver-filter-list');
+    driverList.innerHTML = '';
+    
+    drivers.forEach(driver => {
+        const driverItem = document.createElement('div');
+        driverItem.className = 'driver-item';
+        driverItem.innerHTML = `
+            <div>
+                <input type="checkbox" class="form-check-input me-2" 
+                       id="driver-${driver.id}" value="${driver.id}" checked>
+                <label for="driver-${driver.id}">${driver.full_name}</label>
+            </div>
+            <span class="driver-status status-${driver.status.toLowerCase()}">${driver.status}</span>
+        `;
+        
+        // Add event listener for individual driver checkbox
+        const checkbox = driverItem.querySelector('input');
+        checkbox.addEventListener('change', refreshMap);
+        
+        driverList.appendChild(driverItem);
+    });
+}
+
+function refreshMap() {
+    const filters = getMapFilters();
+    
+    // Show loading indicator
+    document.getElementById('active-drivers').textContent = 'Loading...';
+    
+    // Fetch location data with filters
+    fetch('/manager/api/driver-locations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(filters)
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateMapData(data);
+        updateLocationHistory(data.recent_locations);
+        updateStats(data.stats);
+    })
+    .catch(error => {
+        console.error('Error refreshing map:', error);
+        document.getElementById('active-drivers').textContent = 'Error';
+    });
+}
+
+function getMapFilters() {
+    const timeRange = document.getElementById('time-range').value;
+    const branchId = document.getElementById('branch-filter').value;
+    const selectedDrivers = Array.from(document.querySelectorAll('#driver-filter-list input:checked'))
+        .map(cb => parseInt(cb.value));
+    
+    const filters = {
+        time_range: timeRange,
+        branch_id: branchId || null,
+        driver_ids: selectedDrivers
+    };
+    
+    // Add custom time range if selected
+    if (timeRange === 'custom') {
+        filters.start_time = document.getElementById('start-time').value;
+        filters.end_time = document.getElementById('end-time').value;
+    }
+    
+    return filters;
+}
+
+function updateMapData(data) {
+    locationData = data.locations;
+    
+    // Clear existing layers
+    markersLayer.clearLayers();
+    routesLayer.clearLayers();
+    driverMarkers = {};
+    
+    // Update heatmap
+    if (document.getElementById('show-heatmap').checked) {
+        const heatPoints = locationData.map(loc => [loc.latitude, loc.longitude, 1]);
+        heatmapLayer.setLatLngs(heatPoints);
+    }
+    
+    // Add driver markers
+    if (document.getElementById('show-markers').checked) {
+        addDriverMarkers(data.current_positions);
+    }
+    
+    // Add routes if enabled
+    if (document.getElementById('show-routes').checked) {
+        addDriverRoutes(data.routes);
+    }
+    
+    // Fit map to show all markers if data exists
+    if (data.current_positions.length > 0) {
+        const group = new L.featureGroup(Object.values(driverMarkers));
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+function addDriverMarkers(currentPositions) {
+    currentPositions.forEach(position => {
+        const isActive = position.last_update_minutes < 5;
+        const markerColor = isActive ? '#28a745' : 
+                           position.last_update_minutes < 30 ? '#ffc107' : '#dc3545';
+        
+        const marker = L.circleMarker([position.latitude, position.longitude], {
+            radius: 8,
+            fillColor: markerColor,
+            color: 'white',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+        
+        // Create popup content
+        const popupContent = `
+            <div style="min-width: 200px;">
+                <h6>${position.driver_name}</h6>
+                <p><strong>Status:</strong> ${isActive ? 'Active' : 'Inactive'}</p>
+                <p><strong>Last Update:</strong> ${position.last_update_minutes} min ago</p>
+                <p><strong>Speed:</strong> ${position.speed || 'Unknown'} km/h</p>
+                <p><strong>Accuracy:</strong> ${position.accuracy || 'Unknown'} m</p>
+                <p><strong>Battery:</strong> ${position.battery_level || 'Unknown'}%</p>
+            </div>
+        `;
+        
+        marker.bindPopup(popupContent);
+        driverMarkers[position.driver_id] = marker;
+        markersLayer.addLayer(marker);
+    });
+}
+
+function addDriverRoutes(routes) {
+    routes.forEach(route => {
+        if (route.coordinates.length > 1) {
+            const polyline = L.polyline(route.coordinates, {
+                color: route.color || '#007bff',
+                weight: 3,
+                opacity: 0.7
+            });
+            
+            polyline.bindPopup(`
+                <h6>${route.driver_name}</h6>
+                <p>Route for ${route.date}</p>
+                <p>Distance: ${route.distance} km</p>
+            `);
+            
+            routesLayer.addLayer(polyline);
+        }
+    });
+}
+
+function updateLocationHistory(recentLocations) {
+    const tbody = document.querySelector('#location-history tbody');
+    tbody.innerHTML = '';
+    
+    recentLocations.forEach(location => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${location.driver_name}</td>
+            <td>${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}</td>
+            <td>${location.accuracy || 'N/A'} m</td>
+            <td>${location.speed || 'N/A'} km/h</td>
+            <td>${location.battery_level || 'N/A'}%</td>
+            <td>${location.time_ago}</td>
+            <td>
+                <span class="badge ${location.is_recent ? 'bg-success' : 'bg-secondary'}">
+                    ${location.is_recent ? 'Recent' : 'Old'}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateStats(stats) {
+    document.getElementById('active-drivers').textContent = stats.active_drivers || 0;
+}
+
+function toggleHeatmap() {
+    if (document.getElementById('show-heatmap').checked) {
+        map.addLayer(heatmapLayer);
+    } else {
+        map.removeLayer(heatmapLayer);
+    }
+}
+
+function toggleMarkers() {
+    if (document.getElementById('show-markers').checked) {
+        map.addLayer(markersLayer);
+    } else {
+        map.removeLayer(markersLayer);
+    }
+}
+
+function toggleRoutes() {
+    if (document.getElementById('show-routes').checked) {
+        map.addLayer(routesLayer);
+    } else {
+        map.removeLayer(routesLayer);
+    }
+}
+
+function centerMap() {
+    // Center on Chennai (default location)
+    map.setView([13.0827, 80.2707], 11);
+}
+
+function fitAllMarkers() {
+    if (Object.keys(driverMarkers).length > 0) {
+        const group = new L.featureGroup(Object.values(driverMarkers));
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+function startAutoRefresh() {
+    stopAutoRefresh(); // Clear any existing interval
+    autoRefreshInterval = setInterval(refreshMap, 30000); // 30 seconds
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+});
+</script>
+{% endblock %}
