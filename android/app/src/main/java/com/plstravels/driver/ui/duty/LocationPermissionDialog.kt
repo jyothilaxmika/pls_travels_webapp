@@ -1,5 +1,9 @@
 package com.plstravels.driver.ui.duty
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -43,7 +47,19 @@ fun LocationPermissionDialog(
         }
     }
     
-    // Launcher for background location permission
+    // Launcher for settings (Android 11+ background location)
+    val settingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        // Re-check permissions after returning from settings
+        if (LocationPermissionHelper.hasBackgroundLocationPermission(context)) {
+            onPermissionsGranted()
+        } else {
+            onPermissionsDenied()
+        }
+    }
+    
+    // Launcher for background location permission (Android 10 only)
     val backgroundPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -117,21 +133,41 @@ fun LocationPermissionDialog(
             text = {
                 Column {
                     Text(
-                        text = "To track your location during duty, PLS Travels needs permission to access location in the background.",
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        text = "🚖 Background Location Required",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
                     
                     Text(
-                        text = "This ensures accurate route tracking even when the app is not actively open.",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "PLS Travels collects location data in the background ONLY during active duty periods to:",
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    
+                    Text("• Track routes for compliance verification")
+                    Text("• Calculate accurate trip distances")
+                    Text("• Ensure driver safety monitoring")
+                    Text("• Generate duty performance reports")
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Text(
-                        text = "Select 'Allow all the time' in the next screen.",
+                        text = "⚠️ Location tracking stops immediately when you end your duty.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    val instructionText = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        "You'll be taken to Settings. Select 'Location' → 'App permissions' → 'Allow all the time'"
+                    } else {
+                        "Select 'Allow all the time' in the permission dialog"
+                    }
+                    
+                    Text(
+                        text = instructionText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -143,7 +179,16 @@ fun LocationPermissionDialog(
                         showBackgroundPermissionDialog = false
                         val missingBackgroundPerms = LocationPermissionHelper.getMissingBackgroundPermissions(context)
                         if (missingBackgroundPerms.isNotEmpty()) {
-                            backgroundPermissionLauncher.launch(missingBackgroundPerms)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                // Android 11+: Must go to Settings
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                }
+                                settingsLauncher.launch(intent)
+                            } else {
+                                // Android 10: Can still use runtime permissions
+                                backgroundPermissionLauncher.launch(missingBackgroundPerms)
+                            }
                         } else {
                             onPermissionsGranted()
                         }

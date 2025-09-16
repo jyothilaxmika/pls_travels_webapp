@@ -122,10 +122,18 @@ class LocationTrackingService : Service() {
     private fun startLocationTracking(dutyId: Int) {
         if (isTracking) return
         
-        // Check permissions
+        // Check basic location permissions
         if (!LocationPermissionHelper.hasLocationPermissions(this)) {
             stopSelf()
             return
+        }
+        
+        // CRITICAL: Check background location permission for API 29+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (!LocationPermissionHelper.hasBackgroundLocationPermission(this)) {
+                stopSelf()
+                return
+            }
         }
         
         currentDutyId = dutyId

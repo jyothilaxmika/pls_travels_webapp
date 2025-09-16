@@ -81,7 +81,14 @@ class AuthRepository @Inject constructor(
     
     suspend fun refreshToken(): Result<RefreshTokenResponse> {
         return try {
-            val response = apiService.refreshToken()
+            val refreshToken = tokenManager.getRefreshToken()
+            if (refreshToken.isNullOrEmpty()) {
+                tokenManager.clearTokens()
+                return Result.failure(Exception("No refresh token available"))
+            }
+            
+            val request = RefreshTokenRequest(refreshToken = refreshToken)
+            val response = apiService.refreshToken(request)
             
             if (response.isSuccessful && response.body()?.success == true) {
                 val body = response.body()!!
@@ -90,7 +97,7 @@ class AuthRepository @Inject constructor(
                 if (body.accessToken != null) {
                     tokenManager.updateAccessToken(
                         accessToken = body.accessToken,
-                        expiresIn = body.tokenExpiresIn ?: 3600
+                        expiresIn = body.expiresIn ?: 3600
                     )
                 }
                 
