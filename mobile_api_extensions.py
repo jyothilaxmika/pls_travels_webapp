@@ -17,8 +17,8 @@ from whatsapp_utils import send_advance_payment_request
 
 logger = logging.getLogger(__name__)
 
-# Create mobile extensions blueprint
-mobile_extensions_bp = Blueprint('mobile_extensions', __name__)
+# Create mobile extensions blueprint with proper URL prefix
+mobile_extensions_bp = Blueprint('mobile_extensions', __name__, url_prefix='/api/mobile/v1')
 
 def get_current_mobile_user():
     """Get current user from JWT token"""
@@ -28,14 +28,14 @@ def get_current_mobile_user():
 
 # === PHOTO UPLOAD ENDPOINTS ===
 
-@mobile_extensions_bp.route('/api/v1/driver/upload-photo', methods=['POST'])
+@mobile_extensions_bp.route('/driver/upload-photo', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def upload_duty_photo():
     """Upload photo for duty (start/end duty photos)"""
     try:
         user = get_current_mobile_user()
-        if not user or user.role.name != 'DRIVER':
+        if not user or not user.role or user.role.name != 'DRIVER':
             return jsonify({
                 'success': False,
                 'error': 'ACCESS_DENIED',
@@ -58,15 +58,55 @@ def upload_duty_photo():
                 'message': 'No photo file selected'
             }), 400
         
-        # Validate file type and size
+        # Security: Check file size (limit to 10MB for photos)
+        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
+        photo.seek(0, 2)  # Seek to end to get file size
+        file_size = photo.tell()
+        photo.seek(0)  # Reset to beginning
+        
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({
+                'success': False,
+                'error': 'FILE_TOO_LARGE',
+                'message': f'File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit'
+            }), 400
+        
+        # Security: Validate file extension
         allowed_extensions = {'jpg', 'jpeg', 'png'}
-        file_ext = photo.filename.rsplit('.', 1)[1].lower() if '.' in photo.filename else ''
+        file_ext = photo.filename.rsplit('.', 1)[1].lower() if photo.filename and '.' in photo.filename else ''
         
         if file_ext not in allowed_extensions:
             return jsonify({
                 'success': False,
                 'error': 'INVALID_FILE_TYPE',
                 'message': 'Only JPG, JPEG, PNG files allowed'
+            }), 400
+        
+        # Security: Validate MIME type (content-type header)
+        allowed_mime_types = {'image/jpeg', 'image/png', 'image/jpg'}
+        if photo.content_type not in allowed_mime_types:
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_CONTENT_TYPE',
+                'message': f'Invalid file type. Expected: {", ".join(allowed_mime_types)}'
+            }), 400
+        
+        # Security: Basic file content validation (check for image headers)
+        photo.seek(0)
+        file_header = photo.read(8)
+        photo.seek(0)
+        
+        # Check for valid image file signatures
+        valid_headers = [
+            b'\xff\xd8\xff',  # JPEG
+            b'\x89PNG\r\n\x1a\n',  # PNG
+        ]
+        
+        if not any(file_header.startswith(header) for header in valid_headers):
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_FILE_CONTENT',
+                'message': 'File content does not match expected image format'
             }), 400
         
         # Generate secure filename
@@ -101,14 +141,14 @@ def upload_duty_photo():
 
 # === LOCATION TRACKING ENDPOINTS ===
 
-@mobile_extensions_bp.route('/api/v1/driver/location/update', methods=['POST'])
+@mobile_extensions_bp.route('/driver/location/update', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def update_driver_location():
     """Update driver's current location for real-time tracking"""
     try:
         user = get_current_mobile_user()
-        if not user or user.role.name != 'DRIVER':
+        if not user or not user.role or user.role.name != 'DRIVER':
             return jsonify({
                 'success': False,
                 'error': 'ACCESS_DENIED',
@@ -159,14 +199,14 @@ def update_driver_location():
 
 # === FCM PUSH NOTIFICATIONS ===
 
-@mobile_extensions_bp.route('/api/v1/driver/fcm-token', methods=['POST'])
+@mobile_extensions_bp.route('/driver/fcm-token', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def register_fcm_token():
     """Register FCM token for push notifications"""
     try:
         user = get_current_mobile_user()
-        if not user or user.role.name != 'DRIVER':
+        if not user or not user.role or user.role.name != 'DRIVER':
             return jsonify({
                 'success': False,
                 'error': 'ACCESS_DENIED',
@@ -202,14 +242,14 @@ def register_fcm_token():
 
 # === ADVANCE PAYMENT REQUESTS ===
 
-@mobile_extensions_bp.route('/api/v1/driver/advance-payment', methods=['POST'])
+@mobile_extensions_bp.route('/driver/advance-payment', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def request_advance_payment():
     """Request advance payment via WhatsApp to admins"""
     try:
         user = get_current_mobile_user()
-        if not user or user.role.name != 'DRIVER':
+        if not user or not user.role or user.role.name != 'DRIVER':
             return jsonify({
                 'success': False,
                 'error': 'ACCESS_DENIED',
@@ -283,14 +323,14 @@ def request_advance_payment():
             'message': 'Failed to process advance payment request'
         }), 500
 
-@mobile_extensions_bp.route('/api/v1/driver/advance-payments', methods=['GET'])
+@mobile_extensions_bp.route('/driver/advance-payments', methods=['GET'])
 @jwt_required()
 @csrf.exempt
 def get_advance_payments():
     """Get driver's advance payment requests history"""
     try:
         user = get_current_mobile_user()
-        if not user or user.role.name != 'DRIVER':
+        if not user or not user.role or user.role.name != 'DRIVER':
             return jsonify({
                 'success': False,
                 'error': 'ACCESS_DENIED',
@@ -352,7 +392,7 @@ def get_advance_payments():
 
 # === HEALTH CHECK ENDPOINT ===
 
-@mobile_extensions_bp.route('/api/v1/health', methods=['GET'])
+@mobile_extensions_bp.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for Android app"""
     return jsonify({

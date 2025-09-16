@@ -26,8 +26,8 @@ from app import csrf
 
 logger = logging.getLogger(__name__)
 
-# Create mobile auth blueprint
-mobile_auth_bp = Blueprint('mobile_auth', __name__)
+# Create mobile auth blueprint with proper URL prefix
+mobile_auth_bp = Blueprint('mobile_auth', __name__, url_prefix='/api/mobile/v1')
 
 # JWT token blacklist for logout functionality
 blacklisted_tokens = set()
@@ -48,7 +48,7 @@ def get_client_ip():
     # Fallback to remote address
     return request.remote_addr or '127.0.0.1'
 
-@mobile_auth_bp.route('/api/v1/auth/send-otp', methods=['POST'])
+@mobile_auth_bp.route('/auth/send-otp', methods=['POST'])
 @csrf.exempt
 def mobile_send_otp():
     """Send OTP for mobile authentication"""
@@ -163,7 +163,7 @@ def mobile_send_otp():
             'message': 'Internal server error'
         }), 500
 
-@mobile_auth_bp.route('/api/v1/auth/verify-otp', methods=['POST'])
+@mobile_auth_bp.route('/auth/verify-otp', methods=['POST'])
 @csrf.exempt
 def mobile_verify_otp():
     """Verify OTP and return JWT tokens for mobile authentication"""
@@ -205,17 +205,38 @@ def mobile_verify_otp():
                 'message': 'Invalid phone number or OTP'
             }), 401
 
-        # TODO: Implement proper OTP verification with session storage
-        # For demo purposes, accept any 6-digit code for development
-        if len(otp_code) != 6 or not otp_code.isdigit():
-            logger.warning(f"MOBILE_OTP_VERIFY_INVALID_CODE: Phone: {formatted_phone[-4:].rjust(4, '*')} "
-                          f"Code: {otp_code[:2]}**** IP: {client_ip}")
+        # Verify OTP using proper session validation
+        from flask import session as flask_session
+        otp_result = OTPSession.verify_otp(flask_session, otp_code)
+        
+        if not otp_result['success']:
+            logger.warning(f"MOBILE_OTP_VERIFY_FAILED: Phone: {formatted_phone[-4:].rjust(4, '*')} "
+                          f"IP: {client_ip} Reason: {otp_result['message']}")
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_OTP',
+                'message': otp_result['message']
+            }), 401
+        
+        # Ensure OTP is for the correct phone number
+        if otp_result.get('phone') != formatted_phone:
+            logger.warning(f"MOBILE_OTP_VERIFY_PHONE_MISMATCH: Expected: {formatted_phone[-4:].rjust(4, '*')} "
+                          f"Got: {otp_result.get('phone', 'None')[-4:].rjust(4, '*') if otp_result.get('phone') else 'None'}")
             return jsonify({
                 'success': False,
                 'error': 'INVALID_OTP',
                 'message': 'Invalid OTP code'
             }), 401
 
+        # Check if user has a valid role
+        if not user.role:
+            logger.warning(f"MOBILE_OTP_VERIFY_NO_ROLE: User: {user.username} has no role assigned")
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_USER_STATE',
+                'message': 'User account configuration error'
+            }), 403
+        
         # Create JWT tokens with user claims
         additional_claims = {
             'role': user.role.name,
@@ -232,7 +253,7 @@ def mobile_verify_otp():
 
         refresh_token = create_refresh_token(
             identity=user.username,
-            additional_claims={'user_id': user.id, 'role': user.role.name},
+            additional_claims={'user_id': user.id, 'role': user.role.name if user.role else 'UNKNOWN'},
             expires_delta=timedelta(days=30)  # 30 day refresh token
         )
 
@@ -251,7 +272,7 @@ def mobile_verify_otp():
             'user': {
                 'id': user.id,
                 'username': user.username,
-                'role': user.role.name,
+                'role': user.role.name if user.role else 'UNKNOWN',
                 'full_name': user.full_name,
                 'phone': formatted_phone,
                 'branch_name': user.branch.name if user.branch else None
@@ -267,7 +288,7 @@ def mobile_verify_otp():
             'message': 'Internal server error'
         }), 500
 
-@mobile_auth_bp.route('/api/v1/auth/refresh', methods=['POST'])
+@mobile_auth_bp.route('/auth/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 @csrf.exempt
 def mobile_refresh_token():
@@ -286,6 +307,15 @@ def mobile_refresh_token():
                 'message': 'User account is not active'
             }), 401
 
+        # Check if user has a valid role
+        if not user.role:
+            logger.warning(f"MOBILE_TOKEN_REFRESH_NO_ROLE: User: {user.username} has no role assigned")
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_USER_STATE',
+                'message': 'User account configuration error'
+            }), 403
+        
         # Create new access token
         additional_claims = {
             'role': user.role.name,
@@ -316,7 +346,7 @@ def mobile_refresh_token():
             'message': 'Internal server error'
         }), 500
 
-@mobile_auth_bp.route('/api/v1/auth/logout', methods=['POST'])
+@mobile_auth_bp.route('/auth/logout', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def mobile_logout():

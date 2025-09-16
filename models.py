@@ -114,6 +114,16 @@ class User(UserMixin, db.Model):
     reset_token = db.Column(db.String(6))
     reset_token_expiry = db.Column(db.DateTime)
     
+    # Mobile app specific fields
+    # Location tracking
+    last_latitude = db.Column(db.Float)
+    last_longitude = db.Column(db.Float)
+    last_location_update = db.Column(db.DateTime)
+    
+    # Push notifications (FCM - Firebase Cloud Messaging)
+    fcm_token = db.Column(db.String(512))  # FCM tokens can be quite long
+    fcm_token_updated = db.Column(db.DateTime)
+    
     # Audit fields
     created_at = db.Column(db.DateTime, default=get_ist_time_naive, nullable=False)
     updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
@@ -315,9 +325,10 @@ class Driver(db.Model):
     def get_all_phones(self):
         """Get all phone numbers (primary + additional)"""
         phones = []
-        # Use backref 'user' which is properly defined in the User model
-        if hasattr(self, 'user') and self.user and self.user.phone:
-            phones.append(self.user.phone)
+        # Get user via relationship
+        user = db.session.get(User, self.user_id) if self.user_id else None
+        if user and user.phone:
+            phones.append(user.phone)
         phones.extend(self.get_additional_phones())
         return phones
     
