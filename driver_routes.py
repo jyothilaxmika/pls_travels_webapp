@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_wtf.csrf import validate_csrf
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from functools import wraps
@@ -9,7 +10,7 @@ from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleTracking, VehicleAssignment, db,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus,
-                   TrackingSession)
+                   TrackingSession, AdvancePaymentRequest)
 from forms import DriverProfileForm, DutyForm
 from utils import (allowed_file, calculate_earnings, calculate_advanced_salary, 
                    process_file_upload, process_camera_capture, calculate_tripsheet)
@@ -796,6 +797,135 @@ def earnings():
                          total_penalties=total_penalties,
                          start_date=start_date,
                          end_date=end_date)
+
+# === ADVANCE PAYMENT REQUEST ENDPOINTS ===
+
+@driver_bp.route('/advance-payment/request', methods=['POST'])
+@login_required
+@driver_required
+def request_advance_payment():
+    """Request advance payment during active duty"""
+    from whatsapp_utils import send_advance_payment_request
+    
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'error': 'Driver profile not found'}), 404
+    
+    # Get current active duty
+    active_duty = Duty.query.filter_by(
+        driver_id=driver.id,
+        status=DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return jsonify({'error': 'No active duty found'}), 400
+    
+    try:
+        # CSRF protection for JSON endpoint
+        csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+        if not csrf_token:
+            return jsonify({'error': 'CSRF token missing'}), 400
+        
+        try:
+            validate_csrf(csrf_token)
+        except Exception:
+            return jsonify({'error': 'Invalid CSRF token'}), 400
+        
+        data = request.get_json()
+        amount = float(data.get('amount', 0))
+        purpose = data.get('purpose', 'fuel')
+        notes = data.get('notes', '')
+        location_lat = data.get('latitude')
+        location_lng = data.get('longitude')
+        
+        if amount <= 0:
+            return jsonify({'error': 'Invalid amount'}), 400
+        
+        if amount > 5000:  # Set reasonable limit
+            return jsonify({'error': 'Amount exceeds maximum limit of ₹5,000'}), 400
+        
+        # Send WhatsApp request to admins
+        result = send_advance_payment_request(
+            duty_id=active_duty.id,
+            driver_id=driver.id,
+            amount=amount,
+            purpose=purpose,
+            notes=notes,
+            location_lat=location_lat,
+            location_lng=location_lng
+        )
+        
+        if result['success']:
+            log_audit('request_advance_payment', 'advance_payment_request', result['request_id'],
+                     {'amount': amount, 'purpose': purpose})
+            
+            return jsonify({
+                'success': True,
+                'message': 'Advance payment request sent to admin',
+                'request_id': result['request_id'],
+                'sent_to_admins': result['message_sent_to']
+            })
+        else:
+            return jsonify({'error': result['error']}), 500
+            
+    except Exception as e:
+        print(f"Error requesting advance payment: {str(e)}")
+        return jsonify({'error': 'Failed to process request'}), 500
+
+@driver_bp.route('/advance-payment/pending')
+@login_required
+@driver_required
+def get_pending_advance_requests():
+    """Get pending advance payment requests for current driver"""
+    from whatsapp_utils import get_pending_advance_requests
+    
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'error': 'Driver profile not found'}), 404
+    
+    try:
+        pending_requests = get_pending_advance_requests(driver.id)
+        return jsonify({
+            'success': True,
+            'requests': pending_requests
+        })
+    except Exception as e:
+        return jsonify({'error': 'Failed to fetch requests'}), 500
+
+@driver_bp.route('/advance-payment/<int:request_id>/status')
+@login_required
+@driver_required
+def get_advance_request_status(request_id):
+    """Get status of specific advance payment request"""
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'error': 'Driver profile not found'}), 404
+    
+    try:
+        advance_request = AdvancePaymentRequest.query.filter_by(
+            id=request_id,
+            driver_id=driver.id
+        ).first()
+        
+        if not advance_request:
+            return jsonify({'error': 'Request not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'request': {
+                'id': advance_request.id,
+                'amount_requested': advance_request.amount_requested,
+                'approved_amount': advance_request.approved_amount,
+                'purpose': advance_request.purpose,
+                'status': advance_request.status,
+                'notes': advance_request.notes,
+                'response_notes': advance_request.response_notes,
+                'created_at': advance_request.created_at.strftime('%Y-%m-%d %H:%M'),
+                'responded_at': advance_request.responded_at.strftime('%Y-%m-%d %H:%M') if advance_request.responded_at else None
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': 'Failed to fetch request status'}), 500
 
 
 @driver_bp.route('/ledger')

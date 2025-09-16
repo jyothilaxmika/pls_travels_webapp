@@ -1501,6 +1501,52 @@ class DriverLocation(db.Model):
         r = 6371
         return c * r
 
+class AdvancePaymentRequest(db.Model):
+    """Model for tracking advance payment requests during duty"""
+    __tablename__ = 'advance_payment_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Relationships
+    duty_id = db.Column(db.Integer, db.ForeignKey('duties.id'), nullable=False, index=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False, index=True)
+    
+    # Request details
+    amount_requested = db.Column(db.Float, nullable=False)
+    purpose = db.Column(db.String(100), default='fuel')  # fuel, maintenance, emergency
+    notes = db.Column(db.Text)
+    
+    # WhatsApp integration fields
+    admin_phone = db.Column(db.String(20))  # Phone number message was sent to
+    whatsapp_message_sent = db.Column(db.Boolean, default=False)
+    whatsapp_sent_at = db.Column(db.DateTime)
+    
+    # Status tracking
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected, cancelled
+    response_notes = db.Column(db.Text)
+    responded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    responded_at = db.Column(db.DateTime)
+    
+    # Amount actually approved/disbursed
+    approved_amount = db.Column(db.Float, default=0.0)
+    
+    # Location where request was made
+    request_lat = db.Column(db.Float)
+    request_lng = db.Column(db.Float)
+    
+    # Audit fields
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive, nullable=False)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
+    
+    # Relationships
+    duty = db.relationship('Duty', backref='advance_requests')
+    driver = db.relationship('Driver', backref='advance_payment_requests')
+    responder = db.relationship('User', foreign_keys=[responded_by])
+    
+    def __repr__(self):
+        return f'<AdvancePaymentRequest ₹{self.amount_requested} for Duty {self.duty_id}>'
+
 # (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 class OAuth(db.Model):
     __tablename__ = 'oauth_tokens'
