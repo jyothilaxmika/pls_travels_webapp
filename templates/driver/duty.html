@@ -248,10 +248,72 @@
                     </div>
                 </div>
                 
-                <button class="btn btn-primary" onclick="window.location.reload()">
+                <button class="btn btn-primary mb-3" onclick="window.location.reload()">
                     <i class="fas fa-sync-alt me-2"></i>Refresh Page
                 </button>
             </div>
+        </div>
+    </div>
+    
+    <!-- Start New Duty Form -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-play me-2"></i>Start New Duty</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('driver.start_duty') }}" method="POST">
+                {{ csrf_token() }}
+                
+                <!-- Vehicle Selection -->
+                <div class="mb-3">
+                    <label for="vehicle_id" class="form-label fw-bold">
+                        <i class="fas fa-car text-primary me-2"></i>Select Vehicle
+                    </label>
+                    <select class="form-select form-select-lg" id="vehicle_id" name="vehicle_id" required>
+                        <option value="">Choose a vehicle...</option>
+                        {% for vehicle in available_vehicles %}
+                        <option value="{{ vehicle.id }}">{{ vehicle.registration_number }} - {{ vehicle.make }} {{ vehicle.model }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Start Odometer Reading -->
+                <div class="mb-3">
+                    <label for="start_odometer" class="form-label fw-bold">
+                        <i class="fas fa-tachometer-alt text-info me-2"></i>Starting Odometer Reading (km)
+                    </label>
+                    <input type="number" class="form-control form-control-lg" id="start_odometer" 
+                           name="start_odometer" step="0.1" min="0" required
+                           placeholder="Enter current odometer reading">
+                    <small class="text-muted">Enter the current odometer reading from the vehicle dashboard</small>
+                </div>
+                
+                <!-- Start CNG Level -->
+                <div class="mb-3">
+                    <label for="start_cng_level" class="form-label fw-bold">
+                        <i class="fas fa-gas-pump text-warning me-2"></i>Starting CNG Level (bars)
+                    </label>
+                    <select class="form-select form-select-lg" id="start_cng_level" name="start_cng_level" required>
+                        <option value="">Select CNG level...</option>
+                        <option value="0">0 bars (Empty)</option>
+                        <option value="1">1 bar</option>
+                        <option value="2">2 bars</option>
+                        <option value="3">3 bars</option>
+                        <option value="4">4 bars</option>
+                        <option value="5">5 bars</option>
+                        <option value="6">6 bars</option>
+                        <option value="7">7 bars</option>
+                        <option value="8">8 bars</option>
+                        <option value="9">9 bars</option>
+                        <option value="10" selected>10 bars (Full)</option>
+                    </select>
+                    <small class="text-muted">Check the CNG pressure gauge in your vehicle</small>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-lg w-100">
+                    <i class="fas fa-play-circle me-2"></i>Start Duty
+                </button>
+            </form>
         </div>
     </div>
     
