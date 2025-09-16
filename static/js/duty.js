@@ -411,9 +411,7 @@ function validateStartDuty(form) {
 
 function validateEndDuty(form) {
     const endOdometerInput = form.querySelector('#end_odometer');
-    const revenueInput = form.querySelector('#revenue');
-    const tripCountInput = form.querySelector('#trip_count');
-    const photoInput = form.querySelector('#end_photo');
+    const endCngInput = form.querySelector('#end_cng');
     
     let isValid = true;
     
@@ -426,21 +424,9 @@ function validateEndDuty(form) {
         isValid = false;
     }
     
-    // Revenue validation
-    if (!revenueInput.value || parseFloat(revenueInput.value) < 0) {
-        setFieldError(revenueInput, 'Please enter the revenue collected');
-        isValid = false;
-    }
-    
-    // Trip count validation
-    if (!tripCountInput.value || parseInt(tripCountInput.value) < 0) {
-        setFieldError(tripCountInput, 'Please enter the number of trips');
-        isValid = false;
-    }
-    
-    // Photo requirement
-    if (!photoInput.files.length) {
-        setFieldError(photoInput, 'Please take an end duty photo');
+    // CNG level validation
+    if (!endCngInput.value) {
+        setFieldError(endCngInput, 'Please select end CNG level');
         isValid = false;
     }
     
@@ -501,39 +487,10 @@ function updateDurationDisplay() {
 
 // Real-time earnings calculation
 function setupEarningsCalculation() {
-    const revenueInput = document.getElementById('revenue');
-    const tripCountInput = document.getElementById('trip_count');
-    
-    if (revenueInput && tripCountInput) {
-        revenueInput.addEventListener('input', calculateEarnings);
-        tripCountInput.addEventListener('input', calculateEarnings);
-    }
+    // Removed - earnings calculations are handled server-side only
 }
 
-function calculateEarnings() {
-    const revenue = parseFloat(document.getElementById('revenue').value) || 0;
-    const trips = parseInt(document.getElementById('trip_count').value) || 0;
-    
-    // Simple estimation (actual calculation done server-side)
-    let estimatedEarnings = 0;
-    
-    // Basic calculation - this would be more sophisticated based on duty scheme
-    if (revenue > 0) {
-        estimatedEarnings = Math.min(revenue * 0.3, revenue * 0.5); // 30-50% estimate
-    }
-    
-    // Update display
-    const calcRevenue = document.getElementById('calc-revenue');
-    const calcEarnings = document.getElementById('calc-earnings');
-    
-    if (calcRevenue) {
-        calcRevenue.textContent = formatCurrency(revenue);
-    }
-    
-    if (calcEarnings) {
-        calcEarnings.textContent = formatCurrency(estimatedEarnings);
-    }
-}
+// Removed - earnings calculations are server-side only
 
 // Offline support for duty data
 function setupOfflineSupport() {
