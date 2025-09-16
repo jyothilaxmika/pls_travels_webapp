@@ -831,7 +831,6 @@ function validateOdometerReading() {
     const odometerInput = document.getElementById('end_odometer');
     const startOdometer = {{ active_duty.start_odometer if active_duty.start_odometer else 0 }};
     const hint = document.getElementById('odometer_validation_hint');
-    const validateBtn = document.getElementById('validate_odometer');
     
     if (!odometerInput.value) {
         hint.innerHTML = '<i class="fas fa-exclamation-circle text-warning me-1"></i>Please enter an odometer reading first';
@@ -844,91 +843,30 @@ function validateOdometerReading() {
     if (endReading < startOdometer) {
         hint.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Invalid: End reading cannot be less than start reading (' + startOdometer.toLocaleString() + ' km)';
         odometerInput.classList.add('is-invalid');
-        validateBtn.classList.replace('btn-outline-info', 'btn-outline-danger');
-        validateBtn.innerHTML = '<i class="fas fa-times-circle me-1"></i>Invalid';
     } else if (distance < 5) {
         hint.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Very short duty: Only ' + distance.toFixed(1) + ' km driven. Please verify reading.';
         odometerInput.classList.remove('is-invalid');
         odometerInput.classList.add('is-valid');
-        validateBtn.classList.replace('btn-outline-danger', 'btn-outline-warning');
-        validateBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Check';
     } else if (distance > 300) {
         hint.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Very long duty: ' + distance.toFixed(1) + ' km driven. Please verify reading.';
         odometerInput.classList.remove('is-invalid');
         odometerInput.classList.add('is-valid');
-        validateBtn.classList.replace('btn-outline-danger', 'btn-outline-warning');
-        validateBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Long Trip';
     } else {
         hint.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>Valid reading: ' + distance.toFixed(1) + ' km driven during duty';
         odometerInput.classList.remove('is-invalid');
         odometerInput.classList.add('is-valid');
-        validateBtn.classList.replace('btn-outline-danger', 'btn-outline-success');
-        validateBtn.classList.replace('btn-outline-warning', 'btn-outline-success');
-        validateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Valid';
     }
 }
 
-// Smart CNG estimation based on distance and typical consumption
-function estimateEndCNG() {
-    const odometerInput = document.getElementById('end_odometer');
-    const cngSelect = document.getElementById('end_cng');
-    const startOdometer = {{ active_duty.start_odometer if active_duty.start_odometer else 0 }};
-    const startCng = {{ active_duty.start_cng if active_duty.start_cng else 10 }};
-    const hint = document.getElementById('cng_estimate_hint');
-    const estimateBtn = document.getElementById('estimate_cng');
-    
-    if (!odometerInput.value) {
-        hint.innerHTML = '<i class="fas fa-exclamation-circle text-warning me-1"></i>Please enter odometer reading first for accurate estimation';
-        return;
-    }
-    
-    const endReading = parseFloat(odometerInput.value);
-    const distance = endReading - startOdometer;
-    
-    if (distance <= 0) {
-        hint.innerHTML = '<i class="fas fa-exclamation-circle text-warning me-1"></i>Invalid distance for estimation';
-        return;
-    }
-    
-    // Typical CNG consumption: ~25-30 km per bar for taxi/auto
-    const kmPerBar = 27; // Average consumption
-    const estimatedConsumption = distance / kmPerBar;
-    const estimatedEndCng = Math.max(0, Math.round(startCng - estimatedConsumption));
-    
-    // Auto-select the estimated CNG level
-    if (estimatedEndCng >= 0 && estimatedEndCng <= 10) {
-        cngSelect.value = estimatedEndCng.toString();
-        cngSelect.classList.add('is-valid');
-        
-        const fuelUsed = startCng - estimatedEndCng;
-        const fuelCost = fuelUsed * 90; // ₹90 per bar
-        
-        hint.innerHTML = `<i class="fas fa-calculator text-success me-1"></i>Smart estimate: ${estimatedEndCng} bars remaining (${distance.toFixed(1)} km ÷ ${kmPerBar} km/bar = ${fuelUsed.toFixed(1)} bars used, ~₹${fuelCost.toFixed(0)} fuel cost)`;
-        
-        estimateBtn.classList.replace('btn-outline-success', 'btn-success');
-        estimateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Estimated';
-        
-        // Focus on the CNG select for final adjustment if needed
-        cngSelect.focus();
-    } else {
-        hint.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Unable to estimate - distance may be too long for single tank';
-    }
-}
+// Smart CNG estimation based on distance and typical consumption (functionality removed as requested)
 
 // Auto-validate odometer when value changes
 document.addEventListener('DOMContentLoaded', function() {
     const endOdometerInput = document.getElementById('end_odometer');
     if (endOdometerInput) {
-        endOdometerInput.addEventListener('blur', validateOdometerReading);
         endOdometerInput.addEventListener('input', function() {
             // Reset validation styling when user types
             this.classList.remove('is-valid', 'is-invalid');
-            const validateBtn = document.getElementById('validate_odometer');
-            if (validateBtn) {
-                validateBtn.classList.remove('btn-outline-success', 'btn-outline-warning', 'btn-outline-danger');
-                validateBtn.classList.add('btn-outline-info');
-                validateBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Validate';
-            }
         });
     }
 });
