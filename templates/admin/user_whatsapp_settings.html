@@ -46,6 +46,7 @@
                             <div class="mt-3">
                                 <form class="whatsapp-form" method="POST" action="/admin/user-whatsapp-settings/update" data-user-id="{{ admin.id }}" data-user-name="{{ admin.full_name }}">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="user_id" value="{{ admin.id }}"/>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fab fa-whatsapp"></i></span>
                                         <input 
@@ -59,14 +60,18 @@
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fas fa-save"></i> Update
                                         </button>
-                                        {% if admin.whatsapp_number %}
-                                        <button type="button" class="btn btn-outline-success test-btn" data-user-id="{{ admin.id }}">
-                                            <i class="fas fa-paper-plane"></i> Test
-                                        </button>
-                                        {% endif %}
                                     </div>
                                     <small class="form-text text-muted">Include country code (e.g., +91 for India)</small>
                                 </form>
+                                {% if admin.whatsapp_number %}
+                                <form method="POST" action="/admin/user-whatsapp-settings/test" class="d-inline-block mt-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="user_id" value="{{ admin.id }}"/>
+                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-paper-plane"></i> Test WhatsApp
+                                    </button>
+                                </form>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
@@ -109,6 +114,7 @@
                             <div class="mt-3">
                                 <form class="whatsapp-form" method="POST" action="/admin/user-whatsapp-settings/update" data-user-id="{{ manager.id }}" data-user-name="{{ manager.full_name }}">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="user_id" value="{{ manager.id }}"/>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fab fa-whatsapp"></i></span>
                                         <input 
@@ -122,14 +128,18 @@
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fas fa-save"></i> Update
                                         </button>
-                                        {% if manager.whatsapp_number %}
-                                        <button type="button" class="btn btn-outline-success test-btn" data-user-id="{{ manager.id }}">
-                                            <i class="fas fa-paper-plane"></i> Test
-                                        </button>
-                                        {% endif %}
                                     </div>
                                     <small class="form-text text-muted">Include country code (e.g., +91 for India)</small>
                                 </form>
+                                {% if manager.whatsapp_number %}
+                                <form method="POST" action="/admin/user-whatsapp-settings/test" class="d-inline-block mt-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="user_id" value="{{ manager.id }}"/>
+                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-paper-plane"></i> Test WhatsApp
+                                    </button>
+                                </form>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}

@@ -69,15 +69,15 @@ def get_branch_admins_phones(branch_id: int) -> list:
         # Combine and extract phone numbers (prefer WhatsApp numbers)
         phone_numbers = []
         
-        # Process branch managers
+        # Process branch managers (manager is a tuple: (whatsapp_number, phone))
         for manager in branch_managers:
-            preferred_number = manager.whatsapp_number or manager.phone
+            preferred_number = manager[0] or manager[1]  # whatsapp_number or phone
             if preferred_number:
                 phone_numbers.append(preferred_number)
         
-        # Process system admins
+        # Process system admins (admin is a tuple: (whatsapp_number, phone))
         for admin in system_admins:
-            preferred_number = admin.whatsapp_number or admin.phone
+            preferred_number = admin[0] or admin[1]  # whatsapp_number or phone
             if preferred_number:
                 phone_numbers.append(preferred_number)
         
