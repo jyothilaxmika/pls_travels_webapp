@@ -162,13 +162,14 @@
     <link href="{{ url_for('static', filename='css/responsive-enhancements.css') }}" rel="stylesheet">
     <style>
         .hero-section {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             color: white;
             padding: 4rem 0;
             position: relative;
             min-height: 80vh;
             display: flex;
             align-items: center;
+            overflow: hidden;
         }
         .hero-section::before {
             content: '';
@@ -178,7 +179,17 @@
             right: 0;
             bottom: 0;
             background: url("{{ url_for('static', filename='images/hero-bus-background.png') }}") center/cover no-repeat;
-            opacity: 0.1;
+            opacity: 0.05;
+            z-index: 1;
+        }
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 25% 25%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
             z-index: 1;
         }
         .hero-section .container {
@@ -196,18 +207,19 @@
         }
         .benefit-icon {
             font-size: 1.5rem;
-            color: #f97316;
+            color: #00d4ff;
             margin-bottom: 0.5rem;
             display: inline-block;
             width: 40px;
         }
         .salary-highlight {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            border-radius: 12px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border-radius: 20px;
             padding: 2rem;
             color: white;
             text-align: center;
             margin: 2rem 0;
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.3);
         }
         .feature-card {
             border: none;
@@ -216,23 +228,26 @@
             text-align: center;
             height: 100%;
             transition: all 0.3s ease;
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-            border: 1px solid rgba(249, 115, 22, 0.1);
+            background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            color: white;
         }
         .feature-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(249, 115, 22, 0.15);
-            border-color: rgba(249, 115, 22, 0.3);
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0, 212, 255, 0.2);
+            border-color: rgba(0, 212, 255, 0.5);
+            background: linear-gradient(145deg, #334155 0%, #475569 100%);
         }
         .feature-icon {
             font-size: 2.5rem;
-            color: #f97316;
+            color: #00d4ff;
             margin-bottom: 1rem;
         }
         .stats-section {
-            background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+            background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
             padding: 3rem 0;
+            color: white;
         }
         .stat-box {
             text-align: center;
@@ -241,7 +256,7 @@
         .stat-number {
             font-size: 2.5rem;
             font-weight: bold;
-            color: #f97316;
+            color: #00d4ff;
             display: block;
         }
         .stat-label {
@@ -249,23 +264,25 @@
             font-weight: 500;
         }
         .login-section {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: white;
             padding: 3rem 0;
+            border-top: 1px solid rgba(0, 212, 255, 0.3);
         }
         .btn-primary {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            background: linear-gradient(135deg, #00d4ff 0%, #0284c7 100%);
             border: none;
-            color: white;
-            font-weight: 600;
-            border-radius: 50px;
+            color: #0f172a;
+            font-weight: 700;
+            border-radius: 12px;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
         }
         .btn-primary:hover {
-            background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
-            color: white;
+            background: linear-gradient(135deg, #0284c7 0%, #00d4ff 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 212, 255, 0.4);
+            color: #0f172a;
         }
         .btn-whatsapp {
             background: #25D366;
@@ -279,12 +296,14 @@
             color: white;
         }
         .application-form {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.95);
             border-radius: 20px;
             padding: 2rem;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
             margin: 2rem 0;
-            border: 1px solid rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            backdrop-filter: blur(10px);
+            color: white;
         }
         /* Comprehensive responsive design for all devices */
         @media (max-width: 480px) {
@@ -508,7 +527,7 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-lg" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); backdrop-filter: blur(10px);">
         <div class="container">
             <a class="navbar-brand fw-bold" href="#">
                 <i class="fas fa-car me-2"></i>PLS TRAVELS
@@ -580,11 +599,11 @@
     </section>
 
     <!-- Benefits Section -->
-    <section id="benefits" class="py-5 bg-light">
+    <section id="benefits" class="py-5" style="background: linear-gradient(145deg, #1e293b 0%, #334155 100%);">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold">Why Choose PLS TRAVELS for Uber Driver Jobs? | எங்களுடன் ஏன் ஓட்ட வேண்டும்?</h2>
-                <p class="lead text-muted">Join thousands of drivers earning more with PLS Travels - No car required, daily payouts guaranteed</p>
+                <h2 class="display-5 fw-bold text-white">Why Choose PLS TRAVELS for Uber Driver Jobs? | எங்களுடன் ஏன் ஓட்ட வேண்டும்?</h2>
+                <p class="lead" style="color: rgba(255,255,255,0.8);">Join thousands of drivers earning more with PLS Travels - No car required, daily payouts guaranteed</p>
             </div>
             
             <div class="row">
@@ -595,8 +614,8 @@
                                 <i class="fas fa-car" aria-hidden="true"></i>
                             </div>
                             <div>
-                                <h3 class="card-title mb-1">No Car Required for Uber Driving</h3>
-                                <small class="text-muted">We provide fully maintained, Uber-approved vehicles<br>கார் தேவையில்லை - நாங்கள் கார்களை வழங்குகிறோம்</small>
+                                <h3 class="card-title mb-1 text-white">No Car Required for Uber Driving</h3>
+                                <small style="color: rgba(255,255,255,0.7);">We provide fully maintained, Uber-approved vehicles<br>கார் தேவையில்லை - நாங்கள் கார்களை வழங்குகிறோம்</small>
                             </div>
                         </div>
                     </div>
@@ -608,8 +627,8 @@
                                 <i class="fas fa-clock" aria-hidden="true"></i>
                             </div>
                             <div>
-                                <h3 class="card-title mb-1">Daily Payouts - No Waiting</h3>
-                                <small class="text-muted">Get paid every day, up to ₹3,450 daily<br>உடனடி தினசரி பேமெண்ட்</small>
+                                <h3 class="card-title mb-1 text-white">Daily Payouts - No Waiting</h3>
+                                <small style="color: rgba(255,255,255,0.7);">Get paid every day, up to ₹3,450 daily<br>உடனடி தினசரி பேமெண்ட்</small>
                             </div>
                         </div>
                     </div>
