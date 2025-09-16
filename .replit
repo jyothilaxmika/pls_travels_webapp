@@ -1,11 +1,11 @@
-modules = ["python-3.11", "postgresql-16", "python3"]
+modules = ["web", "python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
 packages = ["android-tools", "cargo", "gitFull", "gradle", "iana-etc", "libiconv", "libxcrypt", "openjdk17", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc"]
 
 [deployment]
-deploymentTarget = "gce"
+deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
@@ -48,6 +48,10 @@ externalPort = 8008
 [[ports]]
 localPort = 36477
 externalPort = 8080
+
+[[ports]]
+localPort = 36977
+externalPort = 9000
 
 [[ports]]
 localPort = 37133

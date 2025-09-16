@@ -63,7 +63,7 @@ def create_app():
             "pool_pre_ping": True,
             "max_overflow": 10,
             "connect_args": {
-                "sslmode": "require",
+                "sslmode": "prefer",  # Changed from 'require' to 'prefer' for compatibility
                 "connect_timeout": 30,
                 "application_name": "pls_travels"
             }
