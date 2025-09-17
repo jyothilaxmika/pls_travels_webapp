@@ -133,6 +133,20 @@ class AuthRepository @Inject constructor(
                     // Reset security violation count on successful login
                     securityManager.resetSecurityViolationCount()
                     
+                    // Sync FCM token after successful login
+                    try {
+                        syncCurrentFcmToken().fold(
+                            onSuccess = {
+                                Timber.i("FCM token synced successfully after login")
+                            },
+                            onFailure = { exception ->
+                                Timber.w(exception, "Failed to sync FCM token after login (non-critical)")
+                            }
+                        )
+                    } catch (e: Exception) {
+                        Timber.w(e, "Exception during FCM token sync after login (non-critical)")
+                    }
+                    
                     Timber.i("User authenticated successfully with enhanced security")
                 }
                 Result.success(authResponse)
@@ -209,6 +223,57 @@ class AuthRepository @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Failed to get access token")
             null
+        }
+    }
+    
+    /**
+     * Update FCM token on server
+     */
+    suspend fun updateFcmToken(fcmToken: String): Result<String> {
+        return try {
+            val response = authApi.updateFcmToken(fcmToken)
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success) {
+                    Timber.i("FCM token updated successfully on server")
+                    Result.success(apiResponse.data ?: "Token updated")
+                } else {
+                    val errorMessage = apiResponse.error ?: "Failed to update FCM token"
+                    Timber.e("Update FCM token failed: $errorMessage")
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                val errorMessage = response.errorBody()?.string() ?: "Failed to update FCM token"
+                Timber.e("Update FCM token API failed: $errorMessage")
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Update FCM token exception")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Sync current FCM token with server after login or app start
+     * This method retrieves the current FCM token and sends it to the server
+     */
+    suspend fun syncCurrentFcmToken(): Result<String> {
+        return try {
+            // Get the current FCM token
+            val task = com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+            val fcmToken = kotlinx.coroutines.tasks.await(task)
+            
+            if (fcmToken.isNotEmpty()) {
+                Timber.d("Retrieved current FCM token for sync: ${fcmToken.take(20)}...")
+                updateFcmToken(fcmToken)
+            } else {
+                val errorMessage = "FCM token is empty"
+                Timber.w(errorMessage)
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to sync current FCM token")
+            Result.failure(e)
         }
     }
 

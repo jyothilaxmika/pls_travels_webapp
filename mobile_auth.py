@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 # Create mobile auth blueprint with proper URL prefix
 mobile_auth_bp = Blueprint('mobile_auth', __name__, url_prefix='/api/mobile/v1')
 
+# Create auth blueprint for Android contract compatibility (no prefix)
+auth_compat_bp = Blueprint('auth_compat', __name__)
+
 # JWT token blacklist for logout functionality
 blacklisted_tokens = set()
 
@@ -346,6 +349,72 @@ def mobile_refresh_token():
             'message': 'Internal server error'
         }), 500
 
+@mobile_auth_bp.route('/auth/update-fcm-token', methods=['POST'])
+@jwt_required()
+@csrf.exempt
+def update_fcm_token():
+    """Update FCM token for push notifications - Android contract compliant"""
+    try:
+        current_user_identity = get_jwt_identity()
+        
+        # Get user from database
+        user = User.query.filter_by(username=current_user_identity).first()
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'USER_NOT_FOUND',
+                'message': 'User not found'
+            }), 404
+
+        # Get FCM token from form data (FormUrlEncoded from Android)
+        fcm_token = request.form.get('fcm_token', '').strip()
+        
+        if not fcm_token:
+            return jsonify({
+                'success': False,
+                'error': 'MISSING_TOKEN',
+                'message': 'FCM token is required'
+            }), 400
+
+        # Validate token format (FCM tokens are typically 140-180 characters)
+        if len(fcm_token) < 100 or len(fcm_token) > 512:
+            logger.warning(f"INVALID_FCM_TOKEN_LENGTH: User: {user.username} Length: {len(fcm_token)}")
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_TOKEN',
+                'message': 'Invalid FCM token format'
+            }), 400
+
+        # Store FCM token in user profile
+        old_token = user.fcm_token
+        user.fcm_token = fcm_token
+        user.fcm_token_updated = datetime.now(timezone.utc)
+        
+        db.session.commit()
+        
+        # Log token update
+        if old_token != fcm_token:
+            logger.info(f"FCM_TOKEN_UPDATED: User: {user.username} "
+                       f"Old: {old_token[:20] + '...' if old_token else 'None'} "
+                       f"New: {fcm_token[:20]}...")
+        else:
+            logger.info(f"FCM_TOKEN_REFRESHED: User: {user.username}")
+
+        return jsonify({
+            'success': True,
+            'data': 'FCM token updated successfully',
+            'message': 'Push notifications enabled'
+        })
+
+    except Exception as e:
+        logger.error(f"Error in update_fcm_token: {str(e)}")
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': 'INTERNAL_ERROR',
+            'message': 'Internal server error'
+        }), 500
+
 @mobile_auth_bp.route('/auth/logout', methods=['POST'])
 @jwt_required()
 @csrf.exempt
@@ -368,6 +437,73 @@ def mobile_logout():
 
     except Exception as e:
         logger.error(f"Error in mobile_logout: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'INTERNAL_ERROR',
+            'message': 'Internal server error'
+        }), 500
+
+# Android contract compatibility endpoints (no prefix)
+@auth_compat_bp.route('/auth/update-fcm-token', methods=['POST'])
+@jwt_required()
+@csrf.exempt
+def update_fcm_token_compat():
+    """Update FCM token - Android contract endpoint (exact URL match)"""
+    try:
+        current_user_identity = get_jwt_identity()
+        
+        # Get user from database
+        user = User.query.filter_by(username=current_user_identity).first()
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'USER_NOT_FOUND',
+                'message': 'User not found'
+            }), 404
+
+        # Get FCM token from form data (FormUrlEncoded from Android)
+        fcm_token = request.form.get('fcm_token', '').strip()
+        
+        if not fcm_token:
+            return jsonify({
+                'success': False,
+                'error': 'MISSING_TOKEN',
+                'message': 'FCM token is required'
+            }), 400
+
+        # Validate token format (FCM tokens are typically 140-180 characters)
+        if len(fcm_token) < 100 or len(fcm_token) > 512:
+            logger.warning(f"INVALID_FCM_TOKEN_LENGTH: User: {user.username} Length: {len(fcm_token)}")
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_TOKEN',
+                'message': 'Invalid FCM token format'
+            }), 400
+
+        # Store FCM token in user profile
+        old_token = user.fcm_token
+        user.fcm_token = fcm_token
+        user.fcm_token_updated = datetime.now(timezone.utc)
+        
+        db.session.commit()
+        
+        # Log token update
+        if old_token != fcm_token:
+            logger.info(f"FCM_TOKEN_UPDATED: User: {user.username} "
+                       f"Old: {old_token[:20] + '...' if old_token else 'None'} "
+                       f"New: {fcm_token[:20]}...")
+        else:
+            logger.info(f"FCM_TOKEN_REFRESHED: User: {user.username}")
+
+        return jsonify({
+            'success': True,
+            'data': 'FCM token updated successfully',
+            'message': 'Push notifications enabled'
+        })
+
+    except Exception as e:
+        logger.error(f"Error in update_fcm_token_compat: {str(e)}")
+        db.session.rollback()
         return jsonify({
             'success': False,
             'error': 'INTERNAL_ERROR',

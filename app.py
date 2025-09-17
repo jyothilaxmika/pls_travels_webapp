@@ -239,7 +239,7 @@ def create_app():
     # Register blueprints
     from auth import auth_bp
     from otp_routes import otp_bp
-    from mobile_auth import mobile_auth_bp
+    from mobile_auth import mobile_auth_bp, auth_compat_bp
     from mobile_api import mobile_api_bp
     from mobile_api_extensions import mobile_extensions_bp
     from admin_routes import admin_bp
@@ -252,6 +252,7 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(otp_bp, url_prefix='/otp')
     app.register_blueprint(mobile_auth_bp)  # Mobile auth includes /api/v1/auth/*
+    app.register_blueprint(auth_compat_bp)  # Android compatibility endpoints /auth/*
     app.register_blueprint(mobile_api_bp)   # Mobile API includes /api/v1/driver/*
     app.register_blueprint(mobile_extensions_bp)  # Extended mobile API for production Android app
     app.register_blueprint(admin_bp, url_prefix='/admin')

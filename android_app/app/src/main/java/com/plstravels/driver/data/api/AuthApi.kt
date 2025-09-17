@@ -35,6 +35,12 @@ interface AuthApi {
 
     @POST("/auth/logout")
     suspend fun logout(): Response<ApiResponse<Any>>
+    
+    @POST("/auth/update-fcm-token")
+    @FormUrlEncoded
+    suspend fun updateFcmToken(
+        @Field("fcm_token") fcmToken: String
+    ): Response<ApiResponse<String>>
 }
 
 /**

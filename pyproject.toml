@@ -37,4 +37,5 @@ dependencies = [
     "pydantic>=2.11.9",
     "sift-stack-py>=0.8.5",
     "defusedcsv>=3.0.0",
+    "firebase-admin>=6.9.0",
 ]

@@ -408,3 +408,56 @@ def get_available_vehicles():
             'error': 'INTERNAL_ERROR',
             'message': 'Internal server error'
         }), 500
+
+@mobile_api_bp.route('/api/mobile/v1/auth/update-fcm-token', methods=['POST'])
+@jwt_required()
+@csrf.exempt
+def update_fcm_token():
+    """Update FCM token for push notifications"""
+    try:
+        user = get_current_mobile_user()
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'USER_NOT_FOUND',
+                'message': 'User not found'
+            }), 404
+        
+        data = request.get_json()
+        if not data or 'fcm_token' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'MISSING_TOKEN',
+                'message': 'FCM token is required'
+            }), 400
+        
+        fcm_token = data['fcm_token']
+        if not fcm_token or len(fcm_token.strip()) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'INVALID_TOKEN',
+                'message': 'FCM token cannot be empty'
+            }), 400
+        
+        # Store FCM token in user profile
+        user.fcm_token = fcm_token
+        user.fcm_token_updated = datetime.utcnow()
+        
+        db.session.commit()
+        
+        logger.info(f"FCM token updated for user: {user.username}")
+        
+        return jsonify({
+            'success': True,
+            'data': 'FCM token updated successfully',
+            'message': 'Push notifications enabled'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in update_fcm_token: {str(e)}")
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': 'INTERNAL_ERROR',
+            'message': 'Internal server error'
+        }), 500
