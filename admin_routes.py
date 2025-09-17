@@ -2725,9 +2725,10 @@ def reports():
     branch_revenue = db.session.query(
         Branch.name,
         func.sum(Duty.revenue).label('total_revenue')
-    ).join(Duty).filter(
-        Duty.start_time >= thirty_days_ago
-    ).group_by(Branch.id, Branch.name).all()
+    ).join(Driver, Branch.id == Driver.branch_id) \
+     .join(Duty, Driver.id == Duty.driver_id) \
+     .filter(Duty.start_time >= thirty_days_ago) \
+     .group_by(Branch.id, Branch.name).all()
     
     # Top drivers by earnings
     top_drivers = db.session.query(
