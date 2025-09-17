@@ -8,6 +8,22 @@ plugins {
     id 'com.google.firebase.crashlytics'
 }
 
+def getVersionName() {
+    def tagVersion = System.getenv("GITHUB_REF_NAME")
+    if (tagVersion && tagVersion.startsWith("v")) {
+        return tagVersion.substring(1) // Remove 'v' prefix
+    }
+    return "1.0.0"
+}
+
+def getVersionCode() {
+    def runNumber = System.getenv("GITHUB_RUN_NUMBER")
+    if (runNumber) {
+        return runNumber.toInteger()
+    }
+    return 1
+}
+
 android {
     namespace 'com.plstravels.driver'
     compileSdk 34
@@ -16,8 +32,8 @@ android {
         applicationId "com.plstravels.driver"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0.0"
+        versionCode getVersionCode()
+        versionName getVersionName()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -30,11 +46,23 @@ android {
         buildConfigField "boolean", "DEBUG_MODE", "true"
     }
 
+    signingConfigs {
+        release {
+            if (System.getenv("SIGNING_KEY_ALIAS")) {
+                keyAlias System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword System.getenv("SIGNING_KEY_PASSWORD") 
+                storeFile file("keystore.jks")
+                storePassword System.getenv("SIGNING_STORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
             
             // Production API URLs
             buildConfigField "String", "BASE_URL", "\"https://plstravels.replit.app\""

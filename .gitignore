@@ -1,0 +1,63 @@
+# Flask Application
+instance/
+uploads/
+app_storage/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Android
+android_app/build/
+android_app/app/build/
+android_app/.gradle/
+android_app/local.properties
+android_app/keystore/
+*.keystore
+*.jks
+android_app/app/google-services.json
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
