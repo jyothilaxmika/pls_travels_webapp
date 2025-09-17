@@ -21,7 +21,18 @@ from utils.twilio_otp import (
 )
 from utils.rate_limiter import otp_rate_limiter
 from utils.config_validator import check_production_readiness
-from models import User, UserRole, UserStatus, db
+# Import models dynamically to avoid circular import
+def get_user_model():
+    from models import User
+    return User
+
+def get_user_status_enum():
+    from models import UserStatus
+    return UserStatus
+
+def get_db():
+    from models import db
+    return db
 from app import csrf
 
 logger = logging.getLogger(__name__)
@@ -112,6 +123,8 @@ def mobile_send_otp():
         start_time = time.time()
 
         # Check if user exists with this phone number
+        User = get_user_model()
+        UserStatus = get_user_status_enum()
         user = User.query.filter_by(phone=formatted_phone).first()
 
         # Generate OTP for timing consistency
@@ -197,6 +210,8 @@ def mobile_verify_otp():
 
         # Verify OTP (this will be implemented using session-like storage)
         # For now, let's verify against the user database
+        User = get_user_model()
+        UserStatus = get_user_status_enum()
         user = User.query.filter_by(phone=formatted_phone).first()
 
         if not user or user.status != UserStatus.ACTIVE:
@@ -261,6 +276,7 @@ def mobile_verify_otp():
         )
 
         # Update user's last login
+        db = get_db()
         user.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
@@ -301,6 +317,8 @@ def mobile_refresh_token():
         jwt_claims = get_jwt()
 
         # Get user from database
+        User = get_user_model()
+        UserStatus = get_user_status_enum()
         user = User.query.filter_by(username=current_user_identity).first()
 
         if not user or user.status != UserStatus.ACTIVE:
@@ -358,6 +376,7 @@ def update_fcm_token():
         current_user_identity = get_jwt_identity()
         
         # Get user from database
+        User = get_user_model()
         user = User.query.filter_by(username=current_user_identity).first()
         if not user:
             return jsonify({
@@ -408,6 +427,7 @@ def update_fcm_token():
 
     except Exception as e:
         logger.error(f"Error in update_fcm_token: {str(e)}")
+        db = get_db()
         db.session.rollback()
         return jsonify({
             'success': False,
@@ -453,6 +473,7 @@ def update_fcm_token_compat():
         current_user_identity = get_jwt_identity()
         
         # Get user from database
+        User = get_user_model()
         user = User.query.filter_by(username=current_user_identity).first()
         if not user:
             return jsonify({
@@ -503,6 +524,7 @@ def update_fcm_token_compat():
 
     except Exception as e:
         logger.error(f"Error in update_fcm_token_compat: {str(e)}")
+        db = get_db()
         db.session.rollback()
         return jsonify({
             'success': False,
