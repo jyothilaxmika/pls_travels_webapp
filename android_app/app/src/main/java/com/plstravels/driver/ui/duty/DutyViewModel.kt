@@ -9,6 +9,8 @@ import com.plstravels.driver.data.database.entity.DutyEntity
 import com.plstravels.driver.data.database.entity.VehicleEntity
 import com.plstravels.driver.data.model.*
 import com.plstravels.driver.data.repository.DutyRepository
+import com.plstravels.driver.service.LocationTrackingService
+import android.content.Context
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,7 +23,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class DutyViewModel @Inject constructor(
-    private val dutyRepository: DutyRepository
+    private val dutyRepository: DutyRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context
 ) : ViewModel() {
 
     // UI State
@@ -113,6 +116,8 @@ class DutyViewModel @Inject constructor(
                         )
                         // Trigger refresh after successful operation
                         refreshData()
+                        // Start location tracking when duty starts
+                        startLocationTracking()
                     },
                     onFailure = { exception ->
                         updateUiState(
@@ -173,6 +178,8 @@ class DutyViewModel @Inject constructor(
                         )
                         // Trigger refresh after successful operation
                         refreshData()
+                        // Stop location tracking when duty ends
+                        stopLocationTracking()
                         // Sync offline duties if available
                         syncOfflineDuties()
                     },
@@ -271,6 +278,33 @@ class DutyViewModel @Inject constructor(
             fuelLevel < 0 -> "Fuel level cannot be negative"
             fuelLevel > 100 -> "Fuel level cannot exceed 100%"
             else -> null
+        }
+    }
+
+    /**
+     * Start location tracking service
+     */
+    private fun startLocationTracking() {
+        try {
+            Timber.i("Starting location tracking for duty")
+            LocationTrackingService.startLocationTracking(context)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to start location tracking")
+            updateUiState(
+                error = "Warning: Location tracking could not be started"
+            )
+        }
+    }
+
+    /**
+     * Stop location tracking service
+     */
+    private fun stopLocationTracking() {
+        try {
+            Timber.i("Stopping location tracking for duty")
+            LocationTrackingService.stopLocationTracking(context)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to stop location tracking")
         }
     }
 
