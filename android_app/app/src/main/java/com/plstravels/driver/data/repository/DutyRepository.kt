@@ -163,6 +163,13 @@ class DutyRepository @Inject constructor(
     }
 
     /**
+     * Get active duty as Flow (reactive)
+     */
+    fun getActiveDutyFlow(): Flow<DutyEntity?> {
+        return dutyDao.getActiveDutyFlow()
+    }
+
+    /**
      * Sync offline duties with server
      */
     suspend fun syncOfflineDuties(): Result<Int> {

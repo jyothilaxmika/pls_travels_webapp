@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.plstravels.driver.ui.duty.DutyViewModel
 
 /**
  * Main dashboard screen for drivers
@@ -18,8 +20,16 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun DashboardScreen(
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    onNavigateToStartDuty: () -> Unit,
+    onNavigateToEndDuty: () -> Unit,
+    onNavigateToCamera: () -> Unit,
+    onNavigateToAdvancePayment: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: DutyViewModel = hiltViewModel()
 ) {
+    val activeDuty by viewModel.activeDuty.collectAsState()
+    val duties by viewModel.duties.collectAsState()
+    val uiState = viewModel.uiState
     Scaffold(
         topBar = {
             TopAppBar(
@@ -84,17 +94,27 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 DashboardActionCard(
-                    title = "Start Duty",
+                    title = if (activeDuty != null) "Duty Active" else "Start Duty",
                     icon = Icons.Default.PlayArrow,
                     modifier = Modifier.weight(1f),
-                    onClick = { /* TODO: Navigate to start duty */ }
+                    enabled = activeDuty == null,
+                    onClick = { 
+                        if (activeDuty == null) {
+                            onNavigateToStartDuty() 
+                        }
+                    }
                 )
                 
                 DashboardActionCard(
                     title = "End Duty",
                     icon = Icons.Default.Stop,
                     modifier = Modifier.weight(1f),
-                    onClick = { /* TODO: Navigate to end duty */ }
+                    enabled = activeDuty != null,
+                    onClick = { 
+                        if (activeDuty != null) {
+                            onNavigateToEndDuty() 
+                        }
+                    }
                 )
             }
 
@@ -106,41 +126,181 @@ fun DashboardScreen(
                     title = "Camera",
                     icon = Icons.Default.CameraAlt,
                     modifier = Modifier.weight(1f),
-                    onClick = { /* TODO: Navigate to camera */ }
+                    onClick = onNavigateToCamera
                 )
                 
                 DashboardActionCard(
                     title = "Advance Payment",
                     icon = Icons.Default.Payment,
                     modifier = Modifier.weight(1f),
-                    onClick = { /* TODO: Navigate to advance payment */ }
+                    onClick = onNavigateToAdvancePayment
                 )
+            }
+
+            // Current Duty Status
+            if (activeDuty != null) {
+                Text(
+                    text = "Current Duty",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Duty Active",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Text(
+                                    text = "ACTIVE",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "Vehicle: Vehicle ID ${activeDuty.vehicleId}",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = "Start Odometer: ${activeDuty.startOdometer?.toInt() ?: "N/A"} km",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = "Start Fuel: ${activeDuty.startFuelLevel?.toInt() ?: "N/A"}%",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+                }
             }
 
             // Recent Activities
             Text(
-                text = "Recent Activities",
+                text = "Recent Duties",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(top = 16.dp)
             )
 
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            if (duties.isNotEmpty()) {
+                duties.take(3).forEach { duty ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = duty.dutyDate ?: "Unknown Date",
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = duty.status ?: "Unknown",
+                                    color = when(duty.status) {
+                                        "ACTIVE" -> MaterialTheme.colorScheme.primary
+                                        "COMPLETED" -> MaterialTheme.colorScheme.secondary
+                                        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    }
+                                )
+                            }
+                            
+                            Text(
+                                text = "Vehicle ID: ${duty.vehicleId}",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                            
+                            if (duty.startOdometer != null && duty.endOdometer != null) {
+                                val distance = duty.endOdometer - duty.startOdometer
+                                Text(
+                                    text = "Distance: ${distance.toInt()} km",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No duties recorded yet",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = "Start your first duty to begin tracking",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
+            
+            // Loading and error states
+            if (uiState.isLoading) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Loading...")
+                    }
+                }
+            }
+            
+            uiState.error?.let { error ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
                     Text(
-                        text = "No recent activities",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = "Start your duty to see activities here",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                        modifier = Modifier.padding(top = 4.dp)
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             }
@@ -154,11 +314,19 @@ private fun DashboardActionCard(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     Card(
-        onClick = onClick,
-        modifier = modifier.aspectRatio(1f)
+        onClick = if (enabled) onClick else { },
+        modifier = modifier.aspectRatio(1f),
+        colors = if (enabled) {
+            CardDefaults.cardColors()
+        } else {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+        }
     ) {
         Column(
             modifier = Modifier
@@ -171,13 +339,22 @@ private fun DashboardActionCard(
                 imageVector = icon,
                 contentDescription = title,
                 modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = if (enabled) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                }
             )
             Text(
                 text = title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 8.dp),
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                }
             )
         }
     }

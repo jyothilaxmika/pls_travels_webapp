@@ -36,6 +36,9 @@ interface DutyDao {
     
     @Query("SELECT * FROM duties WHERE status = 'ACTIVE' LIMIT 1")
     suspend fun getActiveDuty(): DutyEntity?
+
+    @Query("SELECT * FROM duties WHERE status = 'ACTIVE' LIMIT 1")
+    fun getActiveDutyFlow(): Flow<DutyEntity?>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDuty(duty: DutyEntity)

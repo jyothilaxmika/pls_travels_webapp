@@ -10,6 +10,8 @@ import com.plstravels.driver.data.repository.AuthRepository
 import com.plstravels.driver.ui.auth.LoginScreen
 import com.plstravels.driver.ui.auth.AuthViewModel
 import com.plstravels.driver.ui.dashboard.DashboardScreen
+import com.plstravels.driver.ui.duty.StartDutyScreen
+import com.plstravels.driver.ui.duty.EndDutyScreen
 import com.plstravels.driver.ui.splash.SplashScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -68,6 +70,47 @@ fun PLSNavigation(
                     navController.navigate(PLSDestinations.LOGIN) {
                         popUpTo(PLSDestinations.DASHBOARD) { inclusive = true }
                     }
+                },
+                onNavigateToStartDuty = {
+                    navController.navigate(PLSDestinations.START_DUTY)
+                },
+                onNavigateToEndDuty = {
+                    navController.navigate(PLSDestinations.END_DUTY)
+                },
+                onNavigateToCamera = {
+                    navController.navigate(PLSDestinations.CAMERA)
+                },
+                onNavigateToAdvancePayment = {
+                    navController.navigate(PLSDestinations.ADVANCE_PAYMENTS)
+                }
+            )
+        }
+        
+        // Start Duty Screen
+        composable(PLSDestinations.START_DUTY) {
+            StartDutyScreen(
+                onDutyStarted = {
+                    navController.navigate(PLSDestinations.DASHBOARD) {
+                        popUpTo(PLSDestinations.START_DUTY) { inclusive = true }
+                    }
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // End Duty Screen  
+        composable(PLSDestinations.END_DUTY) {
+            EndDutyScreen(
+                activeDuty = null, // TODO: Pass actual active duty
+                onDutyEnded = {
+                    navController.navigate(PLSDestinations.DASHBOARD) {
+                        popUpTo(PLSDestinations.END_DUTY) { inclusive = true }
+                    }
+                },
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -81,7 +124,8 @@ object PLSDestinations {
     const val SPLASH = "splash"
     const val LOGIN = "login"
     const val DASHBOARD = "dashboard"
-    const val DUTY_MANAGEMENT = "duty_management"
+    const val START_DUTY = "start_duty"
+    const val END_DUTY = "end_duty"
     const val CAMERA = "camera"
     const val PROFILE = "profile"
     const val ADVANCE_PAYMENTS = "advance_payments"
