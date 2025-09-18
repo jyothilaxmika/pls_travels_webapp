@@ -337,8 +337,8 @@ class ManualEarningsCalculationForm(FlaskForm):
     toll_expense = FloatField('Toll', validators=[Optional(), NumberRange(min=0)], default=0.0)
     
     # CNG fields
-    start_cng = FloatField('Start CNG', validators=[Optional(), NumberRange(min=0)], default=0.0, render_kw={'readonly': True})
-    end_cng = FloatField('End CNG', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    start_cng = FloatField('Start CNG', validators=[Optional(), NumberRange(min=0)])
+    end_cng = FloatField('End CNG', validators=[Optional(), NumberRange(min=0)])
     
     # Additional configuration
     driver_share_percentage = FloatField('Driver Share %', validators=[Optional(), NumberRange(min=0, max=100)], default=70.0)

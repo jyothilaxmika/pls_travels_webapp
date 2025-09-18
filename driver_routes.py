@@ -506,11 +506,11 @@ def start_duty():
             flash('Please select a valid CNG level between 0 and 10 bars.', 'error')
             return redirect(url_for('driver.duty'))
     else:
-        # Default to last end CNG level if available, otherwise 10 bars (full tank assumption)
-        if last_duty_data and 'last_end_cng' in last_duty_data and last_duty_data['last_end_cng']:
+        # Default to last end CNG level if available, otherwise None to preserve unknown state
+        if last_duty_data and 'last_end_cng' in last_duty_data and last_duty_data['last_end_cng'] is not None:
             start_cng_level = last_duty_data['last_end_cng']
         else:
-            start_cng_level = 10.0  # Assume full tank for new drivers
+            start_cng_level = None  # Preserve unknown state instead of assuming full tank
 
     vehicle = Vehicle.query.filter(
         Vehicle.id == vehicle_id,
@@ -532,7 +532,7 @@ def start_duty():
     duty.duty_scheme_id = None  # No duty scheme required
     duty.actual_start = get_ist_time_naive()
     duty.start_odometer = start_odometer or 0.0
-    duty.start_cng = start_cng_level or 0.0  # Store the starting CNG level
+    duty.start_cng = start_cng_level  # Store the starting CNG level (preserving None for unknown)
     duty.status = DutyStatus.ACTIVE
 
     # Handle start photo camera capture

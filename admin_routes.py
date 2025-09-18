@@ -3651,8 +3651,11 @@ def create_manual_earnings_calculation(duty_id):
         form.operator_bill.data = duty.operator_out or 0.0
         form.advance_deduction.data = duty.advance_deduction or 0.0
         form.toll_expense.data = duty.toll_expense or 0.0
-        form.start_cng.data = duty.start_cng or 0.0
-        form.end_cng.data = duty.end_cng or 0.0
+        # Only populate CNG fields if duty has actual values (preserve None for unknown)
+        if duty.start_cng is not None:
+            form.start_cng.data = duty.start_cng
+        if duty.end_cng is not None:
+            form.end_cng.data = duty.end_cng
     
     return render_template('admin/manual_earnings_form.html', 
                          form=form, duty=duty, existing=existing)
@@ -3673,8 +3676,9 @@ def auto_fetch_duty_data(duty_id):
         'outside_cash_amount': duty.digital_payments or 0.0,
         'advance_deduction': duty.advance_deduction or 0.0,
         'toll_expense': duty.toll_expense or 0.0,
-        'start_cng': duty.start_cng or 0.0,
-        'end_cng': duty.end_cng or 0.0,
+        # Return null for missing CNG values so UI shows blank instead of misleading 0
+        'start_cng': duty.start_cng if duty.start_cng is not None else None,
+        'end_cng': duty.end_cng if duty.end_cng is not None else None,
         'online_hours': 0.0  # Calculate from duty duration if available
     }
     
