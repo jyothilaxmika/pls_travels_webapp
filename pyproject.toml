@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pls-travels"
+version = "1.0.0"
+description = "PLS Travels Driver and Fleet Management System"
+requires-python = ">=3.11"
+dependencies = [
+    # Core Flask
+    "flask>=3.0.0",
+    "flask-sqlalchemy>=3.1.1",
+    "flask-login>=0.6.3",
+    "flask-wtf>=1.2.1",
+    "wtforms>=3.1.0",
+    
+    # Database & ORM
+    "sqlalchemy>=2.0.23",
+    "psycopg2-binary>=2.9.9",
+    
+    # Security
+    "werkzeug>=3.0.1",
+    
+    # HTTP Client & API
+    "requests>=2.31.0",
+    "urllib3>=2.1.0",
+    
+    # Google Services
+    "google-cloud-storage>=2.12.0",
+    "google-api-python-client>=2.110.0",
+    "google-auth>=2.25.2",
+    
+    # Firebase
+    "firebase-admin>=6.4.0",
+    
+    # Communication & SMS
+    "twilio>=8.11.1",
+    
+    # AI/ML
+    "google-generativeai>=0.3.2",
+    
+    # Utilities
+    "python-dateutil>=2.8.2",
+    "pytz>=2023.3",
+    "pillow>=10.1.0",
+    "python-dotenv>=1.0.0",
+    
+    # Production Server
+    "gunicorn>=21.2.0",
+    
+    # Data Processing
+    "pandas>=2.1.4",
+    "numpy>=1.26.2",
+    
+    # Development Tools
+    "sift-py>=0.1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-flask>=1.3.0",
+    "black>=23.11.0",
+    "flake8>=6.1.0",
+]
+
+[tool.setuptools]
+packages = ["pls_travels"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
