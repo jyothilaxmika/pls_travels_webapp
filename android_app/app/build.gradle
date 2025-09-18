@@ -71,6 +71,9 @@ android {
             
             // Security: Certificate pinning enabled in release
             buildConfigField "boolean", "CERTIFICATE_PINNING_ENABLED", "true"
+            
+            // Play Store optimization
+            matchingFallbacks = ['release', 'debug']
         }
         debug {
             applicationIdSuffix ".debug"
@@ -100,6 +103,21 @@ android {
     packaging {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+    
+    bundle {
+        language {
+            // Enable per-language APKs for smaller downloads
+            enableSplit = true
+        }
+        density {
+            // Enable per-density APKs for smaller downloads
+            enableSplit = true
+        }
+        abi {
+            // Enable per-ABI APKs for smaller downloads
+            enableSplit = true
         }
     }
 }
