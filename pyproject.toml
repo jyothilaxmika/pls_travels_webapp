@@ -54,7 +54,6 @@ dependencies = [
     "numpy>=1.26.2",
     
     # Development Tools
-    "sift-py>=0.1.26",
 ]
 
 [project.optional-dependencies]
