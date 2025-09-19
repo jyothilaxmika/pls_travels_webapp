@@ -1,12 +1,15 @@
 import os
 import logging
-from flask import Flask, send_from_directory, session, request
+import uuid
+import traceback
+from flask import Flask, send_from_directory, session, request, jsonify, render_template, g
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.exceptions import HTTPException
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 from datetime import datetime, timedelta
@@ -161,6 +164,102 @@ def create_app():
     # Initialize JWT manager
     jwt.init_app(app)
     app.config['JWT_ALGORITHM'] = 'HS256'
+    
+    # === GLOBAL ERROR HANDLING ===
+    
+    @app.before_request
+    def add_correlation_id():
+        """Add correlation ID to each request for error tracking"""
+        g.correlation_id = str(uuid.uuid4())
+        
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        """Handle CSRF token errors with user-friendly message"""
+        correlation_id = getattr(g, 'correlation_id', 'unknown')
+        app.logger.warning(f"CSRF Error - Correlation ID: {correlation_id}, Description: {e.description}")
+        
+        # Enhanced content negotiation for CSRF errors
+        is_api_request = (request.path.startswith('/api/') or 
+                         request.accept_mimetypes.best_match(['application/json', 'text/html']) == 'application/json')
+        
+        if is_api_request:
+            return jsonify({
+                'success': False,
+                'error': 'Security token expired. Please refresh the page and try again.',
+                'error_code': 'CSRF_ERROR',
+                'correlation_id': correlation_id
+            }), 400
+        else:
+            return render_template('errors/csrf_error.html', 
+                                 correlation_id=correlation_id), 400
+    
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(e):
+        """Handle HTTP exceptions with branded error pages"""
+        correlation_id = getattr(g, 'correlation_id', 'unknown')
+        
+        # Log at appropriate level - 5xx as error, 4xx as warning/info
+        if e.code >= 500:
+            app.logger.error(f"HTTP Exception {e.code} - Correlation ID: {correlation_id}, URL: {request.url}")
+        elif e.code >= 400:
+            app.logger.warning(f"HTTP Exception {e.code} - Correlation ID: {correlation_id}, URL: {request.url}")
+        
+        # Enhanced content negotiation - check for API routes or JSON preference
+        is_api_request = (request.path.startswith('/api/') or 
+                         request.accept_mimetypes.best_match(['application/json', 'text/html']) == 'application/json')
+        
+        if is_api_request:
+            return jsonify({
+                'success': False,
+                'error': e.description if e.code < 500 else 'An internal error occurred. Please try again later.',
+                'error_code': f'HTTP_{e.code}',
+                'correlation_id': correlation_id
+            }), e.code
+        else:
+            # Return branded error pages for different error codes
+            if e.code == 404:
+                return render_template('errors/404.html', correlation_id=correlation_id), 404
+            elif e.code == 403:
+                return render_template('errors/403.html', correlation_id=correlation_id), 403
+            elif e.code >= 500:
+                return render_template('errors/500.html', correlation_id=correlation_id), e.code
+            else:
+                return render_template('errors/generic.html', 
+                                     error_code=e.code, 
+                                     error_message=e.description,
+                                     correlation_id=correlation_id), e.code
+    
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(e):
+        """Handle unexpected errors with user-friendly messages"""
+        correlation_id = getattr(g, 'correlation_id', 'unknown')
+        
+        # Log the full stack trace internally
+        app.logger.error(f"Unexpected Error - Correlation ID: {correlation_id}, URL: {request.url}")
+        app.logger.error(f"Stack Trace: {traceback.format_exc()}")
+        
+        # Enhanced content negotiation - consistent with other handlers
+        is_api_request = (request.path.startswith('/api/') or 
+                         request.accept_mimetypes.best_match(['application/json', 'text/html']) == 'application/json')
+        
+        if is_api_request:
+            return jsonify({
+                'success': False,
+                'error': 'An unexpected error occurred. Please try again later.',
+                'error_code': 'INTERNAL_ERROR',
+                'correlation_id': correlation_id
+            }), 500
+        else:
+            return render_template('errors/500.html', correlation_id=correlation_id), 500
+    
+    @app.after_request
+    def add_correlation_id_header(response):
+        """Add correlation ID to response headers for traceability"""
+        if hasattr(g, 'correlation_id'):
+            response.headers['X-Correlation-ID'] = g.correlation_id
+        return response
+    
+    # === END GLOBAL ERROR HANDLING ===
 
     # Make datetime and timedelta available in templates
     app.jinja_env.globals['datetime'] = datetime
