@@ -969,14 +969,33 @@ def request_advance_payment():
         )
         
         if result['success']:
+            try:
+                from replit_auth import log_audit
+            except ImportError:
+                def log_audit(action, entity_type, entity_id, details=None):
+                    print(f"AUDIT LOG: {action} - {entity_type}#{entity_id} - {details}")
+            
             log_audit('request_advance_payment', 'advance_payment_request', result['request_id'],
                      {'amount': amount, 'purpose': purpose})
+            
+            # Get primary admin contact for WhatsApp redirect
+            from whatsapp_utils import get_branch_admins_phones
+            admin_phones = get_branch_admins_phones(active_duty.branch_id)
+            primary_contact = admin_phones[0] if admin_phones else None
+            
+            # Format contact number for WhatsApp (remove country code prefix if present)
+            formatted_contact = None
+            if primary_contact:
+                # Remove common prefixes and format for WhatsApp URL
+                contact_clean = primary_contact.replace('+91', '').replace('+', '').replace('-', '').replace(' ', '')
+                formatted_contact = contact_clean
             
             return jsonify({
                 'success': True,
                 'message': 'Advance payment request sent to admin',
                 'request_id': result['request_id'],
-                'sent_to_admins': result['message_sent_to']
+                'sent_to_admins': result['message_sent_to'],
+                'contact_number': formatted_contact
             })
         else:
             return jsonify({'error': result['error']}), 500

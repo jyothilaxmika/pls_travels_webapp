@@ -451,8 +451,14 @@ Please respond with approval/rejection
 PLS Travels Fleet Management System`;
 
         // Open WhatsApp with prefilled message
-        const whatsappUrl = `https://wa.me/91${result.contact_number}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        if (result.contact_number) {
+            const whatsappUrl = `https://wa.me/91${result.contact_number}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        } else {
+            // Fallback: Open WhatsApp without specific number
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
         
         // Clear form
         amountInput.value = '';
