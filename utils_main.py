@@ -6,8 +6,15 @@ import base64
 from datetime import datetime
 from dataclasses import dataclass
 from werkzeug.utils import secure_filename
-from replit import object_storage
 import uuid
+
+# Optional Replit storage import (only available in Replit environment)
+try:
+    from replit import object_storage
+    REPLIT_AVAILABLE = True
+except ImportError:
+    object_storage = None
+    REPLIT_AVAILABLE = False
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
@@ -46,6 +53,11 @@ class CloudStorageManager:
         if self._buckets_checked:
             return
             
+        if not REPLIT_AVAILABLE:
+            print("Replit object storage not available - using local storage fallback")
+            self._buckets_checked = True
+            return
+            
         try:
             for bucket_name in STORAGE_BUCKETS.values():
                 try:
@@ -60,10 +72,8 @@ class CloudStorageManager:
             print(f"Error checking buckets: {e}")
     
     def upload_file(self, file_data, filename, bucket_type='assets', content_type=None):
-        # Ensure buckets are checked only when actually needed
-        self._ensure_buckets()
         """
-        Upload file to cloud storage (currently disabled due to API limitations)
+        Upload file to cloud storage (falls back to local storage in production)
         
         Args:
             file_data: File data (bytes or base64 string)
@@ -72,10 +82,17 @@ class CloudStorageManager:
             content_type: MIME type of the file
             
         Returns:
-            str: Cloud storage URL of uploaded file (None for now)
+            str: Cloud storage URL of uploaded file (None for local storage fallback)
         """
+        if not REPLIT_AVAILABLE:
+            print(f"Replit storage not available - using local storage for {filename}")
+            return None  # Fallback to local storage
+            
+        # Ensure buckets are checked only when actually needed
+        self._ensure_buckets()
+        
         try:
-            # Commenting out cloud storage for now due to API method limitations
+            # Cloud storage currently disabled due to API limitations
             print(f"Cloud storage upload requested for {filename} in {bucket_type} bucket")
             return None  # Fallback to local storage
             
@@ -107,6 +124,10 @@ class CloudStorageManager:
     
     def download_file(self, cloud_url):
         """Download file from cloud storage"""
+        if not REPLIT_AVAILABLE:
+            print("Replit storage not available - cannot download from cloud")
+            return None
+            
         try:
             if not cloud_url.startswith('gs://'):
                 return None
@@ -124,6 +145,10 @@ class CloudStorageManager:
     
     def delete_file(self, cloud_url):
         """Delete file from cloud storage"""
+        if not REPLIT_AVAILABLE:
+            print("Replit storage not available - cannot delete from cloud")
+            return False
+            
         try:
             if not cloud_url.startswith('gs://'):
                 return False
