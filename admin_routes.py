@@ -112,44 +112,22 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
-    # Get overall statistics with optimized queries
-    from models import DriverStatus, VehicleStatus, DutyStatus
+    from services import ReportingService
     
-    # Separate simpler queries for counts
-    total_drivers = Driver.query.filter_by(status=DriverStatus.ACTIVE).count()
-    total_vehicles = Vehicle.query.filter_by(status=VehicleStatus.ACTIVE).count()
-    total_branches = Branch.query.filter_by(is_active=True).count()
+    reporting_service = ReportingService()
     
-    # Active duties today with simple queries
-    today = datetime.now().date()
-    active_duties = Duty.query.filter(
-        and_(func.date(Duty.start_time) == today, Duty.status == DutyStatus.ACTIVE)
-    ).count()
-    pending_duties = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
-    
-    # Revenue statistics with limited results
-    revenue_stats = db.session.query(
-        Branch.name,
-        Branch.target_revenue,
-        func.coalesce(func.sum(Duty.revenue), 0).label('actual_revenue')
-    ).outerjoin(Duty, func.date(Duty.start_time) == today) \
-     .filter(Branch.is_active == True) \
-     .group_by(Branch.id, Branch.name, Branch.target_revenue) \
-     .limit(20).all()
-    
-    # Recent activities - limit and optimize
-    recent_activities = AuditLog.query.options(
-        db.joinedload(AuditLog.user)
-    ).order_by(desc(AuditLog.created_at)).limit(10).all()
+    # Use service layer for comprehensive dashboard statistics
+    dashboard_stats = reporting_service.get_dashboard_statistics()
     
     return render_template('admin/dashboard.html',
-                         total_drivers=total_drivers,
-                         total_vehicles=total_vehicles,
-                         total_branches=total_branches,
-                         active_duties=active_duties,
-                         pending_duties=pending_duties,
-                         revenue_stats=revenue_stats,
-                         recent_activities=recent_activities)
+                         total_drivers=dashboard_stats['total_drivers'],
+                         total_vehicles=dashboard_stats['total_vehicles'], 
+                         total_branches=dashboard_stats['total_branches'],
+                         active_duties=dashboard_stats['active_duties'],
+                         pending_duties=dashboard_stats['pending_duties'],
+                         revenue_stats=dashboard_stats['revenue_stats'],
+                         recent_activities=dashboard_stats['recent_activities'],
+                         stats_generated_at=dashboard_stats.get('generated_at'))
 
 @admin_bp.route('/drivers')
 @login_required
@@ -185,37 +163,49 @@ def drivers():
 @login_required
 @admin_required
 def approve_driver(driver_id):
-    driver = Driver.query.get_or_404(driver_id)
-    driver.status = DriverStatus.ACTIVE
-    driver.approved_by = current_user.id
-    driver.approved_at = get_ist_time_naive()
+    from services import DriverService, NotificationService
     
-    # Activate user account
-    driver.user.active = True
+    driver_service = DriverService()
+    notification_service = NotificationService()
     
-    db.session.commit()
+    # Use service layer for business logic
+    success, error_msg = driver_service.approve_driver(driver_id, current_user.id)
     
-    log_audit('approve_driver', 'driver', driver_id, 
-             {'driver_name': driver.full_name, 'branch': driver.branch.name if driver.branch else 'Unknown'})
+    if success:
+        # Send welcome notification
+        notification_service.send_driver_welcome_message(driver_id)
+        
+        # Get driver name for flash message
+        from models import Driver
+        driver = Driver.query.get(driver_id)
+        flash(f'Driver {driver.full_name if driver else "Unknown"} has been approved.', 'success')
+    else:
+        flash(f'Failed to approve driver: {error_msg}', 'error')
     
-    flash(f'Driver {driver.full_name} has been approved.', 'success')
     return redirect(url_for('admin.drivers'))
 
 @admin_bp.route('/drivers/<int:driver_id>/reject', methods=['POST'])
 @login_required
 @admin_required
 def reject_driver(driver_id):
-    driver = Driver.query.get_or_404(driver_id)
-    driver.status = DriverStatus.REJECTED
-    driver.approved_by = current_user.id
-    driver.approved_at = get_ist_time_naive()
+    from services import DriverService
     
-    db.session.commit()
+    driver_service = DriverService()
     
-    log_audit('reject_driver', 'driver', driver_id,
-             {'driver_name': driver.full_name, 'branch': driver.branch.name if driver.branch else 'Unknown'})
+    # Get reason from form if provided
+    reason = request.form.get('reason')
     
-    flash(f'Driver {driver.full_name} has been rejected.', 'warning')
+    # Use service layer for business logic
+    success, error_msg = driver_service.reject_driver(driver_id, current_user.id, reason)
+    
+    if success:
+        # Get driver name for flash message
+        from models import Driver
+        driver = Driver.query.get(driver_id)
+        flash(f'Driver {driver.full_name if driver else "Unknown"} has been rejected.', 'warning')
+    else:
+        flash(f'Failed to reject driver: {error_msg}', 'error')
+    
     return redirect(url_for('admin.drivers'))
 
 @admin_bp.route('/drivers/<int:driver_id>/view')
