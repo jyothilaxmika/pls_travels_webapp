@@ -125,7 +125,7 @@ def register():
             driver = Driver()
             driver.user_id = user.id
             # Generate unique employee ID
-            from utils import generate_employee_id
+            from utils_main import generate_employee_id
             driver.employee_id = generate_employee_id()
             driver.full_name = form.full_name.data
             # Note: Only set fields that exist in the Driver model
@@ -141,7 +141,7 @@ def register():
             driver.status = DriverStatus.PENDING  # Default to pending approval
             
             # Handle file uploads - Front and Back documents
-            from utils import process_file_upload
+            from utils_main import process_file_upload
             if form.aadhar_photo_front.data:
                 aadhar_front_url = process_file_upload(form.aadhar_photo_front.data, user.id, 'aadhar_front', use_cloud=True)
                 if aadhar_front_url:
