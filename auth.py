@@ -4,6 +4,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from models import User, Branch, db, AuditLog
 from forms import LoginForm, RegisterForm
 import json
+from app import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -33,6 +34,7 @@ def log_audit(action, entity_type=None, entity_id=None, details=None):
                     time.sleep(0.5)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute", error_message="Too many login attempts. Please try again in a minute.")
 def login():
     if current_user.is_authenticated:
         from models import UserRole
@@ -91,6 +93,7 @@ def login():
     return render_template('auth/login.html', form=form)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", error_message="Too many registration attempts. Please wait before trying again.")
 def register():
     form = RegisterForm()
     form.branch.choices = [(b.id, b.name) for b in Branch.query.filter_by(is_active=True).all()]

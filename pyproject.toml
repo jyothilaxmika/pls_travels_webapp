@@ -13,46 +13,42 @@ dependencies = [
     "flask-jwt-extended>=4.5.0",
     "flask-socketio>=5.3.0",
     "wtforms>=3.1.0",
-    
     # Database & ORM
     "sqlalchemy>=2.0.23",
     "psycopg2-binary>=2.9.9",
-    
     # Security
     "werkzeug>=3.0.1",
-    
     # HTTP Client & API
     "requests>=2.31.0",
     "urllib3>=2.1.0",
-    
     # Google Services
     "google-cloud-storage>=2.12.0",
     "google-api-python-client>=2.110.0",
     "google-auth>=2.25.2",
-    
     # Firebase
     "firebase-admin>=6.4.0",
-    
     # Communication & SMS
     "twilio>=8.11.1",
-    
     # AI/ML
     "google-generativeai>=0.3.2",
-    
     # Utilities
     "python-dateutil>=2.8.2",
     "pytz>=2023.3",
     "pillow>=10.1.0",
     "python-dotenv>=1.0.0",
-    
     # Production Server
     "gunicorn>=21.2.0",
-    
     # Data Processing
     "pandas>=2.1.4",
     "numpy>=1.26.2",
-    
     # Development Tools
+    "pydantic>=2.11.9",
+    "pyjwt>=2.10.1",
+    "schedule>=1.2.2",
+    "sift-stack-py>=0.8.5",
+    "flask-limiter>=3.13",
+    "flask-dance>=7.1.0",
+    "oauthlib>=3.3.1",
 ]
 
 [project.optional-dependencies]

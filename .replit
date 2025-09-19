@@ -2,7 +2,7 @@ modules = ["web", "python-3.11", "nodejs-20", "postgresql-16", "python3"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["android-tools", "cargo", "gitFull", "gradle", "iana-etc", "libiconv", "libxcrypt", "openjdk17", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc"]
+packages = ["android-tools", "cargo", "freetype", "gitFull", "glibcLocales", "gradle", "iana-etc", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjdk17", "openjpeg", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "tcl", "tk", "zlib"]
 
 [deployment]
 deploymentTarget = "autoscale"

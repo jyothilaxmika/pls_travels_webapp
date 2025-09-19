@@ -12,6 +12,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.exceptions import HTTPException
 from flask_login import LoginManager
 from flask_socketio import SocketIO
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
 
 # Configure logging
@@ -25,6 +27,7 @@ login_manager = LoginManager()
 socketio = SocketIO()
 csrf = CSRFProtect()
 jwt = JWTManager()
+limiter = Limiter(key_func=get_remote_address)
 
 def create_app():
     # Create the app
@@ -102,6 +105,22 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    
+    # Initialize rate limiter with Redis storage for production
+    redis_url = os.environ.get('REDIS_URL')
+    if redis_url:
+        # Production: Use Redis for distributed rate limiting
+        app.config['RATELIMIT_STORAGE_URI'] = redis_url
+        limiter.init_app(app)
+        app.logger.info("Rate limiter initialized with Redis storage")
+    else:
+        # Development: Use in-memory storage with warning
+        limiter.init_app(app)
+        if os.environ.get('FLASK_ENV') == 'production':
+            app.logger.warning("PRODUCTION WARNING: Rate limiter using in-memory storage. Set REDIS_URL for distributed rate limiting.")
+        else:
+            app.logger.info("Rate limiter initialized with in-memory storage (development)")
+    
     login_manager.login_view = 'auth.login'  # type: ignore
     login_manager.login_message = 'Please log in to access this page.'
     
@@ -204,6 +223,8 @@ def create_app():
     # JWT Configuration with separate secret for enhanced security
     jwt_secret = os.environ.get('JWT_SECRET_KEY')
     if not jwt_secret:
+        if os.environ.get('FLASK_ENV') == 'production':
+            raise RuntimeError("JWT_SECRET_KEY environment variable must be set in production")
         # Generate a separate JWT secret if not provided (for development only)
         jwt_secret = app.secret_key + "_jwt_specific"
         app.logger.warning("JWT_SECRET_KEY not set. Using derived secret. Set JWT_SECRET_KEY in production.")
@@ -443,8 +464,15 @@ def create_app():
         from werkzeug.security import generate_password_hash
         
         # Only create demo data if explicitly enabled (SECURITY RISK IN PRODUCTION)
-        demo_mode = True  # Enable demo mode to create admin user
-        # demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
+        # SECURITY: Demo seeding disabled by default - only enable with explicit environment flag
+        demo_mode = os.environ.get('DEMO_SEED', 'false').lower() == 'true'
+        
+        # CRITICAL: Prevent demo seeding in production environments
+        is_production = (os.environ.get('FLASK_ENV') == 'production' or 
+                        os.environ.get('REPL_DEPLOYMENT') == 'true')
+        
+        if demo_mode and is_production:
+            raise RuntimeError("SECURITY ERROR: Demo seeding cannot be enabled in production. Set DEMO_SEED=false.")
         
         if demo_mode:
             
