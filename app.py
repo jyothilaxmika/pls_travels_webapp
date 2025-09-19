@@ -48,15 +48,17 @@ def create_app():
         "https://*.repl.co"
     ]
     
-    # In production, allow the deployed domain
+    # In production, use environment-configured allowlist instead of wildcard
     if os.environ.get('REPL_DEPLOYMENT') == 'true':
-        # For production deployment, allow all origins from the same domain
-        allowed_origins = ["*"]
+        # Get allowed origins from environment variable (comma-separated)
+        production_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'https://*.replit.app,https://*.repl.co')
+        allowed_origins = [origin.strip() for origin in production_origins.split(',')]
     
     CORS(app, origins=allowed_origins, 
-         supports_credentials=False,
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+         supports_credentials=True,  # Enable credentials for secure cookie handling
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "X-Correlation-ID"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         expose_headers=["X-Correlation-ID"])  # Expose correlation ID to clients
 
     # Configure the database - force SQLite for development
     database_url = "sqlite:///pls_travels_dev.db"  # Force local SQLite for development
@@ -102,6 +104,49 @@ def create_app():
     csrf.init_app(app)
     login_manager.login_view = 'auth.login'  # type: ignore
     login_manager.login_message = 'Please log in to access this page.'
+    
+    # === SECURITY CONFIGURATION ===
+    
+    # Secure session cookie configuration
+    from datetime import timedelta  # Ensure timedelta is available in local scope
+    app.config.update(
+        SESSION_COOKIE_SECURE=os.environ.get('FLASK_ENV') == 'production',  # HTTPS only in production
+        SESSION_COOKIE_HTTPONLY=True,  # Prevent XSS access to cookies
+        SESSION_COOKIE_SAMESITE='Lax',  # CSRF protection while allowing normal navigation
+        PERMANENT_SESSION_LIFETIME=timedelta(hours=24),  # Session timeout
+    )
+    
+    # Security headers middleware
+    @app.after_request
+    def add_security_headers(response):
+        """Add comprehensive security headers to all responses"""
+        # Content Security Policy - restrict resource loading
+        csp_policy = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'"
+        )
+        response.headers['Content-Security-Policy'] = csp_policy
+        
+        # Additional security headers
+        response.headers['X-Content-Type-Options'] = 'nosniff'  # Prevent MIME sniffing
+        response.headers['X-Frame-Options'] = 'DENY'  # Prevent clickjacking
+        response.headers['X-XSS-Protection'] = '1; mode=block'  # XSS protection
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'  # Control referrer info
+        
+        # HSTS (HTTP Strict Transport Security) for HTTPS environments
+        if request.is_secure or os.environ.get('FLASK_ENV') == 'production':
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        
+        return response
+    
+    # === END SECURITY CONFIGURATION ===
     
     # Initialize SocketIO with proper security and extended configuration
     # For development, allow all Replit domains with proper wildcard matching
@@ -156,8 +201,14 @@ def create_app():
             dt = pytz.utc.localize(dt)
         return dt.astimezone(IST)
     
-    # JWT Configuration (after imports to avoid scope issues)
-    app.config['JWT_SECRET_KEY'] = app.secret_key  # Use same secret as Flask session
+    # JWT Configuration with separate secret for enhanced security
+    jwt_secret = os.environ.get('JWT_SECRET_KEY')
+    if not jwt_secret:
+        # Generate a separate JWT secret if not provided (for development only)
+        jwt_secret = app.secret_key + "_jwt_specific"
+        app.logger.warning("JWT_SECRET_KEY not set. Using derived secret. Set JWT_SECRET_KEY in production.")
+    
+    app.config['JWT_SECRET_KEY'] = jwt_secret
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
     
