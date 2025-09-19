@@ -3544,7 +3544,11 @@ def update_user_whatsapp_settings():
         db.session.commit()
         
         # Log the update
-        from replit_auth import log_audit
+        try:
+            from replit_auth import log_audit
+        except ImportError:
+            def log_audit(action, entity_type=None, entity_id=None, details=None):
+                print(f"AUDIT LOG: {action} - {entity_type}#{entity_id} - {details}")
         log_audit('update_whatsapp_number', 'user', user_id, {
             'user_name': user.full_name,
             'role': user.role.value,
@@ -3584,7 +3588,11 @@ def test_user_whatsapp_number():
         
         if result.get('success'):
             # Log the test
-            from replit_auth import log_audit
+            try:
+                from replit_auth import log_audit
+            except ImportError:
+                def log_audit(action, entity_type=None, entity_id=None, details=None):
+                    print(f"AUDIT LOG: {action} - {entity_type}#{entity_id} - {details}")
             log_audit('test_whatsapp_number', 'user', user_id, {
                 'user_name': user.full_name,
                 'whatsapp_number': user.whatsapp_number,

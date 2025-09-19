@@ -62,9 +62,10 @@ class CloudStorageManager:
             for bucket_name in STORAGE_BUCKETS.values():
                 try:
                     # Try to create an object to check if bucket exists  
-                    test_obj = object_storage.Object(f"{bucket_name}/test")
-                    # If we can create the object, bucket exists (or will be created)
-                    print(f"Bucket ready: {bucket_name}")
+                    if object_storage:
+                        test_obj = object_storage.Object(f"{bucket_name}/test")
+                        # If we can create the object, bucket exists (or will be created)
+                        print(f"Bucket ready: {bucket_name}")
                 except Exception as e:
                     print(f"Error with bucket {bucket_name}: {e}")
             self._buckets_checked = True
@@ -136,8 +137,9 @@ class CloudStorageManager:
             parts = cloud_url.replace('gs://', '').split('/', 1)
             bucket_name, filename = parts[0], parts[1]
             
-            obj = object_storage.Object(f"{bucket_name}/{filename}")
-            return obj.read()  # type: ignore
+            if object_storage:
+                obj = object_storage.Object(f"{bucket_name}/{filename}")
+                return obj.read()  # type: ignore
             
         except Exception as e:
             print(f"Cloud download error: {e}")
@@ -156,9 +158,10 @@ class CloudStorageManager:
             parts = cloud_url.replace('gs://', '').split('/', 1)
             bucket_name, filename = parts[0], parts[1]
             
-            obj = object_storage.Object(f"{bucket_name}/{filename}")
-            obj.delete()  # type: ignore
-            return True
+            if object_storage:
+                obj = object_storage.Object(f"{bucket_name}/{filename}")
+                obj.delete()  # type: ignore
+                return True
             
         except Exception as e:
             print(f"Cloud delete error: {e}")

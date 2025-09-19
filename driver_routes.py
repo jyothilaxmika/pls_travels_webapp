@@ -567,7 +567,12 @@ def start_duty():
     db.session.commit()
     
     # Log anomaly detection for admin review
-    from replit_auth import log_audit
+    try:
+        from replit_auth import log_audit
+    except ImportError:
+        # Fallback function for when replit_auth is not available
+        def log_audit(action, entity_type, entity_id, details=None):
+            print(f"AUDIT LOG: {action} - {entity_type}#{entity_id} - {details}")
     
     if odometer_anomaly_detected:
         anomaly_details = {
