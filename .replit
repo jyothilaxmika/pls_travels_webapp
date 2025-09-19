@@ -1,4 +1,4 @@
-modules = ["web", "python-3.11", "nodejs-20", "postgresql-16", "python3"]
+modules = ["python-3.11", "web", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
@@ -6,7 +6,7 @@ packages = ["android-tools", "cargo", "freetype", "gitFull", "glibcLocales", "gr
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "--reuse-port", "main:app"]
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
 runButton = "Project"
