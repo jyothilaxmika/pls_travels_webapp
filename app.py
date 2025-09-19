@@ -17,8 +17,12 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Import centralized logging configuration
+from utils.logging_config import setup_logging, log_request_start, log_request_end, get_logger
+from utils.monitoring import setup_monitoring
+
+# Configure centralized logging system
+loggers = setup_logging()
 
 class Base(DeclarativeBase):
     pass
@@ -247,6 +251,7 @@ def create_app():
     def add_correlation_id():
         """Add correlation ID to each request for error tracking"""
         g.correlation_id = str(uuid.uuid4())
+        log_request_start()  # Start request timing for monitoring
         
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
@@ -333,9 +338,23 @@ def create_app():
         """Add correlation ID to response headers for traceability"""
         if hasattr(g, 'correlation_id'):
             response.headers['X-Correlation-ID'] = g.correlation_id
-        return response
+        
+        # Log request completion and add monitoring
+        return log_request_end(response)
     
     # === END GLOBAL ERROR HANDLING ===
+
+    # Set up monitoring middleware and health endpoints
+    setup_monitoring(app)
+    
+    # Configure application logger to use structured logging
+    app.logger = get_logger('app')
+    current_db_url = app.config.get("SQLALCHEMY_DATABASE_URI", database_url)
+    app.logger.info("PLS Travels application starting up", extra={
+        'environment': os.environ.get('FLASK_ENV', 'development'),
+        'deployment_id': os.environ.get('REPL_DEPLOYMENT_ID', 'unknown'),
+        'database_type': 'postgresql' if current_db_url.startswith(('postgresql://', 'postgres://')) else 'sqlite'
+    })
 
     # Make datetime and timedelta available in templates
     app.jinja_env.globals['datetime'] = datetime
