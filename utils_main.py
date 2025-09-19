@@ -548,8 +548,8 @@ def calculate_salary_with_formula(duty, formula):
             'cash_on_hand': float(duty.cash_collection or 0),
             'pass_amount': float(duty.pass_amount or 0),
             'insurance': float(duty.insurance_amount or 0),
-            'start_cng': float(duty.start_cng or 0),
-            'end_cng': float(duty.end_cng or 0),
+            'start_cng': float(duty.start_cng) if duty.start_cng is not None else None,
+            'end_cng': float(duty.end_cng) if duty.end_cng is not None else None,
             # Mathematical functions
             'abs': abs,
             'max': max,
@@ -615,8 +615,8 @@ def calculate_advanced_salary(duty_data, scheme_type=1, daily_rate=3000, days_wo
         cash_collected=duty_data.cash_collection or 0,
         qr_payment=duty_data.qr_payment or 0,
         outside_cash=duty_data.digital_payments or 0,
-        start_cng=int(duty_data.start_cng or 0),
-        end_cng=int(duty_data.end_cng or 0),
+        start_cng=int(duty_data.start_cng) if duty_data.start_cng is not None else 0,
+        end_cng=int(duty_data.end_cng) if duty_data.end_cng is not None else 0,
         pass_deduction=duty_data.penalty_deduction or 0,
         days_worked=days_worked,
         daily_rate=daily_rate
