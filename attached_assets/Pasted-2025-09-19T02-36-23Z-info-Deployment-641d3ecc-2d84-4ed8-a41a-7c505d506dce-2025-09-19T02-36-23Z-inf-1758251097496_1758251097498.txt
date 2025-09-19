@@ -1,0 +1,239 @@
+2025-09-19T02:36:23Z info: Deployment: 641d3ecc-2d84-4ed8-a41a-7c505d506dce
+2025-09-19T02:36:23Z info: Build: 621e269c-f795-4c3e-a641-e619893ba323
+2025-09-19T02:36:23Z info: Connecting to builder
+2025-09-19T02:36:26Z info: Builder connected
+2025-09-19T02:36:26Z info: Installing packages
+--> uv lock
+
+Resolved 99 packages in 645ms
+
+Removed about-time v4.2.1
+
+Removed alive-progress v3.3.0
+Removed amqp v5.3.1
+Removed argon2-cffi v25.1.0
+Removed argon2-cffi-bindings v21.2.0, v25.1.0
+
+Removed bidict v0.23.1
+
+Removed billiard 
+v4.2.1
+Added
+ black v25.9.0
+
+Removed
+ celery v5.5.3
+
+Removed click-didyoumean 
+v0.3.1
+Removed
+ click-plugins
+ v1.1.1.2
+
+Removed
+ click-repl
+ v0.3.0
+
+Removed 
+defusedcsv v3.0.0
+
+Removed 
+dnspython v2.7.0
+Removed 
+email-validator v2.3.0
+Removed 
+eval-type-backport v0.2.2
+
+Removed
+ eventlet 
+v0.40.3
+
+Added
+ flake8 
+v7.3.0
+
+Removed flask-cors
+ v6.0.1
+
+Removed 
+flask-dance v7.1.0
+Removed 
+flask-jwt-extended v4.7.1
+
+Removed
+ flask-socketio 
+v5.5.1
+
+Added
+ google-ai-generativelanguage 
+v0.6.15
+
+Removed 
+google-genai v1.36.0
+
+Added google-generativeai v0.8.5
+Removed graphemeu
+ v0.7.2
+
+Removed
+ iso8601 
+v2.1.0
+
+Removed 
+kombu v5.5.4
+
+Added mccabe 
+v0.7.0
+Added
+ mypy-extensions v1.1.0
+Removed
+ oauthlib v3.3.1
+Removed 
+pandas-stubs v2.3.2.250827
+Added 
+pathspec 
+v0.12.1
+
+Added
+ pillow
+ v11.3.0
+
+Added 
+platformdirs v4.4.0
+Removed playwright v1.55.0
+Added pls-travels v1.0.0
+Removed
+ prompt-toolkit v3.0.52
+Added
+ pycodestyle
+ v2.14.0
+Removed
+ pycryptodomex 
+v3.23.0
+
+Removed pyee
+ v13.0.0
+Added pyflakes v3.4.0
+
+Removed
+ 
+pyseto v1.8.4
+Removed 
+pytest-base-url v2.1.0
+
+Added
+ 
+pytest-flask 
+v1.3.0
+
+Removed
+ pytest-playwright 
+v0.7.1
+
+Removed 
+python-engineio v4.12.2
+
+Removed
+ python-slugify v8.0.4
+
+Removed
+ 
+python-socketio
+ v5.13.0
+Added
+ 
+pytokens v0.1.10
+
+Removed 
+pyyaml 
+v6.0.2
+
+Removed
+ 
+repl-nix-workspace 
+v0.1.0
+
+Removed replit v4.1.2
+
+Removed
+ 
+replit-object-storage 
+v1.0.2
+
+Removed
+ requests-oauthlib v2.0.0
+Removed
+ 
+requests-toolbelt 
+v1.0.0
+
+Removed schedule 
+v1.2.2
+
+Removed
+ sift-stack-py v0.8.5
+Removed 
+simple-websocket v1.1.0
+Removed
+ tenacity 
+v9.1.2
+
+Removed
+ text-unidecode 
+v1.3
+
+Added tqdm 
+v4.67.1
+
+Removed
+ 
+types-protobuf 
+v6.30.2.20250914
+
+Removed
+ types-pytz 
+v2025.2.0.20250809
+
+Removed
+ types-pyyaml
+ v6.0.12.20250822
+
+Removed
+ types-requests
+ v2.32.4.20250913
+
+Removed urlobject v3.0.0
+Removed vine v5.1.0
+Removed wcwidth v0.2.13
+
+Removed websockets v15.0.1
+Removed 
+wsproto 
+v1.2.0
+
+--> uv sync
+
+Resolved 99 packages in 1ms
+
+  × Failed to build `pls-travels @ file:///home/runner/workspace`
+  ├─▶ The build backend returned an error
+
+  ╰─▶ Call to `setuptools.build_meta.build_editable` failed (exit status: 1)
+
+      [stdout]
+      running egg_info
+      creating pls_travels.egg-info
+      writing pls_travels.egg-info/PKG-INFO
+      writing dependency_links to pls_travels.egg-info/dependency_links.txt
+      writing requirements to pls_travels.egg-info/requires.txt
+      writing top-level names to pls_travels.egg-info/top_level.txt
+      writing manifest file 'pls_travels.egg-info/SOURCES.txt'
+
+      [stderr]
+      error: package directory 'pls_travels' does not exist
+
+      hint: This usually indicates a problem with the package or the build
+      environment.
+
+exit status 1
+
