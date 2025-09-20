@@ -1,21 +1,61 @@
 /* Custom CSS for PLS TRAVELS Fleet Management System */
 
-/* Override Bootstrap theme variables when needed */
+/* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    --pls-primary: #ffc107;
-    --pls-secondary: #6c757d;
-    --pls-success: #28a745;
-    --pls-warning: #fd7e14;
-    --pls-danger: #dc3545;
-    --pls-info: #17a2b8;
-    --pls-light: #ffffff;
-    --pls-dark: #343a40;
-    --pls-accent: #6f42c1;
-    --pls-text-dark: #343a40;
-    --pls-text-light: #ffffff;
-    --pls-gray-light: #f8f9fa;
-    --pls-gray-medium: #6c757d;
-    --pls-gray-dark: #495057;
+    /* Primary brand colors */
+    --pls-primary: #2563eb;
+    --pls-primary-light: #3b82f6;
+    --pls-primary-dark: #1d4ed8;
+    --pls-accent: #06b6d4;
+    --pls-accent-light: #0891b2;
+    --pls-accent-dark: #0e7490;
+    
+    /* Status colors */
+    --pls-success: #22c55e;
+    --pls-warning: #f59e0b;
+    --pls-danger: #ef4444;
+    --pls-info: #3b82f6;
+    
+    /* Neutral colors - slate palette */
+    --pls-slate-50: #f8fafc;
+    --pls-slate-100: #f1f5f9;
+    --pls-slate-200: #e2e8f0;
+    --pls-slate-300: #cbd5e1;
+    --pls-slate-400: #94a3b8;
+    --pls-slate-500: #64748b;
+    --pls-slate-600: #475569;
+    --pls-slate-700: #334155;
+    --pls-slate-800: #1e293b;
+    --pls-slate-900: #0f172a;
+    
+    /* Legacy support */
+    --pls-secondary: var(--pls-slate-500);
+    --pls-light: var(--pls-slate-50);
+    --pls-dark: var(--pls-slate-900);
+    --pls-text-dark: var(--pls-slate-900);
+    --pls-text-light: var(--pls-slate-50);
+    --pls-gray-light: var(--pls-slate-100);
+    --pls-gray-medium: var(--pls-slate-500);
+    --pls-gray-dark: var(--pls-slate-700);
+    
+    /* Typography scale */
+    --pls-font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+    --pls-font-size-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+    --pls-font-size-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+    --pls-font-size-lg: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
+    --pls-font-size-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+    --pls-font-size-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+    --pls-font-size-3xl: clamp(1.875rem, 1.6rem + 1.375vw, 2.5rem);
+    --pls-font-size-4xl: clamp(2.25rem, 1.9rem + 1.75vw, 3rem);
+    
+    /* Spacing scale */
+    --pls-spacing-xs: 0.25rem;
+    --pls-spacing-sm: 0.5rem;
+    --pls-spacing-md: 1rem;
+    --pls-spacing-lg: 1.5rem;
+    --pls-spacing-xl: 2rem;
+    --pls-spacing-2xl: 3rem;
+    --pls-spacing-3xl: 4rem;
 }
 
 /* Comprehensive responsive design for mobile and desktop */
@@ -345,12 +385,12 @@
 /* Enhanced form controls */
 .form-control:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
 }
 
 .form-select:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
 }
 
 /* Enhanced responsive form layouts */
@@ -449,18 +489,18 @@ input[type="file"] {
 
 /* Dashboard metric cards */
 .metric-card {
-    background: linear-gradient(135deg, var(--pls-primary) 0%, #e0a800 100%);
-    color: var(--pls-text-dark);
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
+    color: var(--pls-text-light);
     border: none;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
 }
 
 .metric-card-danger {
@@ -560,7 +600,7 @@ input[type="file"] {
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
-    background-color: rgba(255, 193, 7, 0.08);
+    background-color: rgba(37, 99, 235, 0.08);
 }
 
 /* Responsive navigation enhancements */
@@ -717,9 +757,9 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .navbar {
-    background: linear-gradient(135deg, var(--pls-primary) 0%, #e0a800 100%) !important;
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
     border-bottom: none;
-    box-shadow: 0 2px 12px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.3);
 }
 
 [data-bs-theme="light"] .navbar-brand {
@@ -746,11 +786,11 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .btn-primary:hover {
-    background-color: #e0a800;
-    border-color: #e0a800;
-    color: var(--pls-text-dark);
+    background-color: var(--pls-primary-light);
+    border-color: var(--pls-primary-light);
+    color: var(--pls-text-light);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
 }
 
 [data-bs-theme="light"] .btn-secondary {
