@@ -13,7 +13,7 @@ from flask import current_app
 from models import db, Driver, User, Branch, AuditLog, DriverStatus, UserStatus, UserRole
 from .transaction_helper import TransactionHelper
 from .audit_service import AuditService
-from utils_main import get_ist_time_naive
+from timezone_utils import get_ist_time_naive
 
 logger = logging.getLogger(__name__)
 
