@@ -420,7 +420,7 @@ def get_available_vehicles():
             'message': 'Internal server error'
         }), 500
 
-@mobile_api_bp.route('/api/mobile/v1/auth/update-fcm-token', methods=['POST'])
+@mobile_api_bp.route('/auth/update-fcm-token', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def update_fcm_token():
