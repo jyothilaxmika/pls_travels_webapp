@@ -2,19 +2,19 @@
 
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    /* Primary brand colors - Green Success Theme */
-    --pls-primary: #059669;
-    --pls-primary-light: #10b981;
-    --pls-primary-dark: #047857;
-    --pls-accent: #22c55e;
-    --pls-accent-light: #4ade80;
-    --pls-accent-dark: #16a34a;
+    /* Primary brand colors - Uber Official Theme */
+    --pls-primary: #000000;
+    --pls-primary-light: #333333;
+    --pls-primary-dark: #000000;
+    --pls-accent: #3AA76D;
+    --pls-accent-light: #4BB77F;
+    --pls-accent-dark: #2E8A5B;
     
-    /* Status colors */
-    --pls-success: #22c55e;
-    --pls-warning: #f59e0b;
-    --pls-danger: #ef4444;
-    --pls-info: #3b82f6;
+    /* Status colors - Uber Official Palette */
+    --pls-success: #3AA76D;
+    --pls-warning: #FFC043;
+    --pls-danger: #D44333;
+    --pls-info: #276EF1;
     
     /* Neutral colors - slate palette */
     --pls-slate-50: #f8fafc;
@@ -385,12 +385,12 @@
 /* Enhanced form controls */
 .form-control:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25);
 }
 
 .form-select:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25);
 }
 
 /* Enhanced responsive form layouts */
@@ -500,7 +500,7 @@ input[type="file"] {
 
 .metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .metric-card-danger {
@@ -600,7 +600,7 @@ input[type="file"] {
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
-    background-color: rgba(5, 150, 105, 0.08);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Responsive navigation enhancements */
@@ -759,7 +759,7 @@ input[type="file"] {
 [data-bs-theme="light"] .navbar {
     background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
     border-bottom: none;
-    box-shadow: 0 2px 12px rgba(5, 150, 105, 0.3);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 [data-bs-theme="light"] .navbar-brand {
@@ -790,7 +790,7 @@ input[type="file"] {
     border-color: var(--pls-primary-light);
     color: var(--pls-text-light);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(5, 150, 105, 0.4);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 [data-bs-theme="light"] .btn-secondary {
