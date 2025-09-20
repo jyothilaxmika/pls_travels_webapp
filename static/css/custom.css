@@ -2,41 +2,47 @@
 
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    /* Primary brand colors - Uber Official Theme */
-    --pls-primary: #000000;
-    --pls-primary-light: #333333;
-    --pls-primary-dark: #000000;
-    --pls-accent: #3AA76D;
-    --pls-accent-light: #4BB77F;
-    --pls-accent-dark: #2E8A5B;
+    /* Primary brand colors - Modern Attractive Theme */
+    --pls-primary: #1e3a8a;          /* Rich royal blue */
+    --pls-primary-light: #3b82f6;     /* Bright blue */
+    --pls-primary-dark: #1e293b;      /* Dark slate blue */
+    --pls-accent: #10b981;            /* Emerald green */
+    --pls-accent-light: #34d399;      /* Light emerald */
+    --pls-accent-dark: #059669;       /* Dark emerald */
     
-    /* Status colors - Uber Official Palette */
-    --pls-success: #3AA76D;
-    --pls-warning: #FFC043;
-    --pls-danger: #D44333;
-    --pls-info: #276EF1;
+    /* Status colors - Modern Vibrant Palette */
+    --pls-success: #10b981;           /* Emerald green */
+    --pls-warning: #f59e0b;           /* Amber */
+    --pls-danger: #ef4444;            /* Red */
+    --pls-info: #3b82f6;              /* Blue */
     
-    /* Neutral colors - slate palette */
-    --pls-slate-50: #f8fafc;
-    --pls-slate-100: #f1f5f9;
-    --pls-slate-200: #e2e8f0;
-    --pls-slate-300: #cbd5e1;
-    --pls-slate-400: #94a3b8;
-    --pls-slate-500: #64748b;
-    --pls-slate-600: #475569;
-    --pls-slate-700: #334155;
-    --pls-slate-800: #1e293b;
-    --pls-slate-900: #0f172a;
+    /* Neutral colors - modern slate palette */
+    --pls-slate-50: #fafaff;          /* Very light blue-tinted white */
+    --pls-slate-100: #f1f5ff;         /* Light blue-tinted gray */
+    --pls-slate-200: #e2e8f5;         /* Blue-tinted light gray */
+    --pls-slate-300: #cbd5e8;         /* Medium blue-tinted gray */
+    --pls-slate-400: #94a3c4;         /* Blue-tinted medium gray */
+    --pls-slate-500: #64748b;         /* Standard slate */
+    --pls-slate-600: #475569;         /* Dark slate */
+    --pls-slate-700: #334155;         /* Darker slate */
+    --pls-slate-800: #1e293b;         /* Very dark slate */
+    --pls-slate-900: #0f172a;         /* Nearly black */
     
-    /* Legacy support */
-    --pls-secondary: var(--pls-slate-500);
+    /* Legacy support with enhanced colors */
+    --pls-secondary: #6366f1;         /* Indigo */
     --pls-light: var(--pls-slate-50);
     --pls-dark: var(--pls-slate-900);
     --pls-text-dark: var(--pls-slate-900);
-    --pls-text-light: var(--pls-slate-50);
+    --pls-text-light: #ffffff;
     --pls-gray-light: var(--pls-slate-100);
     --pls-gray-medium: var(--pls-slate-500);
     --pls-gray-dark: var(--pls-slate-700);
+    
+    /* Additional attractive colors */
+    --pls-purple: #8b5cf6;            /* Purple */
+    --pls-pink: #ec4899;              /* Pink */
+    --pls-orange: #f97316;            /* Orange */
+    --pls-teal: #14b8a6;              /* Teal */
     
     /* Typography scale */
     --pls-font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);

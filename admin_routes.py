@@ -592,6 +592,134 @@ def advance_payments():
                          total_approved=total_approved,
                          total_rejected=total_rejected)
 
+@admin_bp.route('/bulk-approve-advance-payments', methods=['POST'])
+@login_required
+@admin_required
+def bulk_approve_advance_payments():
+    """Bulk approve advance payment requests"""
+    from services import NotificationService
+    
+    request_ids = request.form.getlist('request_ids')
+    if not request_ids:
+        flash('No requests selected for approval.', 'error')
+        return redirect(url_for('admin.advance_payments'))
+    
+    approved_count = 0
+    failed_count = 0
+    
+    for request_id in request_ids:
+        try:
+            advance_request = AdvancePaymentRequest.query.get(int(request_id))
+            if not advance_request or advance_request.status != 'pending':
+                failed_count += 1
+                continue
+            
+            # Approve with requested amount
+            advance_request.status = 'approved'
+            advance_request.approved_amount = advance_request.amount_requested
+            advance_request.reviewed_by = current_user.id
+            advance_request.reviewed_at = get_ist_time_naive()
+            advance_request.response_notes = f'Bulk approved by {current_user.username}'
+            
+            # Send notification
+            notification_service = NotificationService()
+            notification_service.send_advance_payment_response(
+                advance_request.id, approved=True, 
+                comments=f'Bulk approved - ₹{advance_request.approved_amount}'
+            )
+            
+            approved_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    try:
+        db.session.commit()
+        log_audit('bulk_approve_advance_payments', 'admin', None, {
+            'approved_count': approved_count,
+            'failed_count': failed_count,
+            'request_ids': request_ids
+        })
+        
+        if approved_count > 0:
+            flash(f'Successfully approved {approved_count} advance payment requests.', 'success')
+        if failed_count > 0:
+            flash(f'{failed_count} requests could not be processed.', 'warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('Error processing bulk approval. Please try again.', 'error')
+    
+    return redirect(url_for('admin.advance_payments'))
+
+@admin_bp.route('/bulk-reject-advance-payments', methods=['POST'])
+@login_required
+@admin_required
+def bulk_reject_advance_payments():
+    """Bulk reject advance payment requests"""
+    from services import NotificationService
+    
+    request_ids = request.form.getlist('request_ids')
+    rejection_reason = request.form.get('rejection_reason', '').strip()
+    
+    if not request_ids:
+        flash('No requests selected for rejection.', 'error')
+        return redirect(url_for('admin.advance_payments'))
+    
+    if not rejection_reason:
+        flash('Rejection reason is required for bulk rejection.', 'error')
+        return redirect(url_for('admin.advance_payments'))
+    
+    rejected_count = 0
+    failed_count = 0
+    
+    for request_id in request_ids:
+        try:
+            advance_request = AdvancePaymentRequest.query.get(int(request_id))
+            if not advance_request or advance_request.status != 'pending':
+                failed_count += 1
+                continue
+            
+            # Reject the request
+            advance_request.status = 'rejected'
+            advance_request.reviewed_by = current_user.id
+            advance_request.reviewed_at = get_ist_time_naive()
+            advance_request.response_notes = f'Bulk rejected: {rejection_reason}'
+            
+            # Send notification
+            notification_service = NotificationService()
+            notification_service.send_advance_payment_response(
+                advance_request.id, approved=False, 
+                comments=rejection_reason
+            )
+            
+            rejected_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    try:
+        db.session.commit()
+        log_audit('bulk_reject_advance_payments', 'admin', None, {
+            'rejected_count': rejected_count,
+            'failed_count': failed_count,
+            'rejection_reason': rejection_reason,
+            'request_ids': request_ids
+        })
+        
+        if rejected_count > 0:
+            flash(f'Successfully rejected {rejected_count} advance payment requests.', 'info')
+        if failed_count > 0:
+            flash(f'{failed_count} requests could not be processed.', 'warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('Error processing bulk rejection. Please try again.', 'error')
+    
+    return redirect(url_for('admin.advance_payments'))
+
 @admin_bp.route('/advance-payments/<int:request_id>/respond', methods=['POST'])
 @login_required
 @admin_required
