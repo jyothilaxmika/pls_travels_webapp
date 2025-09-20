@@ -4,6 +4,17 @@ PLS TRAVELS is a comprehensive multi-city driver and fleet management system bui
 
 # Recent Changes
 
+## September 20, 2025
+- **Attractive All-Content-Visible Theme**: Complete theme overhaul for maximum visibility and attractiveness
+  - **Enhanced Text Contrast**: Updated text colors to #374151 for optimal readability on light backgrounds
+  - **Improved Navigation**: White text on gradient background with proper hover effects and shadows
+  - **Better Cards & Tables**: Clean white backgrounds with subtle borders and enhanced shadows
+  - **Enhanced Forms**: Clear borders, proper focus states, and improved visual feedback
+  - **Better Buttons**: Improved color contrast with white text on colored backgrounds
+  - **Global Typography**: Anti-aliased fonts with proper sizing and spacing throughout
+  - **Comprehensive Styling**: All UI elements now have proper contrast and visual hierarchy
+  - **Mobile-Responsive**: Consistent visibility across all device sizes
+
 ## September 18, 2025
 - **Google Play Store Launch Ready**: Complete Play Store deployment infrastructure implemented
   - **Automated CI/CD Pipeline**: GitHub Actions workflow for AAB builds with multi-track deployment support (internal/alpha/beta/production)

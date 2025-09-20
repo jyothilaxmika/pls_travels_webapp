@@ -32,7 +32,7 @@
     --pls-secondary: #6366f1;         /* Indigo */
     --pls-light: var(--pls-slate-50);
     --pls-dark: var(--pls-slate-900);
-    --pls-text-dark: var(--pls-slate-700);
+    --pls-text-dark: #374151;
     --pls-text-light: #ffffff;
     --pls-gray-light: var(--pls-slate-100);
     --pls-gray-medium: var(--pls-slate-500);
@@ -62,6 +62,22 @@
     --pls-spacing-xl: 2rem;
     --pls-spacing-2xl: 3rem;
     --pls-spacing-3xl: 4rem;
+}
+
+/* Global body styling for better visibility */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #fafbfc;
+    color: var(--pls-text-dark);
+    line-height: 1.6;
+    font-size: 0.95rem;
+    font-weight: 400;
+}
+
+/* Ensure text is always visible and crisp */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Comprehensive responsive design for mobile and desktop */
@@ -276,21 +292,26 @@
 
 /* Enhanced card styling */
 .card {
-    border: 1px solid #dee2e6;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    transition: box-shadow 0.15s ease-in-out;
+    border: 1px solid var(--pls-slate-200);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    transition: all 0.2s ease;
+    background: #ffffff;
+    border-radius: 8px;
+    color: var(--pls-text-dark);
 }
 
 .card:hover {
-    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
 }
 
 .card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid #dee2e6;
+    background: linear-gradient(135deg, var(--pls-slate-50) 0%, var(--pls-slate-100) 100%);
+    border-bottom: 1px solid var(--pls-slate-200);
     font-weight: 600;
     color: var(--pls-text-dark);
     border-radius: 8px 8px 0 0 !important;
+    padding: 1rem 1.5rem;
 }
 
 /* Status badges enhancement */
@@ -321,7 +342,8 @@
 
 .badge-primary {
     background-color: var(--pls-primary);
-    color: var(--pls-text-dark);
+    color: #ffffff;
+    font-weight: 500;
 }
 
 .badge-secondary {
@@ -330,9 +352,10 @@
 }
 
 .badge-light {
-    background-color: var(--pls-light);
+    background-color: var(--pls-slate-100);
     color: var(--pls-text-dark);
-    border: 1px solid var(--pls-secondary);
+    border: 1px solid var(--pls-slate-300);
+    font-weight: 500;
 }
 
 .badge-dark {
@@ -389,14 +412,32 @@
 }
 
 /* Enhanced form controls */
+.form-control {
+    border: 1px solid var(--pls-slate-300);
+    color: var(--pls-text-dark);
+    background-color: #ffffff;
+    font-size: 0.95rem;
+    border-radius: 6px;
+}
+
 .form-control:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+    color: var(--pls-text-dark);
+}
+
+.form-select {
+    border: 1px solid var(--pls-slate-300);
+    color: var(--pls-text-dark);
+    background-color: #ffffff;
+    font-size: 0.95rem;
+    border-radius: 6px;
 }
 
 .form-select:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+    color: var(--pls-text-dark);
 }
 
 /* Enhanced responsive form layouts */
@@ -556,14 +597,28 @@ input[type="file"] {
 }
 
 /* Enhanced responsive table styling */
+.table {
+    color: var(--pls-text-dark);
+    font-size: 0.95rem;
+}
+
 .table th {
     border-top: none;
     font-weight: 600;
     color: var(--pls-text-dark);
-    background-color: var(--pls-primary);
+    background-color: var(--pls-slate-100);
+    border-bottom: 2px solid var(--pls-primary);
     position: sticky;
     top: 0;
     z-index: 10;
+    padding: 0.75rem;
+}
+
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    color: var(--pls-text-dark);
+    border-bottom: 1px solid var(--pls-slate-200);
 }
 
 /* Mobile-friendly table scrolling */
@@ -751,15 +806,19 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .card {
-    background-color: var(--pls-light);
-    border: 1px solid #e3e6ea;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    background-color: #ffffff;
+    border: 1px solid var(--pls-slate-200);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 8px;
+    color: var(--pls-text-dark);
 }
 
 [data-bs-theme="light"] .table th {
-    background-color: var(--pls-primary);
+    background-color: var(--pls-slate-100);
     color: var(--pls-text-dark);
+    border-bottom: 2px solid var(--pls-primary);
+    font-weight: 600;
+    padding: 0.75rem;
 }
 
 [data-bs-theme="light"] .navbar {
@@ -769,36 +828,40 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .navbar-brand {
-    color: var(--pls-text-dark) !important;
+    color: #ffffff !important;
     font-weight: 700;
-    text-shadow: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    font-size: 1.4rem;
 }
 
 [data-bs-theme="light"] .nav-link {
-    color: var(--pls-text-dark) !important;
-    opacity: 0.85;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    font-size: 0.95rem;
 }
 
 [data-bs-theme="light"] .nav-link:hover {
-    color: var(--pls-text-dark) !important;
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.15);
     border-radius: 4px;
+    transform: translateY(-1px);
 }
 
 [data-bs-theme="light"] .btn-primary {
     background-color: var(--pls-primary);
     border-color: var(--pls-primary);
-    color: var(--pls-text-dark);
+    color: #ffffff;
     font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 6px;
 }
 
 [data-bs-theme="light"] .btn-primary:hover {
-    background-color: var(--pls-primary-light);
-    border-color: var(--pls-primary-light);
-    color: var(--pls-text-light);
+    background-color: var(--pls-primary-dark);
+    border-color: var(--pls-primary-dark);
+    color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
 }
 
 [data-bs-theme="light"] .btn-secondary {
