@@ -35,6 +35,20 @@ def sync_duty():
     # Implement duty data sync logic
     return jsonify({"success": True, "message": "Duty data synced"})
 
+# PWA File handler endpoint
+@app.route('/admin/import', methods=['POST'])
+def pwa_import():
+    from flask import request, jsonify
+    # Handle file imports from PWA
+    return jsonify({"success": True, "message": "File imported"})
+
+# PWA Share target endpoint
+@app.route('/admin/share', methods=['POST'])
+def pwa_share():
+    from flask import request, jsonify
+    # Handle shared content from PWA
+    return jsonify({"success": True, "message": "Content shared"})
+
 if __name__ == '__main__':
     # Use Flask directly while WebSocket is disabled
     # Use Cloud Run's PORT environment variable if available, otherwise default to 5000
