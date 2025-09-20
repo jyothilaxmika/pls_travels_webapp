@@ -1,0 +1,101 @@
+---
+format_version: '13'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+project_type: android
+trigger_map:
+- push_branch: main
+  workflow: primary
+- push_branch: develop
+  workflow: primary
+- pull_request_source_branch: "*"
+  workflow: primary
+
+workflows:
+  primary:
+    description: |
+      Build and test PLS Travels Android Driver App
+    before_run: 
+    - _setup
+    steps:
+    - change-workdir@1:
+        inputs:
+        - path: "$BITRISE_SOURCE_DIR/android_app"
+    - gradle-runner@2:
+        inputs:
+        - gradle_task: clean
+        - gradle_file: "$BITRISE_SOURCE_DIR/android_app/build.gradle"
+    - android-lint@0:
+        inputs:
+        - project_location: "$BITRISE_SOURCE_DIR/android_app"
+        - module: app
+        - variant: Debug
+    - android-unit-test@1:
+        inputs:
+        - project_location: "$BITRISE_SOURCE_DIR/android_app"
+        - module: app
+        - variant: Debug
+    - android-build@1:
+        inputs:
+        - project_location: "$BITRISE_SOURCE_DIR/android_app"
+        - module: app
+        - variant: Debug
+        title: Build Debug APK
+    - android-build@1:
+        inputs:
+        - project_location: "$BITRISE_SOURCE_DIR/android_app"
+        - module: app
+        - variant: Release
+        title: Build Release APK
+    - deploy-to-bitrise-io@2:
+        inputs:
+        - deploy_path: "$BITRISE_SOURCE_DIR/android_app/app/build/outputs/apk/debug/app-debug.apk"
+        - notify_user_groups: none
+        title: Deploy Debug APK
+    - deploy-to-bitrise-io@2:
+        inputs:
+        - deploy_path: "$BITRISE_SOURCE_DIR/android_app/app/build/outputs/apk/release/app-release.apk"
+        - notify_user_groups: none
+        title: Deploy Release APK
+
+  _setup:
+    description: |
+      Setup environment for Android builds
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@8: {}
+    - cache-pull@2: {}
+    - set-java-version@1:
+        inputs:
+        - set_java_version: "17"
+    - android-sdk-update@1: {}
+    - cache-push@2:
+        inputs:
+        - cache_paths: |
+            $HOME/.gradle
+            $BITRISE_SOURCE_DIR/android_app/.gradle
+            $ANDROID_HOME/build-cache
+
+app:
+  envs:
+  - opts:
+      is_expand: false
+    GRADLE_BUILD_FILE_PATH: android_app/build.gradle
+  - opts:
+      is_expand: false
+    GRADLEW_PATH: android_app/gradlew
+  - opts:
+      is_expand: false
+    GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError"
+  - opts:
+      is_expand: false
+    ANDROID_HOME: /opt/android-sdk-linux
+  - opts:
+      is_expand: false
+    PROJECT_LOCATION: android_app
+
+meta:
+  bitrise.io:
+    stack: linux-docker-android-20.04
+    machine_type_id: standard
