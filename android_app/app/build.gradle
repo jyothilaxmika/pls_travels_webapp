@@ -41,8 +41,8 @@ android {
         }
         
         // Build config fields for API
-        buildConfigField "String", "BASE_URL", "\"https://plstravels.replit.app\""
-        buildConfigField "String", "API_BASE_URL", "\"https://plstravels.replit.app/api/mobile/v1/\""
+        buildConfigField "String", "BASE_URL", "\"https://4a66a697-148e-4a5f-b608-7aec82b1961e-00-3264w7moy943g.spock.replit.dev\""
+        buildConfigField "String", "API_BASE_URL", "\"https://4a66a697-148e-4a5f-b608-7aec82b1961e-00-3264w7moy943g.spock.replit.dev/api/mobile/v1/\""
         buildConfigField "boolean", "DEBUG_MODE", "true"
     }
 
@@ -65,8 +65,8 @@ android {
             signingConfig signingConfigs.release
             
             // Production API URLs
-            buildConfigField "String", "BASE_URL", "\"https://plstravels.replit.app\""
-            buildConfigField "String", "API_BASE_URL", "\"https://plstravels.replit.app/api/mobile/v1/\""
+            buildConfigField "String", "BASE_URL", "\"https://4a66a697-148e-4a5f-b608-7aec82b1961e-00-3264w7moy943g.spock.replit.dev\""
+            buildConfigField "String", "API_BASE_URL", "\"https://4a66a697-148e-4a5f-b608-7aec82b1961e-00-3264w7moy943g.spock.replit.dev/api/mobile/v1/\""
             buildConfigField "boolean", "DEBUG_MODE", "false"
             
             // Security: Certificate pinning enabled in release
