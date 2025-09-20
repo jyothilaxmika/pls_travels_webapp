@@ -2742,10 +2742,15 @@ def reports():
      .filter(Vehicle.status == VehicleStatus.ACTIVE) \
      .group_by(Vehicle.id, Vehicle.registration_number, Branch.name).all()
     
+    # Convert Row objects to dictionaries for JSON serialization
+    branch_revenue_dict = [{'name': row.name, 'total_revenue': float(row.total_revenue or 0)} for row in branch_revenue]
+    top_drivers_dict = [{'full_name': row.full_name, 'branch_name': row.branch_name, 'total_earnings': float(row.total_earnings or 0)} for row in top_drivers]
+    vehicle_stats_dict = [{'registration_number': row.registration_number, 'branch_name': row.branch_name, 'duty_count': int(row.duty_count or 0), 'total_distance': float(row.total_distance or 0)} for row in vehicle_stats]
+    
     return render_template('admin/reports.html',
-                         branch_revenue=branch_revenue,
-                         top_drivers=top_drivers,
-                         vehicle_stats=vehicle_stats)
+                         branch_revenue=branch_revenue_dict,
+                         top_drivers=top_drivers_dict,
+                         vehicle_stats=vehicle_stats_dict)
 
 @admin_bp.route('/api/revenue-chart')
 @login_required
