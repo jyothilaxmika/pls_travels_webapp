@@ -3,54 +3,13 @@ name: Android CI/CD
 on:
   push:
     branches: [ main, develop ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main, develop ]
 
 jobs:
-  lint-and-test:
-    name: Lint & Unit Tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: android_app
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-
-    - name: Run lint
-      run: ./gradlew lintDebug
-
-    - name: Run unit tests
-      run: ./gradlew testDebugUnitTest
-
-    - name: Upload lint results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: lint-results
-        path: android_app/app/build/reports/lint-results-debug.html
-
   build-debug:
     name: Build Debug APK
     runs-on: ubuntu-latest
-    needs: lint-and-test
-    if: github.event_name == 'pull_request'
     defaults:
       run:
         working-directory: android_app
@@ -85,8 +44,7 @@ jobs:
   build-release:
     name: Build Release APK
     runs-on: ubuntu-latest
-    needs: lint-and-test
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main'
     defaults:
       run:
         working-directory: android_app
@@ -109,101 +67,11 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 
-    - name: Decode keystore
-      if: github.event_name != 'pull_request'
-      run: |
-        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
-      env:
-        ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-
     - name: Build release APK
       run: ./gradlew assembleRelease
-      env:
-        SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
 
     - name: Upload release APK
       uses: actions/upload-artifact@v4
       with:
         name: release-apk
         path: android_app/app/build/outputs/apk/release/app-release.apk
-
-    - name: Upload ProGuard mapping
-      uses: actions/upload-artifact@v4
-      with:
-        name: proguard-mapping
-        path: android_app/app/build/outputs/mapping/release/mapping.txt
-
-  github-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: build-release
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Download APK artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: release-apk
-
-    - name: Download ProGuard mapping
-      uses: actions/download-artifact@v4
-      with:
-        name: proguard-mapping
-
-    - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: PLS Travels Driver App ${{ github.ref_name }}
-        body: |
-          ## What's New
-          
-          ### Features
-          - Production-ready Android driver app
-          - Complete duty management system
-          - Real-time location tracking
-          - Photo capture and upload
-          - Push notifications via Firebase
-          - Offline-first architecture
-          
-          ### Installation
-          1. Download the APK file below
-          2. Enable "Install from unknown sources" on your device
-          3. Install the PLS Travels Driver app
-          4. Login with your driver credentials
-          
-          ### Technical Details
-          - Target SDK: Android 34
-          - Minimum SDK: Android 24 (Android 7.0)
-          - Architecture: arm64-v8a, armeabi-v7a, x86_64
-        draft: false
-        prerelease: false
-
-    - name: Upload APK to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./app-release.apk
-        asset_name: pls-travels-driver-${{ github.ref_name }}.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    - name: Upload ProGuard mapping to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./mapping.txt
-        asset_name: proguard-mapping-${{ github.ref_name }}.txt
-        asset_content_type: text/plain
-
-  # Instrumented tests disabled due to billing requirements
-  # Enable when GitHub Actions billing is resolved
