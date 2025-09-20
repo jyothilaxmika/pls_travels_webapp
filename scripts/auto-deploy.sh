@@ -8,7 +8,14 @@ set -e
 echo "🚀 PLS Travels Automated Deployment Starting..."
 
 # Change to android app directory
-cd android_app
+if [ -d "android_app" ]; then
+    cd android_app
+elif [ -f "./gradlew" ]; then
+    echo "Already in android app directory"
+else
+    echo "❌ Error: Could not find android_app directory or gradlew file"
+    exit 1
+fi
 
 # Check if gradlew exists
 if [ ! -f "./gradlew" ]; then
