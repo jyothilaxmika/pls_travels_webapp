@@ -600,18 +600,37 @@ def create_app():
 
         return jsonify(result)
 
-    # Health check endpoint for deployment
+    # Simple health check endpoint for deployment (fast response)
     @app.route('/health')
     def health():
         """Simple health check endpoint for deployment readiness"""
-        return {'status': 'ok', 'timestamp': datetime.utcnow().isoformat()}, 200
+        return {'status': 'ok', 'service': 'pls-travels', 'timestamp': datetime.utcnow().isoformat()}, 200
+    
+    # Readiness probe for deployment
+    @app.route('/ready')
+    def ready():
+        """Fast readiness check for deployment"""
+        return {'status': 'ready', 'service': 'pls-travels'}, 200
+    
+    # Alternative health endpoint for different deployment systems
+    @app.route('/healthz')
+    def healthz():
+        """Kubernetes-style health check"""
+        return {'status': 'ok'}, 200
 
-    # Root route
+    # Root route - optimized for health checks
     @app.route('/')
     def index():
-        from flask import redirect, url_for, render_template
+        from flask import request, redirect, url_for, render_template
         from flask_login import current_user
+        
+        # Fast response for health checks (deployment probes often use User-Agent with keywords like 'health', 'probe', 'check')
+        user_agent = request.headers.get('User-Agent', '').lower()
+        if any(keyword in user_agent for keyword in ['health', 'probe', 'check', 'monitor']) or request.args.get('health'):
+            return {'status': 'ok', 'service': 'pls-travels'}, 200
+            
         from forms import LoginForm
+        from flask_login import current_user
         
         if current_user.is_authenticated:
             from models import UserRole
