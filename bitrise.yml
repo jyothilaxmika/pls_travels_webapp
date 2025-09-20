@@ -57,6 +57,33 @@ workflows:
         - deploy_path: "$BITRISE_SOURCE_DIR/android_app/app/build/outputs/apk/release/app-release.apk"
         - notify_user_groups: none
         title: Deploy Release APK
+    - script@1:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
+            
+            # Upload APKs via Bitrise API for enhanced distribution
+            if [ -n "$BITRISE_AUTH_TOKEN" ] && [ -f "$BITRISE_SOURCE_DIR/scripts/bitrise-upload.sh" ]; then
+              echo "📡 Uploading APKs via Bitrise API..."
+              
+              # Upload Release APK
+              if [ -f "$BITRISE_SOURCE_DIR/android_app/app/build/outputs/apk/release/app-release.apk" ]; then
+                bash "$BITRISE_SOURCE_DIR/scripts/bitrise-upload.sh" \
+                  "$BITRISE_SOURCE_DIR/android_app/app/build/outputs/apk/release/app-release.apk" \
+                  "PLS_Travels_Release_Build_$BITRISE_BUILD_NUMBER"
+              fi
+              
+              # Upload Debug APK  
+              if [ -f "$BITRISE_SOURCE_DIR/android_app/app/build/outputs/apk/debug/app-debug.apk" ]; then
+                bash "$BITRISE_SOURCE_DIR/scripts/bitrise-upload.sh" \
+                  "$BITRISE_SOURCE_DIR/android_app/app/build/outputs/apk/debug/app-debug.apk" \
+                  "PLS_Travels_Debug_Build_$BITRISE_BUILD_NUMBER"
+              fi
+            else
+              echo "⚠️  BITRISE_AUTH_TOKEN not configured for API upload"
+            fi
+        title: Upload via Bitrise API
 
   _setup:
     description: |
