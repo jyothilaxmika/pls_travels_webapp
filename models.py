@@ -193,6 +193,7 @@ class Branch(db.Model):
     # Status and settings
     is_active = db.Column(db.Boolean, default=True, index=True)
     auto_assignment_enabled = db.Column(db.Boolean, default=True)
+    auto_assignment_config = db.Column(db.Text)  # JSON config for auto-assignment preferences
     
     created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)

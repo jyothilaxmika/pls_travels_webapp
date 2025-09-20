@@ -38,7 +38,7 @@ except ImportError:
     def create_recurring_assignments(base_assignment_data, pattern, until_date, assigned_by_user_id):
         return {'success': False, 'created_count': 0, 'errors': ['Function not available']}
 from auth import log_audit
-from recommendation_engine import recommendation_engine
+from recommendation_engine import recommendation_engine, SmartRecommendationEngine
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -773,6 +773,283 @@ def respond_to_advance_request(request_id):
         flash(f'Error processing request: {str(e)}', 'error')
     
     return redirect(url_for('admin.advance_payments'))
+
+# Auto-Assignment Routes
+@admin_bp.route('/auto-assignment')
+@login_required
+@admin_required 
+def auto_assignment():
+    """Auto-assignment management dashboard"""
+    branches = Branch.query.all()
+    
+    # Get auto-assignment statistics
+    auto_enabled_branches = Branch.query.filter_by(auto_assignment_enabled=True).count()
+    total_branches = Branch.query.count()
+    
+    # Recent auto-assignments (if we track them)
+    recent_assignments = VehicleAssignment.query.filter(
+        VehicleAssignment.created_at >= get_ist_time_naive() - timedelta(days=7)
+    ).order_by(VehicleAssignment.created_at.desc()).limit(10).all()
+    
+    return render_template('admin/auto_assignment.html',
+                         branches=branches,
+                         auto_enabled_branches=auto_enabled_branches,
+                         total_branches=total_branches,
+                         recent_assignments=recent_assignments)
+
+@admin_bp.route('/auto-assignment/settings/<int:branch_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def auto_assignment_settings(branch_id):
+    """Configure auto-assignment settings for a specific branch"""
+    branch = Branch.query.get_or_404(branch_id)
+    
+    if request.method == 'POST':
+        # Update auto-assignment settings
+        branch.auto_assignment_enabled = request.form.get('auto_assignment_enabled') == 'on'
+        
+        # Validate and save auto-assignment preferences
+        try:
+            assignment_window_hours = int(request.form.get('assignment_window_hours', 24))
+            max_assignments_per_driver = int(request.form.get('max_assignments_per_driver', 1))
+            
+            # Validate ranges
+            if not (1 <= assignment_window_hours <= 168):
+                flash('Assignment window hours must be between 1 and 168', 'error')
+                return redirect(url_for('admin.auto_assignment_settings', branch_id=branch_id))
+            
+            if not (1 <= max_assignments_per_driver <= 5):
+                flash('Max assignments per driver must be between 1 and 5', 'error')
+                return redirect(url_for('admin.auto_assignment_settings', branch_id=branch_id))
+                
+        except (ValueError, TypeError):
+            flash('Invalid numeric values provided', 'error')
+            return redirect(url_for('admin.auto_assignment_settings', branch_id=branch_id))
+        
+        auto_preferences = {
+            'strategy': request.form.get('strategy', 'balanced'),
+            'assignment_window_hours': assignment_window_hours,
+            'max_assignments_per_driver': max_assignments_per_driver,
+            'prefer_experienced_drivers': request.form.get('prefer_experienced_drivers') == 'on',
+            'balance_workload': request.form.get('balance_workload') == 'on',
+            'auto_assign_time': request.form.get('auto_assign_time', '06:00'),
+            'notification_enabled': request.form.get('notification_enabled') == 'on'
+        }
+        
+        # Store preferences in branch metadata or create a new field
+        branch.auto_assignment_config = json.dumps(auto_preferences)
+        
+        try:
+            db.session.commit()
+            flash(f'Auto-assignment settings updated for {branch.name}', 'success')
+            log_audit('update_auto_assignment_settings', 'admin', branch.id, auto_preferences)
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating auto-assignment settings', 'error')
+        
+        return redirect(url_for('admin.auto_assignment'))
+    
+    # Load existing preferences
+    auto_preferences = {}
+    if hasattr(branch, 'auto_assignment_config') and branch.auto_assignment_config:
+        try:
+            auto_preferences = json.loads(branch.auto_assignment_config)
+        except:
+            pass
+    
+    # Set defaults
+    auto_preferences.setdefault('strategy', 'balanced')
+    auto_preferences.setdefault('assignment_window_hours', 24)
+    auto_preferences.setdefault('max_assignments_per_driver', 1)
+    auto_preferences.setdefault('prefer_experienced_drivers', True)
+    auto_preferences.setdefault('balance_workload', True)
+    auto_preferences.setdefault('auto_assign_time', '06:00')
+    auto_preferences.setdefault('notification_enabled', True)
+    
+    return render_template('admin/auto_assignment_settings.html',
+                         branch=branch,
+                         auto_preferences=auto_preferences)
+
+@admin_bp.route('/auto-assignment/run/<int:branch_id>', methods=['POST'])
+@login_required
+@admin_required
+def run_auto_assignment(branch_id):
+    """Manually trigger auto-assignment for a branch"""
+    branch = Branch.query.get_or_404(branch_id)
+    
+    if not branch.auto_assignment_enabled:
+        flash('Auto-assignment is not enabled for this branch', 'error')
+        return redirect(url_for('admin.auto_assignment'))
+    
+    try:
+        # Load auto-assignment preferences
+        auto_preferences = {}
+        if hasattr(branch, 'auto_assignment_config') and branch.auto_assignment_config:
+            auto_preferences = json.loads(branch.auto_assignment_config)
+        
+        # Run auto-assignment
+        result = run_branch_auto_assignment(branch, auto_preferences)
+        
+        if result['success']:
+            flash(f"Auto-assignment completed for {branch.name}: {result['assignments_created']} assignments created", 'success')
+            log_audit('manual_auto_assignment', 'admin', branch.id, result)
+        else:
+            flash(f"Auto-assignment failed for {branch.name}: {', '.join(result['errors'])}", 'error')
+    
+    except Exception as e:
+        flash(f'Error running auto-assignment: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.auto_assignment'))
+
+def run_branch_auto_assignment(branch, preferences=None):
+    """
+    Execute auto-assignment logic for a specific branch
+    
+    Args:
+        branch: Branch object
+        preferences: Auto-assignment preferences dict
+        
+    Returns:
+        dict: Result with success status and details
+    """
+    if preferences is None:
+        preferences = {}
+    
+    strategy = preferences.get('strategy', 'balanced')
+    assignment_window_hours = preferences.get('assignment_window_hours', 24)
+    max_assignments_per_driver = preferences.get('max_assignments_per_driver', 1)
+    
+    try:
+        # Initialize recommendation engine
+        engine = SmartRecommendationEngine()
+        
+        # Get date range for auto-assignment (typically next day)
+        start_date = get_ist_time_naive() + timedelta(hours=assignment_window_hours)
+        end_date = start_date + timedelta(days=1)
+        
+        # Get recommendations for this branch
+        recommendations = engine.get_recommendations(
+            branch_id=branch.id,
+            shift_type='full_day',
+            date_range=(start_date, end_date),
+            limit=20,
+            strategy=strategy
+        )
+        
+        if not recommendations:
+            return {
+                'success': False,
+                'assignments_created': 0,
+                'errors': ['No recommendations available for auto-assignment']
+            }
+        
+        # Track assignments created and drivers already assigned
+        assignments_created = 0
+        assigned_drivers = set()
+        assigned_vehicles = set()
+        
+        for recommendation in recommendations:
+            # Check if we've already assigned this driver or vehicle
+            if (recommendation.driver.id in assigned_drivers or 
+                recommendation.vehicle.id in assigned_vehicles):
+                continue
+            
+            # Check if driver already has assignments for the day
+            existing_assignments = VehicleAssignment.query.filter(
+                VehicleAssignment.driver_id == recommendation.driver.id,
+                VehicleAssignment.start_date <= end_date,
+                VehicleAssignment.end_date >= start_date,
+                VehicleAssignment.status.in_([AssignmentStatus.ACTIVE, AssignmentStatus.SCHEDULED])
+            ).count()
+            
+            if existing_assignments >= max_assignments_per_driver:
+                continue
+            
+            # Create the assignment
+            assignment = VehicleAssignment(
+                driver_id=recommendation.driver.id,
+                vehicle_id=recommendation.vehicle.id,
+                branch_id=branch.id,
+                start_date=start_date.date(),
+                end_date=end_date.date(),
+                shift_type='full_day',
+                status=AssignmentStatus.SCHEDULED,
+                assigned_by=current_user.id,
+                notes=f'Auto-assigned (Score: {recommendation.total_score:.2f})',
+                created_at=get_ist_time_naive()
+            )
+            
+            db.session.add(assignment)
+            assignments_created += 1
+            assigned_drivers.add(recommendation.driver.id)
+            assigned_vehicles.add(recommendation.vehicle.id)
+            
+            # Stop if we've made enough assignments
+            if assignments_created >= 10:  # Reasonable limit per run
+                break
+        
+        db.session.commit()
+        
+        return {
+            'success': True,
+            'assignments_created': assignments_created,
+            'total_recommendations': len(recommendations),
+            'branch_id': branch.id
+        }
+        
+    except Exception as e:
+        db.session.rollback()
+        return {
+            'success': False,
+            'assignments_created': 0,
+            'errors': [str(e)]
+        }
+
+@admin_bp.route('/auto-assignment/preview/<int:branch_id>')
+@login_required
+@admin_required
+def preview_auto_assignment(branch_id):
+    """Preview what auto-assignment would create for a branch"""
+    branch = Branch.query.get_or_404(branch_id)
+    
+    # Load preferences
+    auto_preferences = {}
+    if hasattr(branch, 'auto_assignment_config') and branch.auto_assignment_config:
+        try:
+            auto_preferences = json.loads(branch.auto_assignment_config)
+        except:
+            pass
+    
+    strategy = auto_preferences.get('strategy', 'balanced')
+    assignment_window_hours = auto_preferences.get('assignment_window_hours', 24)
+    
+    try:
+        # Initialize recommendation engine
+        engine = SmartRecommendationEngine()
+        
+        # Get date range
+        start_date = get_ist_time_naive() + timedelta(hours=assignment_window_hours)
+        end_date = start_date + timedelta(days=1)
+        
+        # Get recommendations
+        recommendations = engine.get_recommendations(
+            branch_id=branch.id,
+            shift_type='full_day',
+            date_range=(start_date, end_date),
+            limit=20,
+            strategy=strategy
+        )
+        
+        return render_template('admin/auto_assignment_preview.html',
+                             branch=branch,
+                             recommendations=recommendations,
+                             start_date=start_date,
+                             end_date=end_date,
+                             strategy=strategy)
+        
+    except Exception as e:
+        flash(f'Error generating preview: {str(e)}', 'error')
+        return redirect(url_for('admin.auto_assignment'))
 
 @admin_bp.route('/advance-payments/<int:request_id>/details')
 @login_required

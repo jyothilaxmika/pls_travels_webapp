@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Auto Assignment Preview - {{ branch.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-card {
+        border-left: 4px solid var(--pls-info);
+        transition: all 0.2s ease;
+    }
+    
+    .preview-card:hover {
+        border-left-color: var(--pls-primary);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .recommendation-card {
+        border: 2px solid var(--pls-slate-200);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+    }
+    
+    .recommendation-card:hover {
+        border-color: var(--pls-accent);
+        transform: translateY(-2px);
+    }
+    
+    .score-badge {
+        background: linear-gradient(135deg, var(--pls-accent) 0%, var(--pls-accent-light) 100%);
+        color: white;
+        font-weight: bold;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+    }
+    
+    .metric-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid var(--pls-slate-100);
+    }
+    
+    .metric-item:last-child {
+        border-bottom: none;
+    }
+    
+    .driver-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--pls-accent);
+    }
+    
+    .vehicle-badge {
+        background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-secondary) 100%);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1">
+                <i class="fas fa-eye me-2"></i>Auto Assignment Preview
+            </h2>
+            <p class="text-muted mb-0">Preview for {{ branch.name }} • Strategy: {{ strategy.title() }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('admin.auto_assignment_settings', branch_id=branch.id) }}" 
+               class="btn btn-outline-primary me-2">
+                <i class="fas fa-cog me-1"></i>Settings
+            </a>
+            <a href="{{ url_for('admin.auto_assignment') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Preview Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card preview-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-plus fa-2x text-primary mb-2"></i>
+                    <h5 class="mb-1">Assignment Period</h5>
+                    <p class="mb-0">{{ start_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <small class="text-muted">to {{ end_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card preview-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x text-success mb-2"></i>
+                    <h5 class="mb-1">Recommendations</h5>
+                    <p class="mb-0">{{ recommendations|length }}</p>
+                    <small class="text-muted">driver-vehicle pairs</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card preview-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                    <h5 class="mb-1">Strategy</h5>
+                    <p class="mb-0">{{ strategy.title() }}</p>
+                    <small class="text-muted">assignment strategy</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="card shadow-sm">
+        <div class="card-header" style="background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-primary-light) 100%); color: white;">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-magic me-2"></i>Recommended Assignments
+                </h5>
+                {% if recommendations %}
+                <form method="POST" action="{{ url_for('admin.run_auto_assignment', branch_id=branch.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-light btn-sm" 
+                            onclick="return confirm('Create these auto-assignments?')">
+                        <i class="fas fa-play me-1"></i>Create Assignments
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            {% if recommendations %}
+            <div class="row">
+                {% for recommendation in recommendations[:10] %}
+                <div class="col-md-6 mb-4">
+                    <div class="card recommendation-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    {% if recommendation.driver.profile_photo %}
+                                    <img src="/uploads/{{ recommendation.driver.profile_photo }}" 
+                                         class="driver-avatar me-3" alt="Driver Photo">
+                                    {% else %}
+                                    <div class="driver-avatar bg-primary d-flex align-items-center justify-content-center me-3">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-1">{{ recommendation.driver.full_name }}</h6>
+                                        <small class="text-muted">{{ recommendation.driver.employee_id }}</small>
+                                    </div>
+                                </div>
+                                <div class="score-badge">
+                                    {{ "%.1f"|format(recommendation.total_score) }}
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-center mb-3">
+                                <i class="fas fa-arrow-down text-muted"></i>
+                            </div>
+
+                            <div class="text-center mb-3">
+                                <span class="vehicle-badge">
+                                    <i class="fas fa-car me-1"></i>{{ recommendation.vehicle.registration_number }}
+                                </span>
+                                {% if recommendation.vehicle.make or recommendation.vehicle.model %}
+                                <br><small class="text-muted">{{ recommendation.vehicle.make }} {{ recommendation.vehicle.model }}</small>
+                                {% endif %}
+                            </div>
+
+                            <!-- Score Breakdown -->
+                            <div class="mt-3">
+                                <h6 class="fw-bold mb-2">Score Breakdown</h6>
+                                <div class="metric-item">
+                                    <span>Performance</span>
+                                    <span class="text-success">{{ "%.1f"|format(recommendation.performance_score) }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span>Compatibility</span>
+                                    <span class="text-info">{{ "%.1f"|format(recommendation.compatibility_score) }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span>Availability</span>
+                                    <span class="text-warning">{{ "%.1f"|format(recommendation.availability_score) }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span>Experience</span>
+                                    <span class="text-primary">{{ "%.1f"|format(recommendation.experience_score) }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Assignment Details -->
+                            <div class="mt-3 p-2 bg-light rounded">
+                                <small class="text-muted">
+                                    <strong>Assignment:</strong> Full Day<br>
+                                    <strong>Date:</strong> {{ start_date.strftime('%Y-%m-%d') }}<br>
+                                    <strong>Confidence:</strong> 
+                                    {% if recommendation.total_score >= 80 %}
+                                    <span class="text-success">High</span>
+                                    {% elif recommendation.total_score >= 60 %}
+                                    <span class="text-warning">Medium</span>
+                                    {% else %}
+                                    <span class="text-danger">Low</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if recommendations|length > 10 %}
+            <div class="text-center mt-3">
+                <small class="text-muted">Showing top 10 recommendations out of {{ recommendations|length }} total</small>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Recommendations Available</h5>
+                <p class="text-muted">
+                    No suitable driver-vehicle pairs found for the specified criteria. 
+                    This could be due to:
+                </p>
+                <ul class="list-unstyled text-muted">
+                    <li>• No available drivers in this branch</li>
+                    <li>• No available vehicles in this branch</li>
+                    <li>• All drivers already have assignments</li>
+                    <li>• All vehicles are already assigned</li>
+                </ul>
+                <a href="{{ url_for('admin.auto_assignment_settings', branch_id=branch.id) }}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-cog me-1"></i>Adjust Settings
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Information Panel -->
+    {% if recommendations %}
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>How Auto-Assignment Works
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">The auto-assignment system analyzes multiple factors to recommend optimal driver-vehicle pairs:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-chart-line text-success me-2"></i><strong>Performance:</strong> Driver's historical performance metrics</li>
+                                <li><i class="fas fa-puzzle-piece text-info me-2"></i><strong>Compatibility:</strong> Driver's experience with vehicle type</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-clock text-warning me-2"></i><strong>Availability:</strong> Driver's current schedule and workload</li>
+                                <li><i class="fas fa-graduation-cap text-primary me-2"></i><strong>Experience:</strong> Years of experience and familiarity</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card" style="border-left: 4px solid var(--pls-warning);">
+                <div class="card-body">
+                    <h6 class="text-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Before Creating Assignments
+                    </h6>
+                    <ul class="small text-muted mb-0">
+                        <li>Review the recommendations carefully</li>
+                        <li>Check for any conflicts with existing assignments</li>
+                        <li>Ensure all drivers and vehicles are ready</li>
+                        <li>Assignments will be created with "Scheduled" status</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

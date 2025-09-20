@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Auto Assignment Settings - {{ branch.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-card {
+        border-left: 4px solid var(--pls-accent);
+        transition: all 0.2s ease;
+    }
+    
+    .settings-card:hover {
+        border-left-color: var(--pls-primary);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-switch .form-check-input {
+        background-color: var(--pls-slate-300);
+    }
+    
+    .form-switch .form-check-input:checked {
+        background-color: var(--pls-accent);
+        border-color: var(--pls-accent);
+    }
+    
+    .strategy-option {
+        border: 2px solid var(--pls-slate-200);
+        border-radius: 8px;
+        padding: 1rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .strategy-option:hover {
+        border-color: var(--pls-accent);
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+    
+    .strategy-option.selected {
+        border-color: var(--pls-accent);
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1">
+                <i class="fas fa-cogs me-2"></i>Auto Assignment Settings
+            </h2>
+            <p class="text-muted mb-0">Configure auto-assignment for {{ branch.name }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('admin.auto_assignment') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="row">
+            <!-- Main Settings -->
+            <div class="col-md-8">
+                <div class="card settings-card">
+                    <div class="card-header" style="background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-primary-light) 100%); color: white;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-toggle-on me-2"></i>Auto-Assignment Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Enable/Disable Auto-Assignment -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_assignment_enabled" 
+                                       name="auto_assignment_enabled" {% if branch.auto_assignment_enabled %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="auto_assignment_enabled">
+                                    Enable Auto-Assignment for {{ branch.name }}
+                                </label>
+                            </div>
+                            <small class="text-muted">When enabled, the system will automatically assign drivers to vehicles based on your configured rules.</small>
+                        </div>
+
+                        <!-- Assignment Strategy -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Assignment Strategy</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="strategy-option {% if auto_preferences.strategy == 'balanced' %}selected{% endif %}" 
+                                         onclick="selectStrategy('balanced')">
+                                        <input type="radio" name="strategy" value="balanced" id="strategy_balanced" 
+                                               {% if auto_preferences.strategy == 'balanced' %}checked{% endif %} hidden>
+                                        <i class="fas fa-balance-scale fa-2x text-primary mb-2"></i>
+                                        <h6 class="fw-bold">Balanced</h6>
+                                        <small class="text-muted">Considers all factors equally for optimal assignments</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="strategy-option {% if auto_preferences.strategy == 'performance' %}selected{% endif %}" 
+                                         onclick="selectStrategy('performance')">
+                                        <input type="radio" name="strategy" value="performance" id="strategy_performance" 
+                                               {% if auto_preferences.strategy == 'performance' %}checked{% endif %} hidden>
+                                        <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                                        <h6 class="fw-bold">Performance</h6>
+                                        <small class="text-muted">Prioritizes high-performing drivers first</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="strategy-option {% if auto_preferences.strategy == 'availability' %}selected{% endif %}" 
+                                         onclick="selectStrategy('availability')">
+                                        <input type="radio" name="strategy" value="availability" id="strategy_availability" 
+                                               {% if auto_preferences.strategy == 'availability' %}checked{% endif %} hidden>
+                                        <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                                        <h6 class="fw-bold">Availability</h6>
+                                        <small class="text-muted">Prioritizes driver availability and workload balance</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assignment Window -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold" for="assignment_window_hours">Assignment Window (Hours)</label>
+                                <input type="number" class="form-control" id="assignment_window_hours" 
+                                       name="assignment_window_hours" value="{{ auto_preferences.assignment_window_hours }}" 
+                                       min="1" max="168">
+                                <small class="text-muted">Hours in advance to create assignments</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold" for="max_assignments_per_driver">Max Assignments per Driver</label>
+                                <input type="number" class="form-control" id="max_assignments_per_driver" 
+                                       name="max_assignments_per_driver" value="{{ auto_preferences.max_assignments_per_driver }}" 
+                                       min="1" max="5">
+                                <small class="text-muted">Maximum daily assignments per driver</small>
+                            </div>
+                        </div>
+
+                        <!-- Auto-Assignment Time -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold" for="auto_assign_time">Auto-Assignment Time</label>
+                                <input type="time" class="form-control" id="auto_assign_time" 
+                                       name="auto_assign_time" value="{{ auto_preferences.auto_assign_time }}">
+                                <small class="text-muted">Daily time to run auto-assignment</small>
+                            </div>
+                        </div>
+
+                        <!-- Additional Preferences -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3">Additional Preferences</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="prefer_experienced_drivers" 
+                                               name="prefer_experienced_drivers" {% if auto_preferences.prefer_experienced_drivers %}checked{% endif %}>
+                                        <label class="form-check-label" for="prefer_experienced_drivers">
+                                            Prefer Experienced Drivers
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Give priority to drivers with more experience</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="balance_workload" 
+                                               name="balance_workload" {% if auto_preferences.balance_workload %}checked{% endif %}>
+                                        <label class="form-check-label" for="balance_workload">
+                                            Balance Workload
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Distribute assignments evenly among drivers</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notifications -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="notification_enabled" 
+                                       name="notification_enabled" {% if auto_preferences.notification_enabled %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="notification_enabled">
+                                    Enable Notifications
+                                </label>
+                            </div>
+                            <small class="text-muted">Send notifications to drivers when auto-assignments are created</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Panel -->
+            <div class="col-md-4">
+                <div class="card settings-card">
+                    <div class="card-header" style="background: linear-gradient(135deg, var(--pls-info) 0%, var(--pls-primary-light) 100%); color: white;">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Configuration Summary
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Branch:</strong> {{ branch.name }}<br>
+                            <small class="text-muted">{{ branch.city }}</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Current Status:</strong>
+                            <span class="badge {% if branch.auto_assignment_enabled %}bg-success{% else %}bg-secondary{% endif %} ms-2">
+                                {% if branch.auto_assignment_enabled %}Enabled{% else %}Disabled{% endif %}
+                            </span>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Strategy:</strong> 
+                            <span class="text-primary">{{ auto_preferences.strategy.title() }}</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Assignment Window:</strong> 
+                            {{ auto_preferences.assignment_window_hours }} hours
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Max Assignments:</strong> 
+                            {{ auto_preferences.max_assignments_per_driver }} per driver
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>Schedule:</strong> 
+                            Daily at {{ auto_preferences.auto_assign_time }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3" style="border-left: 4px solid var(--pls-warning);">
+                    <div class="card-body">
+                        <h6 class="text-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Important Notes
+                        </h6>
+                        <ul class="small text-muted mb-0">
+                            <li>Auto-assignments will only be created for active drivers and vehicles</li>
+                            <li>Existing assignments will not be overridden</li>
+                            <li>Manual assignments always take precedence</li>
+                            <li>Changes take effect immediately upon saving</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Settings
+                    </button>
+                    <a href="{{ url_for('admin.preview_auto_assignment', branch_id=branch.id) }}" 
+                       class="btn btn-outline-info">
+                        <i class="fas fa-eye me-1"></i>Preview Assignments
+                    </a>
+                    <a href="{{ url_for('admin.auto_assignment') }}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function selectStrategy(strategy) {
+    // Remove selected class from all options
+    document.querySelectorAll('.strategy-option').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // Add selected class to chosen option
+    document.querySelector(`#strategy_${strategy}`).parentElement.classList.add('selected');
+    
+    // Check the radio button
+    document.querySelector(`#strategy_${strategy}`).checked = true;
+}
+</script>
+{% endblock %}
