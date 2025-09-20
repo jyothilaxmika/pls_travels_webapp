@@ -926,7 +926,7 @@ def bulk_update_approval_settings():
 def test_duty_approval():
     """Test if a duty would require approval based on current settings"""
     try:
-        scheme_id = int(request.form.get('scheme_id'))
+        scheme_id = int(request.form.get('scheme_id') or 0)
         revenue = float(request.form.get('test_revenue', 0))
         trips = int(request.form.get('test_trips', 0))
         hours = float(request.form.get('test_hours', 0))
@@ -1730,10 +1730,18 @@ def driver_locations():
 @admin_required  
 def api_driver_locations():
     """API endpoint to get current driver locations with real-time data"""
-    # Get filter parameters
-    driver_ids = request.args.getlist('driver_ids')
+    # Get filter parameters with validation
+    driver_ids_raw = request.args.getlist('driver_ids')
+    driver_ids = []
+    # Cast driver_ids to integers for proper index usage
+    for driver_id in driver_ids_raw:
+        try:
+            driver_ids.append(int(driver_id))
+        except (ValueError, TypeError):
+            continue  # Skip invalid IDs
+    
     branch_id = request.args.get('branch_id', type=int)
-    hours_back = request.args.get('hours_back', default=24, type=int)
+    hours_back = min(max(int(request.args.get('hours_back', 24)), 1), 168)  # Clamp 1-168 hours
     only_active_duties = request.args.get('only_active_duties', 'false').lower() == 'true'
     
     # Build time threshold
@@ -1760,19 +1768,44 @@ def api_driver_locations():
             Duty.status == DutyStatus.ACTIVE
         )
     
-    # Get latest location for each driver
-    subquery = query.with_entities(
+    # Get latest location for each driver using efficient subquery approach
+    # Build subquery for latest captured_at per driver
+    latest_subquery = db.session.query(
         DriverLocation.driver_id,
         func.max(DriverLocation.captured_at).label('latest_time')
-    ).group_by(DriverLocation.driver_id).subquery()
+    ).filter(
+        DriverLocation.captured_at >= time_threshold,
+        DriverLocation.latitude.isnot(None),
+        DriverLocation.longitude.isnot(None),
+        DriverLocation.is_mocked == False
+    )
     
-    latest_locations = query.join(
-        subquery,
+    # Apply driver filter early if specified
+    if driver_ids:
+        latest_subquery = latest_subquery.filter(DriverLocation.driver_id.in_(driver_ids))
+        
+    latest_subquery = latest_subquery.group_by(DriverLocation.driver_id).subquery()
+    
+    # Join back to get full location records
+    query = db.session.query(DriverLocation).join(
+        latest_subquery,
         and_(
-            DriverLocation.driver_id == subquery.c.driver_id,
-            DriverLocation.captured_at == subquery.c.latest_time
+            DriverLocation.driver_id == latest_subquery.c.driver_id,
+            DriverLocation.captured_at == latest_subquery.c.latest_time
         )
-    ).all()
+    ).join(Driver).join(User)
+    
+    # Apply branch filter
+    if branch_id:
+        query = query.filter(Driver.branch_id == branch_id)
+    
+    # Apply active duty filter
+    if only_active_duties:
+        query = query.join(Duty, DriverLocation.duty_id == Duty.id).filter(
+            Duty.status == DutyStatus.ACTIVE
+        )
+    
+    latest_locations = query.limit(500).all()  # Limit results for performance
     
     # Format response with comprehensive driver data
     locations = []
@@ -1809,12 +1842,12 @@ def api_driver_locations():
             'network_type': location.network_type,
             'source': location.source,
             
-            # Current duty information
+            # Current duty information - ensure always present for template compatibility
             'current_duty': {
                 'duty_id': current_duty.id if current_duty else None,
                 'vehicle_number': current_duty.vehicle.number if current_duty and current_duty.vehicle else None,
                 'start_time': current_duty.start_time.isoformat() if current_duty and current_duty.start_time else None,
-                'duty_status': current_duty.status.value if current_duty else None
+                'duty_status': current_duty.status.value if current_duty else 'inactive'
             },
             
             # Tracking session info
@@ -1827,6 +1860,18 @@ def api_driver_locations():
         }
         
         locations.append(location_data)
+    
+    # Log audit for location data access
+    log_audit('driver_locations_api_access', 'admin', None, {
+        'accessed_by': current_user.username,
+        'filters': {
+            'hours_back': hours_back,
+            'branch_id': branch_id,
+            'only_active_duties': only_active_duties,
+            'driver_count': len(driver_ids) if driver_ids else 'all'
+        },
+        'results_count': len(locations)
+    })
     
     return jsonify({
         'success': True,
@@ -1846,24 +1891,42 @@ def api_driver_locations():
 @admin_required
 def api_driver_path(driver_id):
     """API endpoint to get driver's location path history"""
-    hours_back = request.args.get('hours_back', default=24, type=int)
+    # Input validation
+    hours_back = min(max(int(request.args.get('hours_back', 24)), 1), 168)  # Clamp 1-168 hours
     duty_id = request.args.get('duty_id', type=int)
+    
+    # Verify driver exists and current user has access
+    driver = Driver.query.get_or_404(driver_id)
     
     # Build time threshold
     time_threshold = get_ist_time_naive() - timedelta(hours=hours_back)
     
-    # Base query for driver path
+    # Base query for driver path with performance optimization
     query = DriverLocation.query.filter(
         DriverLocation.driver_id == driver_id,
         DriverLocation.captured_at >= time_threshold,
         DriverLocation.is_mocked == False
     )
     
-    # Filter by specific duty if provided
+    # Filter by specific duty if provided and validate duty belongs to driver
     if duty_id:
-        query = query.filter(DriverLocation.duty_id == duty_id)
+        duty = Duty.query.filter_by(id=duty_id, driver_id=driver_id).first()
+        if duty:
+            query = query.filter(DriverLocation.duty_id == duty_id)
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid duty ID for this driver'
+            }), 400
     
-    locations = query.order_by(DriverLocation.captured_at).all()
+    # Limit points for performance (max 2000 points) and use decimation if needed
+    total_count = query.count()
+    if total_count > 2000:
+        # Use decimation - take every Nth point to keep it manageable
+        step = max(1, total_count // 2000)
+        locations = query.order_by(DriverLocation.captured_at)[::step][:2000]
+    else:
+        locations = query.order_by(DriverLocation.captured_at).limit(2000).all()
     
     # Format path data
     path_points = []
@@ -1881,12 +1944,22 @@ def api_driver_path(driver_id):
     driver = Driver.query.get(driver_id)
     driver_name = driver.user.full_name if driver and driver.user else 'Unknown'
     
+    # Log audit for driver path access
+    log_audit('driver_path_api_access', 'driver', driver_id, {
+        'accessed_by': current_user.username,
+        'driver_name': driver_name,
+        'hours_back': hours_back,
+        'duty_id': duty_id,
+        'points_returned': len(path_points)
+    })
+    
     return jsonify({
         'success': True,
         'driver_id': driver_id,
         'driver_name': driver_name,
         'path': path_points,
         'total_points': len(path_points),
+        'decimated': total_count > 2000 if 'total_count' in locals() else False,
         'time_range': {
             'from': time_threshold.isoformat(),
             'to': get_ist_time_naive().isoformat()
@@ -1908,7 +1981,7 @@ def driver_tracking_detail(driver_id):
     # Get recent duties with tracking data
     recent_duties = Duty.query.filter_by(
         driver_id=driver_id
-    ).order_by(desc(Duty.start_date)).limit(5).all()
+    ).order_by(desc(Duty.created_at)).limit(5).all()
     
     # Get location statistics
     total_locations = DriverLocation.query.filter_by(driver_id=driver_id).count()
