@@ -5,7 +5,7 @@ channel = "stable-25_05"
 packages = ["android-tools", "cargo", "freetype", "gitFull", "glibcLocales", "gradle", "iana-etc", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjdk17", "openjpeg", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "tcl", "tk", "zlib"]
 
 [deployment]
-deploymentTarget = "vm"
+deploymentTarget = "cloudrun"
 run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "--workers=2", "main:app"]
 
 [workflows]
