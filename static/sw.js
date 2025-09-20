@@ -1,7 +1,7 @@
 // PLS TRAVELS Service Worker
 // Version 1.0 - Production Ready
 
-const CACHE_NAME = 'pls-travels-v1.0';
+const CACHE_NAME = 'pls-travels-v1.1';
 const OFFLINE_URL = '/offline';
 
 // Resources to cache for offline functionality
