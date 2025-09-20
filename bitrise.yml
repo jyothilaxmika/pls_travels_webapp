@@ -114,6 +114,9 @@ app:
     GRADLEW_PATH: android_app/gradlew
   - opts:
       is_expand: false
+    GRADLE_USER_HOME: $HOME/.gradle
+  - opts:
+      is_expand: false
     GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError"
   - opts:
       is_expand: false
