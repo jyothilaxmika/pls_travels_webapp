@@ -17,8 +17,8 @@ from whatsapp_utils import send_advance_payment_request
 
 logger = logging.getLogger(__name__)
 
-# Create mobile API blueprint
-mobile_api_bp = Blueprint('mobile_api', __name__)
+# Create mobile API blueprint with proper URL prefix for Android app
+mobile_api_bp = Blueprint('mobile_api', __name__, url_prefix='/api/mobile/v1')
 
 def get_current_mobile_user():
     """Get current user from JWT token"""
@@ -31,7 +31,18 @@ def get_current_mobile_user():
     
     return user
 
-@mobile_api_bp.route('/api/v1/driver/profile', methods=['GET'])
+@mobile_api_bp.route('/health', methods=['GET'])
+@csrf.exempt
+def health_check():
+    """Simple health check endpoint for Android app"""
+    return jsonify({
+        'success': True,
+        'message': 'PLS Travels Mobile API is running',
+        'version': '1.0',
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    })
+
+@mobile_api_bp.route('/driver/profile', methods=['GET'])
 @jwt_required()
 @csrf.exempt
 def get_driver_profile():
@@ -83,7 +94,7 @@ def get_driver_profile():
             'message': 'Internal server error'
         }), 500
 
-@mobile_api_bp.route('/api/v1/driver/duties', methods=['GET'])
+@mobile_api_bp.route('/driver/duties', methods=['GET'])
 @jwt_required()
 @csrf.exempt
 def get_driver_duties():
@@ -158,7 +169,7 @@ def get_driver_duties():
             'message': 'Internal server error'
         }), 500
 
-@mobile_api_bp.route('/api/v1/driver/duty/start', methods=['POST'])
+@mobile_api_bp.route('/driver/duty/start', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def start_duty():
@@ -263,7 +274,7 @@ def start_duty():
             'message': 'Internal server error'
         }), 500
 
-@mobile_api_bp.route('/api/v1/driver/duty/end', methods=['POST'])
+@mobile_api_bp.route('/driver/duty/end', methods=['POST'])
 @jwt_required()
 @csrf.exempt
 def end_duty():
@@ -362,7 +373,7 @@ def end_duty():
             'message': 'Internal server error'
         }), 500
 
-@mobile_api_bp.route('/api/v1/driver/vehicles', methods=['GET'])
+@mobile_api_bp.route('/driver/vehicles', methods=['GET'])
 @jwt_required()
 @csrf.exempt
 def get_available_vehicles():
