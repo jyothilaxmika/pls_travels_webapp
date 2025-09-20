@@ -5,8 +5,8 @@ channel = "stable-25_05"
 packages = ["android-tools", "cargo", "freetype", "gitFull", "glibcLocales", "gradle", "iana-etc", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjdk17", "openjpeg", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "tcl", "tk", "zlib"]
 
 [deployment]
-deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "--reuse-port", "main:app"]
+deploymentTarget = "vm"
+run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "--workers=2", "main:app"]
 
 [workflows]
 runButton = "Project"
@@ -51,6 +51,10 @@ externalPort = 8080
 [[ports]]
 localPort = 37133
 externalPort = 8081
+
+[[ports]]
+localPort = 37881
+externalPort = 5000
 
 [[ports]]
 localPort = 38177
