@@ -2,7 +2,7 @@
   "name": "PLS TRAVELS - Fleet Management",
   "short_name": "PLS TRAVELS",
   "description": "Multi-city driver and fleet management system for Chennai and Bangalore operations. Manage drivers, vehicles, duties, and earnings with real-time tracking and comprehensive reporting.",
-  "start_url": "/",
+  "start_url": "/auth/login",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#00d4ff",
