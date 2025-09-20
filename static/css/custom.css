@@ -2,47 +2,47 @@
 
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    /* Primary brand colors - Modern Attractive Theme */
-    --pls-primary: #1e3a8a;          /* Rich royal blue */
-    --pls-primary-light: #3b82f6;     /* Bright blue */
-    --pls-primary-dark: #1e293b;      /* Dark slate blue */
-    --pls-accent: #10b981;            /* Emerald green */
-    --pls-accent-light: #34d399;      /* Light emerald */
-    --pls-accent-dark: #059669;       /* Dark emerald */
+    /* Primary brand colors - Light Attractive Theme */
+    --pls-primary: #60a5fa;          /* Light sky blue */
+    --pls-primary-light: #93c5fd;     /* Very light blue */
+    --pls-primary-dark: #3b82f6;      /* Medium blue */
+    --pls-accent: #6ee7b7;            /* Light mint green */
+    --pls-accent-light: #a7f3d0;      /* Very light mint */
+    --pls-accent-dark: #34d399;       /* Medium mint */
     
-    /* Status colors - Modern Vibrant Palette */
-    --pls-success: #10b981;           /* Emerald green */
-    --pls-warning: #f59e0b;           /* Amber */
-    --pls-danger: #ef4444;            /* Red */
-    --pls-info: #3b82f6;              /* Blue */
+    /* Status colors - Light Vibrant Palette */
+    --pls-success: #34d399;           /* Light emerald */
+    --pls-warning: #fbbf24;           /* Light amber */
+    --pls-danger: #f87171;            /* Light red */
+    --pls-info: #60a5fa;              /* Light blue */
     
-    /* Neutral colors - modern slate palette */
-    --pls-slate-50: #fafaff;          /* Very light blue-tinted white */
-    --pls-slate-100: #f1f5ff;         /* Light blue-tinted gray */
-    --pls-slate-200: #e2e8f5;         /* Blue-tinted light gray */
-    --pls-slate-300: #cbd5e8;         /* Medium blue-tinted gray */
-    --pls-slate-400: #94a3c4;         /* Blue-tinted medium gray */
-    --pls-slate-500: #64748b;         /* Standard slate */
-    --pls-slate-600: #475569;         /* Dark slate */
-    --pls-slate-700: #334155;         /* Darker slate */
-    --pls-slate-800: #1e293b;         /* Very dark slate */
-    --pls-slate-900: #0f172a;         /* Nearly black */
+    /* Neutral colors - light pastel palette */
+    --pls-slate-50: #ffffff;          /* Pure white */
+    --pls-slate-100: #f8fafc;         /* Very light gray */
+    --pls-slate-200: #f1f5f9;         /* Light gray */
+    --pls-slate-300: #e2e8f0;         /* Medium light gray */
+    --pls-slate-400: #cbd5e1;         /* Medium gray */
+    --pls-slate-500: #94a3b8;         /* Standard gray */
+    --pls-slate-600: #64748b;         /* Medium dark gray */
+    --pls-slate-700: #475569;         /* Dark gray */
+    --pls-slate-800: #334155;         /* Very dark gray */
+    --pls-slate-900: #1e293b;         /* Nearly black */
     
     /* Legacy support with enhanced colors */
     --pls-secondary: #6366f1;         /* Indigo */
     --pls-light: var(--pls-slate-50);
     --pls-dark: var(--pls-slate-900);
-    --pls-text-dark: var(--pls-slate-900);
+    --pls-text-dark: var(--pls-slate-700);
     --pls-text-light: #ffffff;
     --pls-gray-light: var(--pls-slate-100);
     --pls-gray-medium: var(--pls-slate-500);
     --pls-gray-dark: var(--pls-slate-700);
     
-    /* Additional attractive colors */
-    --pls-purple: #8b5cf6;            /* Purple */
-    --pls-pink: #ec4899;              /* Pink */
-    --pls-orange: #f97316;            /* Orange */
-    --pls-teal: #14b8a6;              /* Teal */
+    /* Additional light attractive colors */
+    --pls-purple: #a78bfa;            /* Light purple */
+    --pls-pink: #f472b6;              /* Light pink */
+    --pls-orange: #fb923c;            /* Light orange */
+    --pls-teal: #2dd4bf;              /* Light teal */
     
     /* Typography scale */
     --pls-font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
@@ -496,47 +496,47 @@ input[type="file"] {
 /* Dashboard metric cards */
 .metric-card {
     background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
-    color: var(--pls-text-light);
-    border: none;
+    color: var(--pls-text-dark);
+    border: 1px solid var(--pls-slate-200);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 20px rgba(96, 165, 250, 0.25);
 }
 
 .metric-card-danger {
-    background: linear-gradient(135deg, var(--pls-danger) 0%, #d35400 100%);
-    color: var(--pls-text-light);
-    border: none;
+    background: linear-gradient(135deg, var(--pls-danger) 0%, #fca5a5 100%);
+    color: var(--pls-text-dark);
+    border: 1px solid var(--pls-slate-200);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(230, 126, 34, 0.25);
+    box-shadow: 0 4px 12px rgba(248, 113, 113, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metric-card-danger:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(230, 126, 34, 0.35);
+    box-shadow: 0 6px 20px rgba(248, 113, 113, 0.25);
 }
 
 .metric-card-warning {
-    background: linear-gradient(135deg, var(--pls-warning) 0%, #e8650e 100%);
-    color: var(--pls-text-light);
-    border: none;
+    background: linear-gradient(135deg, var(--pls-warning) 0%, #fde68a 100%);
+    color: var(--pls-text-dark);
+    border: 1px solid var(--pls-slate-200);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(253, 126, 20, 0.3);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metric-card-warning:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(253, 126, 20, 0.4);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.25);
 }
 
 .metric-card .card-body {
@@ -765,22 +765,24 @@ input[type="file"] {
 [data-bs-theme="light"] .navbar {
     background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
     border-bottom: none;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(96, 165, 250, 0.1);
 }
 
 [data-bs-theme="light"] .navbar-brand {
     color: var(--pls-text-dark) !important;
     font-weight: 700;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    text-shadow: none;
 }
 
 [data-bs-theme="light"] .nav-link {
-    color: rgba(52, 58, 64, 0.8) !important;
+    color: var(--pls-text-dark) !important;
+    opacity: 0.85;
 }
 
 [data-bs-theme="light"] .nav-link:hover {
     color: var(--pls-text-dark) !important;
-    background-color: rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
 }
 
