@@ -1,0 +1,198 @@
+{
+  "name": "PLS TRAVELS - Fleet Management",
+  "short_name": "PLS TRAVELS",
+  "description": "Multi-city driver and fleet management system for Chennai and Bangalore operations. Manage drivers, vehicles, duties, and earnings with real-time tracking and comprehensive reporting.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#00d4ff",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "id": "com.plstravels.fleet-management",
+  "categories": ["business", "productivity", "transportation"],
+  "icons": [
+    {
+      "src": "/static/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/screenshots/mobile-dashboard.png",
+      "sizes": "320x640",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Driver Dashboard - Mobile View"
+    },
+    {
+      "src": "/static/screenshots/desktop-admin.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide", 
+      "label": "Admin Dashboard - Desktop View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Driver Dashboard",
+      "short_name": "Dashboard",
+      "description": "Access driver dashboard for duty management",
+      "url": "/driver/dashboard",
+      "icons": [
+        {
+          "src": "/static/icons/shortcut-dashboard.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Start Duty",
+      "short_name": "Duty",
+      "description": "Start your driving duty",
+      "url": "/driver/duty",
+      "icons": [
+        {
+          "src": "/static/icons/shortcut-duty.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Earnings",
+      "short_name": "Earnings",
+      "description": "View your earnings and payments",
+      "url": "/driver/earnings",
+      "icons": [
+        {
+          "src": "/static/icons/shortcut-earnings.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Fleet management and administration",
+      "url": "/admin/dashboard",
+      "icons": [
+        {
+          "src": "/static/icons/shortcut-admin.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/admin/import",
+      "accept": {
+        "text/csv": [".csv"],
+        "application/vnd.ms-excel": [".xls"],
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"]
+      },
+      "icons": [
+        {
+          "src": "/static/icons/icon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ],
+      "launch_type": "single-client"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+plstravels",
+      "url": "/?handler=%s"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.plstravels.driver",
+      "id": "com.plstravels.driver"
+    }
+  ],
+  "share_target": {
+    "action": "/admin/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": ["image/*", "application/pdf", "text/csv"]
+        }
+      ]
+    }
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "note_taking": {
+    "new_note_url": "/driver/notes/new"
+  },
+  "scope_extensions": [
+    {
+      "origin": "https://api.plstravels.com"
+    }
+  ]
+}
