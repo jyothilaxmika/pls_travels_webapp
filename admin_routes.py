@@ -10,7 +10,8 @@ from sqlalchemy import func, desc, or_, and_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate, Photo, PhotoType,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus, AdvancePaymentRequest, ManualEarningsCalculation)
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus, AdvancePaymentRequest, ManualEarningsCalculation,
+                   DriverLocation, TrackingSession)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm, ManualEarningsCalculationForm
 from utils_main import allowed_file, calculate_earnings, process_file_upload, process_camera_capture
 import json
@@ -1682,6 +1683,251 @@ def recommendations_dashboard():
                          total_drivers=total_drivers,
                          total_vehicles=total_vehicles,
                          top_drivers=top_drivers)
+
+# Driver Location Tracking Routes
+@admin_bp.route('/driver-locations')
+@login_required
+@admin_required
+def driver_locations():
+    """Main driver location tracking dashboard"""
+    # Get filters from request
+    branch_filter = request.args.get('branch', '', type=int)
+    status_filter = request.args.get('status', '')
+    hours_back = request.args.get('hours_back', default=24, type=int)
+    
+    # Get active drivers for dropdown
+    query = Driver.query.join(User).filter(User.status == UserStatus.ACTIVE)
+    
+    if branch_filter:
+        query = query.filter(Driver.branch_id == branch_filter)
+    if status_filter:
+        try:
+            status_enum = DriverStatus(status_filter)
+            query = query.filter(Driver.status == status_enum)
+        except ValueError:
+            pass
+    
+    drivers = query.all()
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    # Get current active duties for context
+    active_duties = Duty.query.filter_by(status=DutyStatus.ACTIVE).count()
+    
+    log_audit('driver_location_tracking_accessed', 'admin', None,
+             {'accessed_by': current_user.username})
+    
+    return render_template('admin/driver_locations.html',
+                         drivers=drivers,
+                         branches=branches,
+                         active_duties=active_duties,
+                         branch_filter=branch_filter,
+                         status_filter=status_filter,
+                         hours_back=hours_back,
+                         title='Driver Location Tracking')
+
+@admin_bp.route('/api/driver-locations')
+@login_required
+@admin_required  
+def api_driver_locations():
+    """API endpoint to get current driver locations with real-time data"""
+    # Get filter parameters
+    driver_ids = request.args.getlist('driver_ids')
+    branch_id = request.args.get('branch_id', type=int)
+    hours_back = request.args.get('hours_back', default=24, type=int)
+    only_active_duties = request.args.get('only_active_duties', 'false').lower() == 'true'
+    
+    # Build time threshold
+    time_threshold = get_ist_time_naive() - timedelta(hours=hours_back)
+    
+    # Base query for driver locations
+    query = DriverLocation.query.join(Driver).join(User).filter(
+        DriverLocation.captured_at >= time_threshold,
+        DriverLocation.latitude.isnot(None),
+        DriverLocation.longitude.isnot(None),
+        DriverLocation.is_mocked == False  # Only real locations
+    )
+    
+    # Apply filters
+    if driver_ids:
+        query = query.filter(DriverLocation.driver_id.in_(driver_ids))
+    
+    if branch_id:
+        query = query.filter(Driver.branch_id == branch_id)
+    
+    if only_active_duties:
+        # Only show drivers with active duties
+        query = query.join(Duty, DriverLocation.duty_id == Duty.id).filter(
+            Duty.status == DutyStatus.ACTIVE
+        )
+    
+    # Get latest location for each driver
+    subquery = query.with_entities(
+        DriverLocation.driver_id,
+        func.max(DriverLocation.captured_at).label('latest_time')
+    ).group_by(DriverLocation.driver_id).subquery()
+    
+    latest_locations = query.join(
+        subquery,
+        and_(
+            DriverLocation.driver_id == subquery.c.driver_id,
+            DriverLocation.captured_at == subquery.c.latest_time
+        )
+    ).all()
+    
+    # Format response with comprehensive driver data
+    locations = []
+    for location in latest_locations:
+        driver = location.driver
+        user = driver.user
+        
+        # Get current duty info
+        current_duty = Duty.query.filter_by(
+            driver_id=driver.id,
+            status=DutyStatus.ACTIVE
+        ).first()
+        
+        # Get tracking session info
+        tracking_session = None
+        if location.tracking_session_id:
+            tracking_session = TrackingSession.query.get(location.tracking_session_id)
+        
+        location_data = {
+            'driver_id': driver.id,
+            'driver_name': user.full_name,
+            'driver_phone': driver.primary_phone,
+            'driver_status': driver.status.value,
+            'branch_name': driver.branch.name if driver.branch else 'Unknown',
+            'latitude': float(location.latitude),
+            'longitude': float(location.longitude),
+            'accuracy': float(location.accuracy) if location.accuracy else None,
+            'speed': float(location.speed) if location.speed else None,
+            'address': location.address,
+            'city': location.city,
+            'captured_at': location.captured_at.isoformat(),
+            'received_at': location.received_at.isoformat(),
+            'battery_level': location.battery_level,
+            'network_type': location.network_type,
+            'source': location.source,
+            
+            # Current duty information
+            'current_duty': {
+                'duty_id': current_duty.id if current_duty else None,
+                'vehicle_number': current_duty.vehicle.number if current_duty and current_duty.vehicle else None,
+                'start_time': current_duty.start_time.isoformat() if current_duty and current_duty.start_time else None,
+                'duty_status': current_duty.status.value if current_duty else None
+            },
+            
+            # Tracking session info
+            'tracking_session': {
+                'session_id': tracking_session.uuid if tracking_session else None,
+                'session_active': tracking_session.is_active if tracking_session else False,
+                'total_points': tracking_session.total_points if tracking_session else 0,
+                'distance_covered': tracking_session.distance_covered if tracking_session else 0
+            }
+        }
+        
+        locations.append(location_data)
+    
+    return jsonify({
+        'success': True,
+        'locations': locations,
+        'total_drivers_tracked': len(locations),
+        'timestamp': get_ist_time_naive().isoformat(),
+        'filters_applied': {
+            'hours_back': hours_back,
+            'branch_id': branch_id,
+            'only_active_duties': only_active_duties,
+            'driver_count': len(driver_ids) if driver_ids else 'all'
+        }
+    })
+
+@admin_bp.route('/api/driver-path/<int:driver_id>')
+@login_required
+@admin_required
+def api_driver_path(driver_id):
+    """API endpoint to get driver's location path history"""
+    hours_back = request.args.get('hours_back', default=24, type=int)
+    duty_id = request.args.get('duty_id', type=int)
+    
+    # Build time threshold
+    time_threshold = get_ist_time_naive() - timedelta(hours=hours_back)
+    
+    # Base query for driver path
+    query = DriverLocation.query.filter(
+        DriverLocation.driver_id == driver_id,
+        DriverLocation.captured_at >= time_threshold,
+        DriverLocation.is_mocked == False
+    )
+    
+    # Filter by specific duty if provided
+    if duty_id:
+        query = query.filter(DriverLocation.duty_id == duty_id)
+    
+    locations = query.order_by(DriverLocation.captured_at).all()
+    
+    # Format path data
+    path_points = []
+    for location in locations:
+        path_points.append({
+            'latitude': float(location.latitude),
+            'longitude': float(location.longitude),
+            'timestamp': location.captured_at.isoformat(),
+            'speed': float(location.speed) if location.speed else 0,
+            'accuracy': float(location.accuracy) if location.accuracy else None,
+            'duty_id': location.duty_id
+        })
+    
+    # Get driver info
+    driver = Driver.query.get(driver_id)
+    driver_name = driver.user.full_name if driver and driver.user else 'Unknown'
+    
+    return jsonify({
+        'success': True,
+        'driver_id': driver_id,
+        'driver_name': driver_name,
+        'path': path_points,
+        'total_points': len(path_points),
+        'time_range': {
+            'from': time_threshold.isoformat(),
+            'to': get_ist_time_naive().isoformat()
+        }
+    })
+
+@admin_bp.route('/driver-tracking/<int:driver_id>')
+@login_required
+@admin_required
+def driver_tracking_detail(driver_id):
+    """Detailed driver tracking page with history and analytics"""
+    driver = Driver.query.get_or_404(driver_id)
+    
+    # Get recent tracking sessions
+    recent_sessions = TrackingSession.query.filter_by(
+        driver_id=driver_id
+    ).order_by(desc(TrackingSession.session_start)).limit(10).all()
+    
+    # Get recent duties with tracking data
+    recent_duties = Duty.query.filter_by(
+        driver_id=driver_id
+    ).order_by(desc(Duty.start_date)).limit(5).all()
+    
+    # Get location statistics
+    total_locations = DriverLocation.query.filter_by(driver_id=driver_id).count()
+    
+    # Get latest location
+    latest_location = DriverLocation.query.filter_by(
+        driver_id=driver_id
+    ).order_by(desc(DriverLocation.captured_at)).first()
+    
+    log_audit('driver_tracking_detail_accessed', 'driver', driver_id,
+             {'accessed_by': current_user.username, 'driver_name': driver.user.full_name})
+    
+    return render_template('admin/driver_tracking_detail.html',
+                         driver=driver,
+                         recent_sessions=recent_sessions,
+                         recent_duties=recent_duties,
+                         total_locations=total_locations,
+                         latest_location=latest_location,
+                         title=f'Driver Tracking - {driver.user.full_name}')
 
 @admin_bp.route('/assignments')
 @login_required
