@@ -146,13 +146,23 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="approvalsDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-check-circle me-1"></i>Approvals
+                                {% set total_approvals = pending_resignations_count + pending_advance_payments_count %}
+                                {% if total_approvals > 0 %}
+                                <span class="badge bg-danger ms-1">{{ total_approvals }}</span>
+                                {% endif %}
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ url_for('admin.resignations') }}">
                                     <i class="fas fa-user-times me-2"></i>Resignation Requests
+                                    {% if pending_resignations_count > 0 %}
+                                    <span class="badge bg-danger ms-2">{{ pending_resignations_count }}</span>
+                                    {% endif %}
                                 </a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('admin.advance_payments') }}">
                                     <i class="fas fa-money-bill-wave me-2"></i>Advance Payments
+                                    {% if pending_advance_payments_count > 0 %}
+                                    <span class="badge bg-danger ms-2">{{ pending_advance_payments_count }}</span>
+                                    {% endif %}
                                 </a></li>
                             </ul>
                         </li>
@@ -253,13 +263,36 @@
                 </ul>
 
                 <ul class="navbar-nav">
-                    {% if current_user.role.name == 'ADMIN' and pending_duties_count > 0 %}
-                    <li class="nav-item">
-                        <a class="nav-link text-danger" href="{{ url_for('admin.pending_duties') }}" title="Pending Approvals">
+                    {% if current_user.role.name == 'ADMIN' %}
+                    {% set total_notifications = pending_duties_count + pending_resignations_count + pending_advance_payments_count %}
+                    {% if total_notifications > 0 %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link text-danger dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" title="Pending Notifications">
                             <i class="fas fa-bell"></i>
-                            <span class="badge bg-danger">{{ pending_duties_count }}</span>
+                            <span class="badge bg-danger">{{ total_notifications }}</span>
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if pending_duties_count > 0 %}
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('admin.pending_duties') }}">
+                                <i class="fas fa-clipboard-list me-2"></i>Pending Duties
+                                <span class="badge bg-danger ms-2">{{ pending_duties_count }}</span>
+                            </a></li>
+                            {% endif %}
+                            {% if pending_resignations_count > 0 %}
+                            <li><a class="dropdown-item text-warning" href="{{ url_for('admin.resignations') }}">
+                                <i class="fas fa-user-times me-2"></i>Resignation Requests
+                                <span class="badge bg-warning ms-2">{{ pending_resignations_count }}</span>
+                            </a></li>
+                            {% endif %}
+                            {% if pending_advance_payments_count > 0 %}
+                            <li><a class="dropdown-item text-info" href="{{ url_for('admin.advance_payments') }}">
+                                <i class="fas fa-money-bill-wave me-2"></i>Advance Payments
+                                <span class="badge bg-info ms-2">{{ pending_advance_payments_count }}</span>
+                            </a></li>
+                            {% endif %}
+                        </ul>
                     </li>
+                    {% endif %}
                     {% endif %}
 
                     <li class="nav-item dropdown">
@@ -267,12 +300,30 @@
                             <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu">
-                            {% if current_user.role.name == 'ADMIN' and pending_duties_count > 0 %}
+                            {% if current_user.role.name == 'ADMIN' %}
+                            {% set total_notifications = pending_duties_count + pending_resignations_count + pending_advance_payments_count %}
+                            {% if total_notifications > 0 %}
+                            <li><h6 class="dropdown-header">Pending Notifications</h6></li>
+                            {% if pending_duties_count > 0 %}
                             <li><a class="dropdown-item text-danger" href="{{ url_for('admin.pending_duties') }}">
-                                <i class="fas fa-clock me-1"></i>Pending Approvals
+                                <i class="fas fa-clipboard-list me-2"></i>Pending Duties
                                 <span class="badge bg-danger ms-2">{{ pending_duties_count }}</span>
                             </a></li>
+                            {% endif %}
+                            {% if pending_resignations_count > 0 %}
+                            <li><a class="dropdown-item text-warning" href="{{ url_for('admin.resignations') }}">
+                                <i class="fas fa-user-times me-2"></i>Resignations
+                                <span class="badge bg-warning ms-2">{{ pending_resignations_count }}</span>
+                            </a></li>
+                            {% endif %}
+                            {% if pending_advance_payments_count > 0 %}
+                            <li><a class="dropdown-item text-info" href="{{ url_for('admin.advance_payments') }}">
+                                <i class="fas fa-money-bill-wave me-2"></i>Advance Payments
+                                <span class="badge bg-info ms-2">{{ pending_advance_payments_count }}</span>
+                            </a></li>
+                            {% endif %}
                             <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                                 <i class="fas fa-sign-out-alt me-1"></i>Logout

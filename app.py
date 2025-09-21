@@ -413,15 +413,28 @@ def create_app():
     @app.context_processor
     def inject_notifications():
         from flask_login import current_user
-        from models import UserRole, DutyStatus, Duty
+        from models import UserRole, DutyStatus, Duty, ResignationRequest, ResignationStatus, AdvancePaymentRequest
         
         if current_user.is_authenticated:
             pending_duties_count = 0
+            pending_resignations_count = 0
+            pending_advance_payments_count = 0
+            
             if current_user.role == UserRole.ADMIN:
                 pending_duties_count = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
+                pending_resignations_count = ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).count()
+                pending_advance_payments_count = AdvancePaymentRequest.query.filter_by(status='pending').count()
             
-            return dict(pending_duties_count=pending_duties_count)
-        return dict(pending_duties_count=0)
+            return dict(
+                pending_duties_count=pending_duties_count,
+                pending_resignations_count=pending_resignations_count,
+                pending_advance_payments_count=pending_advance_payments_count
+            )
+        return dict(
+            pending_duties_count=0,
+            pending_resignations_count=0,
+            pending_advance_payments_count=0
+        )
 
     # JWT token blacklist checker
     from mobile_auth import check_if_token_revoked as check_token_blacklist
