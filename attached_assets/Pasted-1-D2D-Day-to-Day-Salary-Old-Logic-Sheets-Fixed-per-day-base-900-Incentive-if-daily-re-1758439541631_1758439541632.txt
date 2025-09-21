@@ -1,0 +1,165 @@
+1. D2D (Day-to-Day) Salary
+
+Old Logic (Sheets):
+
+Fixed per-day base (≈ ₹900).
+
+Incentive if daily revenue exceeded a threshold.
+
+Daily audit sheet added incentives/deductions.
+
+New Duty Scheme Config (daily_payout):
+
+{
+  "daily_base_amount": 900,
+  "daily_incentive_percent": 0.05,
+  "incentive_threshold": 8000,
+  "minimum_daily_guarantee": 1000
+}
+
+
+Formula:
+
+earnings = daily_base_amount
+incentive = max(0, (gross_revenue - incentive_threshold) * daily_incentive_percent)
+gross_earnings = earnings + incentive
+net_earnings = max(gross_earnings, minimum_daily_guarantee) - deductions
+
+2. 12HRS Scheme
+
+Old Logic (Sheets):
+
+Half-day fixed pay (≈ ₹660).
+
+Incentives similar to D2D but with lower threshold.
+
+New Config (daily_payout variant):
+
+{
+  "daily_base_amount": 660,
+  "daily_incentive_percent": 0.05,
+  "incentive_threshold": 5000
+}
+
+
+Formula:
+
+earnings = daily_base_amount
+incentive = max(0, (gross_revenue - incentive_threshold) * daily_incentive_percent)
+gross_earnings = earnings + incentive
+net_earnings = gross_earnings - deductions
+
+3. Commission Scheme – 25%
+
+Old Logic (Sheets):
+
+Driver keeps 75% of net revenue (gross – expenses).
+
+Company retains 25%.
+
+New Config (revenue_sharing):
+
+{
+  "revenue_share_percent": 75,
+  "minimum_daily_guarantee": 0
+}
+
+
+Formula:
+
+net_revenue = gross_revenue - expenses
+driver_share = net_revenue * (revenue_share_percent / 100)
+company_share = net_revenue - driver_share
+net_earnings = driver_share - deductions
+
+4. Commission Scheme – 20%
+
+Old Logic (Sheets):
+
+Driver keeps 80% of net revenue.
+
+Company retains 20%.
+
+New Config (revenue_sharing):
+
+{
+  "revenue_share_percent": 80,
+  "minimum_daily_guarantee": 0
+}
+
+
+Formula: Same as Commission 25% but with 80/20 split.
+
+5. Minimum Guarantee Scheme
+
+Old Logic (Sheets):
+
+If calculated pay < threshold, driver gets guaranteed minimum.
+
+New Config (daily_payout):
+
+{
+  "daily_base_amount": 0,
+  "minimum_daily_guarantee": 1000
+}
+
+
+Formula:
+
+net_revenue = gross_revenue - expenses
+driver_share = max(net_revenue, minimum_daily_guarantee)
+net_earnings = driver_share - deductions
+
+6. Hybrid Scheme (Base + Commission)
+
+Old Logic (Sheets):
+
+Fixed base salary.
+
+% of net revenue added.
+
+New Config (hybrid_commission):
+
+{
+  "base_amount": 500,
+  "commission_percent": 70
+}
+
+
+Formula:
+
+driver_share = base_amount + (net_revenue * commission_percent / 100)
+company_share = net_revenue - (net_revenue * commission_percent / 100)
+net_earnings = driver_share - deductions
+
+7. Incentive-Only Scheme
+
+Old Logic (Sheets):
+
+No base salary.
+
+Incentives for exceeding trip/revenue targets.
+
+New Config (performance_based):
+
+{
+  "target_trips_daily": 15,
+  "bonus_per_extra_trip": 100,
+  "bonus_target_achievement": 500,
+  "daily_base_amount": 0
+}
+
+
+Formula:
+
+bonus_trips = max(0, (total_trips - target_trips_daily) * bonus_per_extra_trip)
+bonus_target = (gross_revenue >= target_revenue) ? bonus_target_achievement : 0
+net_earnings = bonus_trips + bonus_target - deductions
+
+✅ Migration Summary
+
+Your Sheets logic (D2D, 12HRS, 25%, 20%, Guarantee, Hybrid, Incentive) maps 1-to-1 into duty_schemes JSON configs.
+
+The formulas above replicate exactly what your old audits & trip sheets did.
+
+All settlements still apply advances, PG/UPI receipts, deductions as in your old Daily Audit formula.
