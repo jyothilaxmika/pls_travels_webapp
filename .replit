@@ -2,7 +2,7 @@ modules = ["python-3.11", "web", "nodejs-20", "java", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["android-tools", "cargo", "freetype", "gitFull", "glibcLocales", "gradle", "iana-etc", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjdk17", "openjpeg", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "tcl", "tk", "zlib"]
+packages = ["android-tools", "cargo", "freetype", "gitFull", "glibcLocales", "gradle", "iana-etc", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjdk17", "openjpeg", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "tcl", "tk", "zlib", "imagemagick"]
 
 [deployment]
 deploymentTarget = "cloudrun"
