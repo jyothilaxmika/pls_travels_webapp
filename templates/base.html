@@ -144,6 +144,19 @@
                             </a>
                         </li>
                         <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="approvalsDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-check-circle me-1"></i>Approvals
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('admin.resignations') }}">
+                                    <i class="fas fa-user-times me-2"></i>Resignation Requests
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.advance_payments') }}">
+                                    <i class="fas fa-money-bill-wave me-2"></i>Advance Payments
+                                </a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="storageDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-database me-1"></i>Storage
                             </a>
@@ -166,10 +179,18 @@
                                 </a></li>
                             </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('tracking.vehicle_map') }}">
-                                <i class="fas fa-map-marked-alt me-1"></i>Vehicle Tracking
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="trackingDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-map-marked-alt me-1"></i>Tracking
                             </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('tracking.vehicle_map') }}">
+                                    <i class="fas fa-car me-2"></i>Vehicle Tracking
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.driver_locations') }}">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Driver Locations
+                                </a></li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.uber_integration') }}">
