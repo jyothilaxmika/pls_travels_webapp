@@ -32,8 +32,9 @@
     --pls-secondary: #6366f1;         /* Indigo */
     --pls-light: var(--pls-slate-50);
     --pls-dark: var(--pls-slate-900);
-    --pls-text-dark: #374151;
+    --pls-text-dark: #1f2937;         /* Darker text for better contrast */
     --pls-text-light: #ffffff;
+    --pls-text-muted: #6b7280;        /* Muted text with good contrast */
     --pls-gray-light: var(--pls-slate-100);
     --pls-gray-medium: var(--pls-slate-500);
     --pls-gray-dark: var(--pls-slate-700);
@@ -68,10 +69,79 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #fafbfc;
-    color: var(--pls-text-dark);
+    color: var(--pls-text-dark) !important;
     line-height: 1.6;
     font-size: 0.95rem;
     font-weight: 400;
+}
+
+/* Ensure all text elements have proper contrast */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--pls-text-dark) !important;
+    font-weight: 600;
+}
+
+p, span, div, li, td, th {
+    color: var(--pls-text-dark) !important;
+}
+
+/* Form elements with better contrast */
+.form-label {
+    color: var(--pls-text-dark) !important;
+    font-weight: 500;
+}
+
+.form-text {
+    color: var(--pls-text-muted) !important;
+}
+
+/* Muted text should still be readable */
+.text-muted {
+    color: var(--pls-text-muted) !important;
+}
+
+/* Dropdown menu fixes */
+.dropdown-menu {
+    background-color: #ffffff !important;
+    border: 1px solid var(--pls-slate-200) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.dropdown-item {
+    color: var(--pls-text-dark) !important;
+    font-weight: 400;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: var(--pls-slate-50) !important;
+    color: var(--pls-text-dark) !important;
+}
+
+/* Breadcrumb fixes */
+.breadcrumb-item {
+    color: var(--pls-text-dark) !important;
+}
+
+.breadcrumb-item.active {
+    color: var(--pls-text-muted) !important;
+}
+
+/* Badge fixes */
+.badge {
+    font-weight: 500;
+    color: #ffffff !important;
+}
+
+/* List group fixes */
+.list-group-item {
+    color: var(--pls-text-dark) !important;
+    background-color: #ffffff;
+    border: 1px solid var(--pls-slate-200);
+}
+
+.list-group-item:hover {
+    background-color: var(--pls-slate-50) !important;
+    color: var(--pls-text-dark) !important;
 }
 
 /* Ensure text is always visible and crisp */
@@ -810,15 +880,46 @@ input[type="file"] {
     border: 1px solid var(--pls-slate-200);
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 8px;
-    color: var(--pls-text-dark);
+    color: var(--pls-text-dark) !important;
+}
+
+[data-bs-theme="light"] .card-title {
+    color: var(--pls-text-dark) !important;
+    font-weight: 600;
+}
+
+[data-bs-theme="light"] .card-text {
+    color: var(--pls-text-dark) !important;
+}
+
+[data-bs-theme="light"] .card-header {
+    background-color: var(--pls-slate-50);
+    color: var(--pls-text-dark) !important;
+    font-weight: 600;
+    border-bottom: 1px solid var(--pls-slate-200);
+}
+
+[data-bs-theme="light"] .card-body {
+    color: var(--pls-text-dark) !important;
 }
 
 [data-bs-theme="light"] .table th {
     background-color: var(--pls-slate-100);
-    color: var(--pls-text-dark);
+    color: var(--pls-text-dark) !important;
     border-bottom: 2px solid var(--pls-primary);
     font-weight: 600;
     padding: 0.75rem;
+}
+
+[data-bs-theme="light"] .table td {
+    color: var(--pls-text-dark) !important;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--pls-slate-200);
+}
+
+[data-bs-theme="light"] .table tr:hover td {
+    background-color: var(--pls-slate-50);
+    color: var(--pls-text-dark) !important;
 }
 
 [data-bs-theme="light"] .navbar {
@@ -835,9 +936,10 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .nav-link {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
     font-weight: 500;
     font-size: 0.95rem;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 [data-bs-theme="light"] .nav-link:hover {
@@ -845,6 +947,17 @@ input[type="file"] {
     background-color: rgba(255, 255, 255, 0.15);
     border-radius: 4px;
     transform: translateY(-1px);
+}
+
+/* Sidebar navigation fixes */
+.nav-pills .nav-link {
+    color: var(--pls-text-dark) !important;
+    font-weight: 500;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--pls-primary) !important;
+    color: #ffffff !important;
 }
 
 [data-bs-theme="light"] .btn-primary {
@@ -881,22 +994,33 @@ input[type="file"] {
 [data-bs-theme="light"] .alert-success {
     background-color: rgba(46, 204, 113, 0.1);
     border-color: var(--pls-success);
-    color: #27ae60;
+    color: #047857 !important;
     border-left: 4px solid var(--pls-success);
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .alert-danger {
     background-color: rgba(230, 126, 34, 0.1);
     border-color: var(--pls-danger);
-    color: #d35400;
+    color: #b91c1c !important;
     border-left: 4px solid var(--pls-danger);
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .alert-info {
     background-color: rgba(23, 162, 184, 0.1);
     border-color: var(--pls-info);
-    color: #138496;
+    color: #0369a1 !important;
     border-left: 4px solid var(--pls-info);
+    font-weight: 500;
+}
+
+[data-bs-theme="light"] .alert-warning {
+    background-color: rgba(253, 126, 20, 0.1);
+    border-color: var(--pls-warning);
+    color: #b45309 !important;
+    border-left: 4px solid var(--pls-warning);
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .btn-danger {
@@ -1102,17 +1226,30 @@ input[type="file"] {
 .modal-content {
     border: none;
     border-radius: 10px;
+    color: var(--pls-text-dark) !important;
 }
 
 .modal-header {
-    border-bottom: 1px solid var(--pls-secondary);
+    border-bottom: 1px solid var(--pls-slate-200);
     padding: 1.5rem;
     background-color: var(--pls-primary);
+    color: #ffffff !important;
+}
+
+.modal-title {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.modal-body {
+    color: var(--pls-text-dark) !important;
+    padding: 1.5rem;
 }
 
 .modal-footer {
-    border-top: 1px solid var(--pls-secondary);
+    border-top: 1px solid var(--pls-slate-200);
     padding: 1.5rem;
+    background-color: var(--pls-slate-50);
 }
 
 /* Tooltip customization */
