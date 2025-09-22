@@ -191,9 +191,16 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('aadhar', '{{ driver.aadhar_document }}')">
-                                                    <i class="fas fa-eye me-2"></i>View
+                                                {% if driver.aadhar_document_front %}
+                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('aadhar_front', '{{ driver.aadhar_document_front }}')">
+                                                    <i class="fas fa-eye me-2"></i>View Front
                                                 </a></li>
+                                                {% endif %}
+                                                {% if driver.aadhar_document_back %}
+                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('aadhar_back', '{{ driver.aadhar_document_back }}')">
+                                                    <i class="fas fa-eye me-2"></i>View Back
+                                                </a></li>
+                                                {% endif %}
                                                 <li><a class="dropdown-item" href="#" onclick="editDocument('aadhar', {{ driver.id }})">
                                                     <i class="fas fa-edit me-2"></i>Edit
                                                 </a></li>
@@ -208,9 +215,26 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    {% if driver.aadhar_document %}
+                                    {% if driver.aadhar_document_front or driver.aadhar_document_back %}
                                         <div class="document-preview mt-2">
-                                            <img src="/uploads/{{ driver.aadhar_document }}" class="img-fluid rounded cursor-pointer" alt="Aadhar Document" onclick="viewDocument('aadhar', '{{ driver.aadhar_document }}')" style="max-height: 120px;">
+                                            <div class="row">
+                                                {% if driver.aadhar_document_front %}
+                                                <div class="col-6">
+                                                    <div class="text-center mb-2">
+                                                        <small class="text-muted d-block">Front</small>
+                                                        <img src="/uploads/{{ driver.aadhar_document_front }}" class="img-fluid rounded cursor-pointer" alt="Aadhar Front" onclick="viewDocument('aadhar_front', '{{ driver.aadhar_document_front }}')" style="max-height: 100px; width: 100%; object-fit: cover;">
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% if driver.aadhar_document_back %}
+                                                <div class="col-6">
+                                                    <div class="text-center mb-2">
+                                                        <small class="text-muted d-block">Back</small>
+                                                        <img src="/uploads/{{ driver.aadhar_document_back }}" class="img-fluid rounded cursor-pointer" alt="Aadhar Back" onclick="viewDocument('aadhar_back', '{{ driver.aadhar_document_back }}')" style="max-height: 100px; width: 100%; object-fit: cover;">
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     {% else %}
                                         <div class="text-center text-muted py-3 bg-light rounded">
@@ -247,9 +271,14 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('license', '{{ driver.license_document }}')">
-                                                    <i class="fas fa-eye me-2"></i>View
+                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('license_front', '{{ driver.license_document_front }}')">
+                                                    <i class="fas fa-eye me-2"></i>View Front
                                                 </a></li>
+                                                {% if driver.license_document_back %}
+                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('license_back', '{{ driver.license_document_back }}')">
+                                                    <i class="fas fa-eye me-2"></i>View Back
+                                                </a></li>
+                                                {% endif %}
                                                 <li><a class="dropdown-item" href="#" onclick="editDocument('license', {{ driver.id }})">
                                                     <i class="fas fa-edit me-2"></i>Edit
                                                 </a></li>
@@ -264,9 +293,26 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    {% if driver.license_document %}
+                                    {% if driver.license_document_front or driver.license_document_back %}
                                         <div class="document-preview mt-2">
-                                            <img src="/uploads/{{ driver.license_document }}" class="img-fluid rounded cursor-pointer" alt="License Document" onclick="viewDocument('license', '{{ driver.license_document }}')" style="max-height: 120px;">
+                                            <div class="row">
+                                                {% if driver.license_document_front %}
+                                                <div class="col-6">
+                                                    <div class="text-center mb-2">
+                                                        <small class="text-muted d-block">Front</small>
+                                                        <img src="/uploads/{{ driver.license_document_front }}" class="img-fluid rounded cursor-pointer" alt="License Front" onclick="viewDocument('license_front', '{{ driver.license_document_front }}')" style="max-height: 100px; width: 100%; object-fit: cover;">
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% if driver.license_document_back %}
+                                                <div class="col-6">
+                                                    <div class="text-center mb-2">
+                                                        <small class="text-muted d-block">Back</small>
+                                                        <img src="/uploads/{{ driver.license_document_back }}" class="img-fluid rounded cursor-pointer" alt="License Back" onclick="viewDocument('license_back', '{{ driver.license_document_back }}')" style="max-height: 100px; width: 100%; object-fit: cover;">
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     {% else %}
                                         <div class="text-center text-muted py-3 bg-light rounded">
