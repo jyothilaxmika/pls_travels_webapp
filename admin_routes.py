@@ -2100,8 +2100,8 @@ def driver_locations():
     status_filter = request.args.get('status', '')
     hours_back = request.args.get('hours_back', default=24, type=int)
     
-    # Get active drivers for dropdown
-    query = Driver.query.join(User).filter(User.status == UserStatus.ACTIVE)
+    # Get active drivers for dropdown - specify explicit join condition
+    query = Driver.query.join(User, Driver.user_id == User.id).filter(User.status == UserStatus.ACTIVE)
     
     if branch_filter:
         query = query.filter(Driver.branch_id == branch_filter)
