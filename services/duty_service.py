@@ -273,7 +273,7 @@ class DutyService:
     
     def calculate_duty_earnings(self, duty_id: int) -> Tuple[bool, Optional[Dict[str, float]], Optional[str]]:
         """
-        Calculate earnings for a completed duty based on the duty scheme.
+        Calculate earnings for a completed duty using the new 5-method salary calculation system.
         
         Args:
             duty_id: ID of duty to calculate earnings for
@@ -286,62 +286,99 @@ class DutyService:
             if not duty:
                 return False, None, "Duty not found"
             
-            if not duty.duty_scheme:
-                return False, None, "No duty scheme assigned"
+            # Use new salary calculation system
+            from services.new_salary_service import NewSalaryCalculationService
+            salary_service = NewSalaryCalculationService()
             
-            scheme = duty.duty_scheme
-            revenue = duty.revenue or 0.0
-            trips = duty.total_trips or 0
+            # Determine method based on duty scheme or default to D2D
+            method = 'd2d'  # Default to D2D method
+            custom_config = None
             
-            earnings = 0.0
+            if duty.duty_scheme:
+                # Map old scheme types to new methods - use consistent attributes
+                scheme = duty.duty_scheme
+                scheme_type = getattr(scheme, 'scheme_type', None) or getattr(scheme, 'type', 'revenue_share')
+                
+                if scheme_type == 'final_settlement' or scheme_type == 'mixed':
+                    method = 'd2d'
+                elif scheme_type == 'fixed':
+                    method = 'fixed_daily'
+                    custom_config = {'daily_rate': getattr(scheme, 'fixed_amount', 500.0) or 500.0}
+                elif scheme_type == 'per_trip':
+                    method = 'hybrid_commission'
+                    # Proper conversion: per trip rate becomes base salary, not commission percentage
+                    per_trip_rate = getattr(scheme, 'per_trip_rate', 50.0) or 50.0
+                    custom_config = {
+                        'base_salary': per_trip_rate,  # Fixed amount per trip as base
+                        'commission_threshold': 1000.0,  # Start commission after reasonable threshold
+                        'commission_percentage': 10.0  # Small percentage for additional revenue
+                    }
+                elif scheme_type == 'slab':
+                    method = 'slab_incentive'
+                    revenue_pct = getattr(scheme, 'revenue_percentage', 60.0) or 60.0
+                    bmg_amount = getattr(scheme, 'bmg_amount', 400.0) or 400.0
+                    custom_config = {
+                        'slabs': [
+                            {'min_revenue': 0, 'max_revenue': 2000, 'percentage': revenue_pct},
+                            {'min_revenue': 2001, 'max_revenue': 99999, 'percentage': min(revenue_pct + 10, 80.0)}
+                        ],
+                        'minimum_guarantee': bmg_amount
+                    }
+                else:
+                    method = 'revenue_share'
+                    custom_config = {
+                        'driver_percentage': getattr(scheme, 'revenue_percentage', 70.0) or 70.0,
+                        'minimum_guarantee': getattr(scheme, 'bmg_amount', 0.0) or 0.0
+                    }
+            
+            # Calculate using new system
+            result = salary_service.calculate_salary(
+                duty_id=duty_id,
+                method=method,
+                custom_config=custom_config
+            )
+            
+            # Update duty record
+            duty.driver_earnings = result.net_salary
+            import json
+            from datetime import datetime
+            duty.earnings_breakdown = json.dumps({
+                'method': result.method_name,
+                'total_salary': result.total_salary,
+                'deductions': result.deductions,
+                'net_salary': result.net_salary,
+                'breakdown': result.breakdown,
+                'calculation_notes': result.calculation_notes,
+                'calculated_at': datetime.now().isoformat(),
+                'system_version': 'new_5_method_system'
+            })
+            
+            # Convert new system result to old format for backward compatibility
             breakdown = {
-                'base_amount': 0.0,
-                'revenue_share': 0.0,
-                'trip_bonus': 0.0,
-                'bmg_guarantee': 0.0,
-                'final_earnings': 0.0
+                'base_amount': result.base_amount,
+                'incentive_amount': result.incentive_amount,
+                'revenue_share': result.base_amount if method == 'revenue_share' else 0.0,
+                'trip_bonus': result.incentive_amount if method == 'hybrid_commission' else 0.0,
+                'bmg_guarantee': max(0, result.total_salary - result.base_amount - result.incentive_amount),
+                'total_deductions': result.deductions,
+                'final_earnings': result.net_salary,
+                'method_used': result.method_name,
+                'calculation_notes': result.calculation_notes
             }
             
-            if scheme.type == 'fixed':
-                earnings = scheme.fixed_amount or 0.0
-                breakdown['base_amount'] = earnings
-                
-            elif scheme.type == 'per_trip':
-                earnings = trips * (scheme.per_trip_rate or 0.0)
-                breakdown['trip_bonus'] = earnings
-                
-            elif scheme.type == 'slab':
-                # Implement slab-based calculation
-                # This would need the slab configuration from the scheme
-                earnings = revenue * (scheme.revenue_percentage or 0.0) / 100
-                breakdown['revenue_share'] = earnings
-                
-            elif scheme.type == 'mixed':
-                # Combination of fixed + revenue share
-                base_amount = scheme.fixed_amount or 0.0
-                revenue_share = revenue * (scheme.revenue_percentage or 0.0) / 100
-                earnings = base_amount + revenue_share
-                breakdown['base_amount'] = base_amount
-                breakdown['revenue_share'] = revenue_share
-                
-            elif scheme.scheme_type == 'final_settlement':
-                # Final Settlement Calculator logic
-                earnings, breakdown = self._calculate_final_settlement_earnings(duty, scheme)
-            
-            # Apply BMG (Business Minimum Guarantee) if applicable
-            if scheme.bmg_amount and earnings < scheme.bmg_amount:
-                breakdown['bmg_guarantee'] = scheme.bmg_amount - earnings
-                earnings = scheme.bmg_amount
-            
-            breakdown['final_earnings'] = earnings
-            
-            # Update duty with calculated earnings
-            duty.driver_earnings = earnings
-            db.session.commit()
+            # Commit the changes in a transaction
+            try:
+                db.session.commit()
+                logger.info(f"Salary calculated for duty {duty_id}: ₹{result.net_salary:.2f} using {result.method_name}")
+            except Exception as commit_error:
+                db.session.rollback()
+                logger.error(f"Error committing salary calculation for duty {duty_id}: {str(commit_error)}")
+                raise commit_error
             
             return True, breakdown, None
             
         except Exception as e:
+            db.session.rollback()
             logger.error(f"Error calculating earnings for duty {duty_id}: {str(e)}")
             return False, None, f"Calculation error: {str(e)}"
             
