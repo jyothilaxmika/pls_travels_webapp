@@ -2928,6 +2928,7 @@ def duty_schemes():
     
     branches = Branch.query.filter_by(is_active=True).all()
     scheme_types = [
+        ('final_settlement', 'Final Settlement Calculator'),
         ('daily_payout', 'Daily Salary'),
         ('monthly_payout', 'Monthly Salary'),
         ('performance_based', 'Performance Based'),
@@ -3006,7 +3007,14 @@ def add_duty_scheme():
             'slab1_percent': safe_float_conversion(form.slab1_percent.data, 0),
             'slab2_max': safe_float_conversion(form.slab2_max.data, 0),
             'slab2_percent': safe_float_conversion(form.slab2_percent.data, 0),
-            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0)
+            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0),
+            
+            # Final Settlement Calculator specific configurations
+            'cng_rate': safe_float_conversion(form.cng_rate.data, 90.0),
+            'insurance_deduction_amount': safe_float_conversion(form.insurance_deduction_amount.data, 60.0),
+            'operator_threshold': safe_float_conversion(form.operator_threshold.data, 4500.0),
+            'operator_low_percentage': safe_float_conversion(form.operator_low_percentage.data, 30.0),
+            'operator_high_percentage': safe_float_conversion(form.operator_high_percentage.data, 70.0)
         }
         
         scheme = DutyScheme()
@@ -3086,6 +3094,13 @@ def edit_duty_scheme(scheme_id):
         form.slab2_max.data = config.get('slab2_max', 0)
         form.slab2_percent.data = config.get('slab2_percent', 0)
         form.slab3_percent.data = config.get('slab3_percent', 0)
+        
+        # Final Settlement Calculator specific fields
+        form.cng_rate.data = config.get('cng_rate', 90.0)
+        form.insurance_deduction_amount.data = config.get('insurance_deduction_amount', 60.0)
+        form.operator_threshold.data = config.get('operator_threshold', 4500.0)
+        form.operator_low_percentage.data = config.get('operator_low_percentage', 30.0)
+        form.operator_high_percentage.data = config.get('operator_high_percentage', 70.0)
     
     if form.validate_on_submit():
         # Enhanced configuration for all salary methods
@@ -3134,7 +3149,14 @@ def edit_duty_scheme(scheme_id):
             'slab1_percent': safe_float_conversion(form.slab1_percent.data, 0),
             'slab2_max': safe_float_conversion(form.slab2_max.data, 0),
             'slab2_percent': safe_float_conversion(form.slab2_percent.data, 0),
-            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0)
+            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0),
+            
+            # Final Settlement Calculator specific configurations
+            'cng_rate': safe_float_conversion(form.cng_rate.data, 90.0),
+            'insurance_deduction_amount': safe_float_conversion(form.insurance_deduction_amount.data, 60.0),
+            'operator_threshold': safe_float_conversion(form.operator_threshold.data, 4500.0),
+            'operator_low_percentage': safe_float_conversion(form.operator_low_percentage.data, 30.0),
+            'operator_high_percentage': safe_float_conversion(form.operator_high_percentage.data, 70.0)
         }
         
         # Validation for salary method configurations

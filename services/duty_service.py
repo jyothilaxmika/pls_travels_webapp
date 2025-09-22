@@ -323,6 +323,10 @@ class DutyService:
                 earnings = base_amount + revenue_share
                 breakdown['base_amount'] = base_amount
                 breakdown['revenue_share'] = revenue_share
+                
+            elif scheme.scheme_type == 'final_settlement':
+                # Final Settlement Calculator logic
+                earnings, breakdown = self._calculate_final_settlement_earnings(duty, scheme)
             
             # Apply BMG (Business Minimum Guarantee) if applicable
             if scheme.bmg_amount and earnings < scheme.bmg_amount:
@@ -340,6 +344,97 @@ class DutyService:
         except Exception as e:
             logger.error(f"Error calculating earnings for duty {duty_id}: {str(e)}")
             return False, None, f"Calculation error: {str(e)}"
+            
+    def _calculate_final_settlement_earnings(self, duty, scheme) -> Tuple[float, Dict[str, float]]:
+        """
+        Calculate earnings using Final Settlement Calculator logic
+        Based on the Tamil-style settlement with CNG adjustments
+        """
+        # Get configuration from scheme (JSON stored configuration)
+        config = {}
+        if scheme.configuration:
+            import json
+            try:
+                config = json.loads(scheme.configuration)
+            except:
+                config = {}
+        
+        # Configuration parameters with defaults
+        cng_rate = config.get('cng_rate', 90.0)
+        insurance_deduction = config.get('insurance_deduction_amount', 60.0)
+        operator_threshold = config.get('operator_threshold', 4500.0)
+        operator_low_percent = config.get('operator_low_percentage', 30.0) / 100
+        operator_high_percent = config.get('operator_high_percentage', 70.0) / 100
+        
+        # Extract data from duty with safe attribute access
+        # Cash collection inputs (map to existing fields)
+        cash1 = getattr(duty, 'cash_collection', 0.0) or 0.0  # Cash Collected 1
+        cash2 = getattr(duty, 'digital_payments', 0.0) or 0.0  # Cash Collected 2  
+        out_cash = getattr(duty, 'card_payments', 0.0) or 0.0  # Out Cash
+        
+        # Operator inputs
+        op1 = getattr(duty, 'uber_collected', 0.0) or 0.0  # Operator 1
+        op2 = getattr(duty, 'wallet_payments', 0.0) or 0.0  # Operator 2
+        out_operator = getattr(duty, 'operator_out', 0.0) or 0.0  # Out Operator
+        
+        # Other inputs
+        pass_deduction = getattr(duty, 'pass_amount', 0.0) or 0.0  # Pass Deduction
+        start_cng = getattr(duty, 'start_cng', 0.0) or 0.0  # Start CNG
+        end_cng = getattr(duty, 'end_cng', 0.0) or 0.0  # End CNG
+        
+        # 1. Calculate totals
+        total_cash = cash1 + cash2 + out_cash
+        in_house_operator_total = op1 + op2
+        grand_total_operator = in_house_operator_total + out_operator
+        
+        # 2. Gross Salary Calculation
+        in_house_salary = 0.0
+        if in_house_operator_total > operator_threshold:
+            in_house_salary = (operator_threshold * operator_low_percent) + \
+                            ((in_house_operator_total - operator_threshold) * operator_high_percent)
+        else:
+            in_house_salary = in_house_operator_total * operator_low_percent
+        
+        out_operator_salary = out_operator * operator_low_percent
+        gross_salary = in_house_salary + out_operator_salary
+        
+        # 3. Net Salary Calculation  
+        net_salary = gross_salary - insurance_deduction
+        
+        # 4. CNG Calculation
+        base_cng = grand_total_operator * operator_low_percent  # 30% of total operator
+        cng_adjustment = (start_cng - end_cng) * cng_rate
+        final_cng = base_cng - cng_adjustment
+        
+        # 5. Final Settlement Calculation
+        company_settlement = (total_cash - final_cng) + pass_deduction - net_salary
+        
+        # Return net salary as earnings and detailed breakdown
+        earnings = net_salary
+        
+        breakdown = {
+            'total_cash': round(total_cash, 2),
+            'grand_total_operator': round(grand_total_operator, 2), 
+            'gross_salary': round(gross_salary, 2),
+            'insurance_deduction': round(insurance_deduction, 2),
+            'net_salary': round(net_salary, 2),
+            'base_cng': round(base_cng, 2),
+            'cng_adjustment': round(cng_adjustment, 2),
+            'final_cng': round(final_cng, 2),
+            'company_settlement': round(company_settlement, 2),
+            'final_earnings': round(earnings, 2),
+            
+            # Additional breakdown details
+            'in_house_operator_total': round(in_house_operator_total, 2),
+            'in_house_salary': round(in_house_salary, 2),
+            'out_operator_salary': round(out_operator_salary, 2),
+            'pass_deduction': round(pass_deduction, 2),
+            'start_cng': round(start_cng, 2),
+            'end_cng': round(end_cng, 2),
+            'cng_rate': round(cng_rate, 2)
+        }
+        
+        return earnings, breakdown
     
     def get_active_duties_summary(self) -> Dict[str, Any]:
         """
