@@ -2,19 +2,19 @@
 
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    /* Primary brand colors - Light Attractive Theme */
-    --pls-primary: #60a5fa;          /* Light sky blue */
-    --pls-primary-light: #93c5fd;     /* Very light blue */
-    --pls-primary-dark: #3b82f6;      /* Medium blue */
-    --pls-accent: #6ee7b7;            /* Light mint green */
-    --pls-accent-light: #a7f3d0;      /* Very light mint */
-    --pls-accent-dark: #34d399;       /* Medium mint */
+    /* Primary brand colors - Modern Purple & Orange Theme */
+    --pls-primary: #8b5cf6;          /* Rich purple */
+    --pls-primary-light: #a78bfa;     /* Light purple */
+    --pls-primary-dark: #7c3aed;      /* Dark purple */
+    --pls-accent: #f97316;            /* Vibrant orange */
+    --pls-accent-light: #fb923c;      /* Light orange */
+    --pls-accent-dark: #ea580c;       /* Dark orange */
     
-    /* Status colors - Light Vibrant Palette */
-    --pls-success: #34d399;           /* Light emerald */
-    --pls-warning: #fbbf24;           /* Light amber */
-    --pls-danger: #f87171;            /* Light red */
-    --pls-info: #60a5fa;              /* Light blue */
+    /* Status colors - Enhanced Vibrant Palette */
+    --pls-success: #10b981;           /* Emerald green */
+    --pls-warning: #f59e0b;           /* Amber */
+    --pls-danger: #ef4444;            /* Red */
+    --pls-info: #3b82f6;              /* Blue */
     
     /* Neutral colors - light pastel palette */
     --pls-slate-50: #ffffff;          /* Pure white */
@@ -29,7 +29,7 @@
     --pls-slate-900: #1e293b;         /* Nearly black */
     
     /* Legacy support with enhanced colors */
-    --pls-secondary: #6366f1;         /* Indigo */
+    --pls-secondary: #06b6d4;         /* Cyan */
     --pls-light: var(--pls-slate-50);
     --pls-dark: var(--pls-slate-900);
     --pls-text-dark: #1f2937;         /* Darker text for better contrast */
@@ -39,11 +39,13 @@
     --pls-gray-medium: var(--pls-slate-500);
     --pls-gray-dark: var(--pls-slate-700);
     
-    /* Additional light attractive colors */
-    --pls-purple: #a78bfa;            /* Light purple */
-    --pls-pink: #f472b6;              /* Light pink */
-    --pls-orange: #fb923c;            /* Light orange */
-    --pls-teal: #2dd4bf;              /* Light teal */
+    /* Additional modern attractive colors */
+    --pls-purple: #a855f7;            /* Modern purple */
+    --pls-pink: #ec4899;              /* Hot pink */
+    --pls-orange: #f97316;            /* Modern orange */
+    --pls-teal: #14b8a6;              /* Modern teal */
+    --pls-lime: #84cc16;              /* Fresh lime */
+    --pls-rose: #f43f5e;              /* Modern rose */
     
     /* Typography scale */
     --pls-font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
@@ -925,7 +927,7 @@ input[type="file"] {
 [data-bs-theme="light"] .navbar {
     background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
     border-bottom: none;
-    box-shadow: 0 2px 8px rgba(96, 165, 250, 0.1);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
 }
 
 [data-bs-theme="light"] .navbar-brand {
@@ -974,7 +976,7 @@ input[type="file"] {
     border-color: var(--pls-primary-dark);
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
 }
 
 [data-bs-theme="light"] .btn-secondary {
@@ -1042,11 +1044,11 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .btn-warning:hover {
-    background-color: #e8650e;
-    border-color: #e8650e;
+    background-color: #d97706;
+    border-color: #d97706;
     color: var(--pls-text-light);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(253, 126, 20, 0.4);
+    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.4);
 }
 
 [data-bs-theme="light"] .alert-warning {
