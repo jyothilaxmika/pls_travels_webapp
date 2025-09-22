@@ -13,46 +13,17 @@ class PLSTravelsPWA {
   async init() {
     console.log('Initializing PLS TRAVELS PWA...');
     
-    // Register service worker
-    await this.registerServiceWorker();
+    // Temporarily disabled PWA features to prevent flickering
+    console.log('PWA features temporarily disabled for stability');
     
-    // Setup install prompt
-    this.setupInstallPrompt();
-    
-    // Check if already installed
-    this.checkInstallStatus();
-    
-    // Setup push notifications
-    this.setupPushNotifications();
-    
-    // Add iOS specific meta tags
+    // Only keep iOS meta tags for mobile compatibility
     this.addIOSMetaTags();
   }
 
   async registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      try {
-        this.swRegistration = await navigator.serviceWorker.register('/static/sw.js', {
-          scope: '/'
-        });
-        
-        console.log('Service Worker registered successfully:', this.swRegistration);
-        
-        // Listen for updates
-        this.swRegistration.addEventListener('updatefound', () => {
-          const newWorker = this.swRegistration.installing;
-          
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              this.showUpdateAvailable();
-            }
-          });
-        });
-        
-      } catch (error) {
-        console.error('Service Worker registration failed:', error);
-      }
-    }
+    // Temporarily disabled to prevent flickering issues
+    console.log('Service Worker registration disabled to prevent page flickering');
+    return;
   }
 
   setupInstallPrompt() {
