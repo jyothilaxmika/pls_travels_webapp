@@ -308,6 +308,73 @@ table {
     background: #ffffff;
 }
 
+/* Additional navigation enhancements for menu items */
+.sidebar-nav .nav-item {
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-nav .nav-link {
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-nav .nav-link:hover {
+    color: var(--pls-primary) !important;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);
+    border-color: var(--pls-primary-light);
+    font-weight: 700;
+    transform: translateX(8px);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+}
+
+.sidebar-nav .nav-link.active {
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    border-color: var(--pls-primary-dark);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Navigation icons enhancement */
+.nav-link i {
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+.nav-link:hover i,
+.nav-link.active i {
+    opacity: 1;
+}
+
+/* List-based navigation menus */
+.list-group .list-group-item.nav-item {
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 2px solid transparent;
+    margin-bottom: 0.25rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.list-group .list-group-item.nav-item:hover {
+    color: var(--pls-primary) !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+    border-color: var(--pls-primary-light) !important;
+    font-weight: 700;
+    transform: translateX(5px);
+}
+
 /* Comprehensive responsive design for mobile and desktop */
 @media (max-width: 576px) {
     .container-fluid {
@@ -1135,29 +1202,48 @@ input[type="file"] {
     font-size: 1.4rem;
 }
 
-[data-bs-theme="light"] .nav-link {
+[data-bs-theme="light"] .navbar .nav-link {
     color: rgba(255, 255, 255, 0.95) !important;
-    font-weight: 500;
-    font-size: 0.95rem;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    font-weight: 600;
+    font-size: 1rem;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
-[data-bs-theme="light"] .nav-link:hover {
+[data-bs-theme="light"] .navbar .nav-link:hover {
     color: #ffffff !important;
     background-color: rgba(255, 255, 255, 0.15);
     border-radius: 4px;
     transform: translateY(-1px);
+    font-weight: 700;
 }
 
-/* Sidebar navigation fixes */
+/* Enhanced sidebar navigation with better font colors */
 .nav-pills .nav-link {
-    color: var(--pls-text-dark) !important;
-    font-weight: 500;
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.25rem;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--pls-primary) !important;
+    background-color: rgba(139, 92, 246, 0.1) !important;
+    border-color: var(--pls-primary-light);
+    font-weight: 700;
+    transform: translateX(5px);
 }
 
 .nav-pills .nav-link.active {
     background-color: var(--pls-primary) !important;
     color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    border-color: var(--pls-primary-dark);
 }
 
 [data-bs-theme="light"] .btn-primary {
