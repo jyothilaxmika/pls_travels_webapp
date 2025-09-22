@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
 {% block title %}D2D Final Settlement Calculator - PLS TRAVELS{% endblock %}
 
@@ -308,7 +308,8 @@ function saveCalculation() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
+            'X-CSRFToken': getCSRFToken(),
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify(window.currentCalculation)
     })

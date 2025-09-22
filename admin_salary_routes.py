@@ -59,7 +59,7 @@ def save_method_configuration(method_name):
             return jsonify({'success': False, 'message': 'No configuration data provided'})
         
         # Validate method name
-        valid_methods = ['revenue_share', 'fixed_daily', 'slab_incentive', 'hybrid_commission', 'final_settlement']
+        valid_methods = ['d2d', 'revenue_share', 'fixed_daily', 'slab_incentive', 'hybrid_commission', 'final_settlement']
         if method_name not in valid_methods:
             return jsonify({'success': False, 'message': 'Invalid method name'})
         
@@ -186,6 +186,11 @@ def initialize_default_methods():
         salary_service = NewSalaryCalculationService()
         
         method_definitions = [
+            {
+                'method_name': 'd2d',
+                'display_name': 'D2D Final Settlement',
+                'description': 'Tamil-style day-to-day settlement with operator and CNG calculations'
+            },
             {
                 'method_name': 'revenue_share',
                 'display_name': 'Revenue Share',
@@ -443,6 +448,40 @@ def bulk_calculate_salaries():
         db.session.rollback()
         logger.error(f"Error in bulk salary calculation: {str(e)}")
         return jsonify({'success': False, 'message': f'Bulk calculation error: {str(e)}'})
+
+@admin_salary_bp.route('/d2d/calculator')
+@login_required
+@admin_required  
+def d2d_calculator():
+    """Display the D2D calculator interface"""
+    return render_template('admin/d2d_calculator.html')
+
+@admin_salary_bp.route('/d2d/save-calculation', methods=['POST'])
+@login_required
+@admin_required
+def save_d2d_calculation():
+    """Save a D2D calculation result"""
+    try:
+        calculation_data = request.get_json()
+        if not calculation_data:
+            return jsonify({'success': False, 'message': 'No calculation data provided'})
+        
+        # Save calculation to audit log
+        AuditService.log_action(
+            'save_d2d_calculation', 'system', None,
+            {
+                'inputs': calculation_data.get('inputs', {}),
+                'results': calculation_data.get('results', {}),
+                'saved_by': current_user.username,
+                'calculation_type': 'D2D Final Settlement'
+            }
+        )
+        
+        return jsonify({'success': True, 'message': 'D2D calculation saved successfully'})
+        
+    except Exception as e:
+        logger.error(f"Error saving D2D calculation: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error saving calculation: {str(e)}'})
 
 @admin_salary_bp.route('/reports')
 @login_required

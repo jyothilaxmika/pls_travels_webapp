@@ -463,6 +463,11 @@ def create_app():
     app.register_blueprint(mobile_api_bp)   # Mobile API includes /api/v1/driver/*
     app.register_blueprint(mobile_extensions_bp)  # Extended mobile API for production Android app
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    
+    # Import and register admin salary blueprint
+    from admin_salary_routes import admin_salary_bp
+    app.register_blueprint(admin_salary_bp)
+    
     app.register_blueprint(manager_bp, url_prefix='/manager')
     app.register_blueprint(driver_bp, url_prefix='/driver')
     app.register_blueprint(storage_bp)
