@@ -36,10 +36,8 @@ function initializeRealTimeUpdates() {
     // Update time displays every minute
     setInterval(updateTimeDisplays, 60000);
     
-    // Auto-refresh dashboard data every 5 minutes for active users
-    if (isUserActive()) {
-        setInterval(refreshDashboardData, 300000); // 5 minutes
-    }
+    // Removed auto-refresh to prevent screen flickering
+    // Dashboard data can be refreshed manually by user
 }
 
 function updateTimeDisplays() {
@@ -63,13 +61,9 @@ function isUserActive() {
 }
 
 function refreshDashboardData() {
-    // Only refresh if user is still active on the page
-    if (document.hidden) return;
-    
-    // Reload page for fresh data
-    if (isUserActive()) {
-        window.location.reload();
-    }
+    // Disabled automatic page reload to prevent flickering
+    // Users can manually refresh by pressing F5 or refresh button
+    console.log('Manual refresh required for latest data');
 }
 
 // Chart utility functions
