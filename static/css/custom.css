@@ -90,9 +90,51 @@ p, span, div, li, td, th, label {
     font-weight: 500;
 }
 
-/* Table content with enhanced visibility */
+/* Table content with enhanced visibility and scroll options */
 table {
     color: var(--pls-text-dark) !important;
+}
+
+/* Comprehensive table responsiveness with scroll */
+.table-responsive {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: 70vh;
+    border: 2px solid var(--pls-slate-200);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Ensure tables don't break layout */
+.table-responsive table {
+    min-width: 100%;
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+/* Enhanced scrollbar for tables */
+.table-responsive::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: var(--pls-slate-100);
+    border-radius: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--pls-primary);
+    border-radius: 6px;
+    border: 2px solid var(--pls-slate-100);
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: var(--pls-primary-dark);
+}
+
+.table-responsive::-webkit-scrollbar-corner {
+    background: var(--pls-slate-100);
 }
 
 /* Form elements with maximum contrast */
@@ -154,12 +196,22 @@ table {
     border: 1px solid rgba(0,0,0,0.1);
 }
 
-/* List group fixes with enhanced contrast */
+/* List group fixes with enhanced contrast and scroll */
+.list-group {
+    max-height: 50vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 2px solid var(--pls-slate-200);
+}
+
 .list-group-item {
     color: var(--pls-text-dark) !important;
     background-color: #ffffff;
-    border: 2px solid var(--pls-slate-200);
+    border: 1px solid var(--pls-slate-200);
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .list-group-item:hover {
@@ -167,12 +219,93 @@ table {
     color: var(--pls-text-strong) !important;
     font-weight: 700;
     border-color: var(--pls-primary) !important;
+    white-space: normal;
+    overflow: visible;
+}
+
+.list-group-item.long-content {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 
 /* Ensure text is always visible and crisp */
 * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+/* Universal scroll enhancement classes */
+.scroll-container {
+    overflow: auto;
+    max-height: 70vh;
+    border: 1px solid var(--pls-slate-200);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.horizontal-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+
+.vertical-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 50vh;
+}
+
+.full-scroll {
+    overflow: auto;
+    max-height: 70vh;
+    max-width: 100%;
+}
+
+/* Data display containers with scroll */
+.data-container {
+    background: #ffffff;
+    border: 2px solid var(--pls-slate-200);
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 60vh;
+    padding: 1rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Enhanced table wrapper for all data visibility */
+.table-wrapper {
+    background: #ffffff;
+    border: 2px solid var(--pls-slate-200);
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 70vh;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.table-wrapper table {
+    margin-bottom: 0;
+    min-width: 800px; /* Ensure minimum width for proper column display */
+}
+
+/* Long text content handling */
+.text-content {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid var(--pls-slate-200);
+    border-radius: 4px;
+    background: var(--pls-slate-50);
+}
+
+/* Form sections with scroll for long forms */
+.form-section.scrollable {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid var(--pls-slate-200);
+    border-radius: 8px;
+    background: #ffffff;
 }
 
 /* Comprehensive responsive design for mobile and desktop */
@@ -246,9 +379,30 @@ table {
         max-width: calc(100% - 1rem);
     }
     
-    /* Table improvements */
+    /* Table improvements with enhanced scroll on mobile */
     .table-responsive {
         font-size: 0.875rem;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        border: 2px solid var(--pls-slate-200);
+        border-radius: 8px;
+        max-height: 60vh;
+    }
+    
+    /* Ensure table cells don't wrap on mobile */
+    .table-responsive td, .table-responsive th {
+        white-space: nowrap;
+        min-width: 120px;
+    }
+    
+    /* Content containers with scroll */
+    .content-scroll {
+        max-height: 50vh;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid var(--pls-slate-200);
+        border-radius: 6px;
+        padding: 1rem;
     }
     
     /* Improve touch targets */
@@ -906,6 +1060,21 @@ input[type="file"] {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 8px;
     color: var(--pls-text-dark) !important;
+    overflow: hidden;
+}
+
+/* Card body with scroll options */
+[data-bs-theme="light"] .card-body.scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Large content cards with scroll */
+[data-bs-theme="light"] .card.large-content .card-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: auto;
 }
 
 [data-bs-theme="light"] .card-title {
@@ -1174,23 +1343,29 @@ input[type="file"] {
     color: var(--pls-primary);
 }
 
-/* Custom scrollbar for webkit browsers */
+/* Enhanced custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--pls-light);
+    background: var(--pls-slate-100);
+    border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--pls-secondary);
-    border-radius: 4px;
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
+    border-radius: 6px;
+    border: 2px solid var(--pls-slate-100);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--pls-primary);
+    background: linear-gradient(135deg, var(--pls-primary-dark) 0%, var(--pls-accent-dark) 100%);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--pls-slate-100);
 }
 
 /* Utility classes for spacing */
@@ -1253,11 +1428,15 @@ input[type="file"] {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Enhanced modal styling */
+/* Enhanced modal styling with scroll support */
 .modal-content {
     border: none;
     border-radius: 10px;
     color: var(--pls-text-dark) !important;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
@@ -1265,6 +1444,7 @@ input[type="file"] {
     padding: 1.5rem;
     background-color: var(--pls-primary);
     color: #ffffff !important;
+    flex-shrink: 0;
 }
 
 .modal-title {
@@ -1275,12 +1455,17 @@ input[type="file"] {
 .modal-body {
     color: var(--pls-text-dark) !important;
     padding: 1.5rem;
+    overflow-y: auto;
+    overflow-x: auto;
+    flex-grow: 1;
+    max-height: calc(90vh - 200px);
 }
 
 .modal-footer {
     border-top: 1px solid var(--pls-slate-200);
     padding: 1.5rem;
     background-color: var(--pls-slate-50);
+    flex-shrink: 0;
 }
 
 /* Tooltip customization */
