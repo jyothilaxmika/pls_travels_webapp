@@ -32,9 +32,10 @@
     --pls-secondary: #06b6d4;         /* Cyan */
     --pls-light: var(--pls-slate-50);
     --pls-dark: var(--pls-slate-900);
-    --pls-text-dark: #1f2937;         /* Darker text for better contrast */
+    --pls-text-dark: #111827;         /* Very dark text for maximum contrast */
     --pls-text-light: #ffffff;
-    --pls-text-muted: #6b7280;        /* Muted text with good contrast */
+    --pls-text-muted: #4b5563;        /* Darker muted text for better visibility */
+    --pls-text-strong: #000000;       /* Pure black for critical content */
     --pls-gray-light: var(--pls-slate-100);
     --pls-gray-medium: var(--pls-slate-500);
     --pls-gray-dark: var(--pls-slate-700);
@@ -77,73 +78,95 @@ body {
     font-weight: 400;
 }
 
-/* Ensure all text elements have proper contrast */
+/* Ensure all text elements have maximum contrast */
 h1, h2, h3, h4, h5, h6 {
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+}
+
+p, span, div, li, td, th, label {
     color: var(--pls-text-dark) !important;
+    font-weight: 500;
+}
+
+/* Table content with enhanced visibility */
+table {
+    color: var(--pls-text-dark) !important;
+}
+
+/* Form elements with maximum contrast */
+.form-label {
+    color: var(--pls-text-strong) !important;
     font-weight: 600;
 }
 
-p, span, div, li, td, th {
-    color: var(--pls-text-dark) !important;
-}
-
-/* Form elements with better contrast */
-.form-label {
+.form-control, .form-select {
     color: var(--pls-text-dark) !important;
     font-weight: 500;
 }
 
 .form-text {
     color: var(--pls-text-muted) !important;
+    font-weight: 500;
 }
 
-/* Muted text should still be readable */
-.text-muted {
+/* Enhanced muted text visibility */
+.text-muted, .small, small {
     color: var(--pls-text-muted) !important;
+    font-weight: 500;
 }
 
-/* Dropdown menu fixes */
+/* Dropdown menu fixes with enhanced contrast */
 .dropdown-menu {
     background-color: #ffffff !important;
-    border: 1px solid var(--pls-slate-200) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    border: 2px solid var(--pls-slate-200) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2) !important;
 }
 
 .dropdown-item {
     color: var(--pls-text-dark) !important;
-    font-weight: 400;
+    font-weight: 600;
 }
 
 .dropdown-item:hover, .dropdown-item:focus {
-    background-color: var(--pls-slate-50) !important;
-    color: var(--pls-text-dark) !important;
+    background-color: var(--pls-primary) !important;
+    color: #ffffff !important;
+    font-weight: 700;
 }
 
-/* Breadcrumb fixes */
+/* Breadcrumb fixes with enhanced visibility */
 .breadcrumb-item {
     color: var(--pls-text-dark) !important;
+    font-weight: 600;
 }
 
 .breadcrumb-item.active {
-    color: var(--pls-text-muted) !important;
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
 }
 
-/* Badge fixes */
+/* Badge fixes with maximum contrast */
 .badge {
-    font-weight: 500;
+    font-weight: 700;
     color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.1);
 }
 
-/* List group fixes */
+/* List group fixes with enhanced contrast */
 .list-group-item {
     color: var(--pls-text-dark) !important;
     background-color: #ffffff;
-    border: 1px solid var(--pls-slate-200);
+    border: 2px solid var(--pls-slate-200);
+    font-weight: 500;
 }
 
 .list-group-item:hover {
-    background-color: var(--pls-slate-50) !important;
-    color: var(--pls-text-dark) !important;
+    background-color: var(--pls-primary-light) !important;
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    border-color: var(--pls-primary) !important;
 }
 
 /* Ensure text is always visible and crisp */
@@ -886,42 +909,48 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .card-title {
-    color: var(--pls-text-dark) !important;
-    font-weight: 600;
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.2);
 }
 
 [data-bs-theme="light"] .card-text {
     color: var(--pls-text-dark) !important;
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .card-header {
     background-color: var(--pls-slate-50);
-    color: var(--pls-text-dark) !important;
-    font-weight: 600;
-    border-bottom: 1px solid var(--pls-slate-200);
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    border-bottom: 2px solid var(--pls-slate-200);
 }
 
 [data-bs-theme="light"] .card-body {
     color: var(--pls-text-dark) !important;
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .table th {
     background-color: var(--pls-slate-100);
-    color: var(--pls-text-dark) !important;
-    border-bottom: 2px solid var(--pls-primary);
-    font-weight: 600;
+    color: var(--pls-text-strong) !important;
+    border-bottom: 3px solid var(--pls-primary);
+    font-weight: 700;
     padding: 0.75rem;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.2);
 }
 
 [data-bs-theme="light"] .table td {
     color: var(--pls-text-dark) !important;
     padding: 0.75rem;
     border-bottom: 1px solid var(--pls-slate-200);
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .table tr:hover td {
     background-color: var(--pls-slate-50);
-    color: var(--pls-text-dark) !important;
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
 }
 
 [data-bs-theme="light"] .navbar {
