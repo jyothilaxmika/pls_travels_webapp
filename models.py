@@ -492,6 +492,58 @@ class Vehicle(db.Model):
     def __repr__(self):
         return f'<Vehicle {self.registration_number}>'
 
+class NewSalaryMethod(db.Model):
+    """New 5-Method Salary Calculation System"""
+    __tablename__ = 'new_salary_methods'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Method identification
+    method_name = db.Column(db.String(50), nullable=False, index=True)  # revenue_share, fixed_daily, etc.
+    display_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    
+    # Branch and vehicle type scope
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)  # NULL for global
+    vehicle_type_id = db.Column(db.Integer, db.ForeignKey('vehicle_types.id'), nullable=True)
+    
+    # Configuration (JSON) - Editable via HTML forms
+    configuration = db.Column(db.Text, nullable=False)  # JSON configuration
+    html_form_config = db.Column(db.Text)  # HTML form field definitions
+    
+    # Status and validity
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    is_default = db.Column(db.Boolean, default=False)
+    effective_from = db.Column(db.Date, nullable=False)
+    effective_until = db.Column(db.Date)
+    
+    # Audit fields
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    def get_configuration(self):
+        import json
+        return json.loads(self.configuration) if self.configuration else {}
+    
+    def set_configuration(self, config_dict):
+        import json
+        self.configuration = json.dumps(config_dict)
+    
+    def get_html_form_config(self):
+        import json
+        return json.loads(self.html_form_config) if self.html_form_config else {}
+    
+    def set_html_form_config(self, form_config):
+        import json
+        self.html_form_config = json.dumps(form_config)
+    
+    def __repr__(self):
+        return f'<NewSalaryMethod {self.method_name}: {self.display_name}>'
+
+# Keep old DutyScheme for backward compatibility during transition
 class DutyScheme(db.Model):
     __tablename__ = 'duty_schemes'
     
@@ -502,7 +554,7 @@ class DutyScheme(db.Model):
     
     name = db.Column(db.String(100), nullable=False, index=True)
     description = db.Column(db.Text)
-    scheme_type = db.Column(db.String(20), nullable=False, index=True)  # scheme_1, scheme_2, scheme_3, scheme_4, scheme_5
+    scheme_type = db.Column(db.String(20), nullable=False, index=True)  # Will be replaced by new system
     
     # Configuration stored as JSON with validation
     configuration = db.Column(db.Text)  # JSON configuration
@@ -688,6 +740,7 @@ class Duty(db.Model):
     gross_revenue = db.Column(db.Float, default=0.0)
     net_revenue = db.Column(db.Float, default=0.0)
     driver_earnings = db.Column(db.Float, default=0.0)
+    earnings_breakdown = db.Column(db.Text)  # JSON breakdown of salary calculation
     company_profit = db.Column(db.Float, default=0.0)
     
     # Status and notes

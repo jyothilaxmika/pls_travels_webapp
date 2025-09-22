@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Calculation Methods - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-calculator me-2"></i>Salary Calculation Methods</h2>
+            <p class="text-muted">Configure 5 different salary calculation methods with custom settings</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMethodModal">
+                <i class="fas fa-plus me-1"></i>Add New Method
+            </button>
+            <button class="btn btn-secondary" onclick="initializeDefaultMethods()">
+                <i class="fas fa-sync me-1"></i>Initialize Defaults
+            </button>
+        </div>
+    </div>
+
+    <!-- Method Selection Tabs -->
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="methodTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="revenue-share-tab" data-bs-toggle="tab" data-bs-target="#revenue-share" type="button" role="tab">
+                        <i class="fas fa-percentage me-1"></i>Revenue Share
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="fixed-daily-tab" data-bs-toggle="tab" data-bs-target="#fixed-daily" type="button" role="tab">
+                        <i class="fas fa-money-bill me-1"></i>Fixed Daily
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="slab-incentive-tab" data-bs-toggle="tab" data-bs-target="#slab-incentive" type="button" role="tab">
+                        <i class="fas fa-chart-line me-1"></i>Slab Incentive
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="hybrid-commission-tab" data-bs-toggle="tab" data-bs-target="#hybrid-commission" type="button" role="tab">
+                        <i class="fas fa-coins me-1"></i>Hybrid Commission
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="final-settlement-tab" data-bs-toggle="tab" data-bs-target="#final-settlement" type="button" role="tab">
+                        <i class="fas fa-receipt me-1"></i>Final Settlement
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-content" id="methodTabContent">
+                
+                <!-- Revenue Share Method -->
+                <div class="tab-pane fade show active" id="revenue-share" role="tabpanel">
+                    <form id="revenueShareForm" class="salary-method-form" data-method="revenue_share">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-percentage text-primary me-2"></i>Revenue Sharing Configuration</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Driver Percentage (%)</label>
+                                    <input type="number" class="form-control" name="driver_percentage" value="70" min="0" max="100" step="0.1">
+                                    <div class="form-text">Percentage of revenue that goes to driver</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Company Percentage (%)</label>
+                                    <input type="number" class="form-control" name="company_percentage" value="30" min="0" max="100" step="0.1">
+                                    <div class="form-text">Percentage of revenue that goes to company</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Minimum Guarantee (₹)</label>
+                                    <input type="number" class="form-control" name="minimum_guarantee" value="0" min="0" step="50">
+                                    <div class="form-text">Minimum salary guarantee per duty</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Deduction Types</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="deduction_types" value="insurance" id="rs-insurance" checked>
+                                    <label class="form-check-label" for="rs-insurance">Insurance</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="deduction_types" value="fuel_advance" id="rs-fuel" checked>
+                                    <label class="form-check-label" for="rs-fuel">Fuel Advance</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="deduction_types" value="maintenance" id="rs-maintenance" checked>
+                                    <label class="form-check-label" for="rs-maintenance">Maintenance</label>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="form-label">Maximum Cap (₹)</label>
+                                    <input type="number" class="form-control" name="maximum_cap" value="0" min="0" step="100">
+                                    <div class="form-text">Maximum earnings cap (0 = no limit)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="saveMethodConfiguration('revenue_share')">
+                                <i class="fas fa-save me-1"></i>Save Configuration
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" onclick="testCalculation('revenue_share')">
+                                <i class="fas fa-calculator me-1"></i>Test Calculation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Fixed Daily Method -->
+                <div class="tab-pane fade" id="fixed-daily" role="tabpanel">
+                    <form id="fixedDailyForm" class="salary-method-form" data-method="fixed_daily">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-money-bill text-success me-2"></i>Fixed Daily Rate Configuration</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Daily Rate (₹)</label>
+                                    <input type="number" class="form-control" name="daily_rate" value="500" min="0" step="50">
+                                    <div class="form-text">Fixed amount paid per duty</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Overtime Rate per Hour (₹)</label>
+                                    <input type="number" class="form-control" name="overtime_rate_per_hour" value="50" min="0" step="5">
+                                    <div class="form-text">Extra payment for hours beyond 8 hours</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Holiday Bonus Percentage (%)</label>
+                                    <input type="number" class="form-control" name="holiday_bonus_percentage" value="20" min="0" max="100" step="5">
+                                    <div class="form-text">Extra percentage for weekend/holiday duties</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Additional Benefits</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Attendance Bonus (₹)</label>
+                                    <input type="number" class="form-control" name="attendance_bonus" value="100" min="0" step="25">
+                                    <div class="form-text">Bonus for completing 8+ hour duties</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Late Penalty per Hour (₹)</label>
+                                    <input type="number" class="form-control" name="late_penalty_per_hour" value="25" min="0" step="5">
+                                    <div class="form-text">Deduction for late starts</div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Note:</strong> Overtime is calculated for duties exceeding 8 hours. Holiday bonus applies to weekends.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="saveMethodConfiguration('fixed_daily')">
+                                <i class="fas fa-save me-1"></i>Save Configuration
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" onclick="testCalculation('fixed_daily')">
+                                <i class="fas fa-calculator me-1"></i>Test Calculation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Slab Incentive Method -->
+                <div class="tab-pane fade" id="slab-incentive" role="tabpanel">
+                    <form id="slabIncentiveForm" class="salary-method-form" data-method="slab_incentive">
+                        <div class="row">
+                            <div class="col-12">
+                                <h5><i class="fas fa-chart-line text-warning me-2"></i>Slab-based Incentive Configuration</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Slab</th>
+                                                <th>Min Revenue (₹)</th>
+                                                <th>Max Revenue (₹)</th>
+                                                <th>Driver Percentage (%)</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="slabTableBody">
+                                            <tr>
+                                                <td>1</td>
+                                                <td><input type="number" class="form-control" name="slab1_min" value="0" readonly></td>
+                                                <td><input type="number" class="form-control" name="slab1_max" value="2000" min="0"></td>
+                                                <td><input type="number" class="form-control" name="slab1_percent" value="60" min="0" max="100"></td>
+                                                <td><span class="badge bg-success">Base Slab</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td><input type="number" class="form-control" name="slab2_min" value="2001" readonly></td>
+                                                <td><input type="number" class="form-control" name="slab2_max" value="4000" min="0"></td>
+                                                <td><input type="number" class="form-control" name="slab2_percent" value="65" min="0" max="100"></td>
+                                                <td><button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateSlabRange(2)">Update</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>3</td>
+                                                <td><input type="number" class="form-control" name="slab3_min" value="4001" readonly></td>
+                                                <td><input type="number" class="form-control" name="slab3_max" value="6000" min="0"></td>
+                                                <td><input type="number" class="form-control" name="slab3_percent" value="70" min="0" max="100"></td>
+                                                <td><button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateSlabRange(3)">Update</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>4</td>
+                                                <td><input type="number" class="form-control" name="slab4_min" value="6001" readonly></td>
+                                                <td><input type="number" class="form-control" name="slab4_max" value="99999" min="0"></td>
+                                                <td><input type="number" class="form-control" name="slab4_percent" value="75" min="0" max="100"></td>
+                                                <td><span class="badge bg-info">Top Slab</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Minimum Guarantee (₹)</label>
+                                        <input type="number" class="form-control" name="minimum_guarantee" value="400" min="0" step="50">
+                                        <div class="form-text">Minimum salary regardless of slab</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="saveMethodConfiguration('slab_incentive')">
+                                <i class="fas fa-save me-1"></i>Save Configuration
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" onclick="testCalculation('slab_incentive')">
+                                <i class="fas fa-calculator me-1"></i>Test Calculation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Hybrid Commission Method -->
+                <div class="tab-pane fade" id="hybrid-commission" role="tabpanel">
+                    <form id="hybridCommissionForm" class="salary-method-form" data-method="hybrid_commission">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-coins text-info me-2"></i>Hybrid Commission Configuration</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Base Salary (₹)</label>
+                                    <input type="number" class="form-control" name="base_salary" value="300" min="0" step="50">
+                                    <div class="form-text">Fixed base amount guaranteed daily</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Commission Threshold (₹)</label>
+                                    <input type="number" class="form-control" name="commission_threshold" value="2000" min="0" step="100">
+                                    <div class="form-text">Revenue threshold to start earning commission</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Commission Percentage (%)</label>
+                                    <input type="number" class="form-control" name="commission_percentage" value="25" min="0" max="100" step="1">
+                                    <div class="form-text">Percentage of revenue above threshold</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Performance Bonus Targets</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Target Trips per Day</label>
+                                    <input type="number" class="form-control" name="trips_target" value="20" min="0" step="1">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Target Revenue (₹)</label>
+                                    <input type="number" class="form-control" name="revenue_target" value="5000" min="0" step="100">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Bonus Amount (₹)</label>
+                                    <input type="number" class="form-control" name="bonus_amount" value="200" min="0" step="50">
+                                    <div class="form-text">Bonus when both targets are met</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="saveMethodConfiguration('hybrid_commission')">
+                                <i class="fas fa-save me-1"></i>Save Configuration
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" onclick="testCalculation('hybrid_commission')">
+                                <i class="fas fa-calculator me-1"></i>Test Calculation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Final Settlement Method -->
+                <div class="tab-pane fade" id="final-settlement" role="tabpanel">
+                    <form id="finalSettlementForm" class="salary-method-form" data-method="final_settlement">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-receipt text-danger me-2"></i>Final Settlement Configuration</h5>
+                                <div class="mb-3">
+                                    <label class="form-label">Revenue Low Threshold (₹)</label>
+                                    <input type="number" class="form-control" name="revenue_low_threshold" value="4500" min="0" step="100">
+                                    <div class="form-text">Revenue below this uses low share percentage</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Driver Share Low (%)</label>
+                                    <input type="number" class="form-control" name="driver_share_low" value="30" min="0" max="100" step="1">
+                                    <div class="form-text">Percentage for revenue below threshold</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Driver Share High (%)</label>
+                                    <input type="number" class="form-control" name="driver_share_high" value="70" min="0" max="100" step="1">
+                                    <div class="form-text">Percentage for revenue above threshold</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Standard Deductions</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Insurance Deduction (₹)</label>
+                                    <input type="number" class="form-control" name="insurance_deduction" value="90" min="0" step="10">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">CNG Rate per Liter (₹)</label>
+                                    <input type="number" class="form-control" name="cng_rate" value="90" min="0" step="1">
+                                </div>
+                                <h6>Other Deductions</h6>
+                                <div class="mb-2">
+                                    <label class="form-label">Permit Fee (₹)</label>
+                                    <input type="number" class="form-control" name="permit_fee" value="50" min="0" step="10">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Maintenance Reserve (₹)</label>
+                                    <input type="number" class="form-control" name="maintenance_reserve" value="100" min="0" step="25">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="saveMethodConfiguration('final_settlement')">
+                                <i class="fas fa-save me-1"></i>Save Configuration
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" onclick="testCalculation('final_settlement')">
+                                <i class="fas fa-calculator me-1"></i>Test Calculation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Calculation Modal -->
+    <div class="modal fade" id="testCalculationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Test Salary Calculation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="testCalculationForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Duty Data (Auto-fetched + Manual)</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Revenue (₹)</label>
+                                    <input type="number" class="form-control" id="test_revenue" value="3000" min="0">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Total Trips</label>
+                                    <input type="number" class="form-control" id="test_trips" value="15" min="0">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Duration (Hours)</label>
+                                    <input type="number" class="form-control" id="test_duration" value="8" min="0" step="0.5">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Fuel Consumed (Liters)</label>
+                                    <input type="number" class="form-control" id="test_fuel" value="0" min="0" step="0.1">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Manual Deductions</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Advance Taken (₹)</label>
+                                    <input type="number" class="form-control" id="test_advance" value="0" min="0">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Toll Expense (₹)</label>
+                                    <input type="number" class="form-control" id="test_toll" value="0" min="0">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Maintenance Expense (₹)</label>
+                                    <input type="number" class="form-control" id="test_maintenance" value="0" min="0">
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="test_weekend">
+                                    <label class="form-check-label" for="test_weekend">Weekend Duty</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="calculationResult" class="mt-4"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="runTestCalculation()">
+                        <i class="fas fa-calculator me-1"></i>Calculate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentTestMethod = '';
+
+// Save method configuration
+function saveMethodConfiguration(method) {
+    const form = document.querySelector(`form[data-method="${method}"]`);
+    const formData = new FormData(form);
+    
+    // Convert form data to configuration object
+    const config = {};
+    for (let [key, value] of formData.entries()) {
+        if (key === 'deduction_types') {
+            config[key] = config[key] || [];
+            config[key].push(value);
+        } else if (key.includes('slab')) {
+            // Handle slab configuration
+            const [slabKey, slabNum, slabField] = key.split(/(\d+)/);
+            if (!config.slabs) config.slabs = [];
+            if (!config.slabs[parseInt(slabNum) - 1]) {
+                config.slabs[parseInt(slabNum) - 1] = {};
+            }
+            if (slabField === '_min') config.slabs[parseInt(slabNum) - 1]['min_revenue'] = parseFloat(value) || 0;
+            if (slabField === '_max') config.slabs[parseInt(slabNum) - 1]['max_revenue'] = parseFloat(value) || 0;
+            if (slabField === '_percent') config.slabs[parseInt(slabNum) - 1]['percentage'] = parseFloat(value) || 0;
+        } else {
+            config[key] = isNaN(value) ? value : parseFloat(value);
+        }
+    }
+    
+    // Send to server
+    fetch(`/admin/salary-methods/${method}/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `${method.replace('_', ' ').toUpperCase()} configuration saved successfully!`);
+        } else {
+            showAlert('error', `Error saving configuration: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Network error while saving configuration');
+    });
+}
+
+// Test calculation
+function testCalculation(method) {
+    currentTestMethod = method;
+    const modal = new bootstrap.Modal(document.getElementById('testCalculationModal'));
+    modal.show();
+}
+
+// Run test calculation
+function runTestCalculation() {
+    const testData = {
+        revenue: parseFloat(document.getElementById('test_revenue').value) || 0,
+        total_trips: parseInt(document.getElementById('test_trips').value) || 0,
+        duration_hours: parseFloat(document.getElementById('test_duration').value) || 0,
+        fuel_consumed: parseFloat(document.getElementById('test_fuel').value) || 0,
+        advance_taken: parseFloat(document.getElementById('test_advance').value) || 0,
+        toll_expense: parseFloat(document.getElementById('test_toll').value) || 0,
+        maintenance_expense: parseFloat(document.getElementById('test_maintenance').value) || 0,
+        is_weekend: document.getElementById('test_weekend').checked
+    };
+    
+    fetch(`/admin/salary-methods/${currentTestMethod}/test`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify(testData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        displayCalculationResult(data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('calculationResult').innerHTML = 
+            '<div class="alert alert-danger">Error running calculation</div>';
+    });
+}
+
+// Display calculation result
+function displayCalculationResult(result) {
+    const resultDiv = document.getElementById('calculationResult');
+    if (result.error) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+        return;
+    }
+    
+    const breakdown = result.breakdown || {};
+    resultDiv.innerHTML = `
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">${result.method_name} - Calculation Result</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Summary</h6>
+                        <table class="table table-sm">
+                            <tr><td>Total Salary:</td><td><strong>₹${result.total_salary.toFixed(2)}</strong></td></tr>
+                            <tr><td>Base Amount:</td><td>₹${result.base_amount.toFixed(2)}</td></tr>
+                            <tr><td>Incentive:</td><td>₹${result.incentive_amount.toFixed(2)}</td></tr>
+                            <tr><td>Deductions:</td><td>₹${result.deductions.toFixed(2)}</td></tr>
+                            <tr class="table-success"><td><strong>Net Salary:</strong></td><td><strong>₹${result.net_salary.toFixed(2)}</strong></td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Calculation Notes</h6>
+                        <p class="text-muted">${result.calculation_notes}</p>
+                        <h6>Breakdown</h6>
+                        <pre class="bg-light p-2" style="font-size: 0.8em;">${JSON.stringify(breakdown, null, 2)}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Initialize default methods
+function initializeDefaultMethods() {
+    if (confirm('This will initialize all 5 salary methods with default configurations. Continue?')) {
+        fetch('/admin/salary-methods/initialize', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Default salary methods initialized successfully!');
+                location.reload();
+            } else {
+                showAlert('error', `Error initializing methods: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Network error while initializing methods');
+        });
+    }
+}
+
+// Utility functions
+function getCSRFToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insert at top of container
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 5000);
+}
+
+function updateSlabRange(slabNum) {
+    // Update min value of next slab when max value of current slab changes
+    const maxInput = document.querySelector(`input[name="slab${slabNum}_max"]`);
+    const nextMinInput = document.querySelector(`input[name="slab${slabNum + 1}_min"]`);
+    if (nextMinInput) {
+        nextMinInput.value = parseInt(maxInput.value) + 1;
+    }
+}
+
+// Load existing configurations on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load configurations for each method
+    ['revenue_share', 'fixed_daily', 'slab_incentive', 'hybrid_commission', 'final_settlement'].forEach(method => {
+        loadMethodConfiguration(method);
+    });
+});
+
+function loadMethodConfiguration(method) {
+    fetch(`/admin/salary-methods/${method}/config`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.config) {
+            populateFormFromConfig(method, data.config);
+        }
+    })
+    .catch(error => {
+        console.error(`Error loading ${method} configuration:`, error);
+    });
+}
+
+function populateFormFromConfig(method, config) {
+    const form = document.querySelector(`form[data-method="${method}"]`);
+    if (!form) return;
+    
+    // Populate form fields based on configuration
+    Object.keys(config).forEach(key => {
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input) {
+            if (input.type === 'checkbox') {
+                input.checked = config[key];
+            } else {
+                input.value = config[key];
+            }
+        }
+    });
+    
+    // Special handling for slab configuration
+    if (method === 'slab_incentive' && config.slabs) {
+        config.slabs.forEach((slab, index) => {
+            const slabNum = index + 1;
+            const minInput = form.querySelector(`[name="slab${slabNum}_min"]`);
+            const maxInput = form.querySelector(`[name="slab${slabNum}_max"]`);
+            const percentInput = form.querySelector(`[name="slab${slabNum}_percent"]`);
+            
+            if (minInput) minInput.value = slab.min_revenue || 0;
+            if (maxInput) maxInput.value = slab.max_revenue || 0;
+            if (percentInput) percentInput.value = slab.percentage || 0;
+        });
+    }
+}
+</script>
+
+<style>
+.salary-method-form {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e9ecef;
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+    color: #495057;
+    font-weight: 600;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.form-check-input:checked {
+    background-color: var(--pls-primary);
+    border-color: var(--pls-primary);
+}
+
+.alert {
+    margin-bottom: 1rem;
+}
+
+.btn-primary {
+    background-color: var(--pls-primary);
+    border-color: var(--pls-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--pls-primary-dark);
+    border-color: var(--pls-primary-dark);
+}
+</style>
+{% endblock %}
