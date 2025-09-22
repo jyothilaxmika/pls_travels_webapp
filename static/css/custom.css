@@ -2,19 +2,19 @@
 
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    /* Primary brand colors - Modern Purple & Orange Theme */
-    --pls-primary: #8b5cf6;          /* Rich purple */
-    --pls-primary-light: #a78bfa;     /* Light purple */
-    --pls-primary-dark: #7c3aed;      /* Dark purple */
-    --pls-accent: #f97316;            /* Vibrant orange */
-    --pls-accent-light: #fb923c;      /* Light orange */
-    --pls-accent-dark: #ea580c;       /* Dark orange */
+    /* Primary brand colors - Professional Corporate Theme */
+    --pls-primary: #1e3a8a;          /* Professional navy blue */
+    --pls-primary-light: #3b82f6;     /* Medium blue */
+    --pls-primary-dark: #1e40af;      /* Dark blue */
+    --pls-accent: #059669;            /* Professional green */
+    --pls-accent-light: #10b981;      /* Light green */
+    --pls-accent-dark: #047857;       /* Dark green */
     
-    /* Status colors - Enhanced Vibrant Palette */
-    --pls-success: #10b981;           /* Emerald green */
-    --pls-warning: #f59e0b;           /* Amber */
-    --pls-danger: #ef4444;            /* Red */
-    --pls-info: #3b82f6;              /* Blue */
+    /* Status colors - Professional Palette */
+    --pls-success: #059669;           /* Professional green */
+    --pls-warning: #d97706;           /* Professional amber */
+    --pls-danger: #dc2626;            /* Professional red */
+    --pls-info: #2563eb;              /* Professional blue */
     
     /* Neutral colors - light pastel palette */
     --pls-slate-50: #ffffff;          /* Pure white */
@@ -29,7 +29,7 @@
     --pls-slate-900: #1e293b;         /* Nearly black */
     
     /* Legacy support with enhanced colors */
-    --pls-secondary: #06b6d4;         /* Cyan */
+    --pls-secondary: #475569;         /* Professional gray */
     --pls-light: var(--pls-slate-50);
     --pls-dark: var(--pls-slate-900);
     --pls-text-dark: #111827;         /* Very dark text for maximum contrast */
@@ -40,13 +40,13 @@
     --pls-gray-medium: var(--pls-slate-500);
     --pls-gray-dark: var(--pls-slate-700);
     
-    /* Additional modern attractive colors */
-    --pls-purple: #a855f7;            /* Modern purple */
-    --pls-pink: #ec4899;              /* Hot pink */
-    --pls-orange: #f97316;            /* Modern orange */
-    --pls-teal: #14b8a6;              /* Modern teal */
-    --pls-lime: #84cc16;              /* Fresh lime */
-    --pls-rose: #f43f5e;              /* Modern rose */
+    /* Additional professional colors */
+    --pls-purple: #6366f1;            /* Professional purple */
+    --pls-pink: #be185d;              /* Professional pink */
+    --pls-orange: #ea580c;            /* Professional orange */
+    --pls-teal: #0f766e;              /* Professional teal */
+    --pls-lime: #65a30d;              /* Professional lime */
+    --pls-rose: #be123c;              /* Professional rose */
     
     /* Typography scale */
     --pls-font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);

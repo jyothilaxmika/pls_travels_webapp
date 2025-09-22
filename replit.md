@@ -4,7 +4,21 @@ PLS TRAVELS is a comprehensive multi-city driver and fleet management system bui
 
 # Recent Changes
 
+## September 22, 2025
+- **Professional Corporate Theme**: Complete color scheme overhaul for professional appearance
+  - **Navy Blue Primary**: Changed from purple to professional navy blue (#1e3a8a) for corporate look
+  - **Professional Green Accent**: Replaced orange with professional green (#059669) for business appeal
+  - **Status Colors Updated**: All status indicators use professional color palette
+  - **Corporate Gray Secondary**: Updated secondary colors to professional grays
+  - **Enhanced Professionalism**: All UI elements now use sophisticated, corporate-appropriate colors
+  - **Business-Ready Appearance**: Color scheme suitable for enterprise and corporate clients
+
 ## September 20, 2025
+- **Screen Flickering Resolution**: Complete elimination of page flickering issues
+  - **Auto-Refresh Disabled**: Removed 5-minute automatic page refreshes causing flickering
+  - **Service Worker Issues Fixed**: Disabled problematic PWA features preventing screen disruption
+  - **Navigation Stability**: Fixed week navigation and calendar functions preventing page reloads
+  - **Stable User Experience**: Application now provides smooth, uninterrupted interface
 - **Attractive All-Content-Visible Theme**: Complete theme overhaul for maximum visibility and attractiveness
   - **Enhanced Text Contrast**: Updated text colors to #374151 for optimal readability on light backgrounds
   - **Improved Navigation**: White text on gradient background with proper hover effects and shadows
