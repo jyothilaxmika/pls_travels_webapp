@@ -423,22 +423,19 @@ def create_app():
             if current_user.role == UserRole.ADMIN:
                 try:
                     pending_duties_count = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
-                except Exception as e:
-                    logger.error(f"Error fetching pending duties count: {str(e)}")
+                except Exception:
                     db.session.rollback()
                     pending_duties_count = 0
                 
                 try:
                     pending_resignations_count = ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).count()
-                except Exception as e:
-                    logger.error(f"Error fetching pending resignations count: {str(e)}")
+                except Exception:
                     db.session.rollback()
                     pending_resignations_count = 0
                 
                 try:
                     pending_advance_payments_count = AdvancePaymentRequest.query.filter_by(status='pending').count()
-                except Exception as e:
-                    logger.error(f"Error fetching pending advance payments count: {str(e)}")
+                except Exception:
                     db.session.rollback()
                     pending_advance_payments_count = 0
             
