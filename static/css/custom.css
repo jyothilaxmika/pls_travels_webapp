@@ -235,34 +235,7 @@ table {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Global flicker prevention */
-body, html {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-}
-
-/* Prevent content flickering during transitions */
-.btn, .card, .alert, .modal, .dropdown-menu {
-    will-change: auto;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-}
-
-/* Smooth content loading */
-.fade-in {
-    animation: fadeInSmooth 0.15s ease-out;
-}
-
-@keyframes fadeInSmooth {
-    from { 
-        opacity: 0;
-        transform: translateY(10px) translateZ(0);
-    }
-    to { 
-        opacity: 1;
-        transform: translateY(0) translateZ(0);
-    }
-}
+/* Removed global flicker prevention that was causing issues */
 
 /* Universal scroll enhancement classes */
 .scroll-container {
@@ -337,7 +310,7 @@ body, html {
     background: #ffffff;
 }
 
-/* Additional navigation enhancements for menu items with flicker fixes */
+/* Additional navigation enhancements for menu items */
 .sidebar-nav .nav-item {
     margin-bottom: 0.5rem;
 }
@@ -350,12 +323,9 @@ body, html {
     border-radius: 8px;
     border: 2px solid transparent;
     text-shadow: 0 1px 1px rgba(255,255,255,0.1);
-    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    will-change: transform;
-    backface-visibility: hidden;
-    transform: translateZ(0);
 }
 
 .sidebar-nav .nav-link:hover {
@@ -1162,22 +1132,18 @@ input[type="file"] {
     overflow: hidden;
 }
 
-/* Card body with scroll options and anti-flicker */
+/* Card body with scroll options */
 [data-bs-theme="light"] .card-body.scrollable {
     max-height: 400px;
     overflow-y: auto;
     overflow-x: auto;
-    transform: translateZ(0);
-    will-change: scroll-position;
 }
 
-/* Large content cards with scroll and stability */
+/* Large content cards with scroll */
 [data-bs-theme="light"] .card.large-content .card-body {
     max-height: 60vh;
     overflow-y: auto;
     overflow-x: auto;
-    transform: translateZ(0);
-    will-change: scroll-position;
 }
 
 [data-bs-theme="light"] .card-title {
@@ -1253,7 +1219,7 @@ input[type="file"] {
     font-weight: 700;
 }
 
-/* Enhanced sidebar navigation with better font colors and stable animations */
+/* Enhanced sidebar navigation with better font colors */
 .nav-pills .nav-link {
     color: var(--pls-text-strong) !important;
     font-weight: 600;
@@ -1263,9 +1229,7 @@ input[type="file"] {
     margin-bottom: 0.25rem;
     text-shadow: 0 1px 1px rgba(255,255,255,0.1);
     border: 2px solid transparent;
-    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-    will-change: transform;
-    backface-visibility: hidden;
+    transition: all 0.3s ease;
 }
 
 .nav-pills .nav-link:hover {
@@ -1552,7 +1516,7 @@ input[type="file"] {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Enhanced modal styling with scroll support and flicker fixes */
+/* Enhanced modal styling with scroll support */
 .modal-content {
     border: none;
     border-radius: 10px;
@@ -1561,19 +1525,6 @@ input[type="file"] {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-}
-
-/* Fix modal flickering issues */
-.modal.fade .modal-dialog {
-    transition: transform 0.15s ease-out;
-    transform: translateZ(0);
-}
-
-.modal.show .modal-dialog {
-    transform: none;
 }
 
 .modal-header {
