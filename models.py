@@ -253,11 +253,9 @@ class Driver(db.Model):
     
     profile_photo = db.Column(db.String(255))
     
-    # Bank Details - SECURITY: Sensitive fields require encryption at rest
-    # TODO: Implement field-level encryption using SQLAlchemy-Utils or similar
-    # For production, use: encrypted_type = EncryptedType(db.String, secret_key)
+    # Bank Details with encryption consideration
     bank_name = db.Column(db.String(100))
-    account_number = db.Column(db.String(50))  # CRITICAL: Must encrypt in production
+    account_number = db.Column(db.String(50))  # Should be encrypted in production
     ifsc_code = db.Column(db.String(15))
     account_holder_name = db.Column(db.String(100))
     bank_verified = db.Column(db.Boolean, default=False)
