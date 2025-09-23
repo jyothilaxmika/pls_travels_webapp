@@ -233,10 +233,41 @@
     border: 1px solid #dee2e6;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     transition: box-shadow 0.15s ease-in-out;
+    max-height: 600px; /* Prevent cards from becoming too tall */
+    overflow: hidden; /* Ensure scrollable behavior */
 }
 
 .card:hover {
     box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollable card body for content overflow */
+.card-body {
+    max-height: 500px; /* Maximum height before scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Hide horizontal overflow */
+    scrollbar-width: thin; /* Thin scrollbar for Firefox */
+    scrollbar-color: #dee2e6 transparent; /* Custom scrollbar colors */
+}
+
+/* Custom scrollbar styling for webkit browsers */
+.card-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.card-body::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
 }
 
 .card-header {
@@ -456,11 +487,19 @@ input[type="file"] {
     overflow: hidden;
     box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    max-height: 400px; /* Limit height for metric cards */
 }
 
 .metric-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+}
+
+/* Scrollable content for metric cards */
+.metric-card .card-body {
+    max-height: 350px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .metric-card-danger {
@@ -471,11 +510,19 @@ input[type="file"] {
     overflow: hidden;
     box-shadow: 0 6px 20px rgba(230, 126, 34, 0.25);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    max-height: 400px; /* Limit height for danger metric cards */
 }
 
 .metric-card-danger:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(230, 126, 34, 0.35);
+}
+
+/* Scrollable content for danger metric cards */
+.metric-card-danger .card-body {
+    max-height: 350px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .metric-card-warning {
@@ -550,6 +597,15 @@ input[type="file"] {
     .table-cards .card {
         margin-bottom: 0.75rem;
         border-left: 4px solid var(--pls-primary);
+        max-height: 400px; /* Limit height for table cards */
+        overflow: hidden;
+    }
+    
+    /* Scrollable content for table cards */
+    .table-cards .card .card-body {
+        max-height: 350px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 }
 
@@ -1281,3 +1337,42 @@ input[type="file"] {
 .progress-bar-danger {
     background-color: var(--pls-danger) !important;
 }
+
+/* Universal scroll enhancement for all card types */
+.card, .metric-card, .metric-card-danger, .metric-card-warning {
+    position: relative;
+}
+
+/* Ensure all card content is scrollable on small screens */
+@media (max-width: 768px) {
+    .card {
+        max-height: 400px !important;
+    }
+    
+    .card-body {
+        max-height: 350px !important;
+    }
+}
+
+/* Smaller cards on very small screens */
+@media (max-width: 480px) {
+    .card {
+        max-height: 300px !important;
+    }
+    
+    .card-body {
+        max-height: 250px !important;
+    }
+    
+    /* Custom scrollbar for mobile */
+    .card-body::-webkit-scrollbar {
+        width: 6px;
+    }
+}
+
+/* Enhanced focus states for keyboard navigation */
+.card-body:focus {
+    outline: 2px solid var(--pls-primary);
+    outline-offset: 2px;
+}
+

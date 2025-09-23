@@ -27,6 +27,9 @@
     
     .driver-dashboard .earnings-cards .card-body {
         padding: 1.5rem 1rem;
+        max-height: 200px; /* Limit height on mobile */
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     
     .driver-dashboard .earnings-cards h4 {
