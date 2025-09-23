@@ -302,27 +302,35 @@ class DutyService:
                 'final_earnings': 0.0
             }
             
-            if scheme.type == 'fixed':
+            if scheme.scheme_type == 'fixed':
                 earnings = scheme.fixed_amount or 0.0
                 breakdown['base_amount'] = earnings
                 
-            elif scheme.type == 'per_trip':
+            elif scheme.scheme_type == 'per_trip':
                 earnings = trips * (scheme.per_trip_rate or 0.0)
                 breakdown['trip_bonus'] = earnings
                 
-            elif scheme.type == 'slab':
+            elif scheme.scheme_type == 'slab':
                 # Implement slab-based calculation
                 # This would need the slab configuration from the scheme
                 earnings = revenue * (scheme.revenue_percentage or 0.0) / 100
                 breakdown['revenue_share'] = earnings
                 
-            elif scheme.type == 'mixed':
+            elif scheme.scheme_type == 'mixed':
                 # Combination of fixed + revenue share
                 base_amount = scheme.fixed_amount or 0.0
                 revenue_share = revenue * (scheme.revenue_percentage or 0.0) / 100
                 earnings = base_amount + revenue_share
                 breakdown['base_amount'] = base_amount
                 breakdown['revenue_share'] = revenue_share
+                
+            elif scheme.scheme_type == 'custom_formula':
+                # Final Settlement Calculator (Scheme 1) Logic
+                earnings, breakdown = self._calculate_custom_formula_earnings(duty, scheme)
+            
+            else:
+                logger.warning(f"Unknown scheme type: {scheme.scheme_type}")
+                earnings = 0.0
             
             # Apply BMG (Business Minimum Guarantee) if applicable
             if scheme.bmg_amount and earnings < scheme.bmg_amount:
@@ -340,6 +348,95 @@ class DutyService:
         except Exception as e:
             logger.error(f"Error calculating earnings for duty {duty_id}: {str(e)}")
             return False, None, f"Calculation error: {str(e)}"
+    
+    def _calculate_custom_formula_earnings(self, duty, scheme) -> Tuple[float, Dict[str, float]]:
+        """
+        Calculate earnings for custom formula schemes (Final Settlement Calculator).
+        
+        Args:
+            duty: Duty object with revenue and other data
+            scheme: DutyScheme object with configuration
+            
+        Returns:
+            tuple: (earnings: float, breakdown: dict)
+        """
+        import json
+        
+        try:
+            # Get scheme configuration
+            config = json.loads(scheme.configuration) if scheme.configuration else {}
+            
+            # Extract duty data (these would come from duty form inputs in practice)
+            # For now, using duty revenue fields as proxies
+            cash_collected_1 = duty.gross_revenue or 0.0
+            cash_collected_2 = 0.0  # Could be stored in additional revenue fields
+            out_cash = 0.0
+            operator_amount_1 = duty.net_revenue or 0.0
+            operator_amount_2 = 0.0
+            out_operator = 0.0
+            pass_deduction = duty.fuel_deduction or 0.0
+            start_cng = duty.start_cng or 0.0
+            end_cng = duty.end_cng or 0.0
+            
+            # Configuration defaults
+            insurance_deduction = config.get('insurance_deduction', {}).get('default', 60)
+            cng_rate = config.get('cng_rate', {}).get('default', 90)
+            inhouse_slab_threshold = config.get('inhouse_slab_threshold', {}).get('default', 4500)
+            inhouse_base_percentage = config.get('inhouse_base_percentage', {}).get('default', 30)
+            inhouse_above_threshold_percentage = config.get('inhouse_above_threshold_percentage', {}).get('default', 70)
+            out_operator_percentage = config.get('out_operator_percentage', {}).get('default', 30)
+            base_cng_percentage = config.get('base_cng_percentage', {}).get('default', 30)
+            
+            # Calculate as per Final Settlement Calculator logic
+            # 1. Total collections
+            total_cash = cash_collected_1 + cash_collected_2 + out_cash
+            inhouse_operator_total = operator_amount_1 + operator_amount_2
+            grand_total_operator = inhouse_operator_total + out_operator
+            
+            # 2. Salary calculations
+            if inhouse_operator_total > inhouse_slab_threshold:
+                inhouse_salary = (inhouse_slab_threshold * inhouse_base_percentage / 100) + \
+                               ((inhouse_operator_total - inhouse_slab_threshold) * inhouse_above_threshold_percentage / 100)
+            else:
+                inhouse_salary = inhouse_operator_total * inhouse_base_percentage / 100
+            
+            out_operator_salary = out_operator * out_operator_percentage / 100
+            gross_salary = inhouse_salary + out_operator_salary
+            net_salary = gross_salary - insurance_deduction
+            
+            # 3. CNG calculations
+            base_cng = grand_total_operator * base_cng_percentage / 100
+            cng_adjustment = (start_cng - end_cng) * cng_rate
+            final_cng = base_cng - cng_adjustment
+            
+            # 4. Final settlement
+            company_settlement = (total_cash - final_cng) + pass_deduction - net_salary
+            
+            # Driver earnings is the net salary they receive
+            earnings = net_salary
+            
+            # Detailed breakdown for reporting
+            breakdown = {
+                'total_cash': total_cash,
+                'grand_total_operator': grand_total_operator,
+                'inhouse_salary': inhouse_salary,
+                'out_operator_salary': out_operator_salary,
+                'gross_salary': gross_salary,
+                'insurance_deduction': insurance_deduction,
+                'net_salary': net_salary,
+                'base_cng': base_cng,
+                'cng_adjustment': cng_adjustment,
+                'final_cng': final_cng,
+                'company_settlement': company_settlement,
+                'final_earnings': earnings,
+                'pass_deduction': pass_deduction
+            }
+            
+            return earnings, breakdown
+            
+        except Exception as e:
+            logger.error(f"Error in custom formula calculation: {str(e)}")
+            return 0.0, {'final_earnings': 0.0}
     
     def get_active_duties_summary(self) -> Dict[str, Any]:
         """
