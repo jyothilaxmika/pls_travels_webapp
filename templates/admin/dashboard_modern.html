@@ -1,0 +1,416 @@
+{% extends "admin/base_modern.html" %}
+
+{% block title %}Dashboard - PLS TRAVELS Admin Portal{% endblock %}
+
+{% block page_name %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">Welcome back, {{ current_user.username }}!</h1>
+    <p class="page-subtitle">Here's what's happening with your transportation business today.</p>
+    
+    <div class="page-actions">
+        <button class="btn btn-outline">
+            <i class="fas fa-download"></i>
+            Export Report
+        </button>
+        <button class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            Quick Actions
+        </button>
+    </div>
+</div>
+
+<!-- Key Metrics Grid -->
+<div class="grid grid-cols-4 mb-8">
+    <!-- Total Drivers -->
+    <div class="metric-card">
+        <div class="metric-header">
+            <div class="metric-title">Total Drivers</div>
+            <div class="metric-icon primary">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ total_drivers|default(0) }}</div>
+        <div class="metric-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>+12% from last month</span>
+        </div>
+    </div>
+    
+    <!-- Active Vehicles -->
+    <div class="metric-card">
+        <div class="metric-header">
+            <div class="metric-title">Active Vehicles</div>
+            <div class="metric-icon success">
+                <i class="fas fa-car"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ active_vehicles|default(0) }}</div>
+        <div class="metric-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>+5% from last month</span>
+        </div>
+    </div>
+    
+    <!-- Monthly Revenue -->
+    <div class="metric-card">
+        <div class="metric-header">
+            <div class="metric-title">Monthly Revenue</div>
+            <div class="metric-icon success">
+                <i class="fas fa-rupee-sign"></i>
+            </div>
+        </div>
+        <div class="metric-value">₹{{ "{:,.0f}".format(monthly_revenue|default(0)) }}</div>
+        <div class="metric-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>+18% from last month</span>
+        </div>
+    </div>
+    
+    <!-- Pending Approvals -->
+    <div class="metric-card">
+        <div class="metric-header">
+            <div class="metric-title">Pending Approvals</div>
+            <div class="metric-icon warning">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+        <div class="metric-value">{{ pending_approvals|default(0) }}</div>
+        {% if pending_approvals > 0 %}
+        <div class="metric-change negative">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Needs attention</span>
+        </div>
+        {% else %}
+        <div class="metric-change positive">
+            <i class="fas fa-check"></i>
+            <span>All caught up!</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Main Dashboard Grid -->
+<div class="grid grid-cols-3 gap-6">
+    <!-- Charts Section -->
+    <div class="col-span-2">
+        <!-- Revenue Chart -->
+        <div class="card mb-6">
+            <div class="card-header">
+                <h3 class="card-title">Revenue Overview</h3>
+                <p class="card-subtitle">Monthly revenue trends and projections</p>
+            </div>
+            <div class="card-body">
+                <div class="h-80 flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div class="text-center">
+                        <i class="fas fa-chart-line fa-3x text-gray-400 mb-4"></i>
+                        <p class="text-gray-600">Revenue chart would be displayed here</p>
+                        <p class="text-sm text-gray-500">Integration with Chart.js or similar library</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Duties Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3 class="table-title">Recent Duties</h3>
+                <div class="table-actions">
+                    <div class="table-search">
+                        <div class="table-search-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <input type="text" class="table-search-input" placeholder="Search duties...">
+                    </div>
+                    <button class="btn btn-outline btn-sm">
+                        <i class="fas fa-filter"></i>
+                        Filter
+                    </button>
+                    <button class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i>
+                        New Duty
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="sortable">Driver</th>
+                            <th class="sortable">Vehicle</th>
+                            <th class="sortable">Route</th>
+                            <th class="sortable">Status</th>
+                            <th class="sortable">Earnings</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body">
+                        {% for duty in recent_duties|default([]) %}
+                        <tr>
+                            <td>
+                                <div class="table-cell-avatar">
+                                    {% if duty.driver.profile_photo %}
+                                    <img src="/uploads/{{ duty.driver.profile_photo }}" alt="Driver" class="table-avatar">
+                                    {% else %}
+                                    <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-600 text-sm"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="font-medium text-gray-900">{{ duty.driver.full_name }}</div>
+                                        <div class="text-sm text-gray-500">ID: {{ duty.driver.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="font-medium">{{ duty.vehicle.registration_number if duty.vehicle else 'Not Assigned' }}</div>
+                                <div class="text-sm text-gray-500">{{ duty.vehicle.vehicle_type if duty.vehicle else '' }}</div>
+                            </td>
+                            <td>{{ duty.route_description or 'N/A' }}</td>
+                            <td>
+                                <div class="table-cell-status">
+                                    {% if duty.status == 'completed' %}
+                                    <span class="badge badge-success">Completed</span>
+                                    {% elif duty.status == 'active' %}
+                                    <span class="badge badge-primary">Active</span>
+                                    {% elif duty.status == 'pending' %}
+                                    <span class="badge badge-warning">Pending</span>
+                                    {% else %}
+                                    <span class="badge badge-secondary">{{ duty.status.title() }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="font-medium text-green-600">₹{{ "{:,.0f}".format(duty.earnings or 0) }}</div>
+                            </td>
+                            <td>
+                                <div class="table-cell-actions">
+                                    <button class="btn btn-ghost btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-ghost btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-8 text-gray-500">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 block"></i>
+                                No recent duties found
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar Content -->
+    <div class="space-y-6">
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Quick Actions</h3>
+                <p class="card-subtitle">Common administrative tasks</p>
+            </div>
+            <div class="card-body">
+                <div class="space-y-3">
+                    <a href="{{ url_for('admin.add_driver') }}" class="btn btn-outline w-full justify-start">
+                        <i class="fas fa-user-plus"></i>
+                        Add New Driver
+                    </a>
+                    <a href="{{ url_for('admin.add_vehicle') }}" class="btn btn-outline w-full justify-start">
+                        <i class="fas fa-car"></i>
+                        Register Vehicle
+                    </a>
+                    <a href="{{ url_for('admin.pending_duties') }}" class="btn btn-outline w-full justify-start">
+                        <i class="fas fa-clipboard-check"></i>
+                        Review Duties
+                    </a>
+                    <a href="{{ url_for('admin.reports') }}" class="btn btn-outline w-full justify-start">
+                        <i class="fas fa-chart-bar"></i>
+                        Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Notifications -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Activity</h3>
+                <p class="card-subtitle">Latest system notifications</p>
+            </div>
+            <div class="card-body">
+                <div class="space-y-4">
+                    {% for notification in recent_notifications|default([]) %}
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-info text-blue-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm text-gray-900">{{ notification.message }}</div>
+                            <div class="text-xs text-gray-500 mt-1">{{ notification.created_at.strftime('%H:%M') if notification.created_at else 'Just now' }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-6 text-gray-500">
+                        <i class="fas fa-bell-slash fa-2x mb-2 block"></i>
+                        <p class="text-sm">No recent notifications</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% if recent_notifications %}
+            <div class="card-footer">
+                <button class="btn btn-ghost btn-sm w-full">
+                    View All Notifications
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- System Status -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">System Status</h3>
+                <p class="card-subtitle">Current system health</p>
+            </div>
+            <div class="card-body">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-gray-700">Database</span>
+                        </div>
+                        <span class="text-xs text-green-600 font-medium">Operational</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-gray-700">API Services</span>
+                        </div>
+                        <span class="text-xs text-green-600 font-medium">Operational</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <span class="text-sm text-gray-700">SMS Service</span>
+                        </div>
+                        <span class="text-xs text-yellow-600 font-medium">Limited</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-gray-700">File Storage</span>
+                        </div>
+                        <span class="text-xs text-green-600 font-medium">Operational</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Statistics Section -->
+<div class="mt-8">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Performance Metrics</h3>
+            <p class="card-subtitle">Key performance indicators for this month</p>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-5 gap-6">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 mb-1">{{ driver_utilization|default(85) }}%</div>
+                    <div class="text-sm text-gray-600">Driver Utilization</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: {{ driver_utilization|default(85) }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 mb-1">{{ fleet_efficiency|default(92) }}%</div>
+                    <div class="text-sm text-gray-600">Fleet Efficiency</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ fleet_efficiency|default(92) }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 mb-1">{{ customer_satisfaction|default(4.8) }}</div>
+                    <div class="text-sm text-gray-600">Customer Rating</div>
+                    <div class="flex justify-center mt-2">
+                        {% for i in range(5) %}
+                        <i class="fas fa-star text-yellow-400 text-sm"></i>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 mb-1">{{ on_time_performance|default(94) }}%</div>
+                    <div class="text-sm text-gray-600">On-Time Performance</div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: {{ on_time_performance|default(94) }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900 mb-1">₹{{ "{:,.0f}".format(avg_earnings|default(15000)) }}</div>
+                    <div class="text-sm text-gray-600">Avg. Driver Earnings</div>
+                    <div class="text-xs text-green-600 mt-2">
+                        <i class="fas fa-arrow-up"></i> +8% vs last month
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dashboard-specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh dashboard data every 5 minutes
+        setInterval(function() {
+            // Implement data refresh logic here
+            console.log('Refreshing dashboard data...');
+        }, 300000); // 5 minutes
+        
+        // Initialize chart placeholder (would integrate with Chart.js)
+        const chartContainer = document.querySelector('.h-80');
+        if (chartContainer) {
+            // Chart.js integration would go here
+            console.log('Chart container ready for Chart.js integration');
+        }
+        
+        // Table sorting functionality
+        const sortableHeaders = document.querySelectorAll('.sortable');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                console.log('Sorting by:', this.textContent);
+                // Implement sorting logic
+            });
+        });
+        
+        // Real-time metrics updates (would connect to WebSocket)
+        function updateMetrics() {
+            // Simulate real-time metric updates
+            console.log('Updating metrics...');
+        }
+        
+        // Initialize real-time updates
+        setInterval(updateMetrics, 30000); // Every 30 seconds
+    });
+</script>
+{% endblock %}
