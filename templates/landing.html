@@ -544,6 +544,42 @@
             color: rgba(255, 255, 255, 0.6);
         }
         
+        /* Feature Item Styling */
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(10px);
+        }
+        
+        /* Contact Form Enhancement */
+        .form-control {
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #1e293b;
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            background: white;
+            border-color: #0ea5e9;
+            color: #1e293b;
+            box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.25);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(30, 41, 59, 0.6);
+        }
+        
         /* Floating Elements */
         .floating-elements {
             position: absolute;
@@ -885,6 +921,12 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#faq">FAQ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">Who We Are</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contact</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#login">Driver Login</a>
@@ -1335,6 +1377,341 @@
         </div>
     </section>
 
+    <!-- Who We Are Section -->
+    <section id="about" class="py-5" style="background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark mb-3">
+                    <i class="fas fa-users me-2 text-primary"></i>Who We Are | நாங்கள் யார்
+                </h2>
+                <p class="lead text-muted">Your trusted partner in professional driving careers</p>
+            </div>
+            
+            <div class="row align-items-center mb-5">
+                <div class="col-lg-6 mb-4">
+                    <div class="about-content">
+                        <h3 class="h2 fw-bold text-dark mb-4">PLS TRAVELS - Uber's Authorized Partner</h3>
+                        <div class="feature-list">
+                            <div class="feature-item mb-3">
+                                <i class="fas fa-certificate text-primary me-3"></i>
+                                <div>
+                                    <strong>Official Uber Partner</strong><br>
+                                    <span class="text-muted">Authorized fleet supplier for Chennai & Bangalore operations</span>
+                                </div>
+                            </div>
+                            <div class="feature-item mb-3">
+                                <i class="fas fa-award text-success me-3"></i>
+                                <div>
+                                    <strong>5+ Years Experience</strong><br>
+                                    <span class="text-muted">Proven track record in driver training and fleet management</span>
+                                </div>
+                            </div>
+                            <div class="feature-item mb-3">
+                                <i class="fas fa-handshake text-info me-3"></i>
+                                <div>
+                                    <strong>Driver-First Approach</strong><br>
+                                    <span class="text-muted">Committed to driver welfare, earnings, and career growth</span>
+                                </div>
+                            </div>
+                            <div class="feature-item mb-3">
+                                <i class="fas fa-chart-line text-warning me-3"></i>
+                                <div>
+                                    <strong>1000+ Successful Drivers</strong><br>
+                                    <span class="text-muted">Helping drivers earn sustainable income with flexible schedules</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="mission-card p-4" style="background: linear-gradient(145deg, #1e293b 0%, #334155 100%); border-radius: 24px; color: white; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+                        <h4 class="text-warning mb-3"><i class="fas fa-bullseye me-2"></i>Our Mission</h4>
+                        <p class="mb-4">To revolutionize the driving profession by providing sustainable income opportunities, comprehensive support, and career advancement for professional drivers across India.</p>
+                        
+                        <h4 class="text-info mb-3"><i class="fas fa-eye me-2"></i>Our Vision</h4>
+                        <p class="mb-0">To become India's most trusted and preferred partner for professional drivers, ensuring dignity, prosperity, and professional growth in the transportation industry.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Section -->
+            <div class="row text-center">
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card p-4" style="background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
+                        <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                        <h3 class="fw-bold text-dark">1000+</h3>
+                        <p class="text-muted mb-0">Active Drivers</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card p-4" style="background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
+                        <i class="fas fa-car fa-2x text-success mb-2"></i>
+                        <h3 class="fw-bold text-dark">500+</h3>
+                        <p class="text-muted mb-0">Fleet Vehicles</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card p-4" style="background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
+                        <i class="fas fa-map-marker-alt fa-2x text-info mb-2"></i>
+                        <h3 class="fw-bold text-dark">2</h3>
+                        <p class="text-muted mb-0">Major Cities</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card p-4" style="background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
+                        <i class="fas fa-rupee-sign fa-2x text-warning mb-2"></i>
+                        <h3 class="fw-bold text-dark">₹50L+</h3>
+                        <p class="text-muted mb-0">Monthly Earnings</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Future Projects Section -->
+    <section id="future" class="py-5" style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold text-white mb-3">
+                    <i class="fas fa-rocket me-2 text-primary"></i>Future Projects | எதிர்கால திட்டங்கள்
+                </h2>
+                <p class="lead text-white-75">Expanding opportunities for professional drivers across India</p>
+            </div>
+            
+            <div class="row">
+                <!-- Project 1 -->
+                <div class="col-lg-4 mb-4">
+                    <div class="project-card h-100 p-4" style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 20px; border: 1px solid rgba(0,212,255,0.3); backdrop-filter: blur(10px);">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-city fa-3x text-primary mb-3"></i>
+                            <h4 class="text-white">Multi-City Expansion</h4>
+                        </div>
+                        <ul class="text-white-75">
+                            <li>Hyderabad operations launching Q2 2025</li>
+                            <li>Mumbai expansion planned for Q3 2025</li>
+                            <li>Delhi-NCR entry by end of 2025</li>
+                            <li>Pune and Kolkata in 2026 roadmap</li>
+                        </ul>
+                        <div class="mt-3">
+                            <span class="badge bg-primary">Launching Soon</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Project 2 -->
+                <div class="col-lg-4 mb-4">
+                    <div class="project-card h-100 p-4" style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 20px; border: 1px solid rgba(34,197,94,0.3); backdrop-filter: blur(10px);">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-leaf fa-3x text-success mb-3"></i>
+                            <h4 class="text-white">Electric Vehicle Fleet</h4>
+                        </div>
+                        <ul class="text-white-75">
+                            <li>100% electric vehicle transition by 2026</li>
+                            <li>Charging infrastructure development</li>
+                            <li>Environmental sustainability focus</li>
+                            <li>Government incentive programs</li>
+                        </ul>
+                        <div class="mt-3">
+                            <span class="badge bg-success">Eco-Friendly</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Project 3 -->
+                <div class="col-lg-4 mb-4">
+                    <div class="project-card h-100 p-4" style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 20px; border: 1px solid rgba(245,101,101,0.3); backdrop-filter: blur(10px);">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-graduation-cap fa-3x text-danger mb-3"></i>
+                            <h4 class="text-white">Driver Academy</h4>
+                        </div>
+                        <ul class="text-white-75">
+                            <li>Comprehensive driver training programs</li>
+                            <li>Professional certification courses</li>
+                            <li>Skill development workshops</li>
+                            <li>Career advancement opportunities</li>
+                        </ul>
+                        <div class="mt-3">
+                            <span class="badge bg-danger">Education</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Services -->
+            <div class="row mt-5">
+                <div class="col-lg-6 mb-4">
+                    <div class="service-card p-4" style="background: rgba(0,212,255,0.1); border-radius: 16px; border: 1px solid rgba(0,212,255,0.3);">
+                        <h5 class="text-white mb-3"><i class="fas fa-truck me-2"></i>Logistics & Delivery</h5>
+                        <p class="text-white-75 mb-0">Expanding into goods transportation and last-mile delivery services with dedicated driver programs and competitive incentives.</p>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                    <div class="service-card p-4" style="background: rgba(34,197,94,0.1); border-radius: 16px; border: 1px solid rgba(34,197,94,0.3);">
+                        <h5 class="text-white mb-3"><i class="fas fa-mobile-alt me-2"></i>Technology Platform</h5>
+                        <p class="text-white-75 mb-0">Advanced driver app with AI-powered route optimization, earnings analytics, and comprehensive fleet management tools.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Us Section -->
+    <section id="contact" class="py-5" style="background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold text-dark mb-3">
+                    <i class="fas fa-phone-alt me-2 text-primary"></i>Contact Us | எங்களை தொடர்பு கொள்ளுங்கள்
+                </h2>
+                <p class="lead text-muted">Get in touch with our team for queries, support, or partnership opportunities</p>
+            </div>
+            
+            <div class="row">
+                <!-- Contact Information -->
+                <div class="col-lg-6 mb-4">
+                    <div class="contact-info">
+                        <h4 class="text-dark mb-4">Get In Touch</h4>
+                        
+                        <!-- Phone -->
+                        <div class="contact-item mb-4 p-3" style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <div class="d-flex align-items-center">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-phone-alt fa-lg text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 text-dark">Call Us | அழைக்கவும்</h6>
+                                    <a href="tel:+919787247132" class="text-decoration-none text-muted">+91 9787 247 132</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- WhatsApp -->
+                        <div class="contact-item mb-4 p-3" style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <div class="d-flex align-items-center">
+                                <div class="contact-icon me-3">
+                                    <i class="fab fa-whatsapp fa-lg text-success"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 text-dark">WhatsApp Us</h6>
+                                    <a href="#" id="contactWhatsApp" class="text-decoration-none text-muted">Chat with us instantly</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="contact-item mb-4 p-3" style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <div class="d-flex align-items-center">
+                                <div class="contact-icon me-3">
+                                    <i class="fas fa-envelope fa-lg text-info"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 text-dark">Email Us | மின்னஞ்சல்</h6>
+                                    <a href="mailto:contact@plstravels.com" class="text-decoration-none text-muted">contact@plstravels.com</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Address -->
+                        <div class="contact-item mb-4 p-3" style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <div class="d-flex align-items-start">
+                                <div class="contact-icon me-3 mt-1">
+                                    <i class="fas fa-map-marker-alt fa-lg text-warning"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 text-dark">Office Locations</h6>
+                                    <div class="text-muted">
+                                        <strong>Chennai:</strong> T.Nagar, Chennai - 600017<br>
+                                        <strong>Bangalore:</strong> Electronic City, Bangalore - 560100
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Business Hours -->
+                        <div class="contact-item mb-4 p-3" style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <div class="d-flex align-items-start">
+                                <div class="contact-icon me-3 mt-1">
+                                    <i class="fas fa-clock fa-lg text-secondary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 text-dark">Business Hours</h6>
+                                    <div class="text-muted">
+                                        <strong>Mon - Sat:</strong> 9:00 AM - 7:00 PM<br>
+                                        <strong>Sunday:</strong> 10:00 AM - 4:00 PM<br>
+                                        <span class="text-success">24/7 Driver Support Available</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Contact Form -->
+                <div class="col-lg-6">
+                    <div class="contact-form-card p-4" style="background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);">
+                        <h4 class="text-dark mb-4">Quick Contact Form</h4>
+                        <form id="contactForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="contactName" class="form-label">Name | பெயர்</label>
+                                    <input type="text" class="form-control" id="contactName" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="contactPhone" class="form-label">Phone | தொலைபேசி</label>
+                                    <input type="tel" class="form-control" id="contactPhone" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="contactEmail" class="form-label">Email | மின்னஞ்சல்</label>
+                                <input type="email" class="form-control" id="contactEmail">
+                            </div>
+                            <div class="mb-3">
+                                <label for="contactSubject" class="form-label">Subject | விषயம்</label>
+                                <select class="form-control" id="contactSubject" required>
+                                    <option value="">Choose subject...</option>
+                                    <option value="driver_inquiry">Driver Job Inquiry</option>
+                                    <option value="partnership">Partnership Opportunity</option>
+                                    <option value="support">Support Request</option>
+                                    <option value="feedback">Feedback</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="contactMessage" class="form-label">Message | செய்தி</label>
+                                <textarea class="form-control" id="contactMessage" rows="4" required placeholder="Please describe your inquiry..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Send Message | அனுப்பவும்
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Social Media & Quick Actions -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="text-center p-4" style="background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1);">
+                        <h5 class="text-dark mb-3">Connect With Us | எங்களுடன் இணைக்கவும்</h5>
+                        <div class="d-flex flex-wrap justify-content-center gap-3">
+                            <a href="tel:+919787247132" class="btn btn-outline-primary">
+                                <i class="fas fa-phone me-2"></i>Call Now
+                            </a>
+                            <a href="#" id="contactWhatsAppBtn" class="btn btn-outline-success" target="_blank">
+                                <i class="fab fa-whatsapp me-2"></i>WhatsApp
+                            </a>
+                            <a href="mailto:contact@plstravels.com" class="btn btn-outline-info">
+                                <i class="fas fa-envelope me-2"></i>Email
+                            </a>
+                            <a href="#apply" class="btn btn-primary">
+                                <i class="fas fa-car me-2"></i>Apply Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="bg-dark text-white py-3">
         <div class="container">
@@ -1400,14 +1777,62 @@
                     callNowBtnFaq.setAttribute('aria-label', `Call PLS TRAVELS at +${adminWhatsAppNumber}`);
                 }
                 
+                // Update contact section WhatsApp buttons
+                const contactWhatsApp = document.getElementById('contactWhatsApp');
+                const contactWhatsAppBtn = document.getElementById('contactWhatsAppBtn');
+                
+                if (contactWhatsApp) {
+                    contactWhatsApp.href = `https://wa.me/${adminWhatsAppNumber}`;
+                }
+                if (contactWhatsAppBtn) {
+                    contactWhatsAppBtn.href = `https://wa.me/${adminWhatsAppNumber}`;
+                }
+                
             } catch (error) {
                 console.error('Error loading WhatsApp number:', error);
                 console.log('Using fallback WhatsApp number');
+                
+                // Update contact section WhatsApp buttons with fallback
+                const contactWhatsApp = document.getElementById('contactWhatsApp');
+                const contactWhatsAppBtn = document.getElementById('contactWhatsAppBtn');
+                
+                if (contactWhatsApp) {
+                    contactWhatsApp.href = `https://wa.me/${adminWhatsAppNumber}`;
+                }
+                if (contactWhatsAppBtn) {
+                    contactWhatsAppBtn.href = `https://wa.me/${adminWhatsAppNumber}`;
+                }
             }
         }
         
         // Load WhatsApp number when page loads
         document.addEventListener('DOMContentLoaded', loadWhatsAppNumber);
+        
+        // Contact Form Handler
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('contactName').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const subject = document.getElementById('contactSubject').value;
+            const message = document.getElementById('contactMessage').value.trim();
+            
+            if (!name || !phone || !subject || !message) {
+                alert('Please fill all required fields | தயவுसेय्து அனைத்து தேवையான புலங்களையும் நிரப்पவும்');
+                return;
+            }
+            
+            const whatsappMessage = `Hi, I'm contacting PLS Travels.
+Name: ${name}
+Phone: ${phone}
+Email: ${email || 'Not provided'}
+Subject: ${subject}
+Message: ${message}`;
+            
+            const whatsappURL = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+            window.open(whatsappURL, '_blank');
+        });
         
         document.getElementById('applicationForm').addEventListener('submit', function(e) {
             e.preventDefault();
