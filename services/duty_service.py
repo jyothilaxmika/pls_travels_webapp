@@ -299,7 +299,7 @@ class DutyService:
                 scheme = duty.duty_scheme
                 scheme_type = getattr(scheme, 'scheme_type', None) or getattr(scheme, 'type', 'revenue_share')
                 
-                if scheme_type == 'final_settlement' or scheme_type == 'mixed':
+                if scheme_type == 'final_settlement' or scheme_type == 'mixed' or scheme_type == 'd2d':
                     method = 'd2d'
                 elif scheme_type == 'fixed':
                     method = 'fixed_daily'
