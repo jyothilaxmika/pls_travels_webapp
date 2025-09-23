@@ -159,14 +159,38 @@ body {
 
 /* Ensure all text elements have maximum contrast */
 h1, h2, h3, h4, h5, h6 {
-    color: var(--pls-text-strong) !important;
+    color: var(--pls-text-strong);
     font-weight: 700;
     text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
 
+/* Override for colored card headers to maintain readability */
+.card-header.bg-gradient h1, 
+.card-header.bg-gradient h2, 
+.card-header.bg-gradient h3, 
+.card-header.bg-gradient h4, 
+.card-header.bg-gradient h5, 
+.card-header.bg-gradient h6 {
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
 p, span, div, li, td, th, label {
-    color: var(--pls-text-dark) !important;
+    color: var(--pls-text-dark);
     font-weight: 500;
+}
+
+/* Ensure text visibility on colored cards */
+.card[class*="bg-"] .card-body p,
+.card[class*="bg-"] .card-body span,
+.card[class*="bg-"] .card-body div {
+    color: #fff !important;
+}
+
+.card[class*="bg-warning"] .card-body p,
+.card[class*="bg-warning"] .card-body span,
+.card[class*="bg-warning"] .card-body div {
+    color: #000 !important;
 }
 
 /* Table content with enhanced visibility and scroll options */
@@ -2126,6 +2150,265 @@ input[type="file"] {
 
 /* Enhanced responsive design improvements for admin portal */
 
+/* Desktop large screens - enhanced layouts */
+@media (min-width: 1400px) {
+    /* Enhanced container for ultra-wide screens */
+    .container-fluid {
+        max-width: 1800px;
+        margin: 0 auto;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    
+    /* Enhanced dashboard header */
+    .d-flex.justify-content-between.align-items-center {
+        margin-bottom: 2rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center h2 {
+        font-size: 2.5rem;
+        font-weight: 600;
+    }
+    
+    /* Enhanced metric cards for large screens */
+    .row.g-3 .card {
+        min-height: 140px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .row.g-3 .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .card-body h4 {
+        font-size: 2.2rem;
+        font-weight: 700;
+    }
+    
+    /* Enhanced quick actions */
+    .btn-sm {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    
+    /* Enhanced chart containers for ultra-wide screens */
+    .chart-container {
+        height: 420px !important;
+    }
+    
+    /* Enhanced table for large screens */
+    .table-responsive .table {
+        font-size: 0.95rem;
+    }
+    
+    .table th {
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--pls-primary);
+    }
+    
+    /* Enhanced navigation spacing */
+    .navbar {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.75rem 1.25rem;
+        font-weight: 500;
+    }
+}
+
+/* Desktop standard screens - optimized layouts */
+@media (min-width: 1200px) {
+    /* Enhanced container spacing */
+    .container-fluid {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    
+    /* Better dashboard spacing */
+    .d-flex.justify-content-between.align-items-center {
+        margin-bottom: 1.5rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center h2 {
+        font-size: 2.2rem;
+        font-weight: 600;
+        color: var(--pls-primary);
+    }
+    
+    /* Enhanced metric cards */
+    .row.g-3 .card {
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .card-body h4 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .card-body p {
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 0;
+        opacity: 0.9;
+    }
+    
+    /* Enhanced quick actions grid */
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Enhanced chart containers for desktop */
+    .chart-container {
+        position: relative;
+        height: 380px !important;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    /* Enhanced cards */
+    .card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: box-shadow 0.2s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, var(--pls-primary), var(--pls-secondary));
+        color: white;
+        border: none;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    /* Ensure bg-gradient class has proper background */
+    .card-header.bg-gradient {
+        background: linear-gradient(135deg, var(--pls-primary), var(--pls-secondary)) !important;
+        color: white !important;
+    }
+    
+    /* Ensure all colored card backgrounds have proper styling */
+    .bg-gradient {
+        background: linear-gradient(135deg, var(--pls-primary), var(--pls-secondary)) !important;
+    }
+    
+    /* Override any existing color on gradient headers */
+    .card-header.bg-gradient h1,
+    .card-header.bg-gradient h2,
+    .card-header.bg-gradient h3,
+    .card-header.bg-gradient h4,
+    .card-header.bg-gradient h5,
+    .card-header.bg-gradient h6 {
+        color: white !important;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+    
+    /* Enhanced table styling */
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .table {
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+    
+    .table thead th {
+        background: var(--pls-light);
+        border-bottom: 2px solid var(--pls-primary);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.8rem;
+        color: var(--pls-primary);
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(var(--pls-primary-rgb), 0.05);
+    }
+    
+    /* Enhanced navigation for desktop */
+    .navbar {
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        background: linear-gradient(135deg, #ffffff, #f8f9fa) !important;
+    }
+    
+    .navbar-brand {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    .navbar-nav .nav-link {
+        border-radius: 6px;
+        margin: 0 0.25rem;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+    
+    .navbar-nav .nav-link:hover {
+        background-color: rgba(var(--pls-primary-rgb), 0.1);
+        color: var(--pls-primary) !important;
+    }
+    
+    /* Enhanced badges and alerts */
+    .badge {
+        border-radius: 6px;
+        font-weight: 600;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Enhanced spacing for desktop */
+    .row.g-3 {
+        gap: 1.5rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 2rem !important;
+    }
+    
+    /* Enhanced icons */
+    .fas, .fab {
+        font-size: 1.1em;
+    }
+    
+    .card .fa-2x {
+        font-size: 2.5em !important;
+    }
+}
+
 /* Tablet responsive breakpoint */
 @media (max-width: 1199.98px) {
     /* Ensure offcanvas works properly */
@@ -2222,6 +2505,14 @@ input[type="file"] {
         font-size: 0.95rem;
         line-height: 1.3;
     }
+}
+
+/* Default chart container height */
+.chart-container {
+    position: relative;
+    height: 300px;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 /* Force offcanvas behavior on all screen sizes */
