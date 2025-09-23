@@ -638,6 +638,16 @@ def create_app():
         """Serve uploaded files from the uploads directory"""
         upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
         return send_from_directory(upload_folder, filename)
+    
+    # Route to serve service worker from root for proper PWA scope
+    @app.route('/sw.js')
+    def service_worker():
+        return send_from_directory('.', 'sw.js', mimetype='application/javascript')
+    
+    # Route to serve offline page for PWA
+    @app.route('/offline.html')
+    def offline_page():
+        return send_from_directory('.', 'offline.html')
 
     # SEO routes
     @app.route('/robots.txt')
