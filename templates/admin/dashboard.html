@@ -11,8 +11,8 @@
 </div>
 
 <!-- Key Metrics -->
-<div class="row mb-4">
-    <div class="col-md-3">
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
         <div class="card bg-primary text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -28,7 +28,7 @@
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card bg-success text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -44,7 +44,7 @@
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card bg-info text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -60,7 +60,7 @@
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card bg-warning text-dark">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -78,8 +78,8 @@
 </div>
 
 <!-- Additional Metrics Row -->
-<div class="row mb-4">
-    <div class="col-md-3">
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
         <a href="{{ url_for('admin.pending_duties') }}" class="text-decoration-none">
             <div class="card bg-danger text-white">
                 <div class="card-body">
@@ -103,7 +103,7 @@
         </a>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card bg-dark text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -119,7 +119,7 @@
         </div>
     </div>
     
-    <div class="col-md-6">
+    <div class="col-12 col-lg-6">
         <!-- Quick Actions -->
         <div class="card bg-light">
             <div class="card-header">
@@ -127,7 +127,7 @@
             </div>
             <div class="card-body">
                 <div class="row g-2">
-                    <div class="col-6">
+                    <div class="col-6 col-lg-3">
                         <a href="{{ url_for('admin.pending_duties') }}" class="btn btn-outline-danger btn-sm w-100">
                             <i class="fas fa-clock me-1"></i>Review Duties
                             {% if pending_duties > 0 %}
@@ -135,17 +135,17 @@
                             {% endif %}
                         </a>
                     </div>
-                    <div class="col-6">
+                    <div class="col-6 col-lg-3">
                         <a href="{{ url_for('admin.drivers') }}" class="btn btn-outline-primary btn-sm w-100">
                             <i class="fas fa-users me-1"></i>Manage Drivers
                         </a>
                     </div>
-                    <div class="col-6">
+                    <div class="col-6 col-lg-3">
                         <a href="{{ url_for('admin.vehicles') }}" class="btn btn-outline-success btn-sm w-100">
                             <i class="fas fa-car me-1"></i>Fleet Management
                         </a>
                     </div>
-                    <div class="col-6">
+                    <div class="col-6 col-lg-3">
                         <a href="{{ url_for('admin.duties') }}" class="btn btn-outline-info btn-sm w-100">
                             <i class="fas fa-list me-1"></i>All Duties
                         </a>
@@ -157,25 +157,29 @@
 </div>
 
 <!-- Revenue Overview -->
-<div class="row mb-4">
-    <div class="col-md-8">
+<div class="row g-3 mb-4">
+    <div class="col-12 col-xl-8">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Revenue Trend (Last 7 Days)</h5>
             </div>
             <div class="card-body">
-                <canvas id="revenueChart" height="100"></canvas>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="revenueChart" style="width: 100%; height: 100%;"></canvas>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-4">
+    <div class="col-12 col-xl-4">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-bullseye me-2"></i>Branch Performance</h5>
             </div>
             <div class="card-body">
-                <canvas id="branchChart" height="200"></canvas>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="branchChart" style="width: 100%; height: 100%;"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -280,15 +284,22 @@ fetch('/admin/api/revenue-chart')
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: false
                     }
                 },
                 scales: {
+                    x: {
+                        ticks: {
+                            maxTicksLimit: window.innerWidth < 768 ? 5 : 7
+                        }
+                    },
                     y: {
                         beginAtZero: true,
                         ticks: {
+                            maxTicksLimit: 6,
                             callback: function(value) {
                                 return '₹' + value.toLocaleString();
                             }
@@ -320,9 +331,16 @@ fetch('/admin/api/branch-performance')
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: window.innerWidth < 768 ? 10 : 12
+                            },
+                            boxWidth: window.innerWidth < 768 ? 12 : 15
+                        }
                     }
                 }
             }

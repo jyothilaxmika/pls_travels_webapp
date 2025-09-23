@@ -14,11 +14,11 @@
 <body>
     <!-- Navigation -->
     {% if current_user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <nav class="navbar navbar-expand-xl navbar-light bg-light shadow-sm sticky-top">
         <div class="container-fluid">
             <!-- Left column hamburger menu -->
             <div class="d-flex align-items-center">
-                <button class="btn btn-outline-primary btn-sm me-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                <button class="btn btn-outline-primary btn-sm me-2 d-xl-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
                     <i class="fas fa-bars"></i>
                 </button>
                 <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="{{ url_for('index') }}">
@@ -28,13 +28,14 @@
                 </a>
             </div>
             
-            <!-- Mobile toggle button -->
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+            <!-- Mobile toggle button for user menu only -->
+            <button class="navbar-toggler border-0 d-xl-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Toggle user menu">
+                <i class="fas fa-user-circle"></i>
             </button>
             
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+            <div class="collapse navbar-collapse d-xl-flex" id="navbarNav">
+                <!-- Main nav items hidden on mobile, shown via offcanvas -->
+                <ul class="navbar-nav me-auto d-none d-xl-flex">
                     {% if current_user.role.name == 'ADMIN' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
@@ -183,6 +184,7 @@
                     {% endif %}
                 </ul>
                 
+                <!-- User menu - always visible on larger screens, collapsible on mobile -->
                 <ul class="navbar-nav">
                     {% if current_user.role.name == 'ADMIN' and pending_duties_count > 0 %}
                     <li class="nav-item">
@@ -345,7 +347,7 @@
     </div>
 
     <!-- Main Content -->
-    <main class="container my-4">
+    <main class="container-fluid px-3 px-lg-4 my-3 my-lg-4">
         {% block content %}{% endblock %}
     </main>
 
