@@ -912,6 +912,24 @@ def earnings():
         
         total_earnings += duty_earnings
         duties_with_manual.append(duty)
+    
+    # Convert duties to JSON-serializable format for frontend
+    duties_json = []
+    for duty in duties_with_manual:
+        duty_dict = {
+            'id': duty.id,
+            'start_time': duty.start_time.isoformat() if duty.start_time else None,
+            'end_time': duty.end_time.isoformat() if duty.end_time else None,
+            'revenue': float(duty.revenue or 0),
+            'driver_earnings': float(duty.driver_earnings or 0),
+            'incentive_payment': float(duty.incentive_payment or 0),
+            'status': duty.status.value if duty.status else None,
+            'manual_calculation': {
+                'net_earnings': float(duty.manual_calculation.net_earnings or 0),
+                'notes': duty.manual_calculation.notes
+            } if duty.manual_calculation else None
+        }
+        duties_json.append(duty_dict)
 
     # Get penalties in date range
     penalties = Penalty.query.filter(
@@ -925,6 +943,7 @@ def earnings():
     return render_template('driver/earnings.html',
                          driver=driver,
                          duties=duties_with_manual,
+                         duties_json=duties_json,
                          penalties=penalties,
                          total_earnings=total_earnings,
                          total_manual_earnings=total_manual_earnings,
