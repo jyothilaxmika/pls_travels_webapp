@@ -697,10 +697,15 @@ def end_duty():
         active_duty.total_trips = 0         # To be set during audit
         
         # Store additional financial data in appropriate fields
-        # We'll use gross_revenue to store operator_amount_1, net_revenue for operator_amount_2
-        # This allows the Final Settlement Calculator to access the data
+        # Map operator amounts to revenue fields for Final Settlement Calculator
         active_duty.gross_revenue = operator_amount_1
         active_duty.net_revenue = operator_amount_2
+        
+        # Store individual cash amounts in available fields for detailed tracking
+        # Since model doesn't have cash_collected_1/2 fields, store breakdown in digital_payments and card_payments
+        active_duty.digital_payments = cash_collected_1  # Repurpose for cash_collected_1
+        active_duty.card_payments = cash_collected_2     # Repurpose for cash_collected_2
+        active_duty.wallet_payments = out_cash          # Store out_cash
         
         # Update basic duty info
         active_duty.actual_end = get_ist_time_naive()
