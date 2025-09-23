@@ -13,17 +13,49 @@ class PLSTravelsPWA {
   async init() {
     console.log('Initializing PLS TRAVELS PWA...');
     
-    // Temporarily disabled PWA features to prevent flickering
-    console.log('PWA features temporarily disabled for stability');
+    // Enable full PWA functionality
+    console.log('Enabling full PWA features...');
     
-    // Only keep iOS meta tags for mobile compatibility
+    // Initialize core PWA features
+    await this.registerServiceWorker();
+    this.setupInstallPrompt();
+    this.setupPermissions();
     this.addIOSMetaTags();
+    
+    // Setup contextual permission prompts (don't auto-request)
+    this.setupContextualPermissions();
   }
 
   async registerServiceWorker() {
-    // Temporarily disabled to prevent flickering issues
-    console.log('Service Worker registration disabled to prevent page flickering');
-    return;
+    if ('serviceWorker' in navigator) {
+      try {
+        console.log('Registering Service Worker...');
+        
+        this.swRegistration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/'
+        });
+        
+        console.log('Service Worker registered successfully:', this.swRegistration);
+        
+        // Setup sync and push messaging
+        this.setupBackgroundSync();
+        this.setupPushNotifications();
+        
+        // Listen for service worker updates
+        this.swRegistration.addEventListener('updatefound', () => {
+          console.log('Service Worker update found');
+          this.handleServiceWorkerUpdate();
+        });
+        
+        return this.swRegistration;
+      } catch (error) {
+        console.error('Service Worker registration failed:', error);
+        return null;
+      }
+    } else {
+      console.log('Service Workers not supported');
+      return null;
+    }
   }
 
   setupInstallPrompt() {
@@ -239,6 +271,292 @@ class PLSTravelsPWA {
     return outputArray;
   }
 
+  // Enhanced permissions setup
+  setupPermissions() {
+    console.log('Setting up PWA permissions...');
+    
+    // Check current permission states
+    this.checkPermissionStates();
+    
+    // Setup permission request prompts
+    this.setupPermissionPrompts();
+  }
+
+  async checkPermissionStates() {
+    // Check notification permission
+    if ('Notification' in window) {
+      console.log('Notification permission:', Notification.permission);
+    }
+    
+    // Check geolocation permission
+    if ('geolocation' in navigator) {
+      try {
+        const result = await navigator.permissions.query({name: 'geolocation'});
+        console.log('Geolocation permission:', result.state);
+      } catch (error) {
+        console.log('Geolocation permission check not supported');
+      }
+    }
+    
+    // Check camera permission
+    if ('mediaDevices' in navigator) {
+      try {
+        const result = await navigator.permissions.query({name: 'camera'});
+        console.log('Camera permission:', result.state);
+      } catch (error) {
+        console.log('Camera permission check not supported');
+      }
+    }
+  }
+
+  setupPermissionPrompts() {
+    // Show permission prompts when needed
+    if ('Notification' in window && Notification.permission === 'default') {
+      this.showNotificationPrompt();
+    }
+  }
+
+  setupContextualPermissions() {
+    // Add contextual permission request buttons to relevant areas
+    this.addPermissionButtons();
+    
+    // Listen for permission-related events
+    document.addEventListener('duty-start', () => {
+      this.offerLocationPermission();
+    });
+    
+    document.addEventListener('photo-capture', () => {
+      this.offerCameraPermission();
+    });
+  }
+
+  addPermissionButtons() {
+    // Add unobtrusive permission buttons where contextually relevant
+    const permissionContainer = document.createElement('div');
+    permissionContainer.id = 'pwa-permissions';
+    permissionContainer.className = 'position-fixed bottom-0 end-0 p-3';
+    permissionContainer.style.cssText = 'z-index: 1040; max-width: 300px;';
+    
+    // Only show if permissions not yet granted
+    let buttonsHtml = '';
+    
+    if ('Notification' in window && Notification.permission === 'default') {
+      buttonsHtml += `
+        <button class="btn btn-sm btn-outline-primary mb-2 w-100" onclick="plsPWA.requestNotificationPermission()">
+          <i class="fas fa-bell me-2"></i>Enable Notifications
+        </button>
+      `;
+    }
+    
+    permissionContainer.innerHTML = buttonsHtml;
+    
+    if (buttonsHtml) {
+      document.body.appendChild(permissionContainer);
+    }
+  }
+
+  offerLocationPermission() {
+    if ('geolocation' in navigator) {
+      // Only offer if not already granted
+      navigator.permissions.query({name: 'geolocation'}).then((result) => {
+        if (result.state === 'prompt') {
+          this.showToast(
+            'Location Tracking', 
+            'Enable location access for accurate duty tracking?', 
+            'info',
+            0,
+            [
+              {
+                text: 'Enable',
+                action: () => this.requestGeolocationPermission()
+              }
+            ]
+          );
+        }
+      }).catch(() => {
+        // Permission query not supported, show prompt anyway
+        this.showToast(
+          'Location Tracking', 
+          'Enable location access for accurate duty tracking?', 
+          'info',
+          0,
+          [
+            {
+              text: 'Enable',
+              action: () => this.requestGeolocationPermission()
+            }
+          ]
+        );
+      });
+    }
+  }
+
+  offerCameraPermission() {
+    if ('mediaDevices' in navigator) {
+      navigator.permissions.query({name: 'camera'}).then((result) => {
+        if (result.state === 'prompt') {
+          this.showToast(
+            'Camera Access', 
+            'Enable camera access for photo capture?', 
+            'info',
+            0,
+            [
+              {
+                text: 'Enable',
+                action: () => this.requestCameraPermission()
+              }
+            ]
+          );
+        }
+      }).catch(() => {
+        // Permission query not supported, show prompt anyway
+        this.showToast(
+          'Camera Access', 
+          'Enable camera access for photo capture?', 
+          'info',
+          0,
+          [
+            {
+              text: 'Enable',
+              action: () => this.requestCameraPermission()
+            }
+          ]
+        );
+      });
+    }
+  }
+
+  async requestCameraPermission() {
+    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+      try {
+        console.log('Requesting camera permission...');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        
+        // Stop the stream immediately - we just need permission
+        stream.getTracks().forEach(track => track.stop());
+        
+        console.log('Camera permission granted');
+        this.showToast('Camera Access', 'Camera permission granted successfully', 'success');
+        return true;
+      } catch (error) {
+        console.error('Camera permission denied:', error);
+        this.showToast('Camera Access', 'Camera permission denied', 'warning');
+        return false;
+      }
+    } else {
+      console.log('Camera not supported on this device');
+      return false;
+    }
+  }
+
+  async requestGeolocationPermission() {
+    if ('geolocation' in navigator) {
+      return new Promise((resolve) => {
+        console.log('Requesting geolocation permission...');
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            console.log('Geolocation permission granted:', position.coords);
+            this.showToast('Location Access', 'Location permission granted successfully', 'success');
+            
+            // Store location for duty tracking
+            this.storeCurrentLocation(position.coords);
+            resolve(true);
+          },
+          (error) => {
+            console.error('Geolocation permission denied:', error);
+            this.showToast('Location Access', 'Location permission denied', 'warning');
+            resolve(false);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
+        );
+      });
+    } else {
+      console.log('Geolocation not supported on this device');
+      return false;
+    }
+  }
+
+  storeCurrentLocation(coords) {
+    const locationData = {
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      accuracy: coords.accuracy,
+      timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('pls_current_location', JSON.stringify(locationData));
+    console.log('Location stored for duty tracking:', locationData);
+  }
+
+  setupBackgroundSync() {
+    if (this.swRegistration && 'sync' in window.ServiceWorkerRegistration.prototype) {
+      console.log('Setting up background sync...');
+      
+      // Register sync events for duty data
+      this.swRegistration.sync.register('duty-sync').then(() => {
+        console.log('Background sync registered for duty data');
+      }).catch((error) => {
+        console.error('Background sync registration failed:', error);
+      });
+      
+      // Note: Only register sync events that have handlers in sw.js
+    } else {
+      console.log('Background sync not supported');
+    }
+  }
+
+  setupPushNotifications() {
+    if (this.swRegistration && 'PushManager' in window) {
+      console.log('Setting up push notifications...');
+      
+      // Check if already subscribed
+      this.swRegistration.pushManager.getSubscription().then((subscription) => {
+        if (subscription) {
+          console.log('Already subscribed to push notifications');
+          this.sendSubscriptionToServer(subscription);
+        } else {
+          console.log('Not subscribed to push notifications yet');
+        }
+      });
+    } else {
+      console.log('Push notifications not supported');
+    }
+  }
+
+  handleServiceWorkerUpdate() {
+    const installingWorker = this.swRegistration.installing;
+    
+    if (installingWorker) {
+      installingWorker.addEventListener('statechange', () => {
+        if (installingWorker.state === 'installed') {
+          if (navigator.serviceWorker.controller) {
+            // New update available
+            console.log('New service worker installed, update available');
+            this.showUpdateAvailable();
+          } else {
+            // Service worker installed for the first time
+            console.log('Service worker installed for the first time');
+          }
+        }
+      });
+    }
+  }
+
+  // Trigger sync for pending actions
+  triggerSync(tag = 'duty-sync') {
+    if (this.swRegistration && 'sync' in window.ServiceWorkerRegistration.prototype) {
+      return this.swRegistration.sync.register(tag);
+    } else {
+      console.log('Background sync not supported, performing immediate sync');
+      return Promise.resolve();
+    }
+  }
+
   addIOSMetaTags() {
     // Add iOS-specific meta tags for better PWA support
     const metaTags = [
@@ -280,7 +598,7 @@ class PLSTravelsPWA {
     this.showToast('Update Available!', 'A new version is ready. Refresh to update.', 'info', 0);
   }
 
-  showToast(title, message, type = 'info', duration = 5000) {
+  showToast(title, message, type = 'info', duration = 5000, actions = []) {
     // Create toast container if it doesn't exist
     let toastContainer = document.getElementById('pwa-toast-container');
     if (!toastContainer) {
@@ -338,8 +656,62 @@ class PLSTravelsPWA {
   }
 }
 
+// Theme toggle functionality
+function toggleTheme() {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-bs-theme') || 'light';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  
+  html.setAttribute('data-bs-theme', newTheme);
+  localStorage.setItem('pls-theme', newTheme);
+  
+  // Update theme toggle icon
+  const themeIcon = document.getElementById('theme-icon');
+  if (themeIcon) {
+    themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+  
+  // Show theme change notification
+  if (window.plsPWA && typeof window.plsPWA.showToast === 'function') {
+    window.plsPWA.showToast(
+      'Theme Changed',
+      `Switched to ${newTheme} mode`,
+      'success',
+      2000
+    );
+  }
+}
+
+// Load saved theme on page load
+function loadSavedTheme() {
+  const savedTheme = localStorage.getItem('pls-theme') || 'light';
+  const html = document.documentElement;
+  
+  html.setAttribute('data-bs-theme', savedTheme);
+  
+  // Update theme toggle icon if it exists
+  const themeIcon = document.getElementById('theme-icon');
+  if (themeIcon) {
+    themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+}
+
 // Initialize PWA when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+  // Load saved theme first
+  loadSavedTheme();
+  
+  // Add theme toggle button
+  if (!document.getElementById('theme-toggle')) {
+    const themeToggle = document.createElement('button');
+    themeToggle.id = 'theme-toggle';
+    themeToggle.onclick = toggleTheme;
+    themeToggle.innerHTML = '<i id="theme-icon" class="fas fa-moon"></i>';
+    themeToggle.title = 'Toggle Dark/Light Theme';
+    document.body.appendChild(themeToggle);
+  }
+  
+  // Initialize PWA
   window.plsPWA = new PLSTravelsPWA();
 });
 
