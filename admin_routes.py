@@ -4500,7 +4500,11 @@ def auto_fetch_duty_data(duty_id):
             'driver_name': duty.driver.full_name if duty.driver else 'Unknown',
             'duty_date': duty.duty_date.strftime('%Y-%m-%d') if duty.duty_date else '',
             'vehicle': duty.vehicle.registration_number if duty.vehicle else 'N/A',
-            'duration_calculated': auto_fetched_data['online_hours'] > 0
+            'duration_calculated': auto_fetched_data['online_hours'] > 0,
+            'start_odometer': duty.start_odometer,
+            'end_odometer': duty.end_odometer,
+            'start_photo_available': bool(duty.start_photo),
+            'end_photo_available': bool(duty.end_photo)
         }
     })
 

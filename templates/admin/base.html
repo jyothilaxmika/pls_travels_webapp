@@ -354,6 +354,51 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/missing-functions.js') }}"></script>
+    
+    <!-- Global Photo Modal for Admin Interface -->
+    <div class="modal fade" id="photoModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="photoModalTitle">Photo Verification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="photoModalImage" src="" class="img-fluid" alt="Verification Photo" style="max-height: 80vh;">
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            <span id="photoModalDescription">Click and hold to zoom, right-click to save</span>
+                        </small>
+                    </div>
+                    <div>
+                        <a id="photoModalDownload" href="" download class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Global photo modal functionality for admin interface
+    function showPhotoModal(imageUrl, title, description = '') {
+        document.getElementById('photoModalImage').src = imageUrl;
+        document.getElementById('photoModalTitle').textContent = title || 'Photo Verification';
+        document.getElementById('photoModalDownload').href = imageUrl;
+        if (description) {
+            document.getElementById('photoModalDescription').textContent = description;
+        } else {
+            document.getElementById('photoModalDescription').textContent = 'Click and hold to zoom, right-click to save';
+        }
+        new bootstrap.Modal(document.getElementById('photoModal')).show();
+    }
+    </script>
+    
     {% block scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
 </body>
