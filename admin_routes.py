@@ -2785,7 +2785,7 @@ def branch_performance():
     
     return jsonify([{
         'branch': row.name,
-        'target': float(row.target_revenue),
+        'target': float(row.target_revenue) if row.target_revenue is not None else 0.0,
         'actual': float(row.actual_revenue or 0)
     } for row in branch_data])
 
