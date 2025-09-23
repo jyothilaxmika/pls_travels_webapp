@@ -968,6 +968,104 @@ def test_duty_approval():
 
 
 # Enhanced WhatsApp Approval Routes
+@admin_bp.route('/api/bulk-approve-safe-duties', methods=['POST'])
+@login_required
+@admin_required
+def bulk_approve_safe_duties():
+    """Bulk approve duties that meet auto-approval criteria"""
+    try:
+        # Get pending duties that meet auto-approval criteria
+        safe_duties = []
+        pending_duties = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).all()
+        
+        for duty in pending_duties:
+            if duty.duty_scheme and duty.duty_scheme.requires_approval:
+                # Check if duty meets auto-approval criteria
+                duty_data = {
+                    'revenue': duty.gross_revenue or 0,
+                    'trips': duty.total_trips or 0,
+                    'hours': duty.duty_duration.total_seconds() / 3600 if duty.duty_duration else 0,
+                    'is_weekend': duty.actual_start.weekday() >= 5 if duty.actual_start else False,
+                    'is_night_shift': duty.actual_start.hour >= 22 or duty.actual_start.hour <= 5 if duty.actual_start else False,
+                    'has_anomaly': False  # Could implement anomaly detection logic
+                }
+                
+                needs_approval, reason = duty.duty_scheme.needs_approval(duty_data)
+                if not needs_approval:
+                    safe_duties.append(duty)
+        
+        # Approve safe duties
+        approved_count = 0
+        for duty in safe_duties:
+            duty.status = DutyStatus.COMPLETED
+            duty.approved_at = datetime.utcnow()
+            duty.rejection_reason = None
+            approved_count += 1
+        
+        db.session.commit()
+        
+        log_audit('bulk_approve_safe_duties', 'duty', 0, {
+            'approved_count': approved_count,
+            'admin_id': current_user.id
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': f'Auto-approved {approved_count} safe duties',
+            'approved_count': approved_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@admin_bp.route('/api/bulk-approve-verified-drivers', methods=['POST'])
+@login_required
+@admin_required
+def bulk_approve_verified_drivers():
+    """Bulk approve drivers with complete documentation"""
+    try:
+        # Get pending drivers with verified documents
+        verified_drivers = Driver.query.filter(
+            Driver.status == DriverStatus.PENDING,
+            Driver.aadhar_verified == True,
+            Driver.license_verified == True
+        ).all()
+        
+        approved_count = 0
+        for driver in verified_drivers:
+            driver.status = DriverStatus.ACTIVE
+            driver.approved_at = datetime.utcnow()
+            driver.approved_by = current_user.id
+            approved_count += 1
+            
+            # Send welcome notification
+            try:
+                from services import NotificationService
+                notification_service = NotificationService()
+                notification_service.send_driver_welcome_message(driver.id)
+            except Exception as e:
+                # Don't fail the approval if notification fails
+                pass
+        
+        db.session.commit()
+        
+        log_audit('bulk_approve_verified_drivers', 'driver', 0, {
+            'approved_count': approved_count,
+            'admin_id': current_user.id
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': f'Approved {approved_count} verified drivers',
+            'approved_count': approved_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+
 @admin_bp.route('/api/bulk-approve-advance-payments', methods=['POST'])
 @login_required
 @admin_required
@@ -1247,6 +1345,102 @@ def approval_dashboard():
                          pending_advances=pending_advances,
                          pending_resignations=pending_resignations,
                          stats=stats)
+
+@admin_bp.route('/workflow-dashboard')
+@login_required
+@admin_required
+def workflow_dashboard():
+    """Comprehensive workflow management dashboard"""
+    # Get pending items across all workflows
+    pending_duties = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).join(Driver).order_by(desc(Duty.submitted_at)).limit(15).all()
+    pending_drivers = Driver.query.filter_by(status=DriverStatus.PENDING).order_by(desc(Driver.created_at)).limit(15).all()
+    pending_advances = AdvancePaymentRequest.query.filter_by(status='pending').join(Driver).order_by(desc(AdvancePaymentRequest.created_at)).limit(15).all()
+    pending_resignations = ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).join(Driver).order_by(desc(ResignationRequest.submitted_at)).limit(15).all()
+    
+    # Get comprehensive statistics
+    today = datetime.now().date()
+    stats = {
+        # Pending counts
+        'pending_duties': Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count(),
+        'pending_drivers': Driver.query.filter_by(status=DriverStatus.PENDING).count(),
+        'pending_advances': AdvancePaymentRequest.query.filter_by(status='pending').count(),
+        'pending_resignations': ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).count(),
+        
+        # Total pending amount
+        'total_advance_amount_pending': db.session.query(func.sum(AdvancePaymentRequest.amount_requested)).filter_by(status='pending').scalar() or 0,
+        'total_duty_revenue_pending': db.session.query(func.sum(Duty.gross_revenue)).filter_by(status=DutyStatus.PENDING_APPROVAL).scalar() or 0,
+        
+        # Today's approvals
+        'duties_approved_today': Duty.query.filter(
+            Duty.status == DutyStatus.COMPLETED,
+            func.date(Duty.approved_at) == today
+        ).count(),
+        'drivers_approved_today': Driver.query.filter(
+            Driver.status == DriverStatus.ACTIVE,
+            func.date(Driver.approved_at) == today
+        ).count(),
+        'advances_approved_today': AdvancePaymentRequest.query.filter(
+            AdvancePaymentRequest.status == 'approved',
+            func.date(AdvancePaymentRequest.responded_at) == today
+        ).count(),
+        'resignations_approved_today': ResignationRequest.query.filter(
+            ResignationRequest.status == ResignationStatus.APPROVED,
+            func.date(ResignationRequest.approved_at) == today
+        ).count(),
+        
+        # This week's statistics
+        'week_start': today - timedelta(days=today.weekday()),
+        'duties_pending_this_week': Duty.query.filter(
+            Duty.status == DutyStatus.PENDING_APPROVAL,
+            func.date(Duty.submitted_at) >= (today - timedelta(days=today.weekday()))
+        ).count(),
+        'drivers_registered_this_week': Driver.query.filter(
+            func.date(Driver.created_at) >= (today - timedelta(days=today.weekday()))
+        ).count(),
+        
+        # Auto-approval effectiveness
+        'auto_approved_duties_today': Duty.query.filter(
+            Duty.status == DutyStatus.COMPLETED,
+            func.date(Duty.approved_at) == today,
+            Duty.reviewed_by.is_(None)  # Auto-approved duties have no reviewer
+        ).count(),
+        
+        # Branch distribution for pending items
+        'branch_stats': {
+            'duties': db.session.query(
+                Branch.name,
+                func.count(Duty.id).label('count')
+            ).join(Duty).filter(Duty.status == DutyStatus.PENDING_APPROVAL).group_by(Branch.name).all(),
+            'drivers': db.session.query(
+                Branch.name,
+                func.count(Driver.id).label('count')
+            ).join(Driver).filter(Driver.status == DriverStatus.PENDING).group_by(Branch.name).all()
+        }
+    }
+    
+    # Calculate total pending items for dashboard priority
+    stats['total_pending_items'] = (
+        stats['pending_duties'] + 
+        stats['pending_drivers'] + 
+        stats['pending_advances'] + 
+        stats['pending_resignations']
+    )
+    
+    # Calculate workflow efficiency metrics
+    stats['total_approved_today'] = (
+        stats['duties_approved_today'] + 
+        stats['drivers_approved_today'] + 
+        stats['advances_approved_today'] + 
+        stats['resignations_approved_today']
+    )
+    
+    return render_template('admin/workflow_dashboard.html',
+                         pending_duties=pending_duties,
+                         pending_drivers=pending_drivers,
+                         pending_advances=pending_advances,
+                         pending_resignations=pending_resignations,
+                         stats=stats,
+                         current_date=today.strftime('%B %d, %Y'))
 
 # Driver Block/Unblock Routes
 @admin_bp.route('/drivers/<int:driver_id>/block', methods=['POST'])
