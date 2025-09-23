@@ -6,7 +6,7 @@ packages = ["android-tools", "cargo", "freetype", "gitFull", "glibcLocales", "gr
 
 [deployment]
 deploymentTarget = "cloudrun"
-run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "--workers=2", "main:app"]
+run = ["sh", "-c", "python main.py"]
 
 [workflows]
 runButton = "Project"
