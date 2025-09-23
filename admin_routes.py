@@ -925,7 +925,10 @@ def bulk_update_approval_settings():
 def test_duty_approval():
     """Test if a duty would require approval based on current settings"""
     try:
-        scheme_id = int(request.form.get('scheme_id'))
+        scheme_id = request.form.get('scheme_id')
+        if not scheme_id:
+            return jsonify({'success': False, 'error': 'Scheme ID is required'})
+        scheme_id = int(scheme_id)
         revenue = float(request.form.get('test_revenue', 0))
         trips = int(request.form.get('test_trips', 0))
         hours = float(request.form.get('test_hours', 0))

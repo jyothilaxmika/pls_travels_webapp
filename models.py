@@ -123,6 +123,7 @@ class User(UserMixin, db.Model):
     # Push notifications (FCM - Firebase Cloud Messaging)
     fcm_token = db.Column(db.String(512))  # FCM tokens can be quite long
     fcm_token_updated = db.Column(db.DateTime)
+    profile_data = db.Column(db.Text)  # JSON data for push subscriptions and user profile info
     
     # Audit fields
     created_at = db.Column(db.DateTime, default=get_ist_time_naive, nullable=False)
