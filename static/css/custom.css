@@ -1,14 +1,23 @@
 /* Custom CSS for PLS TRAVELS Fleet Management System */
 
+/* Base page styling with gradient background */
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    background: linear-gradient(135deg, #2ecc71, #8e44ad);
+    min-height: 100vh;
+    color: #fff;
+}
+
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    /* Primary brand colors - Vibrant Growth Theme */
-    --pls-primary: #38ce3c;          /* Vibrant green - growth and success */
-    --pls-primary-light: #4ade80;     /* Light vibrant green */
-    --pls-primary-dark: #16a34a;      /* Dark vibrant green */
-    --pls-accent: #8e32e9;            /* Electric purple - innovation edge */
-    --pls-accent-light: #a855f7;      /* Light electric purple */
-    --pls-accent-dark: #7c3aed;       /* Dark electric purple */
+    /* Primary brand colors - Gradient Theme */
+    --pls-primary: #2ecc71;          /* Gradient green */
+    --pls-primary-light: #27ae60;     /* Light gradient green */
+    --pls-primary-dark: #229954;      /* Dark gradient green */
+    --pls-accent: #8e44ad;            /* Gradient purple */
+    --pls-accent-light: #9b59b6;      /* Light gradient purple */
+    --pls-accent-dark: #8e44ad;       /* Dark gradient purple */
     
     /* Status colors - Vibrant Energy Palette */
     --pls-success: #38ce3c;           /* Vibrant green - growth */
@@ -147,21 +156,20 @@
     transform: translateY(-2px);
 }
 
-/* Global body styling for vibrant theme */
+/* Global body styling for gradient theme */
 body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--pls-slate-50);
-    color: var(--pls-text-dark) !important;
     line-height: 1.6;
     font-size: 0.95rem;
     font-weight: 400;
+    /* Background and color now handled by gradient theme at top of file */
 }
 
-/* Ensure all text elements have maximum contrast */
+/* Text elements styling for gradient theme */
 h1, h2, h3, h4, h5, h6 {
-    color: var(--pls-text-strong);
+    color: #fff !important;
     font-weight: 700;
-    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+    text-shadow: 0 1px 1px rgba(0,0,0,0.3);
 }
 
 /* Override for colored card headers to maintain readability */
@@ -175,10 +183,7 @@ h1, h2, h3, h4, h5, h6 {
     text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-p, span, div, li, td, th, label {
-    color: var(--pls-text-dark);
-    font-weight: 500;
-}
+/* Text elements now use gradient theme white text - see global overrides below */
 
 /* Ensure text visibility on colored cards */
 .card[class*="bg-"] .card-body p,
@@ -194,9 +199,7 @@ p, span, div, li, td, th, label {
 }
 
 /* Table content with enhanced visibility and scroll options */
-table {
-    color: var(--pls-text-dark) !important;
-}
+/* Tables now use gradient theme styling - see overrides below */
 
 /* Comprehensive table responsiveness with scroll */
 .table-responsive {
@@ -246,10 +249,7 @@ table {
     font-weight: 600;
 }
 
-.form-control, .form-select {
-    color: var(--pls-text-dark) !important;
-    font-weight: 500;
-}
+/* Forms now use gradient theme styling - see overrides below */
 
 .form-text {
     color: var(--pls-text-muted) !important;
@@ -269,10 +269,7 @@ table {
     box-shadow: 0 6px 16px rgba(0,0,0,0.2) !important;
 }
 
-.dropdown-item {
-    color: var(--pls-text-dark) !important;
-    font-weight: 600;
-}
+/* Dropdowns now use gradient theme styling - see overrides below */
 
 .dropdown-item:hover, .dropdown-item:focus {
     background-color: var(--pls-primary) !important;
@@ -281,10 +278,7 @@ table {
 }
 
 /* Breadcrumb fixes with enhanced visibility */
-.breadcrumb-item {
-    color: var(--pls-text-dark) !important;
-    font-weight: 600;
-}
+/* Breadcrumbs now use gradient theme styling */
 
 .breadcrumb-item.active {
     color: var(--pls-text-strong) !important;
@@ -1430,10 +1424,13 @@ input[type="file"] {
 
 /* Light theme enhancements */
 [data-bs-theme="light"] {
-    --bs-body-bg: #fafbfc;
-    --bs-body-color: var(--pls-text-dark);
+    --bs-body-bg: transparent;
+    --bs-body-color: #ffffff;
     --bs-primary: var(--pls-primary);
     --bs-secondary: var(--pls-secondary);
+    --bs-card-bg: rgba(255, 255, 255, 0.12);
+    --bs-dropdown-bg: rgba(0, 0, 0, 0.4);
+    --bs-offcanvas-bg: rgba(0, 0, 0, 0.4);
 }
 
 [data-bs-theme="light"] .card {
@@ -2515,15 +2512,322 @@ input[type="file"] {
     overflow: hidden;
 }
 
-/* Force offcanvas behavior on all screen sizes */
+/* Sidebar glass morphism for gradient theme */
 .offcanvas {
+    width: 260px;
+    background: rgba(0, 0, 0, 0.4) !important;
+    min-height: 100vh;
+    padding: 20px;
     transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37) !important;
 }
 
 .offcanvas:not(.show) {
     transform: translateX(-100%) !important;
     visibility: hidden !important;
     opacity: 0 !important;
+}
+
+/* Sidebar links styling - high specificity to override conflicts */
+.offcanvas a,
+.offcanvas .nav-link,
+.offcanvas .sidebar-nav .nav-link,
+.offcanvas .list-group-item {
+    display: block;
+    color: #fff !important;
+    padding: 10px 15px;
+    margin: 5px 0;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.offcanvas a:hover,
+.offcanvas .nav-link:hover,
+.offcanvas .sidebar-nav .nav-link:hover,
+.offcanvas .list-group-item:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    text-decoration: none;
+}
+
+/* Collapsible sections */
+.collapsible {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.collapsible-header {
+    padding: 12px 15px;
+    font-weight: bold;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+}
+
+.collapsible-content {
+    display: none;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.collapsible.open .collapsible-content {
+    display: block;
+}
+
+/* Navbar glass morphism for gradient theme */
+.navbar {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37) !important;
+}
+
+.navbar-brand,
+.navbar-brand:hover {
+    color: #fff !important;
+}
+
+.navbar .nav-link {
+    color: #fff !important;
+}
+
+.navbar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+/* Main content area */
+.main-content {
+    margin-left: 0;
+    padding: 20px;
+}
+
+/* Global typography override for gradient theme - highest priority */
+body, p, span, div, li, label, small, .text-muted, a, strong, b, em, i {
+    color: #fff !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #fff !important;
+    font-weight: 600;
+}
+
+/* Override all Bootstrap text color classes */
+.text-dark, .text-primary, .text-secondary, .text-success, .text-danger, .text-warning, .text-info {
+    color: #fff !important;
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Global override for any missed elements */
+* {
+    color: inherit;
+}
+
+/* Ensure all content areas use white text */
+.container, .container-fluid, .row, .col {
+    color: #fff;
+}
+
+/* Custom scrollbar for gradient theme */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+}
+::-webkit-scrollbar-thumb {
+    background: #8e44ad;
+    border-radius: 8px;
+}
+
+/* Badges for gradient theme */
+.badge {
+    background: crimson !important;
+    color: #fff;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+/* Cards with gradient theme styling - glass morphism effect */
+.card {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(10px);
+    color: #fff !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37) !important;
+}
+
+.card-header {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+    color: #fff !important;
+    backdrop-filter: blur(5px);
+}
+
+.card-body {
+    color: #fff !important;
+}
+
+.card-title, .card-text {
+    color: #fff !important;
+}
+
+/* Table styling overrides for gradient theme - high specificity */
+.table, .table-responsive table {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+.table th, .table thead th {
+    background: rgba(0, 0, 0, 0.35) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.table td, .table tbody td {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.table-responsive, .table-wrapper {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Override any specific table text colors */
+.table th, .table td, .table tbody tr, .table thead tr {
+    color: #fff !important;
+}
+
+/* Form styling for gradient theme - complete glass effect */
+.form-control,
+.form-select {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+    backdrop-filter: blur(5px);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25) !important;
+    color: #fff !important;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.form-label {
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.form-text {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Button styling for gradient theme */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-1px);
+}
+
+/* List group styling for gradient theme */
+.list-group-item {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+.list-group-item:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Alert styling for gradient theme */
+.alert {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+/* Additional gradient theme text overrides */
+.breadcrumb-item, .breadcrumb-item.active,
+.form-label, .sidebar-nav .nav-link,
+.list-group .list-group-item.nav-item {
+    color: #fff !important;
+}
+
+/* Glass morphism for dropdowns */
+.dropdown-menu {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37) !important;
+}
+
+.dropdown-item {
+    color: #fff !important;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+/* Responsive adjustments for gradient theme */
+@media (max-width: 768px) {
+    .offcanvas {
+        width: 85%;
+        max-width: 320px;
+        position: fixed;
+        left: -100%;
+        transition: left 0.3s ease;
+    }
+    .offcanvas.show {
+        left: 0;
+    }
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
 }
 
 /* Hide offcanvas completely on desktop screens */
