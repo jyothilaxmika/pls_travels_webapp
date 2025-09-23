@@ -3938,3 +3938,58 @@ def update_manual_earnings_status():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error updating status: {str(e)}'})
+
+@admin_bp.route('/duty-scheme/<int:scheme_id>/configure', methods=['GET', 'POST'])
+@login_required  
+@admin_required
+def configure_duty_scheme(scheme_id):
+    """Configure editable parameters for duty scheme calculation formula"""
+    try:
+        from models import DutyScheme
+        import json
+        
+        scheme = DutyScheme.query.get_or_404(scheme_id)
+        
+        if request.method == 'POST':
+            # Update configurable parameters
+            config = json.loads(scheme.configuration) if scheme.configuration else {}
+            
+            # Update editable parameters from form
+            updated = False
+            for param_name in ['insurance_deduction', 'cng_rate', 'inhouse_slab_threshold', 
+                              'inhouse_base_percentage', 'inhouse_above_threshold_percentage']:
+                if param_name in request.form:
+                    new_value = float(request.form[param_name])
+                    if param_name in config and 'default' in config[param_name]:
+                        config[param_name]['default'] = new_value
+                        updated = True
+            
+            if updated:
+                scheme.configuration = json.dumps(config)
+                db.session.commit()
+                flash('Duty scheme formula parameters updated successfully!', 'success')
+                
+                # Log the configuration change
+                log_audit('update_duty_scheme_config', 'duty_scheme', scheme_id, {
+                    'scheme_name': scheme.name,
+                    'updated_params': list(request.form.keys()),
+                    'admin_user': current_user.username
+                })
+            
+            return redirect(url_for('admin.configure_duty_scheme', scheme_id=scheme_id))
+        
+        # Parse current configuration for display
+        config = json.loads(scheme.configuration) if scheme.configuration else {}
+        editable_params = {}
+        for param_name, param_config in config.items():
+            if isinstance(param_config, dict) and param_config.get('editable', False):
+                editable_params[param_name] = param_config
+        
+        return render_template('admin/configure_duty_scheme.html', 
+                             scheme=scheme, 
+                             editable_params=editable_params)
+                             
+    except Exception as e:
+        print(f"Error configuring duty scheme {scheme_id}: {str(e)}")
+        flash('An error occurred while configuring the duty scheme', 'error')
+        return redirect(url_for('admin.dashboard'))

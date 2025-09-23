@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Duty Scheme Formula - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 text-dark">
+                        <i class="fas fa-calculator text-primary me-2"></i>Configure Salary Formula
+                    </h1>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-cog me-1"></i>{{ scheme.name }}
+                        <span class="badge bg-info ms-2">{{ scheme.scheme_type|upper }}</span>
+                    </p>
+                </div>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Formula Configuration Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Editable Formula Parameters
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Current Formula:</strong> if (amount > threshold) { salary = (threshold × base%) + ((amount - threshold) × above%); } else { salary = amount × base%; }<br>
+                        <strong>CNG Formula:</strong> Final CNG = (Starting CNG Level - End CNG) × CNG Rate
+                    </div>
+
+                    <form method="POST" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <div class="row">
+                            {% for param_name, param_config in editable_params.items() %}
+                                <div class="col-md-6 mb-4">
+                                    <label for="{{ param_name }}" class="form-label fw-bold">
+                                        {% if param_name == 'insurance_deduction' %}
+                                            <i class="fas fa-shield-alt text-info me-2"></i>Insurance Deduction (₹)
+                                        {% elif param_name == 'cng_rate' %}
+                                            <i class="fas fa-gas-pump text-warning me-2"></i>CNG Rate per Bar (₹)
+                                        {% elif param_name == 'inhouse_slab_threshold' %}
+                                            <i class="fas fa-chart-line text-primary me-2"></i>Salary Threshold (₹)
+                                        {% elif param_name == 'inhouse_base_percentage' %}
+                                            <i class="fas fa-percentage text-success me-2"></i>Base Percentage (%)
+                                        {% elif param_name == 'inhouse_above_threshold_percentage' %}
+                                            <i class="fas fa-percentage text-danger me-2"></i>Above Threshold Percentage (%)
+                                        {% else %}
+                                            <i class="fas fa-cog text-secondary me-2"></i>{{ param_config.label }}
+                                        {% endif %}
+                                    </label>
+                                    
+                                    <div class="input-group">
+                                        {% if param_name in ['inhouse_base_percentage', 'inhouse_above_threshold_percentage'] %}
+                                            <span class="input-group-text">%</span>
+                                        {% elif param_name in ['insurance_deduction', 'cng_rate', 'inhouse_slab_threshold'] %}
+                                            <span class="input-group-text">₹</span>
+                                        {% endif %}
+                                        
+                                        <input type="number" 
+                                               class="form-control" 
+                                               name="{{ param_name }}" 
+                                               id="{{ param_name }}"
+                                               value="{{ param_config.default }}" 
+                                               step="{% if 'percentage' in param_name %}1{% else %}0.01{% endif %}"
+                                               min="0"
+                                               max="{% if 'percentage' in param_name %}100{% else %}999999{% endif %}"
+                                               required>
+                                    </div>
+                                    
+                                    <div class="form-text">
+                                        {% if param_name == 'insurance_deduction' %}
+                                            Fixed insurance deduction amount per duty
+                                        {% elif param_name == 'cng_rate' %}
+                                            Cost per CNG bar in the formula: (Start - End) × Rate
+                                        {% elif param_name == 'inhouse_slab_threshold' %}
+                                            Revenue threshold where salary calculation changes (currently ₹{{ param_config.default }})
+                                        {% elif param_name == 'inhouse_base_percentage' %}
+                                            Salary percentage for amounts up to threshold (currently {{ param_config.default }}%)
+                                        {% elif param_name == 'inhouse_above_threshold_percentage' %}
+                                            Salary percentage for amounts above threshold (currently {{ param_config.default }}%)
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Formula Preview -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-eye me-2"></i>Formula Preview
+                                        </h6>
+                                        <div class="formula-preview bg-white p-3 rounded border">
+                                            <strong>Salary Calculation:</strong><br>
+                                            <code>
+                                                if (operator_total > <span class="text-primary" id="threshold-preview">{{ editable_params.inhouse_slab_threshold.default }}</span>) {<br>
+                                                &nbsp;&nbsp;salary = (<span class="text-primary" id="threshold-preview-2">{{ editable_params.inhouse_slab_threshold.default }}</span> × <span class="text-success" id="base-preview">{{ editable_params.inhouse_base_percentage.default }}</span>%) + ((operator_total - <span class="text-primary" id="threshold-preview-3">{{ editable_params.inhouse_slab_threshold.default }}</span>) × <span class="text-danger" id="above-preview">{{ editable_params.inhouse_above_threshold_percentage.default }}</span>%)<br>
+                                                } else {<br>
+                                                &nbsp;&nbsp;salary = operator_total × <span class="text-success" id="base-preview-2">{{ editable_params.inhouse_base_percentage.default }}</span>%<br>
+                                                }
+                                            </code><br><br>
+                                            <strong>Final Settlement:</strong><br>
+                                            <code>
+                                                net_salary = salary - <span class="text-info" id="insurance-preview">{{ editable_params.insurance_deduction.default }}</span> (insurance)<br>
+                                                final_cng = (start_cng - end_cng) × <span class="text-warning" id="cng-rate-preview">{{ editable_params.cng_rate.default }}</span><br>
+                                                company_settlement = (total_cash - final_cng) + pass_deduction - net_salary
+                                            </code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update Formula Parameters
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Real-time formula preview updates
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = ['inhouse_slab_threshold', 'inhouse_base_percentage', 'inhouse_above_threshold_percentage', 'insurance_deduction', 'cng_rate'];
+    
+    inputs.forEach(function(inputName) {
+        const input = document.getElementById(inputName);
+        if (input) {
+            input.addEventListener('input', updatePreview);
+        }
+    });
+    
+    function updatePreview() {
+        const threshold = document.getElementById('inhouse_slab_threshold').value || 4500;
+        const basePercentage = document.getElementById('inhouse_base_percentage').value || 30;
+        const abovePercentage = document.getElementById('inhouse_above_threshold_percentage').value || 70;
+        const insurance = document.getElementById('insurance_deduction').value || 60;
+        const cngRate = document.getElementById('cng_rate').value || 90;
+        
+        // Update threshold values
+        document.getElementById('threshold-preview').textContent = threshold;
+        document.getElementById('threshold-preview-2').textContent = threshold;
+        document.getElementById('threshold-preview-3').textContent = threshold;
+        
+        // Update percentage values
+        document.getElementById('base-preview').textContent = basePercentage;
+        document.getElementById('base-preview-2').textContent = basePercentage;
+        document.getElementById('above-preview').textContent = abovePercentage;
+        
+        // Update insurance and CNG rate
+        document.getElementById('insurance-preview').textContent = insurance;
+        document.getElementById('cng-rate-preview').textContent = cngRate;
+    }
+});
+</script>
+{% endblock %}
