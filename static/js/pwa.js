@@ -656,62 +656,8 @@ class PLSTravelsPWA {
   }
 }
 
-// Theme toggle functionality
-function toggleTheme() {
-  const html = document.documentElement;
-  const currentTheme = html.getAttribute('data-bs-theme') || 'light';
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  
-  html.setAttribute('data-bs-theme', newTheme);
-  localStorage.setItem('pls-theme', newTheme);
-  
-  // Update theme toggle icon
-  const themeIcon = document.getElementById('theme-icon');
-  if (themeIcon) {
-    themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-  }
-  
-  // Show theme change notification
-  if (window.plsPWA && typeof window.plsPWA.showToast === 'function') {
-    window.plsPWA.showToast(
-      'Theme Changed',
-      `Switched to ${newTheme} mode`,
-      'success',
-      2000
-    );
-  }
-}
-
-// Load saved theme on page load
-function loadSavedTheme() {
-  const savedTheme = localStorage.getItem('pls-theme') || 'light';
-  const html = document.documentElement;
-  
-  html.setAttribute('data-bs-theme', savedTheme);
-  
-  // Update theme toggle icon if it exists
-  const themeIcon = document.getElementById('theme-icon');
-  if (themeIcon) {
-    themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-  }
-}
-
 // Initialize PWA when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Load saved theme first
-  loadSavedTheme();
-  
-  // Add theme toggle button
-  if (!document.getElementById('theme-toggle')) {
-    const themeToggle = document.createElement('button');
-    themeToggle.id = 'theme-toggle';
-    themeToggle.onclick = toggleTheme;
-    themeToggle.innerHTML = '<i id="theme-icon" class="fas fa-moon"></i>';
-    themeToggle.title = 'Toggle Dark/Light Theme';
-    document.body.appendChild(themeToggle);
-  }
-  
-  // Initialize PWA
   window.plsPWA = new PLSTravelsPWA();
 });
 
