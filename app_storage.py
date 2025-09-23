@@ -115,8 +115,27 @@ class AppStorageManager:
             if not gitkeep_path.exists():
                 gitkeep_path.touch()
     
+    def _sanitize_path_component(self, component: str) -> str:
+        """Sanitize path components to prevent directory traversal"""
+        if not component:
+            return 'default'
+        
+        # Remove dangerous characters and sequences
+        sanitized = component.replace('..', '').replace('/', '').replace('\\', '')
+        sanitized = sanitized.replace('\0', '').strip()
+        
+        # Ensure it's not empty after sanitization
+        if not sanitized or sanitized in ['.', '..']:
+            return 'default'
+        
+        return sanitized
+
     def get_storage_path(self, category: str, subcategory: str) -> Path:
         """Get the storage path for a specific category and subcategory"""
+        # Sanitize inputs to prevent directory traversal
+        category = self._sanitize_path_component(category)
+        subcategory = self._sanitize_path_component(subcategory)
+        
         if category in self.storage_categories and subcategory in self.storage_categories[category]:
             return self.base_path / self.storage_categories[category][subcategory]
         return self.base_path / 'temp' / 'uploads'
@@ -136,9 +155,17 @@ class AppStorageManager:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         unique_id = str(uuid.uuid4().hex)[:8]
         
-        # Extract file extension
+        # Sanitize inputs
+        file_type = self._sanitize_path_component(file_type)
+        prefix = self._sanitize_path_component(prefix) if prefix else ''
+        
+        # Extract file extension securely
         if '.' in original_filename:
             extension = original_filename.rsplit('.', 1)[1].lower()
+            # Validate extension to prevent malicious extensions
+            allowed_exts = {'jpg', 'jpeg', 'png', 'webp', 'pdf', 'txt', 'csv', 'xlsx', 'docx'}
+            if extension not in allowed_exts:
+                extension = 'jpg'  # Safe default
         else:
             extension = 'jpg'  # Default for captures
         
