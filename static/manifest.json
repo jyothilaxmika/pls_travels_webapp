@@ -1,0 +1,109 @@
+{
+  "name": "PLS TRAVELS - Driver & Fleet Management",
+  "short_name": "PLS TRAVELS",
+  "description": "Professional driver and fleet management system with duty tracking, earnings calculation, and real-time monitoring",
+  "theme_color": "#1e3a8a",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "start_url": "/",
+  "categories": ["business", "productivity", "travel"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/static/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/screenshots/mobile-dashboard.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Driver Dashboard - Mobile View"
+    },
+    {
+      "src": "/static/screenshots/desktop-admin.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Admin Dashboard - Desktop View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Driver Dashboard",
+      "short_name": "Dashboard",
+      "description": "Quick access to driver duty management",
+      "url": "/driver/dashboard",
+      "icons": [{"src": "/static/icons/shortcut-dashboard.png", "sizes": "96x96"}]
+    },
+    {
+      "name": "Start Duty",
+      "short_name": "Start",
+      "description": "Start a new duty shift",
+      "url": "/driver/duties/start",
+      "icons": [{"src": "/static/icons/shortcut-start.png", "sizes": "96x96"}]
+    },
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Access admin dashboard",
+      "url": "/admin/dashboard",
+      "icons": [{"src": "/static/icons/shortcut-admin.png", "sizes": "96x96"}]
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.plstravels.app"
+    }
+  ],
+  "prefer_related_applications": false
+}
