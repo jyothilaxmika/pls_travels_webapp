@@ -1,0 +1,212 @@
+[SW] Background sync triggered: duty-sync
+sw.js:265 [SW] Syncing duty data
+sw.js:112 [SW] Background sync triggered: photo-upload
+sw.js:295 [SW] Syncing photo uploads
+sw.js:112 [SW] Background sync triggered: earnings-sync
+sw.js:326 [SW] Syncing earnings data
+34Refused to connect to '<URL>' because it violates the following Content Security Policy directive: "connect-src 'self'".
+Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+34The FetchEvent for "<URL>" resulted in a network error response: the promise was rejected.Understand this warning
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+4sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+4sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+4sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+4sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+4sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+bootstrap.min.css:1  Failed to load resource: net::ERR_FAILEDUnderstand this error
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+all.min.css:1  Failed to load resource: net::ERR_FAILEDUnderstand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+bootstrap.bundle.min.js:1  Failed to load resource: net::ERR_FAILEDUnderstand this error
+4sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/chart.js. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+chart.js:1  Failed to load resource: net::ERR_FAILEDUnderstand this error
+missing-functions.js:522 Missing functions script loaded successfully
+pwa.js:13 [PWA] Initializing PWA Manager
+pwa.js:522 [PWA] PWA Manager ready
+pwa-install.js:558 [PWA-Install] PWA Install Manager ready
+pwa.js:43 [PWA] Service Worker registered: ServiceWorkerRegistration
+pwa.js:95 [PWA] Offline database initialized
+pwa.js:137 [PWA] Camera API configured
+pwa.js:224 [PWA] Background sync supported
+pwa.js:36 [PWA] PWA Manager initialized successfully
+pwa.js:144 [PWA] Notification permission: granted
+dashboard:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">Understand this warning
+pwa-install.js:38 [PWA-Install] Install prompt available
+dashboard:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+/api/push/subscribe:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+pwa.js:173 [PWA] Push notification subscription active
+dashboard.js:275 Dashboard error: ReferenceError: bootstrap is not defined
+    at dashboard.js:25:27
+    at NodeList.forEach (<anonymous>)
+    at dashboard.js:24:16
+(anonymous) @ dashboard.js:275Understand this error
+dashboard.js:25 Uncaught ReferenceError: bootstrap is not defined
+    at dashboard.js:25:27
+    at NodeList.forEach (<anonymous>)
+    at dashboard.js:24:16Understand this error
+dashboard:637 Uncaught (in promise) ReferenceError: Chart is not defined
+    at dashboard:637:9Understand this error
+dashboard:675 Uncaught (in promise) ReferenceError: Chart is not defined
+    at dashboard:675:9Understand this error
+sw.js:250 Fetch API cannot load https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+sw.js:250 Fetch API cannot load https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css. Refused to connect because it violates the document's Content Security Policy.
+staleWhileRevalidate @ sw.js:250Understand this error
+sw.js:256 [SW] Fetch failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
+    at staleWhileRevalidate (sw.js:250:24)
+2sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.Understand this error
+pwa.js:311 [PWA] Background sync registered
+sw.js:112 [SW] Background sync triggered: duty-sync
+sw.js:265 [SW] Syncing duty data
+sw.js:112 [SW] Background sync triggered: photo-upload
+sw.js:295 [SW] Syncing photo uploads
+sw.js:112 [SW] Background sync triggered: earnings-sync
+sw.js:326 [SW] Syncing earnings data
