@@ -1,350 +1,415 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 
 {% block title %}Drivers Management - PLS TRAVELS{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-    <h2><i class="fas fa-users me-2"></i>Drivers Management</h2>
-    <div class="d-flex gap-2 flex-wrap">
-        <!-- Search Bar -->
-        <div class="input-group" style="max-width: 300px;">
-            <input type="text" class="form-control" placeholder="Search drivers..." id="searchInput">
-            <button class="btn btn-outline-secondary" type="button" id="searchBtn">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
-        
-        <!-- Add Driver Button -->
-        <a href="{{ url_for('admin.add_driver') }}" class="btn btn-success">
-            <i class="fas fa-user-plus me-2"></i><span class="d-none d-md-inline">Add Driver</span>
-        </a>
-        
-        <!-- Filter Button -->
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
-            <i class="fas fa-filter me-2"></i><span class="d-none d-md-inline">Filter</span>
-        </button>
-        
-        <!-- View Toggle for Mobile/Desktop -->
-        <div class="btn-group d-md-none" role="group">
-            <button type="button" class="btn btn-outline-secondary" id="tableView" title="Table View">
-                <i class="fas fa-table"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary active" id="cardView" title="Card View">
-                <i class="fas fa-th-large"></i>
-            </button>
+<!-- Page Header with Search and Actions -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 class="mb-0"><i class="fas fa-users me-2"></i>Drivers Management</h2>
+                <p class="text-muted mb-0">Manage driver profiles, documents, and approvals</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <!-- Search Bar -->
+                <div class="input-group" style="max-width: 250px;">
+                    <input type="text" class="form-control" placeholder="Search drivers..." id="searchInput">
+                    <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                
+                <!-- Add Driver Button -->
+                <a href="{{ url_for('admin.add_driver') }}" class="btn btn-success">
+                    <i class="fas fa-user-plus me-2"></i><span class="d-none d-sm-inline">Add Driver</span>
+                </a>
+                
+                <!-- Filter Button -->
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <i class="fas fa-filter me-2"></i><span class="d-none d-sm-inline">Filter</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Filters Summary -->
+<!-- Active Filters Alert -->
 {% if status_filter or branch_filter %}
 <div class="alert alert-info mb-4">
-    <i class="fas fa-info-circle me-2"></i>
-    Showing drivers 
-    {% if status_filter %}with status: <strong>{{ status_filter.title() }}</strong>{% endif %}
-    {% if branch_filter %}in branch: <strong>{{ branches | selectattr('id', 'equalto', branch_filter) | map(attribute='name') | first }}</strong>{% endif %}
-    <a href="{{ url_for('admin.drivers') }}" class="btn btn-sm btn-outline-primary ms-2">Clear Filters</a>
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Active Filters:</strong>
+            {% if status_filter %}<span class="badge bg-primary ms-2">Status: {{ status_filter.title() }}</span>{% endif %}
+            {% if branch_filter %}<span class="badge bg-secondary ms-2">Branch: {{ branches | selectattr('id', 'equalto', branch_filter) | map(attribute='name') | first }}</span>{% endif %}
+        </div>
+        <a href="{{ url_for('admin.drivers') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-times me-1"></i>Clear All
+        </a>
+    </div>
 </div>
 {% endif %}
 
-<!-- Drivers Table (Desktop View) -->
-<div class="card" id="driversTable">
+<!-- Tab Navigation -->
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="driversTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="drivers-tab" data-bs-toggle="tab" data-bs-target="#drivers-pane" type="button" role="tab">
+                    <i class="fas fa-users me-2"></i>All Drivers
+                    <span class="badge bg-secondary ms-2">{{ drivers.items|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-pane" type="button" role="tab">
+                    <i class="fas fa-clock me-2"></i>Pending Approval
+                    <span class="badge bg-warning ms-2">{{ drivers.items|selectattr('status.value', 'equalto', 'pending')|list|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-pane" type="button" role="tab">
+                    <i class="fas fa-file-alt me-2"></i>Documents
+                </button>
+            </li>
+        </ul>
+    </div>
+    
     <div class="card-body">
-        {% if drivers.items %}
-        <div class="table-responsive d-none d-lg-block">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Driver</th>
-                        <th>Branch</th>
-                        <th>Phone</th>
-                        <th>Status</th>
-                        <th>Joined</th>
-                        <th>Total Earnings</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div class="tab-content" id="driversTabContent">
+            <!-- All Drivers Tab -->
+            <div class="tab-pane fade show active" id="drivers-pane" role="tabpanel">
+                {% if drivers.items %}
+                <!-- Drivers Grid -->
+                <div class="desktop-grid two-column" id="driversGrid">
                     {% for driver in drivers.items %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                {% if driver.profile_photo %}
-                                <img src="/uploads/{{ driver.profile_photo }}" class="rounded-circle me-2" width="32" height="32">
-                                {% else %}
-                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
-                                    <i class="fas fa-user text-white"></i>
-                                </div>
-                                {% endif %}
-                                <div>
-                                    <strong>{{ driver.full_name }}</strong><br>
-                                    <small class="text-muted">{{ driver.user.username }}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>{{ driver.branch.name }}</td>
-                        <td>{{ driver.phone }}</td>
-                        <td>
-                            {% if driver.status.value == 'active' %}
-                                <span class="badge bg-success">Active</span>
-                            {% elif driver.status.value == 'pending' %}
-                                <span class="badge bg-warning">Pending</span>
-                            {% elif driver.status.value == 'rejected' %}
-                                <span class="badge bg-danger">Rejected</span>
-                            {% elif driver.status.value == 'suspended' %}
-                                <span class="badge bg-danger">Blocked</span>
-                            {% elif driver.status.value == 'terminated' %}
-                                <span class="badge bg-dark">Terminated</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ driver.created_at.strftime('%Y-%m-%d') if driver.created_at else 'N/A' }}</td>
-                        <td>₹{{ "{:,.2f}".format(driver.total_earnings or 0) }}</td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <!-- View button -->
-                                <a href="{{ url_for('admin.view_driver', driver_id=driver.id) }}" class="btn btn-sm btn-outline-primary" title="View Details">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                
-                                <!-- Edit button -->
-                                <a href="{{ url_for('admin.edit_driver', driver_id=driver.id) }}" class="btn btn-sm btn-outline-info" title="Edit Driver">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                
-                                {% if driver.status.value == 'pending' %}
-                                <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')" title="Approve">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                                <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')" title="Reject">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </form>
-                                {% elif driver.status.value == 'active' %}
-                                <button type="button" class="btn btn-sm btn-warning" onclick="quickBlockDriver({{ driver.id }}, '{{ driver.full_name }}')" title="Block Driver">
-                                    <i class="fas fa-ban"></i>
-                                </button>
-                                {% elif driver.status.value == 'suspended' %}
-                                <button type="button" class="btn btn-sm btn-success" onclick="quickUnblockDriver({{ driver.id }})" title="Unblock Driver">
-                                    <i class="fas fa-unlock"></i>
-                                </button>
-                                {% endif %}
-                                
-                                <!-- Delete button -->
-                                {% if driver.status.value != 'terminated' %}
-                                <form method="POST" action="{{ url_for('admin.delete_driver', driver_id=driver.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver? This action cannot be undone.')">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Driver">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    
-                    <!-- Driver Details Modal -->
-                    <div class="modal fade" id="driverModal{{ driver.id }}" tabindex="-1">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">{{ driver.full_name }} - Details</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6>Personal Information</h6>
-                                            <p><strong>Full Name:</strong> {{ driver.full_name }}</p>
-                                            <p><strong>Phone:</strong> {{ driver.phone }}</p>
-                                            <p><strong>Address:</strong> {{ driver.address or 'Not provided' }}</p>
-                                            <p><strong>Aadhar:</strong> {{ driver.aadhar_number }}</p>
-                                            <p><strong>License:</strong> {{ driver.license_number }}</p>
+                    <div class="driver-card-container">
+                        <div class="card h-100 driver-card">
+                            <div class="card-body">
+                                <!-- Driver Header -->
+                                <div class="d-flex align-items-start justify-content-between mb-3">
+                                    <div class="d-flex align-items-center">
+                                        {% if driver.profile_photo %}
+                                        <img src="/uploads/{{ driver.profile_photo }}" class="rounded-circle me-3" width="48" height="48" alt="Profile">
+                                        {% else %}
+                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                            <i class="fas fa-user text-white"></i>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6>Bank Details</h6>
-                                            <p><strong>Bank:</strong> {{ driver.bank_name or 'Not provided' }}</p>
-                                            <p><strong>Account:</strong> {{ driver.account_number or 'Not provided' }}</p>
-                                            <p><strong>IFSC:</strong> {{ driver.ifsc_code or 'Not provided' }}</p>
-                                            <p><strong>Holder:</strong> {{ driver.account_holder_name or 'Not provided' }}</p>
+                                        {% endif %}
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">{{ driver.full_name }}</h6>
+                                            <small class="text-muted">{{ driver.user.username }}</small>
                                         </div>
                                     </div>
-                                    
-                                    {% if driver.status == 'active' %}
-                                    <div class="mt-3">
-                                        <h6>Performance</h6>
-                                        <p><strong>Total Earnings:</strong> ₹{{ "{:,.2f}".format(driver.total_earnings or 0) }}</p>
-                                        {% if driver.current_vehicle %}
-                                        <p><strong>Current Vehicle:</strong> {{ driver.current_vehicle.registration_number }}</p>
+                                    <div>
+                                        {% if driver.status.value == 'active' %}
+                                            <span class="status-active">Active</span>
+                                        {% elif driver.status.value == 'pending' %}
+                                            <span class="status-pending">Pending</span>
+                                        {% elif driver.status.value == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% elif driver.status.value == 'suspended' %}
+                                            <span class="badge bg-danger">Blocked</span>
+                                        {% elif driver.status.value == 'terminated' %}
+                                            <span class="badge bg-dark">Terminated</span>
+                                        {% else %}
+                                            <span class="status-inactive">{{ driver.status.value.title() }}</span>
                                         {% endif %}
                                     </div>
+                                </div>
+                                
+                                <!-- Driver Info Grid -->
+                                <div class="driver-info-grid mb-3">
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Branch</small>
+                                        <strong>{{ driver.branch.name }}</strong>
+                                    </div>
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Phone</small>
+                                        <strong>{{ driver.phone or 'N/A' }}</strong>
+                                    </div>
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Joined</small>
+                                        <strong>{{ driver.created_at.strftime('%d %b %Y') if driver.created_at else 'N/A' }}</strong>
+                                    </div>
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Total Earnings</small>
+                                        <strong class="text-success">₹{{ "{:,.0f}".format(driver.total_earnings or 0) }}</strong>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('admin.view_driver', driver_id=driver.id) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="{{ url_for('admin.edit_driver', driver_id=driver.id) }}" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    {% if driver.status.value == 'pending' %}
+                                    <button type="button" class="btn btn-success btn-sm" onclick="approveDriver({{ driver.id }})">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="rejectDriver({{ driver.id }})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% elif driver.status.value == 'active' %}
+                                    <button type="button" class="btn btn-warning btn-sm" onclick="blockDriver({{ driver.id }}, '{{ driver.full_name }}')">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% elif driver.status.value == 'suspended' %}
+                                    <button type="button" class="btn btn-success btn-sm" onclick="unblockDriver({{ driver.id }})">
+                                        <i class="fas fa-unlock"></i>
+                                    </button>
+                                    {% endif %}
+                                    
+                                    {% if driver.status.value != 'terminated' %}
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteDriver({{ driver.id }}, '{{ driver.full_name }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Mobile Card View -->
-        <div class="d-lg-none" id="driversCards">
-            <div class="row">
-                {% for driver in drivers.items %}
-                <div class="col-12 mb-3">
-                    <div class="card driver-card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                {% if driver.profile_photo %}
-                                <img src="/uploads/{{ driver.profile_photo }}" class="rounded-circle me-3" width="50" height="50">
+                </div>
+                
+                <!-- Pagination -->
+                {% if drivers.pages > 1 %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if drivers.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.drivers', page=drivers.prev_num, status=status_filter, branch=branch_filter) }}">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in drivers.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != drivers.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.drivers', page=page_num, status=status_filter, branch=branch_filter) }}">{{ page_num }}</a>
+                                </li>
                                 {% else %}
-                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
-                                    <i class="fas fa-user text-white"></i>
-                                </div>
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
                                 {% endif %}
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1">{{ driver.full_name }}</h6>
-                                    <small class="text-muted">{{ driver.user.username }}</small>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if drivers.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.drivers', page=drivers.next_num, status=status_filter, branch=branch_filter) }}">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No drivers found</h4>
+                        <p class="text-muted mb-4">No drivers match your current filters or search criteria.</p>
+                        <a href="{{ url_for('admin.add_driver') }}" class="btn btn-success">
+                            <i class="fas fa-user-plus me-2"></i>Add First Driver
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Pending Approval Tab -->
+            <div class="tab-pane fade" id="pending-pane" role="tabpanel">
+                {% set pending_drivers = drivers.items|selectattr('status.value', 'equalto', 'pending')|list %}
+                {% if pending_drivers %}
+                <div class="alert alert-warning mb-4">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>{{ pending_drivers|length }} driver(s)</strong> awaiting your approval
+                </div>
+                
+                <div class="desktop-grid two-column">
+                    {% for driver in pending_drivers %}
+                    <div class="driver-card-container">
+                        <div class="card h-100 border-warning driver-card">
+                            <div class="card-body">
+                                <!-- Driver Header -->
+                                <div class="d-flex align-items-start justify-content-between mb-3">
+                                    <div class="d-flex align-items-center">
+                                        {% if driver.profile_photo %}
+                                        <img src="/uploads/{{ driver.profile_photo }}" class="rounded-circle me-3" width="48" height="48" alt="Profile">
+                                        {% else %}
+                                        <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                            <i class="fas fa-user text-dark"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">{{ driver.full_name }}</h6>
+                                            <small class="text-muted">{{ driver.user.username }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="status-pending">Pending</span>
                                 </div>
-                                <div class="text-end">
-                                    {% if driver.status.value == 'active' %}
-                                        <span class="badge bg-success">Active</span>
-                                    {% elif driver.status.value == 'pending' %}
-                                        <span class="badge bg-warning">Pending</span>
-                                    {% elif driver.status.value == 'rejected' %}
-                                        <span class="badge bg-danger">Rejected</span>
-                                    {% elif driver.status.value == 'suspended' %}
-                                        <span class="badge bg-danger">Blocked</span>
-                                    {% elif driver.status.value == 'terminated' %}
-                                        <span class="badge bg-dark">Terminated</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">{{ driver.status.value.title() }}</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <small class="text-muted d-block">Branch</small>
-                                    <strong>{{ driver.branch.name }}</strong>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted d-block">Phone</small>
-                                    <strong>{{ driver.phone or 'N/A' }}</strong>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <small class="text-muted d-block">Joined</small>
-                                    <strong>{{ driver.created_at.strftime('%Y-%m-%d') if driver.created_at else 'N/A' }}</strong>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted d-block">Total Earnings</small>
-                                    <strong class="text-success">₹{{ "{:,.2f}".format(driver.total_earnings or 0) }}</strong>
-                                </div>
-                            </div>
-                            
-                            <!-- Mobile Action Buttons -->
-                            <div class="d-flex gap-2 flex-wrap">
-                                <a href="{{ url_for('admin.view_driver', driver_id=driver.id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye me-1"></i>View
-                                </a>
                                 
-                                <a href="{{ url_for('admin.edit_driver', driver_id=driver.id) }}" class="btn btn-sm btn-outline-info">
-                                    <i class="fas fa-edit me-1"></i>Edit
-                                </a>
+                                <!-- Driver Info Grid -->
+                                <div class="driver-info-grid mb-3">
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Branch</small>
+                                        <strong>{{ driver.branch.name }}</strong>
+                                    </div>
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Phone</small>
+                                        <strong>{{ driver.phone or 'N/A' }}</strong>
+                                    </div>
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Applied</small>
+                                        <strong>{{ driver.created_at.strftime('%d %b %Y') if driver.created_at else 'N/A' }}</strong>
+                                    </div>
+                                    <div class="info-item">
+                                        <small class="text-muted d-block">Documents</small>
+                                        <strong class="text-info">Ready for Review</strong>
+                                    </div>
+                                </div>
                                 
-                                {% if driver.status.value == 'pending' %}
-                                <form method="POST" action="{{ url_for('admin.approve_driver', driver_id=driver.id) }}" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this driver?')">
-                                        <i class="fas fa-check me-1"></i>Approve
-                                    </button>
-                                </form>
-                                <form method="POST" action="{{ url_for('admin.reject_driver', driver_id=driver.id) }}" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Reject this driver?')">
-                                        <i class="fas fa-times me-1"></i>Reject
-                                    </button>
-                                </form>
-                                {% elif driver.status.value == 'active' %}
-                                <button type="button" class="btn btn-sm btn-warning" onclick="quickBlockDriver({{ driver.id }}, '{{ driver.full_name }}')">
-                                    <i class="fas fa-ban me-1"></i>Block
-                                </button>
-                                {% elif driver.status.value == 'suspended' %}
-                                <button type="button" class="btn btn-sm btn-success" onclick="quickUnblockDriver({{ driver.id }})">
-                                    <i class="fas fa-unlock me-1"></i>Unblock
-                                </button>
-                                {% endif %}
-                                
-                                {% if driver.status.value != 'terminated' %}
-                                <form method="POST" action="{{ url_for('admin.delete_driver', driver_id=driver.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this driver? This action cannot be undone.')">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash me-1"></i>Delete
-                                    </button>
-                                </form>
-                                {% endif %}
+                                <!-- Approval Actions -->
+                                <div class="d-grid gap-2">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-success" onclick="approveDriver({{ driver.id }})">
+                                            <i class="fas fa-check me-2"></i>Approve
+                                        </button>
+                                        <button type="button" class="btn btn-danger" onclick="rejectDriver({{ driver.id }})">
+                                            <i class="fas fa-times me-2"></i>Reject
+                                        </button>
+                                    </div>
+                                    <a href="{{ url_for('admin.view_driver', driver_id=driver.id) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye me-2"></i>Review Details
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h4 class="text-muted">All caught up!</h4>
+                        <p class="text-muted">No drivers are currently waiting for approval.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Documents Tab -->
+            <div class="tab-pane fade" id="documents-pane" role="tabpanel">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Document Management:</strong> Review and manage driver documents across all statuses.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Document Cards Grid -->
+                <div class="desktop-grid three-column" id="documentsGrid">
+                    {% for driver in drivers.items %}
+                    <div class="document-card-container">
+                        <div class="card h-100">
+                            <div class="card-header d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    {% if driver.profile_photo %}
+                                    <img src="/uploads/{{ driver.profile_photo }}" class="rounded-circle me-2" width="32" height="32" alt="Profile">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                    {% endif %}
+                                    <h6 class="mb-0">{{ driver.full_name }}</h6>
+                                </div>
+                                {% if driver.status.value == 'pending' %}
+                                    <span class="status-pending">Pending</span>
+                                {% else %}
+                                    <span class="status-active">{{ driver.status.value.title() }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <div class="document-list">
+                                    <div class="document-item">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <i class="fas fa-id-card text-primary me-2"></i>
+                                                <strong>Aadhar Card</strong>
+                                            </div>
+                                            {% if driver.aadhar_document %}
+                                            <span class="badge bg-success">✓</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">✗</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if driver.aadhar_number %}
+                                        <small class="text-muted ms-4">{{ driver.aadhar_number }}</small>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="document-item">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <i class="fas fa-id-badge text-info me-2"></i>
+                                                <strong>License</strong>
+                                            </div>
+                                            {% if driver.license_document %}
+                                            <span class="badge bg-success">✓</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">✗</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if driver.license_number %}
+                                        <small class="text-muted ms-4">{{ driver.license_number }}</small>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="document-item">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <i class="fas fa-user-circle text-secondary me-2"></i>
+                                                <strong>Profile Photo</strong>
+                                            </div>
+                                            {% if driver.profile_photo %}
+                                            <span class="badge bg-success">✓</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">✗</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <a href="{{ url_for('admin.view_driver', driver_id=driver.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-eye me-2"></i>View All Documents
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-        
-        <!-- Pagination -->
-        {% if drivers.pages > 1 %}
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if drivers.has_prev %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('admin.drivers', page=drivers.prev_num, status=status_filter, branch=branch_filter) }}">Previous</a>
-                </li>
-                {% endif %}
-                
-                {% for page_num in drivers.iter_pages() %}
-                    {% if page_num %}
-                        {% if page_num != drivers.page %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('admin.drivers', page=page_num, status=status_filter, branch=branch_filter) }}">{{ page_num }}</a>
-                        </li>
-                        {% else %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ page_num }}</span>
-                        </li>
-                        {% endif %}
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">...</span>
-                    </li>
-                    {% endif %}
-                {% endfor %}
-                
-                {% if drivers.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('admin.drivers', page=drivers.next_num, status=status_filter, branch=branch_filter) }}">Next</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-        
-        {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-users fa-3x text-muted mb-3"></i>
-            <h4>No drivers found</h4>
-            <p class="text-muted">No drivers match your current filters.</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 
@@ -393,8 +458,57 @@
 
 {% block extra_js %}
 <script>
-// Quick Block/Unblock Functions for Drivers List
-function quickBlockDriver(driverId, driverName) {
+// Driver Management Functions
+function approveDriver(driverId) {
+    if (confirm('Are you sure you want to approve this driver?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/drivers/${driverId}/approve`;
+        
+        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function rejectDriver(driverId) {
+    const reason = prompt('Please enter a reason for rejection:');
+    if (reason && reason.trim()) {
+        if (confirm('Are you sure you want to reject this driver?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/drivers/${driverId}/reject`;
+            
+            const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+            }
+            
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'reason';
+            reasonInput.value = reason.trim();
+            form.appendChild(reasonInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+}
+
+function blockDriver(driverId, driverName) {
     const reason = prompt(`Block driver: ${driverName}\n\nPlease enter a reason for blocking:`);
     
     if (reason === null) {
@@ -426,6 +540,7 @@ function quickBlockDriver(driverId, driverName) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                alert('Driver blocked successfully');
                 location.reload();
             } else {
                 alert('Error blocking driver: ' + data.message);
@@ -438,12 +553,12 @@ function quickBlockDriver(driverId, driverName) {
     }
 }
 
-function quickUnblockDriver(driverId) {
-    if (confirm('Are you sure you want to unblock this driver?\n\nThey will be able to access the system and start new duties.')) {
+function unblockDriver(driverId) {
+    if (confirm('Are you sure you want to unblock this driver?')) {
+        const formData = new FormData();
+        
         // Get CSRF token
         const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
-        
-        const formData = new FormData();
         if (csrfToken) {
             formData.append('csrf_token', csrfToken);
         }
@@ -458,6 +573,7 @@ function quickUnblockDriver(driverId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                alert('Driver unblocked successfully');
                 location.reload();
             } else {
                 alert('Error unblocking driver: ' + data.message);
@@ -470,114 +586,45 @@ function quickUnblockDriver(driverId) {
     }
 }
 
-// Search functionality
+function deleteDriver(driverId, driverName) {
+    if (confirm(`Are you sure you want to delete ${driverName}?\n\nThis action cannot be undone.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/drivers/${driverId}/delete`;
+        
+        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Driver List Search Functionality
 document.getElementById('searchInput')?.addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
-    const tableRows = document.querySelectorAll('#driversTable tbody tr');
-    const driverCards = document.querySelectorAll('#driversCards .driver-card');
+    const driverCards = document.querySelectorAll('.driver-card-container');
     
-    // Search in table view
-    tableRows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
-    
-    // Search in card view
     driverCards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.closest('.col-12').style.display = text.includes(searchTerm) ? '' : 'none';
+        const driverName = card.querySelector('h6').textContent.toLowerCase();
+        const driverPhone = card.querySelector('.info-item:nth-child(2) strong').textContent.toLowerCase();
+        
+        if (driverName.includes(searchTerm) || driverPhone.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
     });
 });
 
-// JavaScript delete function removed - now using proper form submission with CSRF protection
-
-// View toggle functionality for mobile
-document.addEventListener('DOMContentLoaded', function() {
-    const tableViewBtn = document.getElementById('tableView');
-    const cardViewBtn = document.getElementById('cardView');
-    const driversTable = document.getElementById('driversTable')?.querySelector('.table-responsive');
-    const driversCards = document.getElementById('driversCards');
-    
-    if (tableViewBtn && cardViewBtn && driversTable && driversCards) {
-        tableViewBtn.addEventListener('click', function() {
-            driversTable.classList.remove('d-none', 'd-lg-block');
-            driversTable.classList.add('d-block');
-            driversCards.classList.add('d-none');
-            
-            tableViewBtn.classList.add('active');
-            cardViewBtn.classList.remove('active');
-        });
-        
-        cardViewBtn.addEventListener('click', function() {
-            driversTable.classList.add('d-none');
-            driversCards.classList.remove('d-none');
-            driversCards.classList.add('d-block');
-            
-            cardViewBtn.classList.add('active');
-            tableViewBtn.classList.remove('active');
-        });
-    }
+document.getElementById('searchBtn')?.addEventListener('click', function() {
+    document.getElementById('searchInput').dispatchEvent(new Event('input'));
 });
 </script>
-
-<style>
-/* Mobile responsive enhancements */
-@media (max-width: 768px) {
-    .btn-group .btn {
-        font-size: 0.8rem;
-        padding: 0.25rem 0.5rem;
-    }
-    
-    .driver-card {
-        border-left: 4px solid #007bff;
-        transition: all 0.2s;
-    }
-    
-    .driver-card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        transform: translateY(-2px);
-    }
-    
-    .gap-2 {
-        gap: 0.5rem !important;
-    }
-    
-    .flex-wrap {
-        flex-wrap: wrap;
-    }
-}
-
-/* Enhanced search styling */
-#searchInput {
-    border-radius: 0.375rem 0 0 0.375rem;
-}
-
-#searchBtn {
-    border-radius: 0 0.375rem 0.375rem 0;
-}
-
-/* Improved action buttons */
-.btn-group .btn {
-    margin-right: 2px;
-}
-
-.btn-group .btn:last-child {
-    margin-right: 0;
-}
-
-/* Status badge improvements */
-.badge {
-    font-size: 0.75em;
-}
-
-/* Card improvements */
-.driver-card .btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-}
-
-.driver-card .btn-group {
-    flex-wrap: wrap;
-}
-</style>
 {% endblock %}
