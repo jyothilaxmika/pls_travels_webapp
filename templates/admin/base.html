@@ -10,21 +10,48 @@
 </head>
 <body>
     {% if current_user.is_authenticated %}
-    <!-- Header -->
+    <!-- Header - Desktop Enhanced -->
     <header>
-        <button id="toggle-btn"><i class="fas fa-bars"></i></button>
-        <h1>PLS TRAVELS - {% if current_user.role.name == 'ADMIN' %}Admin Dashboard{% elif current_user.role.name == 'MANAGER' %}Manager Dashboard{% else %}Driver Dashboard{% endif %}</h1>
+        <div class="header-left">
+            <button id="toggle-btn"><i class="fas fa-bars"></i></button>
+            <h1>PLS TRAVELS</h1>
+        </div>
+        
+        <div class="header-center">
+            <div class="breadcrumb-nav">
+                <a href="{{ url_for('index') }}">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                {% if current_user.role.name == 'ADMIN' %}
+                    <span>Admin Dashboard</span>
+                {% elif current_user.role.name == 'MANAGER' %}
+                    <span>Manager Dashboard</span>
+                {% else %}
+                    <span>Driver Dashboard</span>
+                {% endif %}
+            </div>
+        </div>
+        
         <div class="header-user">
-            <span class="user-name">{{ current_user.username }}</span>
+            <span class="user-name">
+                <div class="user-avatar">
+                    {{ current_user.username[0].upper() }}
+                </div>
+                {{ current_user.username }}
+            </span>
             <a href="{{ url_for('auth.logout') }}" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i>
             </a>
         </div>
     </header>
 
-    <div class="layout">
-        <!-- Sidebar -->
-        <div class="sidebar">
+    <!-- Desktop Sidebar Toggle -->
+    <button class="sidebar-toggle" id="desktop-toggle" title="Toggle Sidebar">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    
+    <div class="layout with-sidebar" id="main-layout">
+        <!-- Sidebar - Desktop Enhanced -->
+        <div class="sidebar" id="sidebar">
             <h2><i class="fas fa-bus me-2"></i>PLS TRAVELS</h2>
             
             {% if current_user.role.name == 'ADMIN' %}
@@ -144,8 +171,8 @@
                 <i class="fas fa-sign-out-alt me-2"></i>Logout
             </a>
         </div>
-        <!-- Main Content -->
-        <div class="main-content">
+        <!-- Main Content - Desktop Enhanced -->
+        <div class="main-content with-sidebar" id="main-content">
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -167,17 +194,86 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script>
-    // Collapsible menu functionality
+    // Enhanced collapsible menu functionality
     document.querySelectorAll(".collapsible-header").forEach(header => {
         header.addEventListener("click", () => {
-            header.parentElement.classList.toggle("open");
+            const collapsible = header.parentElement;
+            const isOpen = collapsible.classList.contains("open");
+            
+            // Close all other collapsibles
+            document.querySelectorAll(".collapsible.open").forEach(other => {
+                if (other !== collapsible) {
+                    other.classList.remove("open");
+                }
+            });
+            
+            // Toggle current collapsible
+            collapsible.classList.toggle("open", !isOpen);
         });
     });
 
-    // Sidebar toggle functionality
-    document.getElementById("toggle-btn").addEventListener("click", () => {
+    // Mobile sidebar toggle functionality
+    document.getElementById("toggle-btn")?.addEventListener("click", () => {
         document.querySelector(".sidebar").classList.toggle("active");
     });
+    
+    // Desktop sidebar toggle functionality
+    const desktopToggle = document.getElementById("desktop-toggle");
+    const sidebar = document.getElementById("sidebar");
+    const mainLayout = document.getElementById("main-layout");
+    const mainContent = document.getElementById("main-content");
+    
+    if (desktopToggle && sidebar && mainLayout && mainContent) {
+        desktopToggle.addEventListener("click", () => {
+            const isCollapsed = sidebar.classList.contains("collapsed");
+            
+            if (isCollapsed) {
+                // Expand sidebar
+                sidebar.classList.remove("collapsed");
+                mainLayout.classList.remove("sidebar-collapsed");
+                mainLayout.classList.add("with-sidebar");
+                mainContent.classList.remove("sidebar-collapsed");
+                mainContent.classList.add("with-sidebar");
+                desktopToggle.classList.remove("collapsed");
+                desktopToggle.innerHTML = '<i class="fas fa-chevron-left"></i>';
+                desktopToggle.title = "Collapse Sidebar";
+            } else {
+                // Collapse sidebar
+                sidebar.classList.add("collapsed");
+                mainLayout.classList.remove("with-sidebar");
+                mainLayout.classList.add("sidebar-collapsed");
+                mainContent.classList.remove("with-sidebar");
+                mainContent.classList.add("sidebar-collapsed");
+                desktopToggle.classList.add("collapsed");
+                desktopToggle.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                desktopToggle.title = "Expand Sidebar";
+            }
+        });
+    }
+    
+    // Auto-hide sidebar text on collapse
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (target.classList.contains('collapsed')) {
+                    target.querySelectorAll('a span, h2').forEach(el => {
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateX(-10px)';
+                    });
+                } else {
+                    target.querySelectorAll('a span, h2').forEach(el => {
+                        el.style.opacity = '1';
+                        el.style.transform = 'translateX(0)';
+                    });
+                }
+            }
+        });
+    });
+    
+    if (sidebar) {
+        observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+    }
     
     // Global photo modal functionality for admin interface (XSS-safe)
     function showPhotoModal(imageUrl, title, description = '') {
