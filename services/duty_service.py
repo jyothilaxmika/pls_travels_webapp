@@ -420,10 +420,9 @@ class DutyService:
             gross_salary = inhouse_salary + out_operator_salary
             net_salary = gross_salary - insurance_deduction
             
-            # 3. CNG calculations
-            base_cng = grand_total_operator * base_cng_percentage / 100
-            cng_adjustment = (start_cng - end_cng) * cng_rate
-            final_cng = base_cng - cng_adjustment
+            # 3. CNG calculations - SIMPLIFIED per user request
+            # New simplified formula: Final CNG = (Starting CNG Level - End CNG) * 90
+            final_cng = (start_cng - end_cng) * cng_rate
             
             # 4. Final settlement
             company_settlement = (total_cash - final_cng) + pass_deduction - net_salary
@@ -440,8 +439,6 @@ class DutyService:
                 'gross_salary': gross_salary,
                 'insurance_deduction': insurance_deduction,
                 'net_salary': net_salary,
-                'base_cng': base_cng,
-                'cng_adjustment': cng_adjustment,
                 'final_cng': final_cng,
                 'company_settlement': company_settlement,
                 'final_earnings': earnings,
@@ -450,7 +447,12 @@ class DutyService:
                 'operator_amount_2': operator_amount_2,
                 'out_operator': out_operator,
                 'start_cng': start_cng,
-                'end_cng': end_cng
+                'end_cng': end_cng,
+                # Add configurable parameters to breakdown for transparency
+                'salary_threshold': inhouse_slab_threshold,
+                'base_percentage': inhouse_base_percentage,
+                'above_threshold_percentage': inhouse_above_threshold_percentage,
+                'cng_rate': cng_rate
             }
             
             return earnings, breakdown
