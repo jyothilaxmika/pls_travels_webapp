@@ -367,26 +367,32 @@ class DutyService:
             config = json.loads(scheme.configuration) if scheme.configuration else {}
             
             # Extract duty data from financial settlement form submitted by driver
-            # Cash collections are stored in cash_collection field (total of cash_collected_1 + cash_collected_2 + out_cash)
-            total_cash = duty.cash_collection or 0.0
-            
-            # Operator amounts are stored in gross_revenue and net_revenue fields
-            operator_amount_1 = duty.gross_revenue or 0.0
-            operator_amount_2 = duty.net_revenue or 0.0
+            # Get atomic financial fields and compute totals for robustness
+            operator_amount_1 = duty.gross_revenue or 0.0  # Stored in gross_revenue
+            operator_amount_2 = duty.net_revenue or 0.0    # Stored in net_revenue
             out_operator = duty.operator_out or 0.0
             
-            # Pass deduction is stored in fuel_deduction field
+            # Get individual cash collections from duty record (stored in repurposed fields)
+            # Cash collections are stored separately for accurate calculation
+            cash_collected_1 = duty.digital_payments or 0.0   # Repurposed field
+            cash_collected_2 = duty.card_payments or 0.0      # Repurposed field
+            out_cash = duty.wallet_payments or 0.0            # Repurposed field
+            
+            # Compute total cash for Final Settlement Calculator
+            total_cash = cash_collected_1 + cash_collected_2 + out_cash
+            
+            # Pass deduction from fuel_deduction field
             pass_deduction = duty.fuel_deduction or 0.0
             
             # CNG data from driver form
             start_cng = duty.start_cng or 0.0
             end_cng = duty.end_cng or 0.0
             
-            # For individual cash collection breakdown, we'll estimate from total
-            # (Admin can adjust during approval if needed)
-            cash_collected_1 = total_cash * 0.6  # Estimate 60% as cash_collected_1
-            cash_collected_2 = total_cash * 0.4  # Estimate 40% as cash_collected_2
-            out_cash = 0.0  # Usually minimal, already included in total_cash
+            # Validate essential fields are present
+            if start_cng == 0 and end_cng == 0:
+                logger.warning(f"Duty {duty.id}: Missing CNG data for Final Settlement Calculator")
+            if total_cash == 0 and operator_amount_1 == 0 and operator_amount_2 == 0:
+                logger.warning(f"Duty {duty.id}: Missing financial data for Final Settlement Calculator")
             
             # Configuration defaults
             insurance_deduction = config.get('insurance_deduction', {}).get('default', 60)
@@ -398,8 +404,8 @@ class DutyService:
             base_cng_percentage = config.get('base_cng_percentage', {}).get('default', 30)
             
             # Calculate as per Final Settlement Calculator logic
-            # 1. Total collections
-            total_cash = cash_collected_1 + cash_collected_2 + out_cash
+            # 1. Total collections (already calculated from driver input)
+            # total_cash is already set from duty.cash_collection
             inhouse_operator_total = operator_amount_1 + operator_amount_2
             grand_total_operator = inhouse_operator_total + out_operator
             
@@ -439,7 +445,12 @@ class DutyService:
                 'final_cng': final_cng,
                 'company_settlement': company_settlement,
                 'final_earnings': earnings,
-                'pass_deduction': pass_deduction
+                'pass_deduction': pass_deduction,
+                'operator_amount_1': operator_amount_1,
+                'operator_amount_2': operator_amount_2,
+                'out_operator': out_operator,
+                'start_cng': start_cng,
+                'end_cng': end_cng
             }
             
             return earnings, breakdown
