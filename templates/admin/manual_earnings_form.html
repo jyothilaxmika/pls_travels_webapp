@@ -57,31 +57,61 @@
                         <h5 class="text-primary">📈 Income Sources</h5>
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.online_hours.label }}</label>
-                                {{ form.online_hours(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-sync text-success me-1" title="Auto-calculated from duty start to end time"></i>
+                                    {{ form.online_hours.label }}
+                                    <small class="text-success">Auto-calculated</small>
+                                </label>
+                                {{ form.online_hours(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Calculated from duty start to end time</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.uber_trips.label }}</label>
-                                {{ form.uber_trips(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.uber_trips.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.uber_trips(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.cash_collected.label }}</label>
-                                {{ form.cash_collected(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.cash_collected.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.cash_collected(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.cash_collected_2.label }}</label>
-                                {{ form.cash_collected_2(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.cash_collected_2.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.cash_collected_2(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.operator_bill.label }}</label>
-                                {{ form.operator_bill(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.operator_bill.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.operator_bill(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.operator_bill_2.label }}</label>
-                                {{ form.operator_bill_2(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.operator_bill_2.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.operator_bill_2(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
                             </div>
                         </div>
                         
@@ -108,12 +138,29 @@
                                 {{ form.pass_deduction(class="form-control") }}
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.advance_deduction.label }}</label>
-                                {{ form.advance_deduction(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-sync text-success me-1" title="Auto-fetched from WhatsApp advance requests"></i>
+                                    {{ form.advance_deduction.label }}
+                                    <small class="text-success">Auto-fetched</small>
+                                    <span id="advance-highlight" class="badge bg-info ms-2" style="display: none;">WhatsApp Request</span>
+                                </label>
+                                {{ form.advance_deduction(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Auto-fetched from approved WhatsApp advance requests</small>
+                                <div id="advance-details" class="mt-2" style="display: none;">
+                                    <small class="text-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span id="advance-summary"></span>
+                                    </small>
+                                </div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.toll_expense.label }}</label>
-                                {{ form.toll_expense(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.toll_expense.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.toll_expense(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
                             </div>
                         </div>
                         
@@ -121,12 +168,22 @@
                         <h5 class="text-success">⛽ CNG Tracking</h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.start_cng.label }}</label>
-                                {{ form.start_cng(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-sync text-success me-1" title="Auto-fetched from duty start"></i>
+                                    {{ form.start_cng.label }}
+                                    <small class="text-success">Auto-fetched</small>
+                                </label>
+                                {{ form.start_cng(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Automatically fetched from duty start CNG level</small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.end_cng.label }}</label>
-                                {{ form.end_cng(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-sync text-success me-1" title="Auto-fetched from duty end"></i>
+                                    {{ form.end_cng.label }}
+                                    <small class="text-success">Auto-fetched</small>
+                                </label>
+                                {{ form.end_cng(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Automatically fetched from duty end CNG level</small>
                             </div>
                         </div>
                         
@@ -172,16 +229,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Populate form fields with auto-fetched data
                 Object.keys(data.data).forEach(fieldName => {
                     const field = document.querySelector(`[name="${fieldName}"]`);
-                    if (field) {
+                    if (field && data.data[fieldName] !== null) {
                         field.value = data.data[fieldName];
-                        field.style.backgroundColor = '#e8f5e8'; // Highlight auto-fetched fields
+                        
+                        // Add visual indicators based on field category
+                        if (data.auto_fetched_fields && data.auto_fetched_fields.includes(fieldName)) {
+                            field.classList.add('border-success', 'auto-fetch-field');
+                            field.setAttribute('readonly', true);
+                            field.style.backgroundColor = '#e8f5e8'; // Green tint for auto-fetched
+                        } else if (data.manual_fields && data.manual_fields.includes(fieldName)) {
+                            field.classList.add('border-warning', 'manual-input-field');
+                            field.style.backgroundColor = '#fff3cd'; // Yellow tint for manual input
+                        }
                     }
                 });
                 
-                // Show success message
-                alert('Data auto-fetched successfully from duty record!');
+                // Handle WhatsApp advance highlighting
+                if (data.advance_highlight && data.whatsapp_advance_details) {
+                    const highlight = document.getElementById('advance-highlight');
+                    const details = document.getElementById('advance-details');
+                    const summary = document.getElementById('advance-summary');
+                    
+                    if (highlight) {
+                        highlight.style.display = 'inline';
+                        highlight.textContent = `${data.whatsapp_advance_details.count} Request(s)`;
+                    }
+                    
+                    if (details && summary) {
+                        details.style.display = 'block';
+                        summary.innerHTML = `
+                            <strong>WhatsApp Advance Requests:</strong><br>
+                            Total: ₹${data.whatsapp_advance_details.total_amount}<br>
+                            Count: ${data.whatsapp_advance_details.count} request(s)
+                        `;
+                    }
+                    
+                    // Pulse animation for advance field to highlight WhatsApp integration
+                    const advanceField = document.querySelector('[name="advance_deduction"]');
+                    if (advanceField) {
+                        advanceField.style.animation = 'pulse 2s infinite';
+                        setTimeout(() => { 
+                            advanceField.style.animation = ''; 
+                        }, 6000);
+                    }
+                }
+                
+                // Show success message with duty info
+                let message = 'Auto-fetch completed!\n\n';
+                if (data.duty_info) {
+                    message += `Driver: ${data.duty_info.driver_name}\n`;
+                    message += `Date: ${data.duty_info.duty_date}\n`;
+                    message += `Vehicle: ${data.duty_info.vehicle}\n`;
+                    if (data.duty_info.duration_calculated) {
+                        message += `Online Hours: ${data.data.online_hours} hours calculated\n`;
+                    }
+                }
+                if (data.advance_highlight) {
+                    message += `\n💰 WhatsApp Advance: ₹${data.whatsapp_advance_details.total_amount} auto-fetched`;
+                }
+                message += '\n\n✅ Auto-fetched fields (green): ' + (data.auto_fetched_fields?.length || 0);
+                message += '\n⚠️ Manual input fields (yellow): ' + (data.manual_fields?.length || 0);
+                
+                alert(message);
             } else {
-                alert('Error auto-fetching data: ' + (data.message || 'Unknown error'));
+                alert('Failed to auto-fetch data: ' + (data.error || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -191,4 +302,88 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<style>
+/* Auto-fetch and manual input field styling */
+.auto-fetch-field {
+    background-color: #e8f5e8 !important;
+    border-color: #28a745 !important;
+}
+
+.manual-input-field {
+    background-color: #fff3cd !important;
+    border-color: #ffc107 !important;
+}
+
+.manual-input-field:focus {
+    background-color: #ffffff !important;
+    border-color: #ffc107 !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+}
+
+/* Pulse animation for WhatsApp advance highlighting */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+/* Enhanced field labels */
+.form-label small {
+    font-weight: normal;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+/* Badge styling for WhatsApp requests */
+.badge.bg-info {
+    animation: fadeInScale 0.5s ease-in-out;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Enhanced visual separation between field categories */
+.text-primary, .text-warning, .text-success {
+    border-bottom: 2px solid currentColor;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Admin verification indicators */
+.verification-status {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.verification-status.verified {
+    color: #28a745;
+}
+
+.verification-status.pending {
+    color: #ffc107;
+}
+
+.verification-status.rejected {
+    color: #dc3545;
+}
+</style>
 {% endblock %}

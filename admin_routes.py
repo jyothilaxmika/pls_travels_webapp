@@ -4413,33 +4413,95 @@ def create_manual_earnings_calculation(duty_id):
 @login_required
 @admin_required  
 def auto_fetch_duty_data(duty_id):
-    """Auto-fetch duty data for manual calculation"""
+    """Auto-fetch duty data for manual calculation with WhatsApp advance integration"""
     duty = Duty.query.get_or_404(duty_id)
     
-    # Prepare auto-fetched data
+    # Auto-fetch advance payments from WhatsApp requests
+    advance_amount = 0.0
+    advance_highlight = False
+    whatsapp_advance_details = None
+    
+    try:
+        from models import AdvancePaymentRequest
+        from sqlalchemy import func
+        # Get approved advance requests for this driver on duty date
+        advance_requests = AdvancePaymentRequest.query.filter(
+            AdvancePaymentRequest.driver_id == duty.driver_id,
+            AdvancePaymentRequest.status == 'approved',
+            func.date(AdvancePaymentRequest.created_at) == duty.duty_date
+        ).all()
+        
+        if advance_requests:
+            advance_amount = sum(req.approved_amount or 0 for req in advance_requests)
+            advance_highlight = True
+            whatsapp_advance_details = {
+                'count': len(advance_requests),
+                'total_amount': advance_amount,
+                'requests': [
+                    {
+                        'amount': req.approved_amount,
+                        'requested_at': req.created_at.strftime('%H:%M'),
+                        'notes': req.reason
+                    } for req in advance_requests
+                ]
+            }
+    except Exception as e:
+        logger.warning(f"Could not fetch advance payment data: {str(e)}")
+    
+    # Prepare auto-fetched data with clear categorization
     auto_fetched_data = {
-        'uber_trips': duty.uber_trips or 0,
-        'cash_collected': duty.cash_collection or 0.0,
+        # AUTO-FETCH FIELDS (system calculates)
+        'online_hours': 0.0,  # Calculated from start_time to end_time
+        'advance_deduction': advance_amount,  # Auto-fetched from WhatsApp requests
+        'start_cng': duty.start_cng if duty.start_cng is not None else None,  # From duty start
+        'end_cng': duty.end_cng if duty.end_cng is not None else None,  # From duty end
+        
+        # MANUAL INPUT FIELDS (driver fills, admin verifies)
+        'uber_trips': None,  # Driver to fill
+        'cash_collected': None,  # Driver to fill
+        'cash_collected_2': None,  # Driver to fill  
+        'operator_bill': None,  # Driver to fill
+        'operator_bill_2': None,  # Driver to fill
+        'toll_expense': None,  # Driver to fill
+        
+        # Additional fields for reference
         'qr_payment': duty.qr_payment or 0.0,
-        'operator_bill': duty.operator_out or 0.0,
         'outside_cash_amount': duty.digital_payments or 0.0,
-        'advance_deduction': duty.advance_deduction or 0.0,
-        'toll_expense': duty.toll_expense or 0.0,
-        # Return null for missing CNG values so UI shows blank instead of misleading 0
-        'start_cng': duty.start_cng if duty.start_cng is not None else None,
-        'end_cng': duty.end_cng if duty.end_cng is not None else None,
-        'online_hours': 0.0  # Calculate from duty duration if available
+        'outside_operator_bill': duty.operator_out or 0.0,
+        'pass_deduction': duty.pass_amount or 0.0
     }
     
-    # Calculate online hours from duty duration
-    if duty.actual_start and duty.actual_end:
+    # Calculate online hours from duty start to end times
+    if duty.start_time and duty.end_time:
+        duration = duty.end_time - duty.start_time
+        auto_fetched_data['online_hours'] = round(duration.total_seconds() / 3600, 2)
+    elif duty.actual_start and duty.actual_end:
         duration = duty.actual_end - duty.actual_start
         auto_fetched_data['online_hours'] = round(duration.total_seconds() / 3600, 2)
+    
+    # Categorize fields for UI display
+    auto_fetch_categories = {
+        'auto_calculated': ['online_hours', 'start_cng', 'end_cng'],
+        'whatsapp_advance': ['advance_deduction'],
+        'driver_manual': ['uber_trips', 'cash_collected', 'cash_collected_2', 
+                         'operator_bill', 'operator_bill_2', 'toll_expense'],
+        'pre_filled': ['qr_payment', 'outside_cash_amount', 'outside_operator_bill', 'pass_deduction']
+    }
     
     return jsonify({
         'success': True, 
         'data': auto_fetched_data,
-        'auto_fetched_fields': list(auto_fetched_data.keys())
+        'auto_fetched_fields': auto_fetch_categories['auto_calculated'] + auto_fetch_categories['whatsapp_advance'],
+        'manual_fields': auto_fetch_categories['driver_manual'],
+        'field_categories': auto_fetch_categories,
+        'advance_highlight': advance_highlight,
+        'whatsapp_advance_details': whatsapp_advance_details,
+        'duty_info': {
+            'driver_name': duty.driver.full_name if duty.driver else 'Unknown',
+            'duty_date': duty.duty_date.strftime('%Y-%m-%d') if duty.duty_date else '',
+            'vehicle': duty.vehicle.registration_number if duty.vehicle else 'N/A',
+            'duration_calculated': auto_fetched_data['online_hours'] > 0
+        }
     })
 
 @admin_bp.route('/manual-earnings/calculate', methods=['POST'])
