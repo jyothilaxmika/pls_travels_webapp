@@ -3916,31 +3916,36 @@ def manual_earnings_list():
 @admin_required
 def create_manual_earnings_calculation(duty_id):
     """Create manual earnings calculation for a specific duty"""
-    duty = Duty.query.get_or_404(duty_id)
+    try:
+        duty = Duty.query.get_or_404(duty_id)
+        
+        # Check if manual calculation already exists for this duty
+        from models import ManualEarningsCalculation
+        existing = ManualEarningsCalculation.query.filter_by(duty_id=duty_id).first()
+        
+        form = ManualEarningsCalculationForm()
+        form.duty_id.data = duty_id
+        
+        # Auto-fetch data from duty (pre-populate form)
+        if duty:
+            form.uber_trips.data = duty.uber_trips or 0
+            form.cash_collected.data = duty.cash_collection or 0.0
+            form.qr_payment.data = duty.qr_payment or 0.0
+            form.operator_bill.data = duty.operator_out or 0.0
+            form.advance_deduction.data = duty.advance_deduction or 0.0
+            form.toll_expense.data = duty.toll_expense or 0.0
+            # Only populate CNG fields if duty has actual values (preserve None for unknown)
+            if duty.start_cng is not None:
+                form.start_cng.data = duty.start_cng
+            if duty.end_cng is not None:
+                form.end_cng.data = duty.end_cng
+        
+        return render_template('admin/manual_earnings_form.html', 
+                             form=form, duty=duty, existing=existing)
     
-    # Check if manual calculation already exists for this duty
-    from models import ManualEarningsCalculation
-    existing = ManualEarningsCalculation.query.filter_by(duty_id=duty_id).first()
-    
-    form = ManualEarningsCalculationForm()
-    form.duty_id.data = duty_id
-    
-    # Auto-fetch data from duty (pre-populate form)
-    if duty:
-        form.uber_trips.data = duty.uber_trips or 0
-        form.cash_collected.data = duty.cash_collection or 0.0
-        form.qr_payment.data = duty.qr_payment or 0.0
-        form.operator_bill.data = duty.operator_out or 0.0
-        form.advance_deduction.data = duty.advance_deduction or 0.0
-        form.toll_expense.data = duty.toll_expense or 0.0
-        # Only populate CNG fields if duty has actual values (preserve None for unknown)
-        if duty.start_cng is not None:
-            form.start_cng.data = duty.start_cng
-        if duty.end_cng is not None:
-            form.end_cng.data = duty.end_cng
-    
-    return render_template('admin/manual_earnings_form.html', 
-                         form=form, duty=duty, existing=existing)
+    except Exception as e:
+        flash(f'Error accessing duty {duty_id}: {str(e)}', 'error')
+        return redirect(url_for('admin.pending_duties'))
 
 @admin_bp.route('/manual-earnings/auto-fetch/<int:duty_id>')
 @login_required
