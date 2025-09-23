@@ -166,13 +166,15 @@ def dashboard():
         Driver.query.filter_by(status=DriverStatus.PENDING).count() +
         Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
     )
+    pending_duties_count = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
     
-    return render_template('admin/dashboard_modern.html',
+    return render_template('admin/dashboard_bootstrap.html',
                          total_drivers=dashboard_stats['total_drivers'],
                          active_vehicles=dashboard_stats['total_vehicles'], 
                          total_branches=dashboard_stats['total_branches'],
                          active_duties=dashboard_stats['active_duties'],
                          pending_duties=dashboard_stats['pending_duties'],
+                         pending_duties_count=pending_duties_count,
                          monthly_revenue=monthly_revenue,
                          pending_approvals=pending_approvals,
                          revenue_stats=dashboard_stats['revenue_stats'],
