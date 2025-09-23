@@ -742,7 +742,7 @@
             <div class="row justify-content-center mt-5">
                 <div class="col-lg-8">
                     <div class="text-center">
-                        <a href="tel:+919787247132" class="btn btn-primary btn-lg me-3 mb-3" aria-label="Call PLS TRAVELS at +91 9787 247 132">
+                        <a href="tel:+919787247132" id="callNowBtn" class="btn btn-primary btn-lg me-3 mb-3" aria-label="Call PLS TRAVELS">
                             <i class="fas fa-phone me-2" aria-hidden="true"></i>Call Now | இப்போது அழைக்கவும்
                         </a>
                         <a href="#" id="whatsappBtnContact" class="btn btn-whatsapp btn-lg mb-3" target="_blank" rel="noopener noreferrer" aria-label="Contact PLS TRAVELS on WhatsApp">
@@ -969,7 +969,7 @@
                                 Contact us directly for personalized assistance | தனிப்பட்ட உதவிக்கு எங்களை நேரடியாக தொடர்பு கொள்ளுங்கள்
                             </p>
                             <div class="d-flex flex-wrap justify-content-center gap-3">
-                                <a href="tel:+919787247132" class="btn btn-primary btn-lg">
+                                <a href="tel:+919787247132" id="callNowBtnFaq" class="btn btn-primary btn-lg">
                                     <i class="fas fa-phone me-2"></i>Call Now | இப்போது அழைக்கவும்
                                 </a>
                                 <a href="#" id="whatsappBtnFaq" class="btn btn-whatsapp btn-lg" target="_blank">
@@ -1033,6 +1033,19 @@
                 const whatsappBtnFaq = document.getElementById('whatsappBtnFaq');
                 if (whatsappBtnFaq) {
                     whatsappBtnFaq.href = `https://wa.me/${adminWhatsAppNumber}`;
+                }
+                
+                // Update Call Now buttons to use the same number
+                const callNowBtn = document.getElementById('callNowBtn');
+                if (callNowBtn) {
+                    callNowBtn.href = `tel:+${adminWhatsAppNumber}`;
+                    callNowBtn.setAttribute('aria-label', `Call PLS TRAVELS at +${adminWhatsAppNumber}`);
+                }
+                
+                const callNowBtnFaq = document.getElementById('callNowBtnFaq');
+                if (callNowBtnFaq) {
+                    callNowBtnFaq.href = `tel:+${adminWhatsAppNumber}`;
+                    callNowBtnFaq.setAttribute('aria-label', `Call PLS TRAVELS at +${adminWhatsAppNumber}`);
                 }
                 
             } catch (error) {
