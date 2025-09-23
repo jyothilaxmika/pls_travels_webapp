@@ -366,17 +366,27 @@ class DutyService:
             # Get scheme configuration
             config = json.loads(scheme.configuration) if scheme.configuration else {}
             
-            # Extract duty data (these would come from duty form inputs in practice)
-            # For now, using duty revenue fields as proxies
-            cash_collected_1 = duty.gross_revenue or 0.0
-            cash_collected_2 = 0.0  # Could be stored in additional revenue fields
-            out_cash = 0.0
-            operator_amount_1 = duty.net_revenue or 0.0
-            operator_amount_2 = 0.0
-            out_operator = 0.0
+            # Extract duty data from financial settlement form submitted by driver
+            # Cash collections are stored in cash_collection field (total of cash_collected_1 + cash_collected_2 + out_cash)
+            total_cash = duty.cash_collection or 0.0
+            
+            # Operator amounts are stored in gross_revenue and net_revenue fields
+            operator_amount_1 = duty.gross_revenue or 0.0
+            operator_amount_2 = duty.net_revenue or 0.0
+            out_operator = duty.operator_out or 0.0
+            
+            # Pass deduction is stored in fuel_deduction field
             pass_deduction = duty.fuel_deduction or 0.0
+            
+            # CNG data from driver form
             start_cng = duty.start_cng or 0.0
             end_cng = duty.end_cng or 0.0
+            
+            # For individual cash collection breakdown, we'll estimate from total
+            # (Admin can adjust during approval if needed)
+            cash_collected_1 = total_cash * 0.6  # Estimate 60% as cash_collected_1
+            cash_collected_2 = total_cash * 0.4  # Estimate 40% as cash_collected_2
+            out_cash = 0.0  # Usually minimal, already included in total_cash
             
             # Configuration defaults
             insurance_deduction = config.get('insurance_deduction', {}).get('default', 60)

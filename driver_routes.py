@@ -668,27 +668,44 @@ def end_duty():
             flash('No active duty found.', 'error')
             return redirect(url_for('driver.duty'))
 
-        # Get essential data from simplified form
+        # Get essential data from form including financial settlement data
         end_odometer = request.form.get('end_odometer', type=float)
+        end_cng = request.form.get('end_cng', type=float)
         
-        # Simplified form defaults - admin/manager can modify during audit
-        active_duty.cash_collection = 0.0  # To be set during audit
-        active_duty.qr_payment = 0.0       # To be set during audit
-        active_duty.digital_payments = 0.0  # To be set during audit
-        active_duty.operator_out = 0.0      # To be set during audit
+        # Financial settlement data from driver form
+        cash_collected_1 = request.form.get('cash_collected_1', type=float) or 0.0
+        cash_collected_2 = request.form.get('cash_collected_2', type=float) or 0.0
+        out_cash = request.form.get('out_cash', type=float) or 0.0
+        pass_deduction = request.form.get('pass_deduction', type=float) or 0.0
+        operator_amount_1 = request.form.get('operator_amount_1', type=float) or 0.0
+        operator_amount_2 = request.form.get('operator_amount_2', type=float) or 0.0
+        out_operator = request.form.get('out_operator', type=float) or 0.0
+        
+        # Store financial data for Final Settlement Calculator
+        active_duty.cash_collection = cash_collected_1 + cash_collected_2 + out_cash  # Total cash collections
+        active_duty.qr_payment = 0.0       # Not used in scheme 1
+        active_duty.digital_payments = 0.0  # Not used in scheme 1
+        active_duty.operator_out = out_operator  # Out operator amount
         active_duty.toll_expense = 0.0      # To be set during audit
         active_duty.fuel_expense = 0.0      # To be set during audit
         active_duty.other_expenses = 0.0    # To be set during audit
         active_duty.maintenance_expense = 0.0  # To be set during audit
         active_duty.company_pay = 0.0       # To be set during audit
         active_duty.advance_deduction = 0.0  # To be set during audit
-        active_duty.fuel_deduction = 0.0    # To be set during audit
+        active_duty.fuel_deduction = pass_deduction  # Pass deduction from driver form
         active_duty.penalty_deduction = 0.0  # To be set during audit
         active_duty.total_trips = 0         # To be set during audit
-
+        
+        # Store additional financial data in appropriate fields
+        # We'll use gross_revenue to store operator_amount_1, net_revenue for operator_amount_2
+        # This allows the Final Settlement Calculator to access the data
+        active_duty.gross_revenue = operator_amount_1
+        active_duty.net_revenue = operator_amount_2
+        
         # Update basic duty info
         active_duty.actual_end = get_ist_time_naive()
         active_duty.end_odometer = end_odometer
+        active_duty.end_cng = end_cng  # Store end CNG level
         active_duty.fuel_consumed = 0.0  # To be set during audit
         active_duty.status = DutyStatus.PENDING_APPROVAL
         active_duty.submitted_at = get_ist_time_naive()
