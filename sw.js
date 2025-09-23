@@ -86,9 +86,21 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Skip Chrome extensions
+  // Skip Chrome extensions and external CDNs
   if (url.protocol === 'chrome-extension:') {
     return;
+  }
+  
+  // Skip external CDN URLs to avoid CSP violations
+  const externalCDNs = [
+    'cdn.jsdelivr.net',
+    'cdnjs.cloudflare.com',
+    'fonts.googleapis.com',
+    'fonts.gstatic.com'
+  ];
+  
+  if (externalCDNs.some(cdn => url.hostname.includes(cdn))) {
+    return; // Let browser handle CDN requests directly
   }
   
   // Network first for API calls and critical data
