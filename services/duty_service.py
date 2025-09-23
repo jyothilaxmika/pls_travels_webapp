@@ -301,6 +301,16 @@ class DutyService:
                 
                 if scheme_type == 'final_settlement' or scheme_type == 'mixed' or scheme_type == 'd2d':
                     method = 'd2d'
+                    # Load scheme configuration JSON for D2D method
+                    try:
+                        import json
+                        if hasattr(scheme, 'configuration') and scheme.configuration:
+                            scheme_config = json.loads(scheme.configuration)
+                            if isinstance(scheme_config, dict):
+                                custom_config = scheme_config
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Failed to parse D2D scheme configuration: {e}")
+                        custom_config = None
                 elif scheme_type == 'fixed':
                     method = 'fixed_daily'
                     custom_config = {'daily_rate': getattr(scheme, 'fixed_amount', 500.0) or 500.0}
