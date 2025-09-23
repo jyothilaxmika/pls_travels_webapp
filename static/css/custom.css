@@ -1,26 +1,5 @@
 /* Custom CSS for PLS TRAVELS Fleet Management System */
 
-/* Dashboard Layout Fixes */
-.dashboard-card-min-width {
-    min-width: 180px;
-}
-
-/* Ensure dashboard cards don't collapse on any screen size */
-@media (max-width: 991px) {
-    .admin-dashboard .col-lg-2 {
-        min-width: 200px;
-        flex: 0 0 auto;
-    }
-}
-
-@media (max-width: 767px) {
-    .admin-dashboard .col-md-4 {
-        min-width: 150px;
-        flex: 0 0 calc(50% - 1rem);
-        margin: 0.5rem;
-    }
-}
-
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
     /* Primary brand colors - Professional Corporate Theme */
