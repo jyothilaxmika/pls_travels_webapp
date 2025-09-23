@@ -179,7 +179,7 @@ class AppStorageManager:
         return secure_filename(f"{base_name}.{extension}")
     
     def save_uploaded_file(self, file: FileStorage, user_id: int, 
-                          file_type: str, metadata: Dict = None) -> Optional[Dict]:
+                          file_type: str, metadata: Optional[Dict] = None) -> Optional[Dict]:
         """
         Save an uploaded file with proper organization and metadata
         
@@ -236,7 +236,7 @@ class AppStorageManager:
             return None
     
     def save_camera_capture(self, image_data: str, user_id: int, 
-                           capture_type: str, metadata: Dict = None) -> Optional[Dict]:
+                           capture_type: str, metadata: Optional[Dict] = None) -> Optional[Dict]:
         """
         Save camera capture with metadata
         
@@ -330,7 +330,7 @@ class AppStorageManager:
             print(f"Error reading metadata: {e}")
             return None
     
-    def get_user_files(self, user_id: int, file_type: str = None) -> List[Dict]:
+    def get_user_files(self, user_id: int, file_type: Optional[str] = None) -> List[Dict]:
         """Get all files for a specific user"""
         files = []
         
@@ -354,7 +354,7 @@ class AppStorageManager:
         
         return sorted(files, key=lambda x: x.get('uploaded_at', x.get('captured_at', '')), reverse=True)
 
-    def get_files_by_category(self, category: str, user_filter: int = None, page: int = 1, per_page: int = 20) -> Dict:
+    def get_files_by_category(self, category: str, user_filter: Optional[int] = None, page: int = 1, per_page: int = 20) -> Dict:
         """Get files by category with pagination"""
         files = []
         
