@@ -1,404 +1,208 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light" id="html-theme">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PLS TRAVELS{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/responsive-enhancements.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/driver-mobile.css') }}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
     {% if current_user.is_authenticated %}
-    <nav class="navbar navbar-expand-xl navbar-dark shadow-sm sticky-top">
-        <div class="container-fluid">
-            <!-- Left column hamburger menu -->
-            <div class="d-flex align-items-center">
-                <button class="btn btn-outline-primary btn-sm me-2 d-xl-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="{{ url_for('index') }}">
-                    <i class="fas fa-bus me-2"></i>
-                    <span class="d-none d-sm-inline">PLS TRAVELS</span>
-                    <span class="d-sm-none">PLS</span>
-                </a>
-            </div>
-            
-            <!-- Mobile toggle button for user menu only -->
-            <button class="navbar-toggler border-0 d-xl-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-label="Toggle user menu">
-                <i class="fas fa-user-circle"></i>
-            </button>
-            
-            <div class="collapse navbar-collapse d-xl-flex" id="navbarNav">
-                <!-- Main nav items hidden on mobile, shown via offcanvas -->
-                <ul class="navbar-nav me-auto d-none d-xl-flex">
-                    {% if current_user.role.name == 'ADMIN' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.drivers') }}">
-                                <i class="fas fa-users me-1"></i>Drivers
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.vehicles') }}">
-                                <i class="fas fa-car me-1"></i>Vehicles
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="dutiesDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-clipboard-list me-1"></i>Duties
-                                {% if pending_duties_count > 0 %}
-                                <span class="badge bg-danger ms-1">{{ pending_duties_count }}</span>
-                                {% endif %}
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('admin.duties') }}">
-                                    <i class="fas fa-list me-2"></i>All Duties
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin.pending_duties') }}">
-                                    <i class="fas fa-clock me-2"></i>Pending Approval
-                                    {% if pending_duties_count > 0 %}
-                                    <span class="badge bg-danger ms-2">{{ pending_duties_count }}</span>
-                                    {% endif %}
-                                </a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.schedule_duty_assignments') }}">
-                                <i class="fas fa-calendar-plus me-1"></i>Schedule Duties
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.recommendations_dashboard') }}">
-                                <i class="fas fa-brain me-1"></i>Smart Recommendations
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.duty_schemes') }}">
-                                <i class="fas fa-calculator me-1"></i>Duty Schemes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.approval_settings') }}">
-                                <i class="fas fa-shield-alt me-1"></i>Trip Approval Settings
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.reports') }}">
-                                <i class="fas fa-chart-bar me-1"></i>Reports
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="storageDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-database me-1"></i>Storage
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('storage.storage_dashboard') }}">
-                                    <i class="fas fa-database me-2"></i>Storage Overview
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('storage.document_manager') }}">
-                                    <i class="fas fa-file-alt me-2"></i>Document Manager
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('storage.duty_photo_manager') }}">
-                                    <i class="fas fa-camera me-2"></i>Duty Photos
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/storage/gallery/documents">
-                                    <i class="fas fa-images me-2"></i>Documents Gallery
-                                </a></li>
-                                <li><a class="dropdown-item" href="/storage/gallery/photos">
-                                    <i class="fas fa-images me-2"></i>Photos Gallery
-                                </a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('tracking.vehicle_map') }}">
-                                <i class="fas fa-map-marked-alt me-1"></i>Vehicle Tracking
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.uber_integration') }}">
-                                <i class="fab fa-uber me-1"></i>Uber Integration
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.whatsapp_settings') }}">
-                                <i class="fab fa-whatsapp me-1"></i>WhatsApp Settings
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.audit_logs') }}">
-                                <i class="fas fa-history me-1"></i>Audit Logs
-                            </a>
-                        </li>
-                    {% elif current_user.role.name == 'MANAGER' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('manager.dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('manager.drivers') }}">
-                                <i class="fas fa-users me-1"></i>Drivers
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('manager.reports') }}">
-                                <i class="fas fa-chart-bar me-1"></i>Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('tracking.vehicle_map') }}">
-                                <i class="fas fa-map-marked-alt me-1"></i>Vehicle Tracking
-                            </a>
-                        </li>
-                    {% elif current_user.role.name == 'DRIVER' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('driver.dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('driver.profile') }}">
-                                <i class="fas fa-user me-1"></i>Profile
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('driver.duty') }}">
-                                <i class="fas fa-play-circle me-1"></i>Duty
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('driver.earnings') }}">
-                                <i class="fas fa-rupee-sign me-1"></i>Earnings
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-                
-                <!-- User menu - always visible on larger screens, collapsible on mobile -->
-                <ul class="navbar-nav">
-                    {% if current_user.role.name == 'ADMIN' and pending_duties_count > 0 %}
-                    <li class="nav-item">
-                        <a class="nav-link text-danger" href="{{ url_for('admin.pending_duties') }}" title="Pending Approvals">
-                            <i class="fas fa-bell"></i>
-                            <span class="badge bg-danger">{{ pending_duties_count }}</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
-                        </a>
-                        <ul class="dropdown-menu">
-                            {% if current_user.role.name == 'ADMIN' and pending_duties_count > 0 %}
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('admin.pending_duties') }}">
-                                <i class="fas fa-clock me-1"></i>Pending Approvals
-                                <span class="badge bg-danger ms-2">{{ pending_duties_count }}</span>
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            {% endif %}
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout
-                            </a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+    <!-- Header -->
+    <header>
+        <button id="toggle-btn"><i class="fas fa-bars"></i></button>
+        <h1>PLS TRAVELS - {% if current_user.role.name == 'ADMIN' %}Admin Dashboard{% elif current_user.role.name == 'MANAGER' %}Manager Dashboard{% else %}Driver Dashboard{% endif %}</h1>
+        <div class="header-user">
+            <span class="user-name">{{ current_user.username }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
         </div>
-    </nav>
+    </header>
 
-    <!-- Offcanvas Sidebar Menu -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="sidebarMenuLabel">
-                <i class="fas fa-bus me-2"></i>PLS TRAVELS
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <ul class="nav nav-pills flex-column mb-auto">
-                {% if current_user.role.name == 'ADMIN' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.drivers') }}">
-                            <i class="fas fa-users me-2"></i>Drivers
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.vehicles') }}">
-                            <i class="fas fa-car me-2"></i>Vehicles
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.assignments') }}">
-                            <i class="fas fa-calendar-alt me-2"></i>Assignments
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.duties') }}">
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-bus me-2"></i>PLS TRAVELS</h2>
+            
+            {% if current_user.role.name == 'ADMIN' %}
+                <a href="{{ url_for('admin.dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('admin.drivers') }}">
+                    <i class="fas fa-users me-2"></i>Drivers
+                </a>
+                <a href="{{ url_for('admin.vehicles') }}">
+                    <i class="fas fa-car me-2"></i>Vehicles
+                </a>
+                
+                <div class="collapsible">
+                    <div class="collapsible-header">
+                        <i class="fas fa-clipboard-list me-2"></i>Duties
+                        {% if pending_duties_count > 0 %}
+                        <span class="badge">{{ pending_duties_count }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="collapsible-content">
+                        <a href="{{ url_for('admin.duties') }}">
                             <i class="fas fa-list me-2"></i>All Duties
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link d-flex justify-content-between align-items-center" href="{{ url_for('admin.pending_duties') }}">
-                            <span><i class="fas fa-clock me-2"></i>Pending Approval</span>
+                        <a href="{{ url_for('admin.pending_duties') }}">
+                            <i class="fas fa-clock me-2"></i>Pending Approval
                             {% if pending_duties_count > 0 %}
-                            <span class="badge bg-danger">{{ pending_duties_count }}</span>
+                            <span class="badge">{{ pending_duties_count }}</span>
                             {% endif %}
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.duty_schemes') }}">
-                            <i class="fas fa-calculator me-2"></i>Duty Schemes
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('admin.schedule_duty_assignments') }}">
+                    <i class="fas fa-calendar-plus me-2"></i>Schedule Duties
+                </a>
+                <a href="{{ url_for('admin.recommendations_dashboard') }}">
+                    <i class="fas fa-brain me-2"></i>Smart Recommendations
+                </a>
+                <a href="{{ url_for('admin.auto_assignment') }}">
+                    <i class="fas fa-magic me-2"></i>Auto Assignment
+                </a>
+                <a href="{{ url_for('admin.duty_schemes') }}">
+                    <i class="fas fa-calculator me-2"></i>Duty Schemes
+                </a>
+                <a href="{{ url_for('admin.reports') }}">
+                    <i class="fas fa-chart-bar me-2"></i>Reports
+                </a>
+                
+                <div class="collapsible">
+                    <div class="collapsible-header">
+                        <i class="fas fa-check-circle me-2"></i>Approvals
+                    </div>
+                    <div class="collapsible-content">
+                        <a href="{{ url_for('admin.resignation_requests') }}">
+                            <i class="fas fa-user-times me-2"></i>Resignation Requests
+                            {% if resignation_count > 0 %}
+                            <span class="badge">{{ resignation_count }}</span>
+                            {% endif %}
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.reports') }}">
-                            <i class="fas fa-chart-bar me-2"></i>Reports
+                        <a href="{{ url_for('admin.advance_payments') }}">
+                            <i class="fas fa-money-bill-wave me-2"></i>Advance Payments
+                            {% if advance_payment_count > 0 %}
+                            <span class="badge">{{ advance_payment_count }}</span>
+                            {% endif %}
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.uber_integration') }}">
-                            <i class="fab fa-uber me-2"></i>Uber Integration
+                    </div>
+                </div>
+                
+                <div class="collapsible">
+                    <div class="collapsible-header">
+                        <i class="fas fa-database me-2"></i>Storage
+                    </div>
+                    <div class="collapsible-content">
+                        <a href="{{ url_for('storage.storage_dashboard') }}">
+                            <i class="fas fa-database me-2"></i>Storage Overview
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('storage.storage_dashboard') }}">
-                            <i class="fas fa-database me-2"></i>Storage Management
+                        <a href="{{ url_for('storage.document_manager') }}">
+                            <i class="fas fa-file-alt me-2"></i>Document Manager
                         </a>
-                    </li>
-                {% elif current_user.role.name == 'MANAGER' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('manager.dashboard') }}">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        <a href="{{ url_for('storage.duty_photo_manager') }}">
+                            <i class="fas fa-camera me-2"></i>Duty Photos
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('manager.drivers') }}">
-                            <i class="fas fa-users me-2"></i>Drivers
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('manager.reports') }}">
-                            <i class="fas fa-chart-bar me-2"></i>Reports
-                        </a>
-                    </li>
-                {% elif current_user.role.name == 'DRIVER' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('driver.dashboard') }}">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('driver.profile') }}">
-                            <i class="fas fa-user me-2"></i>Profile
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('driver.duty') }}">
-                            <i class="fas fa-play-circle me-2"></i>Duty Management
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('driver.earnings') }}">
-                            <i class="fas fa-money-bill-wave me-2"></i>Earnings
-                        </a>
-                    </li>
+                    </div>
+                </div>
+                
+            {% elif current_user.role.name == 'MANAGER' %}
+                <a href="{{ url_for('manager.dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('manager.drivers') }}">
+                    <i class="fas fa-users me-2"></i>Drivers
+                </a>
+                <a href="{{ url_for('manager.reports') }}">
+                    <i class="fas fa-chart-bar me-2"></i>Reports
+                </a>
+                <a href="{{ url_for('tracking.vehicle_map') }}">
+                    <i class="fas fa-map-marked-alt me-2"></i>Vehicle Tracking
+                </a>
+                
+            {% elif current_user.role.name == 'DRIVER' %}
+                <a href="{{ url_for('driver.dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('driver.profile') }}">
+                    <i class="fas fa-user me-2"></i>Profile
+                </a>
+                <a href="{{ url_for('driver.duty') }}">
+                    <i class="fas fa-play-circle me-2"></i>Duty Management
+                </a>
+                <a href="{{ url_for('driver.earnings') }}">
+                    <i class="fas fa-money-bill-wave me-2"></i>Earnings
+                </a>
+            {% endif %}
+            
+            <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                            {{ message }}
+                            <button type="button" class="close-btn" onclick="this.parentElement.style.display='none'">&times;</button>
+                        </div>
+                    {% endfor %}
                 {% endif %}
-                
-                <hr>
-                
-                <li class="nav-item">
-                    <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}">
-                        <i class="fas fa-sign-out-alt me-2"></i>Logout
-                    </a>
-                </li>
-            </ul>
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
         </div>
     </div>
     {% endif %}
 
-    <!-- Flash Messages -->
-    <div class="container mt-3">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
-
-    <!-- Main Content -->
-    <main class="container-fluid px-3 px-lg-4 my-3 my-lg-4">
-        {% block content %}{% endblock %}
-    </main>
-
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/missing-functions.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/offcanvas-fix.js') }}"></script>
+    <script>
+    // Collapsible menu functionality
+    document.querySelectorAll(".collapsible-header").forEach(header => {
+        header.addEventListener("click", () => {
+            header.parentElement.classList.toggle("open");
+        });
+    });
+
+    // Sidebar toggle functionality
+    document.getElementById("toggle-btn").addEventListener("click", () => {
+        document.querySelector(".sidebar").classList.toggle("active");
+    });
     
-    <!-- Global Photo Modal for Admin Interface -->
-    <div class="modal fade" id="photoModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="photoModalTitle">Photo Verification</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    // Global photo modal functionality for admin interface
+    function showPhotoModal(imageUrl, title, description = '') {
+        const modal = document.createElement('div');
+        modal.className = 'photo-modal';
+        modal.innerHTML = `
+            <div class="photo-modal-content">
+                <div class="photo-modal-header">
+                    <h3>${title || 'Photo Verification'}</h3>
+                    <button type="button" class="close-btn" onclick="this.closest('.photo-modal').remove()">&times;</button>
                 </div>
-                <div class="modal-body text-center">
-                    <img id="photoModalImage" src="" class="img-fluid" alt="Verification Photo" style="max-height: 80vh;">
+                <div class="photo-modal-body">
+                    <img src="${imageUrl}" alt="Verification Photo" style="max-width: 100%; max-height: 80vh;">
                 </div>
-                <div class="modal-footer justify-content-between">
+                <div class="photo-modal-footer">
+                    <small>${description || 'Right-click to save image'}</small>
                     <div>
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle"></i> 
-                            <span id="photoModalDescription">Click and hold to zoom, right-click to save</span>
-                        </small>
-                    </div>
-                    <div>
-                        <a id="photoModalDownload" href="" download class="btn btn-primary">
-                            <i class="fas fa-download me-1"></i>Download
-                        </a>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <a href="${imageUrl}" download class="btn btn-primary">Download</a>
+                        <button type="button" class="btn btn-secondary" onclick="this.closest('.photo-modal').remove()">Close</button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <script>
-    // Global photo modal functionality for admin interface
-    function showPhotoModal(imageUrl, title, description = '') {
-        document.getElementById('photoModalImage').src = imageUrl;
-        document.getElementById('photoModalTitle').textContent = title || 'Photo Verification';
-        document.getElementById('photoModalDownload').href = imageUrl;
-        if (description) {
-            document.getElementById('photoModalDescription').textContent = description;
-        } else {
-            document.getElementById('photoModalDescription').textContent = 'Click and hold to zoom, right-click to save';
-        }
-        new bootstrap.Modal(document.getElementById('photoModal')).show();
+        `;
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        document.body.appendChild(modal);
     }
     </script>
     
