@@ -3665,19 +3665,26 @@ def auto_fetch_duty_data(duty_id):
     """Auto-fetch duty data for manual calculation"""
     duty = Duty.query.get_or_404(duty_id)
     
-    # Prepare auto-fetched data
+    # Calculate total advance payment requests for this duty
+    total_advance_requested = 0.0
+    if duty.advance_requests:
+        total_advance_requested = sum(req.amount for req in duty.advance_requests if req.status in ['pending', 'approved'])
+    
+    # Prepare auto-fetched data according to specification
     auto_fetched_data = {
-        'uber_trips': duty.uber_trips or 0,
-        'cash_collected': duty.cash_collection or 0.0,
-        'qr_payment': duty.qr_payment or 0.0,
-        'operator_bill': duty.operator_out or 0.0,
-        'outside_cash_amount': duty.digital_payments or 0.0,
-        'advance_deduction': duty.advance_deduction or 0.0,
-        'toll_expense': duty.toll_expense or 0.0,
-        # Return null for missing CNG values so UI shows blank instead of misleading 0
+        # 📈 Income Sources - Auto-fetch from duty
+        'online_hours': 0.0,  # Calculate from duty duration
+        'cash_collected': duty.cash_collection or 0.0,  # Driver-filled (adjustable)
+        'cash_collected_2': duty.digital_payments or 0.0,  # Driver-filled (adjustable) 
+        'operator_bill': duty.operator_out or 0.0,  # Driver-filled (adjustable)
+        'operator_bill_2': duty.card_payments or 0.0,  # Driver-filled (adjustable)
+        
+        # 📉 Deductions - Auto-fetch advance from requests
+        'advance_deduction': total_advance_requested,  # Auto-fetch from advance requests
+        
+        # ⛽ CNG Tracking - Driver-filled (adjustable)
         'start_cng': duty.start_cng if duty.start_cng is not None else None,
         'end_cng': duty.end_cng if duty.end_cng is not None else None,
-        'online_hours': 0.0  # Calculate from duty duration if available
     }
     
     # Calculate online hours from duty duration
@@ -3685,10 +3692,36 @@ def auto_fetch_duty_data(duty_id):
         duration = duty.actual_end - duty.actual_start
         auto_fetched_data['online_hours'] = round(duration.total_seconds() / 3600, 2)
     
+    # Field categorization for proper styling
+    field_categories = {
+        # Auto-fetch fields (blue styling)
+        'online_hours': 'auto',
+        'advance_deduction': 'auto',
+        
+        # Driver-filled fields (green styling) - adjustable by admin
+        'cash_collected': 'driver',
+        'cash_collected_2': 'driver', 
+        'operator_bill': 'driver',
+        'operator_bill_2': 'driver',
+        'start_cng': 'driver',
+        'end_cng': 'driver',
+        
+        # Admin-only fields (red styling) - filled by admin only
+        'uber_trips': 'admin',
+        'out_cash': 'admin',
+        'out_operator': 'admin', 
+        'qr_payment': 'admin',
+        'pass_deduction': 'admin',
+        'toll_expense': 'admin'
+    }
+
     return jsonify({
         'success': True, 
         'data': auto_fetched_data,
-        'auto_fetched_fields': list(auto_fetched_data.keys())
+        'field_categories': field_categories,
+        'auto_fetched_fields': list(auto_fetched_data.keys()),
+        'advance_highlighted': total_advance_requested > 0,
+        'advance_requests_count': len(duty.advance_requests) if duty.advance_requests else 0
     })
 
 @admin_bp.route('/manual-earnings/calculate', methods=['POST'])

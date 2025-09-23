@@ -58,46 +58,82 @@
                         <h5 class="text-primary">📈 Income Sources</h5>
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.online_hours.label }}</label>
-                                {{ form.online_hours(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-clock text-info me-1"></i>Online Hours
+                                    <span class="badge bg-info ms-1">Auto-fetch</span>
+                                </label>
+                                {{ form.online_hours(class="form-control bg-light border-info", readonly=true) }}
+                                <small class="text-muted">Calculated from duty duration</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.uber_trips.label }}</label>
-                                {{ form.uber_trips(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-car text-warning me-1"></i>No of Uber Trips
+                                    <span class="badge bg-warning ms-1">Admin Fill</span>
+                                </label>
+                                {{ form.uber_trips(class="form-control border-warning") }}
+                                <small class="text-muted">Admin wants to fill</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.cash_collected.label }}</label>
-                                {{ form.cash_collected(class="form-control") }}
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.cash_collected_2.label }}</label>
-                                {{ form.cash_collected_2(class="form-control") }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.operator_bill.label }}</label>
-                                {{ form.operator_bill(class="form-control") }}
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.operator_bill_2.label }}</label>
-                                {{ form.operator_bill_2(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-money-bill-wave text-success me-1"></i>Cash Collected
+                                    <span class="badge bg-success ms-1">Driver Fill</span>
+                                </label>
+                                {{ form.cash_collected(class="form-control border-success") }}
+                                <small class="text-muted">Driver input - adjustable by admin</small>
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.out_cash.label }}</label>
-                                {{ form.out_cash(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-money-bill-wave text-success me-1"></i>Cash Collected 2
+                                    <span class="badge bg-success ms-1">Driver Fill</span>
+                                </label>
+                                {{ form.cash_collected_2(class="form-control border-success") }}
+                                <small class="text-muted">Driver input - adjustable by admin</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.out_operator.label }}</label>
-                                {{ form.out_operator(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-user-cog text-success me-1"></i>Operator Bill
+                                    <span class="badge bg-success ms-1">Driver Fill</span>
+                                </label>
+                                {{ form.operator_bill(class="form-control border-success") }}
+                                <small class="text-muted">Driver input - adjustable by admin</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.qr_payment.label }}</label>
-                                {{ form.qr_payment(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-user-cog text-success me-1"></i>Operator Bill 2
+                                    <span class="badge bg-success ms-1">Driver Fill</span>
+                                </label>
+                                {{ form.operator_bill_2(class="form-control border-success") }}
+                                <small class="text-muted">Driver input - adjustable by admin</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-money-bill text-danger me-1"></i>Out Cash
+                                    <span class="badge bg-danger ms-1">Admin Only</span>
+                                </label>
+                                {{ form.out_cash(class="form-control border-danger") }}
+                                <small class="text-muted">Admin fills this field</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-user-minus text-danger me-1"></i>Out Operator
+                                    <span class="badge bg-danger ms-1">Admin Only</span>
+                                </label>
+                                {{ form.out_operator(class="form-control border-danger") }}
+                                <small class="text-muted">Admin fills this field</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-qrcode text-danger me-1"></i>QR Payment
+                                    <span class="badge bg-danger ms-1">Admin Only</span>
+                                </label>
+                                {{ form.qr_payment(class="form-control border-danger") }}
+                                <small class="text-muted">Admin fills this field</small>
                             </div>
                         </div>
                         
@@ -105,28 +141,43 @@
                         <h5 class="text-warning">📉 Deductions</h5>
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.pass_deduction.label }}</label>
-                                {{ form.pass_deduction(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-receipt text-danger me-1"></i>Pass Deduction
+                                    <span class="badge bg-danger ms-1">Admin Only</span>
+                                </label>
+                                {{ form.pass_deduction(class="form-control border-danger") }}
+                                <small class="text-muted">Admin fills this field</small>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.advance_deduction.label }}</label>
+                                <label class="form-label">
+                                    <i class="fas fa-money-check-alt text-info me-1"></i>Advance
+                                    <span class="badge bg-info ms-1">Auto-fetch</span>
+                                    {% if duty.advance_requests %}
+                                    <span class="badge bg-danger ms-1 pulse">HIGHLIGHTED</span>
+                                    {% endif %}
+                                </label>
                                 <div class="input-group">
                                     {% if duty.advance_requests %}
                                     <span class="input-group-text bg-warning text-dark">
                                         <i class="fas fa-exclamation-triangle"></i>
                                     </span>
                                     {% endif %}
-                                    {{ form.advance_deduction(class="form-control" + (" border-warning bg-warning bg-opacity-10" if duty.advance_requests else "")) }}
+                                    {{ form.advance_deduction(class="form-control bg-light border-warning" + (" border-danger bg-warning bg-opacity-25" if duty.advance_requests else ""), readonly=true) }}
                                 </div>
-                                {% if duty.advance_requests %}
-                                <small class="text-warning fw-bold">
-                                    <i class="fas fa-info-circle"></i> Advance payment requests found for this duty!
+                                <small class="text-muted">
+                                    <i class="fas fa-robot me-1"></i>Auto-fetched from advance payment requests
+                                    {% if duty.advance_requests %}
+                                    <span class="text-danger fw-bold"> - {{ duty.advance_requests|length }} request(s) found!</span>
+                                    {% endif %}
                                 </small>
-                                {% endif %}
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">{{ form.toll_expense.label }}</label>
-                                {{ form.toll_expense(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-road text-danger me-1"></i>Toll
+                                    <span class="badge bg-danger ms-1">Admin Only</span>
+                                </label>
+                                {{ form.toll_expense(class="form-control border-danger") }}
+                                <small class="text-muted">Admin fills this field</small>
                             </div>
                         </div>
                         
@@ -134,12 +185,20 @@
                         <h5 class="text-success">⛽ CNG Tracking</h5>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.start_cng.label }}</label>
-                                {{ form.start_cng(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-gas-pump text-success me-1"></i>Start CNG
+                                    <span class="badge bg-success ms-1">Driver Fill</span>
+                                </label>
+                                {{ form.start_cng(class="form-control border-success") }}
+                                <small class="text-muted">Driver input - adjustable by admin</small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.end_cng.label }}</label>
-                                {{ form.end_cng(class="form-control") }}
+                                <label class="form-label">
+                                    <i class="fas fa-gas-pump text-success me-1"></i>End CNG
+                                    <span class="badge bg-success ms-1">Driver Fill</span>
+                                </label>
+                                {{ form.end_cng(class="form-control border-success") }}
+                                <small class="text-muted">Driver input - adjustable by admin</small>
                             </div>
                         </div>
                         
@@ -336,17 +395,52 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Populate form fields with auto-fetched data
+                // Populate form fields with auto-fetched data and apply category-based styling
+                let autoFields = 0, driverFields = 0, adminFields = 0;
+                
                 Object.keys(data.data).forEach(fieldName => {
                     const field = document.querySelector(`[name="${fieldName}"]`);
                     if (field) {
                         field.value = data.data[fieldName];
-                        field.style.backgroundColor = '#e8f5e8'; // Highlight auto-fetched fields
+                        
+                        // Apply styling based on field category
+                        const category = data.field_categories[fieldName];
+                        if (category === 'auto') {
+                            field.style.backgroundColor = '#e3f2fd'; // Light blue for auto-fetch
+                            field.style.borderColor = '#2196f3'; // Blue border
+                            field.readOnly = true;
+                            autoFields++;
+                        } else if (category === 'driver') {
+                            field.style.backgroundColor = '#e8f5e8'; // Light green for driver-filled
+                            field.style.borderColor = '#4caf50'; // Green border
+                            driverFields++;
+                        } else if (category === 'admin') {
+                            adminFields++;
+                        }
                     }
                 });
                 
-                // Show success message
-                alert('Data auto-fetched successfully from duty record!');
+                // Show detailed success message
+                const advanceHighlighted = data.advance_highlighted ? ' 🔥 ADVANCE HIGHLIGHTED!' : '';
+                const message = `✅ Data auto-fetched successfully!${advanceHighlighted}\n\n📊 Fields Updated:\n• ${autoFields} Auto-fetch fields (blue)\n• ${driverFields} Driver-filled fields (green)\n• ${adminFields} Admin-only fields remain unchanged\n\n💡 Blue fields are calculated automatically\n💡 Green fields contain driver input (adjustable)`;
+                
+                // Create a nice toast notification instead of alert
+                const toast = document.createElement('div');
+                toast.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                toast.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
+                toast.innerHTML = `
+                    <strong>Auto-fetch Complete!</strong><br>
+                    ${autoFields} auto-calculated, ${driverFields} driver-filled${advanceHighlighted}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(toast);
+                
+                // Auto-remove toast after 5 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 5000);
             } else {
                 alert('Error auto-fetching data: ' + (data.message || 'Unknown error'));
             }
