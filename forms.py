@@ -327,8 +327,8 @@ class ManualEarningsCalculationForm(FlaskForm):
     cash_collected_2 = FloatField('Cash Collected 2', validators=[Optional(), NumberRange(min=0)], default=0.0)
     operator_bill = FloatField('Operator Bill', validators=[Optional(), NumberRange(min=0)], default=0.0)
     operator_bill_2 = FloatField('Operator Bill 2', validators=[Optional(), NumberRange(min=0)], default=0.0)
-    outside_cash_amount = FloatField('Outside Cash Amount', validators=[Optional(), NumberRange(min=0)], default=0.0)
-    outside_operator_bill = FloatField('Outside Operator Bill', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    out_cash = FloatField('Out Cash', validators=[Optional(), NumberRange(min=0)], default=0.0)
+    out_operator = FloatField('Out Operator', validators=[Optional(), NumberRange(min=0)], default=0.0)
     qr_payment = FloatField('QR Payment', validators=[Optional(), NumberRange(min=0)], default=0.0)
     
     # Deduction fields
