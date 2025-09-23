@@ -312,12 +312,13 @@
 
 <script>
 // Earnings trend chart
-{% if duties %}
-const dutiesData = {{ duties_json | tojson }};
-const chartData = dutiesData.map(duty => ({
-    date: new Date(duty.start_time).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
-    earnings: duty.driver_earnings
-}));
+{% if duties_json %}
+const dutiesData = {{ duties_json | tojson | safe }};
+if (dutiesData && dutiesData.length > 0) {
+    const chartData = dutiesData.map(duty => ({
+        date: new Date(duty.start_time).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+        earnings: duty.driver_earnings || 0
+    }));
 
 const ctx = document.getElementById('earningsTrendChart').getContext('2d');
 new Chart(ctx, {
@@ -352,6 +353,7 @@ new Chart(ctx, {
         }
     }
 });
+}
 {% endif %}
 
 function exportEarningsCSV() {
