@@ -204,6 +204,15 @@
                                 </a>
                                 
                                 {% if request.status == 'pending' %}
+                                <!-- Quick WhatsApp Approve -->
+                                <button type="button" class="btn btn-success btn-sm me-1 quick-approve-advance" 
+                                        data-id="{{ request.id }}" 
+                                        data-amount="{{ request.amount_requested }}"
+                                        data-driver="{{ request.driver.full_name }}"
+                                        title="Quick approve with WhatsApp notification">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                                
                                 <!-- Approve Button -->
                                 <button type="button" class="btn btn-outline-success" 
                                         data-bs-toggle="modal" 
@@ -365,4 +374,49 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Setup CSRF token for AJAX requests
+$.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", $('meta[name=csrf-token]').attr('content'));
+        }
+    }
+});
+
+$(document).ready(function() {
+    // Quick approve functionality
+    $('.quick-approve-advance').click(function() {
+        const requestId = $(this).data('id');
+        const amount = $(this).data('amount');
+        const driver = $(this).data('driver');
+        
+        if (confirm(`Quick approve ₹${amount} advance for ${driver}?\n\nThis will:\n• Approve the full amount\n• Send WhatsApp notification\n• Process immediately`)) {
+            $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            $.post(`{{ url_for('admin.quick_approve_advance', request_id=0) }}`.replace('0', requestId))
+                .done(function(response) {
+                    if (response.success) {
+                        alert('✅ ' + response.message);
+                        if (response.whatsapp_sent) {
+                            alert('📱 WhatsApp notification sent to driver');
+                        }
+                        location.reload();
+                    } else {
+                        alert('❌ Error: ' + response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('❌ Network error. Please try again.');
+                })
+                .always(function() {
+                    $(this).prop('disabled', false).html('<i class="fab fa-whatsapp"></i>');
+                });
+        }
+    });
+});
+</script>
 {% endblock %}

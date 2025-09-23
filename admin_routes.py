@@ -960,6 +960,287 @@ def test_duty_approval():
         return jsonify({'success': False, 'error': str(e)})
 
 
+# Enhanced WhatsApp Approval Routes
+@admin_bp.route('/api/bulk-approve-advance-payments', methods=['POST'])
+@login_required
+@admin_required
+def bulk_approve_advance_payments():
+    """Bulk approve advance payment requests with WhatsApp notifications"""
+    try:
+        request_ids = request.get_json().get('request_ids', [])
+        if not request_ids:
+            return jsonify({'success': False, 'message': 'No requests selected'})
+        
+        # Get all requests
+        requests = AdvancePaymentRequest.query.filter(AdvancePaymentRequest.id.in_(request_ids)).all()
+        approved_count = 0
+        failed_requests = []
+        
+        for advance_request in requests:
+            if advance_request.status != 'pending':
+                failed_requests.append({'id': advance_request.id, 'reason': 'Not pending'})
+                continue
+            
+            try:
+                # Approve with full requested amount
+                advance_request.status = 'approved'
+                advance_request.approved_amount = advance_request.amount_requested
+                advance_request.responded_by = current_user.id
+                advance_request.responded_at = datetime.utcnow()
+                advance_request.response_notes = 'Bulk approved'
+                
+                # Send WhatsApp notification
+                driver = advance_request.driver
+                driver_phones = driver.get_all_phones() if hasattr(driver, 'get_all_phones') else [driver.user.phone] if driver.user.phone else []
+                
+                if driver_phones:
+                    from whatsapp_utils import send_twilio_message
+                    message = f"✅ *ADVANCE APPROVED*\n\nAmount: ₹{advance_request.approved_amount:,.2f}\nPurpose: {advance_request.purpose}\n\nApproved by: {current_user.full_name}\n\nPLS Travels"
+                    send_twilio_message(driver_phones[0], message)
+                
+                approved_count += 1
+                
+            except Exception as e:
+                failed_requests.append({'id': advance_request.id, 'reason': str(e)})
+        
+        db.session.commit()
+        
+        log_audit('bulk_approve_advance_payments', 'advance_payment_request', 0, {
+            'approved_count': approved_count,
+            'total_requests': len(request_ids),
+            'admin_id': current_user.id
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': f'Approved {approved_count} requests successfully',
+            'approved_count': approved_count,
+            'failed_requests': failed_requests
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@admin_bp.route('/api/bulk-approve-resignations', methods=['POST'])
+@login_required
+@admin_required
+def bulk_approve_resignations():
+    """Bulk approve resignation requests with WhatsApp notifications"""
+    try:
+        resignation_ids = request.get_json().get('resignation_ids', [])
+        if not resignation_ids:
+            return jsonify({'success': False, 'message': 'No resignations selected'})
+        
+        resignations = ResignationRequest.query.filter(ResignationRequest.id.in_(resignation_ids)).all()
+        approved_count = 0
+        failed_requests = []
+        
+        for resignation in resignations:
+            if resignation.status != ResignationStatus.PENDING:
+                failed_requests.append({'id': resignation.id, 'reason': 'Not pending'})
+                continue
+            
+            try:
+                # Calculate notice period dates
+                notice_start = datetime.now().date()
+                notice_end = notice_start + timedelta(days=30)
+                
+                # Update resignation
+                resignation.status = ResignationStatus.APPROVED
+                resignation.reviewed_by = current_user.id
+                resignation.reviewed_at = datetime.utcnow()
+                resignation.approved_at = datetime.utcnow()
+                resignation.admin_comments = 'Bulk approved - Standard 30 day notice period'
+                resignation.notice_period_start = notice_start
+                resignation.notice_period_end = notice_end
+                
+                # Send WhatsApp notification
+                driver = resignation.driver
+                driver_phones = driver.get_all_phones() if hasattr(driver, 'get_all_phones') else [driver.user.phone] if driver.user.phone else []
+                
+                if driver_phones:
+                    from whatsapp_utils import send_twilio_message
+                    message = f"✅ *RESIGNATION APPROVED*\n\nNotice Period: {notice_start} to {notice_end}\nLast Working Day: {notice_end}\n\nApproved by: {current_user.full_name}\n\nThank you for your service.\n\nPLS Travels"
+                    send_twilio_message(driver_phones[0], message)
+                
+                approved_count += 1
+                
+            except Exception as e:
+                failed_requests.append({'id': resignation.id, 'reason': str(e)})
+        
+        db.session.commit()
+        
+        log_audit('bulk_approve_resignations', 'resignation_request', 0, {
+            'approved_count': approved_count,
+            'total_requests': len(resignation_ids),
+            'admin_id': current_user.id
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': f'Approved {approved_count} resignations successfully',
+            'approved_count': approved_count,
+            'failed_requests': failed_requests
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@admin_bp.route('/api/quick-approve-advance/<int:request_id>', methods=['POST'])
+@login_required
+@admin_required
+def quick_approve_advance(request_id):
+    """Quick approve advance payment with WhatsApp notification"""
+    try:
+        advance_request = AdvancePaymentRequest.query.get_or_404(request_id)
+        
+        if advance_request.status != 'pending':
+            return jsonify({'success': False, 'message': 'Request already processed'})
+        
+        # Approve with full amount
+        advance_request.status = 'approved'
+        advance_request.approved_amount = advance_request.amount_requested
+        advance_request.responded_by = current_user.id
+        advance_request.responded_at = datetime.utcnow()
+        advance_request.response_notes = 'Quick approved'
+        
+        # Send enhanced WhatsApp notification
+        driver = advance_request.driver
+        driver_phones = driver.get_all_phones() if hasattr(driver, 'get_all_phones') else [driver.user.phone] if driver.user.phone else []
+        
+        if driver_phones:
+            from utils.whatsapp_utils import send_twilio_message
+            message = f"""✅ *ADVANCE PAYMENT APPROVED*
+
+💰 Amount: ₹{advance_request.approved_amount:,.2f}
+📝 Purpose: {advance_request.purpose}
+⏰ Approved: {datetime.now().strftime('%d/%m/%Y %I:%M %p')}
+👤 Approved by: {current_user.full_name}
+
+📲 You can collect the advance from your nearest branch.
+
+---
+🚌 PLS TRAVELS
+Fleet Management System"""
+            send_twilio_message(driver_phones[0], message)
+        
+        db.session.commit()
+        
+        log_audit('quick_approve_advance', 'advance_payment_request', request_id, {
+            'driver_id': advance_request.driver_id,
+            'amount': advance_request.approved_amount
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': f'Advance of ₹{advance_request.approved_amount:,.2f} approved successfully',
+            'whatsapp_sent': bool(driver_phones)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+@admin_bp.route('/api/quick-approve-resignation/<int:resignation_id>', methods=['POST'])
+@login_required
+@admin_required
+def quick_approve_resignation(resignation_id):
+    """Quick approve resignation with WhatsApp notification"""
+    try:
+        resignation = ResignationRequest.query.get_or_404(resignation_id)
+        
+        if resignation.status != ResignationStatus.PENDING:
+            return jsonify({'success': False, 'message': 'Resignation already processed'})
+        
+        # Calculate notice period
+        notice_start = datetime.now().date()
+        notice_end = notice_start + timedelta(days=30)
+        
+        # Approve resignation
+        resignation.status = ResignationStatus.APPROVED
+        resignation.reviewed_by = current_user.id
+        resignation.reviewed_at = datetime.utcnow()
+        resignation.approved_at = datetime.utcnow()
+        resignation.admin_comments = 'Quick approved - Standard process'
+        resignation.notice_period_start = notice_start
+        resignation.notice_period_end = notice_end
+        resignation.actual_last_working_date = notice_end
+        
+        # Send enhanced WhatsApp notification
+        driver = resignation.driver
+        driver_phones = driver.get_all_phones() if hasattr(driver, 'get_all_phones') else [driver.user.phone] if driver.user.phone else []
+        
+        if driver_phones:
+            from utils.whatsapp_utils import send_twilio_message
+            message = f"""✅ *RESIGNATION APPROVED*
+
+👤 Driver: {driver.full_name}
+📅 Notice Period: {notice_start.strftime('%d/%m/%Y')} to {notice_end.strftime('%d/%m/%Y')}
+🗓️ Last Working Day: {notice_end.strftime('%d/%m/%Y')}
+⏰ Approved: {datetime.now().strftime('%d/%m/%Y %I:%M %p')}
+👤 Approved by: {current_user.full_name}
+
+📋 Please complete your notice period and handover all company assets.
+
+🙏 Thank you for your service with PLS Travels.
+
+---
+🚌 PLS TRAVELS
+HR Department"""
+            send_twilio_message(driver_phones[0], message)
+        
+        db.session.commit()
+        
+        log_audit('quick_approve_resignation', 'resignation_request', resignation_id, {
+            'driver_id': resignation.driver_id,
+            'notice_period_days': 30
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': f'Resignation approved. Notice period: {notice_start} to {notice_end}',
+            'notice_end_date': notice_end.strftime('%Y-%m-%d'),
+            'whatsapp_sent': bool(driver_phones)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+# Enhanced Approval Dashboard
+@admin_bp.route('/approval-dashboard')
+@login_required
+@admin_required
+def approval_dashboard():
+    """Enhanced approval dashboard with WhatsApp integration"""
+    # Get pending advance payments
+    pending_advances = AdvancePaymentRequest.query.filter_by(status='pending').join(Driver).order_by(desc(AdvancePaymentRequest.created_at)).limit(20).all()
+    
+    # Get pending resignations
+    pending_resignations = ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).join(Driver).order_by(desc(ResignationRequest.submitted_at)).limit(20).all()
+    
+    # Get statistics
+    stats = {
+        'pending_advances': AdvancePaymentRequest.query.filter_by(status='pending').count(),
+        'pending_resignations': ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).count(),
+        'approved_advances_today': AdvancePaymentRequest.query.filter(
+            AdvancePaymentRequest.status == 'approved',
+            func.date(AdvancePaymentRequest.responded_at) == datetime.now().date()
+        ).count(),
+        'approved_resignations_today': ResignationRequest.query.filter(
+            ResignationRequest.status == ResignationStatus.APPROVED,
+            func.date(ResignationRequest.approved_at) == datetime.now().date()
+        ).count(),
+        'total_advance_amount_pending': db.session.query(func.sum(AdvancePaymentRequest.amount_requested)).filter_by(status='pending').scalar() or 0
+    }
+    
+    return render_template('admin/approval_dashboard.html',
+                         pending_advances=pending_advances,
+                         pending_resignations=pending_resignations,
+                         stats=stats)
+
 # Driver Block/Unblock Routes
 @admin_bp.route('/drivers/<int:driver_id>/block', methods=['POST'])
 @login_required
