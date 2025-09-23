@@ -15,7 +15,7 @@ from .transaction_helper import TransactionHelper
 from .audit_service import AuditService
 from .vehicle_service import VehicleService
 from timezone_utils import get_ist_time_naive
-from utils_main import get_last_duty_values
+from driver_routes import get_last_duty_values
 
 logger = logging.getLogger(__name__)
 
