@@ -919,7 +919,7 @@ def earnings():
         duty_dict = {
             'id': duty.id,
             'start_time': duty.start_time.isoformat() if duty.start_time else None,
-            'end_time': duty.end_time.isoformat() if duty.end_time else None,
+            'end_time': duty.end_duty_time.isoformat() if hasattr(duty, 'end_duty_time') and duty.end_duty_time else None,
             'revenue': float(duty.revenue or 0),
             'driver_earnings': float(duty.driver_earnings or 0),
             'incentive_payment': float(duty.incentive_payment or 0),
