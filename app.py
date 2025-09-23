@@ -689,6 +689,21 @@ def create_app():
         """Serve uploaded files from the uploads directory"""
         upload_folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
         return send_from_directory(upload_folder, filename)
+    
+    # PWA Service Worker route
+    @app.route('/sw.js')
+    def service_worker():
+        """Serve service worker from root with proper headers"""
+        response = send_from_directory('static', 'sw.js')
+        response.headers['Service-Worker-Allowed'] = '/'
+        response.headers['Cache-Control'] = 'no-cache'
+        return response
+    
+    # PWA Offline page route
+    @app.route('/offline')
+    def offline_page():
+        """Serve offline page for PWA"""
+        return render_template('offline.html')
 
     # SEO routes
     @app.route('/robots.txt')
