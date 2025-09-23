@@ -2226,9 +2226,16 @@ input[type="file"] {
 
 /* Ultra small mobile devices */
 @media (max-width: 575.98px) {
-    /* Offcanvas full width on very small screens */
+    /* Offcanvas responsive width on very small screens */
     .offcanvas {
-        width: 100%;
+        width: 85%;
+        max-width: 320px;
+    }
+    
+    /* Ensure offcanvas is hidden by default on all screen sizes */
+    .offcanvas:not(.show) {
+        transform: translateX(-100%) !important;
+        visibility: hidden !important;
     }
     
     /* Minimize padding on tiny screens */

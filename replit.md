@@ -13,6 +13,11 @@ PLS TRAVELS is a comprehensive multi-city driver and fleet management system bui
   - **Table Optimization**: Horizontal scrolling tables with .table-responsive wrappers for mobile viewing
   - **Container Layout**: Container-fluid implementation with responsive padding for all screen sizes
   - **Professional Implementation**: Maintains vibrant growth-focused color theme while ensuring accessibility across all devices
+- **Offcanvas Navigation Fix**: Resolved layout collapse issue with sidebar menu
+  - **Responsive Width Control**: Optimized offcanvas width (85% max 320px) to prevent full screen coverage
+  - **Smart JavaScript Behavior**: Auto-close on navigation clicks and responsive screen size changes
+  - **Enhanced CSS Controls**: Proper hiding/showing states with transform and visibility management
+  - **Smooth User Experience**: Professional slide-in/out behavior across all device sizes
 
 ## September 22, 2025
 - **Professional Corporate Theme**: Complete color scheme overhaul for professional appearance
