@@ -1,0 +1,426 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Enhanced Approval Dashboard - PLS TRAVELS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tasks me-2"></i>Enhanced Approval Dashboard</h2>
+    <div class="text-muted">
+        <i class="fas fa-clock me-1"></i>{{ moment().format('MMMM DD, YYYY') }}
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.pending_advances }}</h4>
+                        <p class="mb-0">Pending Advances</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.pending_resignations }}</h4>
+                        <p class="mb-0">Pending Resignations</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-minus fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">₹{{ "{:,.0f}".format(stats.total_advance_amount_pending) }}</h4>
+                        <p class="mb-0">Total Pending Amount</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-rupee-sign fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.approved_advances_today + stats.approved_resignations_today }}</h4>
+                        <p class="mb-0">Approved Today</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-double fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-lightning-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-money-bill-wave me-2"></i>Advance Payments</h6>
+                        <button id="bulkApproveAdvances" class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-check-circle me-1"></i>Bulk Approve Selected
+                        </button>
+                        <button id="selectAllAdvances" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-square me-1"></i>Select All
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user-minus me-2"></i>Resignations</h6>
+                        <button id="bulkApproveResignations" class="btn btn-success btn-sm me-2">
+                            <i class="fas fa-check-circle me-1"></i>Bulk Approve Selected
+                        </button>
+                        <button id="selectAllResignations" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-square me-1"></i>Select All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Advance Payments -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-money-bill-wave me-2"></i>Pending Advance Payments</h5>
+                <a href="{{ url_for('admin.advance_payments') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if pending_advances %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="checkAllAdvances"></th>
+                                <th>Driver</th>
+                                <th>Amount</th>
+                                <th>Purpose</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for advance in pending_advances %}
+                            <tr>
+                                <td><input type="checkbox" class="advance-checkbox" value="{{ advance.id }}"></td>
+                                <td>
+                                    <strong>{{ advance.driver.full_name }}</strong><br>
+                                    <small class="text-muted">{{ advance.driver.employee_id }}</small>
+                                </td>
+                                <td>
+                                    <strong>₹{{ "{:,.2f}".format(advance.amount_requested) }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ advance.purpose }}</span>
+                                </td>
+                                <td>{{ advance.created_at.strftime('%d/%m/%Y %I:%M %p') }}</td>
+                                <td>
+                                    <button class="btn btn-success btn-sm quick-approve-advance" 
+                                            data-id="{{ advance.id }}" 
+                                            data-amount="{{ advance.amount_requested }}"
+                                            data-driver="{{ advance.driver.full_name }}">
+                                        <i class="fab fa-whatsapp me-1"></i>Quick Approve
+                                    </button>
+                                    <a href="{{ url_for('admin.advance_payment_details', request_id=advance.id) }}" 
+                                       class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-eye me-1"></i>Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                    <h5>No pending advance payment requests</h5>
+                    <p class="text-muted">All advance payment requests have been processed.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Resignations -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-user-minus me-2"></i>Pending Resignations</h5>
+                <a href="{{ url_for('admin.resignations') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if pending_resignations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="checkAllResignations"></th>
+                                <th>Driver</th>
+                                <th>Reason</th>
+                                <th>Preferred Last Day</th>
+                                <th>Date Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for resignation in pending_resignations %}
+                            <tr>
+                                <td><input type="checkbox" class="resignation-checkbox" value="{{ resignation.id }}"></td>
+                                <td>
+                                    <strong>{{ resignation.driver.full_name }}</strong><br>
+                                    <small class="text-muted">{{ resignation.driver.employee_id }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ resignation.reason }}</span>
+                                    {% if resignation.detailed_reason %}
+                                    <br><small class="text-muted">{{ resignation.detailed_reason[:50] }}...</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ resignation.preferred_last_working_date.strftime('%d/%m/%Y') if resignation.preferred_last_working_date else 'Not specified' }}</td>
+                                <td>{{ resignation.submitted_at.strftime('%d/%m/%Y %I:%M %p') }}</td>
+                                <td>
+                                    <button class="btn btn-success btn-sm quick-approve-resignation" 
+                                            data-id="{{ resignation.id }}"
+                                            data-driver="{{ resignation.driver.full_name }}">
+                                        <i class="fab fa-whatsapp me-1"></i>Quick Approve
+                                    </button>
+                                    <a href="{{ url_for('admin.view_resignation', resignation_id=resignation.id) }}" 
+                                       class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-eye me-1"></i>Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                    <h5>No pending resignation requests</h5>
+                    <p class="text-muted">All resignation requests have been processed.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced approval dashboard functionality
+$(document).ready(function() {
+    // Check all functionality
+    $('#checkAllAdvances').change(function() {
+        $('.advance-checkbox').prop('checked', this.checked);
+    });
+    
+    $('#checkAllResignations').change(function() {
+        $('.resignation-checkbox').prop('checked', this.checked);
+    });
+    
+    // Select all buttons
+    $('#selectAllAdvances').click(function() {
+        $('.advance-checkbox').prop('checked', true);
+        $('#checkAllAdvances').prop('checked', true);
+    });
+    
+    $('#selectAllResignations').click(function() {
+        $('.resignation-checkbox').prop('checked', true);
+        $('#checkAllResignations').prop('checked', true);
+    });
+    
+    // Quick approve advance payments
+    $('.quick-approve-advance').click(function() {
+        const requestId = $(this).data('id');
+        const amount = $(this).data('amount');
+        const driver = $(this).data('driver');
+        
+        if (confirm(`Quick approve ₹${amount} advance for ${driver}?\n\nThis will:\n• Approve the full amount\n• Send WhatsApp notification\n• Process immediately`)) {
+            quickApproveAdvance(requestId);
+        }
+    });
+    
+    // Quick approve resignations
+    $('.quick-approve-resignation').click(function() {
+        const resignationId = $(this).data('id');
+        const driver = $(this).data('driver');
+        
+        if (confirm(`Quick approve resignation for ${driver}?\n\nThis will:\n• Approve with 30-day notice period\n• Send WhatsApp notification\n• Start notice period today`)) {
+            quickApproveResignation(resignationId);
+        }
+    });
+    
+    // Bulk approve advance payments
+    $('#bulkApproveAdvances').click(function() {
+        const selected = $('.advance-checkbox:checked').map(function() {
+            return this.value;
+        }).get();
+        
+        if (selected.length === 0) {
+            alert('Please select at least one advance payment request.');
+            return;
+        }
+        
+        if (confirm(`Bulk approve ${selected.length} advance payment requests?\n\nThis will:\n• Approve all selected requests with full amounts\n• Send WhatsApp notifications to all drivers\n• Process immediately`)) {
+            bulkApproveAdvances(selected);
+        }
+    });
+    
+    // Bulk approve resignations
+    $('#bulkApproveResignations').click(function() {
+        const selected = $('.resignation-checkbox:checked').map(function() {
+            return this.value;
+        }).get();
+        
+        if (selected.length === 0) {
+            alert('Please select at least one resignation request.');
+            return;
+        }
+        
+        if (confirm(`Bulk approve ${selected.length} resignation requests?\n\nThis will:\n• Approve all with 30-day notice periods\n• Send WhatsApp notifications to all drivers\n• Start notice periods today`)) {
+            bulkApproveResignations(selected);
+        }
+    });
+});
+
+function quickApproveAdvance(requestId) {
+    $.post(`/admin/api/quick-approve-advance/${requestId}`)
+        .done(function(response) {
+            if (response.success) {
+                showAlert('success', `✅ ${response.message}`);
+                if (response.whatsapp_sent) {
+                    showAlert('info', '📱 WhatsApp notification sent to driver');
+                }
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('error', `❌ Error: ${response.message}`);
+            }
+        })
+        .fail(function() {
+            showAlert('error', '❌ Network error. Please try again.');
+        });
+}
+
+function quickApproveResignation(resignationId) {
+    $.post(`/admin/api/quick-approve-resignation/${resignationId}`)
+        .done(function(response) {
+            if (response.success) {
+                showAlert('success', `✅ ${response.message}`);
+                if (response.whatsapp_sent) {
+                    showAlert('info', '📱 WhatsApp notification sent to driver');
+                }
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('error', `❌ Error: ${response.message}`);
+            }
+        })
+        .fail(function() {
+            showAlert('error', '❌ Network error. Please try again.');
+        });
+}
+
+function bulkApproveAdvances(requestIds) {
+    $.post('/admin/api/bulk-approve-advance-payments', {
+        request_ids: requestIds
+    }, null, 'json')
+        .done(function(response) {
+            if (response.success) {
+                showAlert('success', `✅ ${response.message}`);
+                showAlert('info', '📱 WhatsApp notifications sent to approved drivers');
+                if (response.failed_requests.length > 0) {
+                    console.log('Failed requests:', response.failed_requests);
+                }
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('error', `❌ Error: ${response.message}`);
+            }
+        })
+        .fail(function() {
+            showAlert('error', '❌ Network error. Please try again.');
+        });
+}
+
+function bulkApproveResignations(resignationIds) {
+    $.post('/admin/api/bulk-approve-resignations', {
+        resignation_ids: resignationIds
+    }, null, 'json')
+        .done(function(response) {
+            if (response.success) {
+                showAlert('success', `✅ ${response.message}`);
+                showAlert('info', '📱 WhatsApp notifications sent to approved drivers');
+                if (response.failed_requests.length > 0) {
+                    console.log('Failed requests:', response.failed_requests);
+                }
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('error', `❌ Error: ${response.message}`);
+            }
+        })
+        .fail(function() {
+            showAlert('error', '❌ Network error. Please try again.');
+        });
+}
+
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    $('.content-wrapper').prepend(alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        $('.alert').alert('close');
+    }, 5000);
+}
+</script>
+{% endblock %}
