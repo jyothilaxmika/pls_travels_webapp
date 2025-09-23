@@ -1,0 +1,194 @@
+🔹 Desktop-Responsive Layout
+✅ Updated HTML
+<header>
+  <button id="toggle-btn">☰</button>
+  <h1>PLS TRAVELS PLS - Admin Dashboard</h1>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>PLS TRAVELS PLS</h2>
+    <a href="#">Dashboard</a>
+    <a href="#">Drivers</a>
+    <a href="#">Vehicles</a>
+
+    <div class="collapsible">
+      <div class="collapsible-header">Duties</div>
+      <div class="collapsible-content">
+        <a href="#">All Duties</a>
+        <a href="#">Pending Approval</a>
+      </div>
+    </div>
+
+    <a href="#">Schedule Duties</a>
+    <a href="#">Smart Recommendations</a>
+    <a href="#">Auto Assignment</a>
+    <a href="#">Duty Schemes</a>
+    <a href="#">Reports</a>
+
+    <div class="collapsible">
+      <div class="collapsible-header">Approvals</div>
+      <div class="collapsible-content">
+        <a href="#">Resignation Requests <span class="badge">1</span></a>
+        <a href="#">Advance Payments <span class="badge">1</span></a>
+      </div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header">Storage</div>
+      <div class="collapsible-content">
+        <a href="#">Storage Overview</a>
+        <a href="#">Document Manager</a>
+        <a href="#">Duty Photos</a>
+      </div>
+    </div>
+
+    <a href="#">Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h2>Welcome</h2>
+    <p>This is the admin dashboard area. Adjust the window size to see responsiveness.</p>
+  </div>
+</div>
+
+🎨 CSS (Desktop + Responsive)
+/* General Reset */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background: #f9f9f9;
+}
+
+/* Header */
+header {
+  background: #8e44ad;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+}
+header h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+}
+#toggle-btn {
+  font-size: 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  display: none; /* visible only on small screens */
+}
+
+/* Layout wrapper */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: linear-gradient(135deg, #2ecc71, #8e44ad);
+  padding: 20px;
+  color: #fff;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.sidebar h2 {
+  margin: 0 0 20px;
+}
+
+.sidebar a {
+  display: block;
+  color: #fff;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.sidebar a:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Collapsible */
+.collapsible-header {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.collapsible-content {
+  display: none;
+  padding-left: 15px;
+}
+.collapsible.open .collapsible-content {
+  display: block;
+}
+
+/* Badge */
+.badge {
+  background: crimson;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  padding: 20px;
+}
+
+/* Responsive rules */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  #toggle-btn {
+    display: inline-block;
+  }
+  .sidebar {
+    position: absolute;
+    top: 0;
+    left: -260px;
+    height: 100%;
+    z-index: 1000;
+  }
+  .sidebar.active {
+    left: 0;
+  }
+  .main-content {
+    margin-left: 0 !important;
+  }
+}
+
+⚡ JavaScript for Toggle
+document.querySelectorAll(".collapsible-header").forEach(header => {
+  header.addEventListener("click", () => {
+    header.parentElement.classList.toggle("open");
+  });
+});
+
+document.getElementById("toggle-btn").addEventListener("click", () => {
+  document.querySelector(".sidebar").classList.toggle("active");
+});
+
+✨ What You Get
+
+Desktop screens (1200px+) → Sidebar fixed, content aligned side by side.
+
+Medium desktops (1024px) → Sidebar shrinks to 220px.
+
+Tablets & mobiles (<768px) → Sidebar collapses into hamburger ☰ toggle.
+
+Collapsible menus → Smooth inline expand/collapse.
+
+Unified gradient → Sidebar looks professional.
