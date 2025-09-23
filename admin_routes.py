@@ -108,6 +108,13 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@admin_bp.route('/responsive-demo')
+@login_required
+@admin_required
+def responsive_demo():
+    """Responsive layout demonstration page"""
+    return render_template('admin/responsive_demo.html')
+
 @admin_bp.route('/dashboard')
 @login_required
 @admin_required
