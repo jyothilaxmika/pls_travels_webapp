@@ -3724,8 +3724,8 @@ def process_manual_earnings_calculation():
         calculation.cash_collected_2 = form.cash_collected_2.data
         calculation.operator_bill = form.operator_bill.data
         calculation.operator_bill_2 = form.operator_bill_2.data
-        calculation.outside_cash_amount = form.outside_cash_amount.data
-        calculation.outside_operator_bill = form.outside_operator_bill.data
+        calculation.outside_cash_amount = form.out_cash.data
+        calculation.outside_operator_bill = form.out_operator.data
         calculation.qr_payment = form.qr_payment.data
         calculation.pass_deduction = form.pass_deduction.data
         calculation.advance_deduction = form.advance_deduction.data

@@ -672,27 +672,29 @@ def end_duty():
         end_odometer = request.form.get('end_odometer', type=float)
         end_cng = request.form.get('end_cng', type=float)
         
-        # Financial settlement data from driver form
+        # Financial settlement data from driver form (audit fields removed)
         cash_collected_1 = request.form.get('cash_collected_1', type=float) or 0.0
         cash_collected_2 = request.form.get('cash_collected_2', type=float) or 0.0
-        out_cash = request.form.get('out_cash', type=float) or 0.0
-        pass_deduction = request.form.get('pass_deduction', type=float) or 0.0
         operator_amount_1 = request.form.get('operator_amount_1', type=float) or 0.0
         operator_amount_2 = request.form.get('operator_amount_2', type=float) or 0.0
-        out_operator = request.form.get('out_operator', type=float) or 0.0
+        
+        # Admin audit fields - will be filled during admin approval process
+        out_cash = 0.0          # To be set during admin audit
+        pass_deduction = 0.0    # To be set during admin audit  
+        out_operator = 0.0      # To be set during admin audit
         
         # Store financial data for Final Settlement Calculator
-        active_duty.cash_collection = cash_collected_1 + cash_collected_2 + out_cash  # Total cash collections
+        active_duty.cash_collection = cash_collected_1 + cash_collected_2  # Total cash collections (out_cash added during audit)
         active_duty.qr_payment = 0.0       # Not used in scheme 1
         active_duty.digital_payments = 0.0  # Not used in scheme 1
-        active_duty.operator_out = out_operator  # Out operator amount
+        active_duty.operator_out = 0.0  # Out operator amount - to be set during admin audit
         active_duty.toll_expense = 0.0      # To be set during audit
         active_duty.fuel_expense = 0.0      # To be set during audit
         active_duty.other_expenses = 0.0    # To be set during audit
         active_duty.maintenance_expense = 0.0  # To be set during audit
         active_duty.company_pay = 0.0       # To be set during audit
         active_duty.advance_deduction = 0.0  # To be set during audit
-        active_duty.fuel_deduction = pass_deduction  # Pass deduction from driver form
+        active_duty.fuel_deduction = 0.0  # Pass deduction - to be set during admin audit
         active_duty.penalty_deduction = 0.0  # To be set during audit
         active_duty.total_trips = 0         # To be set during audit
         
@@ -705,7 +707,7 @@ def end_duty():
         # Since model doesn't have cash_collected_1/2 fields, store breakdown in digital_payments and card_payments
         active_duty.digital_payments = cash_collected_1  # Repurpose for cash_collected_1
         active_duty.card_payments = cash_collected_2     # Repurpose for cash_collected_2
-        active_duty.wallet_payments = out_cash          # Store out_cash
+        active_duty.wallet_payments = 0.0  # Out cash - to be set during admin audit
         
         # Update basic duty info
         active_duty.actual_end = get_ist_time_naive()
