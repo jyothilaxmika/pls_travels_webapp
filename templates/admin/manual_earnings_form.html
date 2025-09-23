@@ -5,7 +5,8 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-12">
+        <!-- Main Form (Left Side) -->
+        <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">
@@ -20,7 +21,7 @@
                         Vehicle: <strong>{{ duty.vehicle.registration_number if duty.vehicle else 'N/A' }}</strong>
                     </p>
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="max-height: 80vh; overflow-y: auto;">
                     <form method="POST" action="{{ url_for('admin.process_manual_earnings_calculation') }}" id="manualEarningsForm">
                         {{ form.hidden_tag() }}
                         {{ form.duty_id }}
@@ -109,7 +110,19 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">{{ form.advance_deduction.label }}</label>
-                                {{ form.advance_deduction(class="form-control") }}
+                                <div class="input-group">
+                                    {% if duty.advance_requests %}
+                                    <span class="input-group-text bg-warning text-dark">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </span>
+                                    {% endif %}
+                                    {{ form.advance_deduction(class="form-control" + (" border-warning bg-warning bg-opacity-10" if duty.advance_requests else "")) }}
+                                </div>
+                                {% if duty.advance_requests %}
+                                <small class="text-warning fw-bold">
+                                    <i class="fas fa-info-circle"></i> Advance payment requests found for this duty!
+                                </small>
+                                {% endif %}
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">{{ form.toll_expense.label }}</label>
@@ -156,6 +169,160 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Verification Panel (Right Side) -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-camera me-2"></i>Photo Verification
+                    </h5>
+                </div>
+                <div class="card-body" style="max-height: 80vh; overflow-y: auto;">
+                    
+                    <!-- Start Odometer Photo -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">
+                            <i class="fas fa-play-circle me-2"></i>Start Odometer Photo
+                        </h6>
+                        {% if duty.start_photo %}
+                            <div class="text-center">
+                                <img src="{{ url_for('uploaded_file', filename=duty.start_photo) }}" 
+                                     class="img-fluid rounded border" 
+                                     style="max-height: 200px; cursor: pointer;"
+                                     onclick="openPhotoModal('{{ url_for('uploaded_file', filename=duty.start_photo) }}', 'Start Odometer Photo')"
+                                     alt="Start Odometer Photo">
+                                <div class="mt-2">
+                                    <small class="text-muted">Click to enlarge</small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No start odometer photo available
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- End Odometer Photo -->
+                    <div class="mb-4">
+                        <h6 class="text-danger">
+                            <i class="fas fa-stop-circle me-2"></i>End Odometer Photo
+                        </h6>
+                        {% if duty.end_photo %}
+                            <div class="text-center">
+                                <img src="{{ url_for('uploaded_file', filename=duty.end_photo) }}" 
+                                     class="img-fluid rounded border" 
+                                     style="max-height: 200px; cursor: pointer;"
+                                     onclick="openPhotoModal('{{ url_for('uploaded_file', filename=duty.end_photo) }}', 'End Odometer Photo')"
+                                     alt="End Odometer Photo">
+                                <div class="mt-2">
+                                    <small class="text-muted">Click to enlarge</small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No end odometer photo available
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- End Duty Photo -->
+                    <div class="mb-4">
+                        <h6 class="text-success">
+                            <i class="fas fa-check-circle me-2"></i>End Duty Photo
+                        </h6>
+                        {% if duty.end_photo %}
+                            <div class="text-center">
+                                <img src="{{ url_for('uploaded_file', filename=duty.end_photo) }}" 
+                                     class="img-fluid rounded border" 
+                                     style="max-height: 200px; cursor: pointer;"
+                                     onclick="openPhotoModal('{{ url_for('uploaded_file', filename=duty.end_photo) }}', 'End Duty Photo')"
+                                     alt="End Duty Photo">
+                                <div class="mt-2">
+                                    <small class="text-muted">Click to enlarge</small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No end duty photo available
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Advance Payment Requests -->
+                    {% if duty.advance_requests %}
+                    <div class="alert alert-warning border-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-money-check-alt me-2"></i>Advance Payment Requests
+                        </h6>
+                        {% for request in duty.advance_requests %}
+                        <div class="border-top pt-2 mt-2">
+                            <strong>Amount: ₹{{ "{:,.2f}".format(request.amount) }}</strong><br>
+                            <small class="text-muted">
+                                Requested: {{ request.created_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                                Status: <span class="badge bg-{{ 'success' if request.status == 'approved' else 'warning' }}">{{ request.status|title }}</span>
+                            </small>
+                            {% if request.reason %}
+                            <div class="mt-1">
+                                <small><strong>Reason:</strong> {{ request.reason }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Duty Information Summary -->
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-info-circle me-2"></i>Duty Summary
+                            </h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Start Odometer:</small><br>
+                                    <strong>{{ "{:,.0f}".format(duty.start_odometer) if duty.start_odometer else 'N/A' }} km</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">End Odometer:</small><br>
+                                    <strong>{{ "{:,.0f}".format(duty.end_odometer) if duty.end_odometer else 'N/A' }} km</strong>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Start CNG:</small><br>
+                                    <strong>{{ duty.start_cng if duty.start_cng else 'N/A' }} bars</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">End CNG:</small><br>
+                                    <strong>{{ duty.end_cng if duty.end_cng else 'N/A' }} bars</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoModalLabel">Photo Verification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalPhoto" src="" class="img-fluid" alt="Duty Photo">
+            </div>
+        </div>
     </div>
 </div>
 
@@ -189,6 +356,14 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Error auto-fetching data');
         });
     });
+    
+    // Photo modal functionality
+    window.openPhotoModal = function(photoUrl, title) {
+        document.getElementById('photoModalLabel').textContent = title;
+        document.getElementById('modalPhoto').src = photoUrl;
+        const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
+        photoModal.show();
+    };
 });
 </script>
 {% endblock %}
