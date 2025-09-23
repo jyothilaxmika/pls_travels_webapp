@@ -2224,18 +2224,30 @@ input[type="file"] {
     }
 }
 
+/* Force offcanvas behavior on all screen sizes */
+.offcanvas {
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out !important;
+}
+
+.offcanvas:not(.show) {
+    transform: translateX(-100%) !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Hide offcanvas completely on desktop screens */
+@media (min-width: 1200px) {
+    .offcanvas:not(.show) {
+        display: none !important;
+    }
+}
+
 /* Ultra small mobile devices */
 @media (max-width: 575.98px) {
     /* Offcanvas responsive width on very small screens */
     .offcanvas {
         width: 85%;
         max-width: 320px;
-    }
-    
-    /* Ensure offcanvas is hidden by default on all screen sizes */
-    .offcanvas:not(.show) {
-        transform: translateX(-100%) !important;
-        visibility: hidden !important;
     }
     
     /* Minimize padding on tiny screens */
