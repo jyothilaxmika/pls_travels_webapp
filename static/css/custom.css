@@ -1376,3 +1376,227 @@ input[type="file"] {
     outline-offset: 2px;
 }
 
+/* ===== SCROLLING PANELS ===== */
+
+/* Basic Scrolling Panel */
+.scroll-panel {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+.scroll-panel-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    color: var(--pls-text-dark);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.scroll-panel-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 transparent;
+}
+
+/* Custom scrollbar for scrolling panels */
+.scroll-panel-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scroll-panel-body::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.scroll-panel-body::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.scroll-panel-body::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Panel Sizes */
+.scroll-panel-sm {
+    max-height: 300px;
+}
+
+.scroll-panel-sm .scroll-panel-body {
+    max-height: 240px;
+}
+
+.scroll-panel-md {
+    max-height: 400px;
+}
+
+.scroll-panel-md .scroll-panel-body {
+    max-height: 340px;
+}
+
+.scroll-panel-lg {
+    max-height: 600px;
+}
+
+.scroll-panel-lg .scroll-panel-body {
+    max-height: 540px;
+}
+
+.scroll-panel-xl {
+    max-height: 800px;
+}
+
+.scroll-panel-xl .scroll-panel-body {
+    max-height: 740px;
+}
+
+/* Full Height Panel */
+.scroll-panel-full {
+    height: calc(100vh - 120px);
+    max-height: none;
+}
+
+.scroll-panel-full .scroll-panel-body {
+    height: calc(100vh - 180px);
+    max-height: none;
+}
+
+/* Panel Variants */
+.scroll-panel-primary {
+    border-color: var(--pls-primary);
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.15);
+}
+
+.scroll-panel-primary .scroll-panel-header {
+    background: linear-gradient(135deg, var(--pls-primary) 0%, #1e40af 100%);
+    color: white;
+    border-bottom-color: var(--pls-primary);
+}
+
+.scroll-panel-success {
+    border-color: var(--pls-success);
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15);
+}
+
+.scroll-panel-success .scroll-panel-header {
+    background: linear-gradient(135deg, var(--pls-success) 0%, #059669 100%);
+    color: white;
+    border-bottom-color: var(--pls-success);
+}
+
+.scroll-panel-warning {
+    border-color: var(--pls-warning);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.scroll-panel-warning .scroll-panel-header {
+    background: linear-gradient(135deg, var(--pls-warning) 0%, #d97706 100%);
+    color: white;
+    border-bottom-color: var(--pls-warning);
+}
+
+.scroll-panel-danger {
+    border-color: var(--pls-danger);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+.scroll-panel-danger .scroll-panel-header {
+    background: linear-gradient(135deg, var(--pls-danger) 0%, #dc2626 100%);
+    color: white;
+    border-bottom-color: var(--pls-danger);
+}
+
+/* Data Panel (for tables and lists) */
+.scroll-panel-data {
+    background: #fafafa;
+    border: 2px solid #e5e7eb;
+}
+
+.scroll-panel-data .scroll-panel-body {
+    padding: 0;
+    background: white;
+}
+
+.scroll-panel-data .scroll-panel-body table {
+    margin-bottom: 0;
+}
+
+.scroll-panel-data .scroll-panel-body .list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* Chat/Feed Panel */
+.scroll-panel-feed {
+    background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.scroll-panel-feed .scroll-panel-body {
+    padding: 0.5rem;
+}
+
+.scroll-panel-feed .scroll-panel-body .message-item {
+    background: white;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile Optimizations for Panels */
+@media (max-width: 768px) {
+    .scroll-panel-lg,
+    .scroll-panel-xl {
+        max-height: 400px;
+    }
+    
+    .scroll-panel-lg .scroll-panel-body,
+    .scroll-panel-xl .scroll-panel-body {
+        max-height: 340px;
+    }
+    
+    .scroll-panel-full {
+        height: calc(100vh - 80px);
+    }
+    
+    .scroll-panel-full .scroll-panel-body {
+        height: calc(100vh - 140px);
+    }
+    
+    .scroll-panel-body {
+        padding: 1rem;
+    }
+    
+    .scroll-panel-header {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-panel-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .scroll-panel-md,
+    .scroll-panel-lg,
+    .scroll-panel-xl {
+        max-height: 300px;
+    }
+    
+    .scroll-panel-md .scroll-panel-body,
+    .scroll-panel-lg .scroll-panel-body,
+    .scroll-panel-xl .scroll-panel-body {
+        max-height: 240px;
+    }
+}
+
