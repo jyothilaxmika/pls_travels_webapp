@@ -41,7 +41,7 @@
                 <div class="collapsible">
                     <div class="collapsible-header">
                         <i class="fas fa-clipboard-list me-2"></i>Duties
-                        {% if pending_duties_count > 0 %}
+                        {% if pending_duties_count|default(0) > 0 %}
                         <span class="badge">{{ pending_duties_count }}</span>
                         {% endif %}
                     </div>
@@ -51,7 +51,7 @@
                         </a>
                         <a href="{{ url_for('admin.pending_duties') }}">
                             <i class="fas fa-clock me-2"></i>Pending Approval
-                            {% if pending_duties_count > 0 %}
+                            {% if pending_duties_count|default(0) > 0 %}
                             <span class="badge">{{ pending_duties_count }}</span>
                             {% endif %}
                         </a>
@@ -81,13 +81,13 @@
                     <div class="collapsible-content">
                         <a href="{{ url_for('admin.resignation_requests') }}">
                             <i class="fas fa-user-times me-2"></i>Resignation Requests
-                            {% if resignation_count > 0 %}
+                            {% if resignation_count|default(0) > 0 %}
                             <span class="badge">{{ resignation_count }}</span>
                             {% endif %}
                         </a>
                         <a href="{{ url_for('admin.advance_payments') }}">
                             <i class="fas fa-money-bill-wave me-2"></i>Advance Payments
-                            {% if advance_payment_count > 0 %}
+                            {% if advance_payment_count|default(0) > 0 %}
                             <span class="badge">{{ advance_payment_count }}</span>
                             {% endif %}
                         </a>
@@ -179,28 +179,63 @@
         document.querySelector(".sidebar").classList.toggle("active");
     });
     
-    // Global photo modal functionality for admin interface
+    // Global photo modal functionality for admin interface (XSS-safe)
     function showPhotoModal(imageUrl, title, description = '') {
         const modal = document.createElement('div');
         modal.className = 'photo-modal';
-        modal.innerHTML = `
-            <div class="photo-modal-content">
-                <div class="photo-modal-header">
-                    <h3>${title || 'Photo Verification'}</h3>
-                    <button type="button" class="close-btn" onclick="this.closest('.photo-modal').remove()">&times;</button>
-                </div>
-                <div class="photo-modal-body">
-                    <img src="${imageUrl}" alt="Verification Photo" style="max-width: 100%; max-height: 80vh;">
-                </div>
-                <div class="photo-modal-footer">
-                    <small>${description || 'Right-click to save image'}</small>
-                    <div>
-                        <a href="${imageUrl}" download class="btn btn-primary">Download</a>
-                        <button type="button" class="btn btn-secondary" onclick="this.closest('.photo-modal').remove()">Close</button>
-                    </div>
-                </div>
-            </div>
-        `;
+        
+        const content = document.createElement('div');
+        content.className = 'photo-modal-content';
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = 'photo-modal-header';
+        const headerTitle = document.createElement('h3');
+        headerTitle.textContent = title || 'Photo Verification';
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'close-btn';
+        closeBtn.textContent = '×';
+        closeBtn.onclick = () => modal.remove();
+        header.appendChild(headerTitle);
+        header.appendChild(closeBtn);
+        
+        // Body
+        const body = document.createElement('div');
+        body.className = 'photo-modal-body';
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = 'Verification Photo';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '80vh';
+        body.appendChild(img);
+        
+        // Footer
+        const footer = document.createElement('div');
+        footer.className = 'photo-modal-footer';
+        const footerText = document.createElement('small');
+        footerText.textContent = description || 'Right-click to save image';
+        const footerButtons = document.createElement('div');
+        const downloadBtn = document.createElement('a');
+        downloadBtn.href = imageUrl;
+        downloadBtn.download = true;
+        downloadBtn.className = 'btn btn-primary';
+        downloadBtn.textContent = 'Download';
+        const closeBtn2 = document.createElement('button');
+        closeBtn2.type = 'button';
+        closeBtn2.className = 'btn btn-secondary';
+        closeBtn2.textContent = 'Close';
+        closeBtn2.onclick = () => modal.remove();
+        footerButtons.appendChild(downloadBtn);
+        footerButtons.appendChild(closeBtn2);
+        footer.appendChild(footerText);
+        footer.appendChild(footerButtons);
+        
+        content.appendChild(header);
+        content.appendChild(body);
+        content.appendChild(footer);
+        modal.appendChild(content);
+        
         modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
         document.body.appendChild(modal);
     }
