@@ -116,17 +116,22 @@ def create_app():
     
     # Initialize rate limiter with Redis storage for production
     redis_url = os.environ.get('REDIS_URL')
+    
+    # Validate Redis URL format
     if redis_url and redis_url.startswith(('redis://', 'rediss://')):
         # Production: Use Redis for distributed rate limiting
         app.config['RATELIMIT_STORAGE_URI'] = redis_url
         limiter.init_app(app)
         app.logger.info("Rate limiter initialized with Redis storage")
     else:
-        # Development: Use in-memory storage with warning
+        # Development: Use in-memory storage
+        # Don't set RATELIMIT_STORAGE_URI to use default in-memory storage
         limiter.init_app(app)
+        
         if redis_url and not redis_url.startswith(('redis://', 'rediss://')):
-            app.logger.warning("REDIS_URL provided but not in Redis format. Using in-memory storage.")
-        if os.environ.get('FLASK_ENV') == 'production':
+            app.logger.warning(f"REDIS_URL provided but not in Redis format (got: {redis_url[:20]}...). Using in-memory storage.")
+        
+        if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('REPL_DEPLOYMENT') == 'true':
             app.logger.warning("PRODUCTION WARNING: Rate limiter using in-memory storage. Set REDIS_URL for distributed rate limiting.")
         else:
             app.logger.info("Rate limiter initialized with in-memory storage (development)")
