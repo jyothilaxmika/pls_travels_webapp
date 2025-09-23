@@ -43,83 +43,86 @@
 </div>
 
 {% if duties.items %}
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Date</th>
-                        <th>Driver</th>
-                        <th>Vehicle</th>
-                        <th>Branch</th>
-                        <th>Revenue</th>
-                        <th>Earnings</th>
-                        <th>Submitted</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for duty in duties.items %}
-                    <tr>
-                        <td>
-                            <div class="fw-bold">{{ moment(duty.actual_start).format('DD/MM/YYYY') }}</div>
-                            <small class="text-muted">
-                                {{ moment(duty.actual_start).format('HH:mm') }} - 
-                                {{ moment(duty.actual_end).format('HH:mm') }}
-                            </small>
-                        </td>
-                        <td>
-                            <div class="fw-bold">{{ duty.driver.full_name if duty.driver else 'Unknown' }}</div>
-                            <small class="text-muted">{{ duty.driver.user.username if duty.driver else 'N/A' }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-info">{{ duty.vehicle.registration_number if duty.vehicle else 'Unknown' }}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-secondary">{{ duty.branch.name if duty.branch else 'Unknown' }}</span>
-                        </td>
-                        <td>
-                            <div class="fw-bold text-success">₹{{ "%.2f"|format(duty.gross_revenue or 0) }}</div>
-                            <small class="text-muted">{{ duty.total_trips or 0 }} trips</small>
-                        </td>
-                        <td>
-                            <div class="fw-bold text-primary">₹{{ "%.2f"|format(duty.driver_earnings or 0) }}</div>
-                        </td>
-                        <td>
-                            <small class="text-muted">{{ moment(duty.submitted_at).fromNow() if duty.submitted_at else 'N/A' }}</small>
-                        </td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <!-- View Details Button -->
-                                <button type="button" class="btn btn-sm btn-outline-info" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#dutyModal{{ duty.id }}"
-                                        title="View Details">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                
-                                <!-- Fill Earnings Form Button -->
-                                <a href="{{ url_for('admin.create_manual_earnings_calculation', duty_id=duty.id) }}" 
-                                   class="btn btn-sm btn-success" 
-                                   title="Fill Earnings Form & Approve">
-                                    <i class="fas fa-calculator"></i> Calculate
-                                </a>
-                                
-                                <!-- Reject Button -->
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#rejectModal{{ duty.id }}"
-                                        title="Reject">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<!-- Scrolling Panel for Pending Duties Table -->
+<div class="scroll-panel scroll-panel-data scroll-panel-lg">
+    <div class="scroll-panel-header">
+        <i class="fas fa-table me-2"></i>Pending Duties List 
+        <span class="badge bg-warning text-dark ms-2">{{ duties.total }} Total</span>
+    </div>
+    <div class="scroll-panel-body">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark sticky-top">
+                <tr>
+                    <th>Date</th>
+                    <th>Driver</th>
+                    <th>Vehicle</th>
+                    <th>Branch</th>
+                    <th>Revenue</th>
+                    <th>Earnings</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for duty in duties.items %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ moment(duty.actual_start).format('DD/MM/YYYY') }}</div>
+                        <small class="text-muted">
+                            {{ moment(duty.actual_start).format('HH:mm') }} - 
+                            {{ moment(duty.actual_end).format('HH:mm') }}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ duty.driver.full_name if duty.driver else 'Unknown' }}</div>
+                        <small class="text-muted">{{ duty.driver.user.username if duty.driver else 'N/A' }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ duty.vehicle.registration_number if duty.vehicle else 'Unknown' }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">{{ duty.branch.name if duty.branch else 'Unknown' }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-success">₹{{ "%.2f"|format(duty.gross_revenue or 0) }}</div>
+                        <small class="text-muted">{{ duty.total_trips or 0 }} trips</small>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-primary">₹{{ "%.2f"|format(duty.driver_earnings or 0) }}</div>
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ moment(duty.submitted_at).fromNow() if duty.submitted_at else 'N/A' }}</small>
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <!-- View Details Button -->
+                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#dutyModal{{ duty.id }}"
+                                    title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            
+                            <!-- Fill Earnings Form Button -->
+                            <a href="{{ url_for('admin.create_manual_earnings_calculation', duty_id=duty.id) }}" 
+                               class="btn btn-sm btn-success" 
+                               title="Fill Earnings Form & Approve">
+                                <i class="fas fa-calculator"></i> Calculate
+                            </a>
+                            
+                            <!-- Reject Button -->
+                            <button type="button" class="btn btn-sm btn-danger" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#rejectModal{{ duty.id }}"
+                                    title="Reject">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -174,196 +177,199 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-primary">Basic Information</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <th>Driver:</th>
-                                <td>{{ duty.driver.full_name if duty.driver else 'Unknown' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Vehicle:</th>
-                                <td>{{ duty.vehicle.registration_number if duty.vehicle else 'Unknown' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Start Time:</th>
-                                <td>{{ moment(duty.actual_start).format('DD/MM/YYYY HH:mm') if duty.actual_start else 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <th>End Time:</th>
-                                <td>{{ moment(duty.actual_end).format('DD/MM/YYYY HH:mm') if duty.actual_end else 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Start Odometer:</th>
-                                <td>{{ duty.start_odometer or 0 }} km</td>
-                            </tr>
-                            <tr>
-                                <th>End Odometer:</th>
-                                <td>{{ duty.end_odometer or 0 }} km</td>
-                            </tr>
-                            <tr>
-                                <th>Distance:</th>
-                                <td>{{ duty.total_distance or 0 }} km</td>
-                            </tr>
-                            <tr>
-                                <th>Duty Scheme:</th>
-                                <td>
-                                    <span class="badge bg-secondary">{{ duty.duty_scheme.name if duty.duty_scheme else 'Not Set' }}</span>
-                                    {% if duty.duty_scheme and duty.duty_scheme.minimum_guarantee %}
-                                    <br><small class="text-muted">BMG: ₹{{ duty.duty_scheme.minimum_guarantee }}</small>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-success">Financial Details</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <th>Cash Collection:</th>
-                                <td>₹{{ "%.2f"|format(duty.cash_collection or 0) }}</td>
-                            </tr>
-                            <tr>
-                                <th>QR Payment:</th>
-                                <td>₹{{ "%.2f"|format(duty.qr_payment or 0) }}</td>
-                            </tr>
-                            <tr>
-                                <th>Digital Payments:</th>
-                                <td>₹{{ "%.2f"|format(duty.digital_payments or 0) }}</td>
-                            </tr>
-                            <tr>
-                                <th>Total Trips:</th>
-                                <td>{{ duty.total_trips or 0 }}</td>
-                            </tr>
-                            <tr>
-                                <th>Gross Revenue:</th>
-                                <td class="fw-bold text-success">₹{{ "%.2f"|format(duty.gross_revenue or 0) }}</td>
-                            </tr>
-                            <tr>
-                                <th>Driver Earnings:</th>
-                                <td class="fw-bold text-primary">₹{{ "%.2f"|format(duty.driver_earnings or 0) }}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-                
-                {% if duty.all_photos or duty.start_photo or duty.end_photo %}
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <h6 class="text-info">
-                            <i class="fas fa-camera me-2"></i>Duty Photos 
-                            <span class="badge bg-info">{{ duty.all_photos|length if duty.all_photos else 0 }}</span>
-                        </h6>
-                        
-                        {% if duty.all_photos %}
-                        <!-- Show all photos from database -->
-                        <div class="row">
-                            {% for photo in duty.all_photos %}
-                            <div class="col-md-4 col-sm-6 mb-3">
-                                <div class="card">
-                                    <div class="card-body p-2 text-center">
-                                        <p class="small text-muted mb-1">
-                                            {% set photo_type_names = {
-                                                'DUTY_START': 'Start Photo',
-                                                'DUTY_END': 'End Photo',
-                                                'VEHICLE_INSPECTION': 'Vehicle Inspection',
-                                                'INCIDENT_REPORT': 'Incident Report',
-                                                'ODOMETER_READING': 'Odometer Reading',
-                                                'FUEL_RECEIPT': 'Fuel Receipt',
-                                                'GENERAL': 'General Photo'
-                                            } %}
-                                            <strong>{{ photo_type_names.get(photo.photo_type.name, photo.photo_type.name) }}</strong>
-                                        </p>
-                                        {% if photo.server_url %}
-                                            <img src="{{ photo.server_url }}" 
-                                                 class="img-fluid rounded border" style="max-height: 120px;"
-                                                 onerror="this.style.display='none';">
-                                        {% elif photo.filename %}
-                                            <img src="{{ url_for('uploaded_file', filename=photo.filename) }}" 
-                                                 class="img-fluid rounded border" style="max-height: 120px;"
-                                                 onerror="this.style.display='none';">
+            <!-- Scrollable Modal Body -->
+            <div class="modal-body p-0">
+                <div class="scroll-panel-body" style="max-height: 70vh; padding: 1.25rem;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Basic Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Driver:</th>
+                                    <td>{{ duty.driver.full_name if duty.driver else 'Unknown' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vehicle:</th>
+                                    <td>{{ duty.vehicle.registration_number if duty.vehicle else 'Unknown' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Start Time:</th>
+                                    <td>{{ moment(duty.actual_start).format('DD/MM/YYYY HH:mm') if duty.actual_start else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>End Time:</th>
+                                    <td>{{ moment(duty.actual_end).format('DD/MM/YYYY HH:mm') if duty.actual_end else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Start Odometer:</th>
+                                    <td>{{ duty.start_odometer or 0 }} km</td>
+                                </tr>
+                                <tr>
+                                    <th>End Odometer:</th>
+                                    <td>{{ duty.end_odometer or 0 }} km</td>
+                                </tr>
+                                <tr>
+                                    <th>Distance:</th>
+                                    <td>{{ duty.total_distance or 0 }} km</td>
+                                </tr>
+                                <tr>
+                                    <th>Duty Scheme:</th>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ duty.duty_scheme.name if duty.duty_scheme else 'Not Set' }}</span>
+                                        {% if duty.duty_scheme and duty.duty_scheme.minimum_guarantee %}
+                                        <br><small class="text-muted">BMG: ₹{{ duty.duty_scheme.minimum_guarantee }}</small>
                                         {% endif %}
-                                        {% if photo.description %}
-                                        <p class="small text-muted mt-1">{{ photo.description }}</p>
-                                        {% endif %}
-                                        <small class="text-muted">{{ moment(photo.created_at).fromNow() if photo.created_at else 'N/A' }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
-                        
-                        {% else %}
-                        <!-- Fallback: Show legacy start/end photos if no database photos -->
-                        <div class="row">
-                            {% if duty.start_photo and duty.start_photo.strip() %}
-                            <div class="col-md-6">
-                                <div class="text-center">
-                                    <p class="small text-muted mb-2">Start Photo</p>
-                                    <img src="{{ url_for('uploaded_file', filename=duty.start_photo) }}" 
-                                         class="img-fluid rounded border" style="max-height: 200px;"
-                                         onerror="this.style.display='none';">
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% if duty.end_photo and duty.end_photo.strip() %}
-                            <div class="col-md-6">
-                                <div class="text-center">
-                                    <p class="small text-muted mb-2">End Photo</p>
-                                    <img src="{{ url_for('uploaded_file', filename=duty.end_photo) }}" 
-                                         class="img-fluid rounded border" style="max-height: 200px;"
-                                         onerror="this.style.display='none';">
-                                </div>
-                            </div>
-                            {% endif %}
+                        <div class="col-md-6">
+                            <h6 class="text-success">Financial Details</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Cash Collection:</th>
+                                    <td>₹{{ "%.2f"|format(duty.cash_collection or 0) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>QR Payment:</th>
+                                    <td>₹{{ "%.2f"|format(duty.qr_payment or 0) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Digital Payments:</th>
+                                    <td>₹{{ "%.2f"|format(duty.digital_payments or 0) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Total Trips:</th>
+                                    <td>{{ duty.total_trips or 0 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Gross Revenue:</th>
+                                    <td class="fw-bold text-success">₹{{ "%.2f"|format(duty.gross_revenue or 0) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Driver Earnings:</th>
+                                    <td class="fw-bold text-primary">₹{{ "%.2f"|format(duty.driver_earnings or 0) }}</td>
+                                </tr>
+                            </table>
                         </div>
-                        {% endif %}
                     </div>
-                </div>
-                {% endif %}
-                
-                <!-- Duty Scheme Selection -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="card border-warning">
-                            <div class="card-header bg-warning bg-opacity-10">
-                                <h6 class="mb-0 text-warning">
-                                    <i class="fas fa-cog me-2"></i>Admin Controls - Update Duty Scheme
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <form method="POST" action="{{ url_for('admin.update_duty_scheme', duty_id=duty.id) }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <div class="row align-items-end">
-                                        <div class="col-md-8">
-                                            <label for="duty_scheme_{{ duty.id }}" class="form-label">
-                                                <strong>Select New Duty Scheme:</strong>
-                                            </label>
-                                            <select class="form-select" name="duty_scheme_id" id="duty_scheme_{{ duty.id }}" required>
-                                                <option value="">Choose Duty Scheme</option>
-                                                {% for scheme in duty_schemes %}
-                                                <option value="{{ scheme.id }}" {% if duty.duty_scheme_id == scheme.id %}selected{% endif %}>
-                                                    {{ scheme.name }}
-                                                    {% if scheme.minimum_guarantee %} - BMG: ₹{{ scheme.minimum_guarantee }}{% endif %}
-                                                    {% if scheme.is_default %} (Default){% endif %}
-                                                </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <button type="submit" class="btn btn-warning w-100" 
-                                                    onclick="return confirm('Are you sure you want to update the duty scheme? This will affect earnings calculation.')">
-                                                <i class="fas fa-sync-alt me-1"></i>Update Scheme
-                                            </button>
+                    
+                    {% if duty.all_photos or duty.start_photo or duty.end_photo %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="text-info">
+                                <i class="fas fa-camera me-2"></i>Duty Photos 
+                                <span class="badge bg-info">{{ duty.all_photos|length if duty.all_photos else 0 }}</span>
+                            </h6>
+                            
+                            {% if duty.all_photos %}
+                            <!-- Show all photos from database -->
+                            <div class="row">
+                                {% for photo in duty.all_photos %}
+                                <div class="col-md-4 col-sm-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body p-2 text-center">
+                                            <p class="small text-muted mb-1">
+                                                {% set photo_type_names = {
+                                                    'DUTY_START': 'Start Photo',
+                                                    'DUTY_END': 'End Photo',
+                                                    'VEHICLE_INSPECTION': 'Vehicle Inspection',
+                                                    'INCIDENT_REPORT': 'Incident Report',
+                                                    'ODOMETER_READING': 'Odometer Reading',
+                                                    'FUEL_RECEIPT': 'Fuel Receipt',
+                                                    'GENERAL': 'General Photo'
+                                                } %}
+                                                <strong>{{ photo_type_names.get(photo.photo_type.name, photo.photo_type.name) }}</strong>
+                                            </p>
+                                            {% if photo.server_url %}
+                                                <img src="{{ photo.server_url }}" 
+                                                     class="img-fluid rounded border" style="max-height: 120px;"
+                                                     onerror="this.style.display='none';">
+                                            {% elif photo.filename %}
+                                                <img src="{{ url_for('uploaded_file', filename=photo.filename) }}" 
+                                                     class="img-fluid rounded border" style="max-height: 120px;"
+                                                     onerror="this.style.display='none';">
+                                            {% endif %}
+                                            {% if photo.description %}
+                                            <p class="small text-muted mt-1">{{ photo.description }}</p>
+                                            {% endif %}
+                                            <small class="text-muted">{{ moment(photo.created_at).fromNow() if photo.created_at else 'N/A' }}</small>
                                         </div>
                                     </div>
-                                    <small class="text-muted mt-2 d-block">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Changing the duty scheme may recalculate driver earnings. This action will be logged for audit.
-                                    </small>
-                                </form>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            {% else %}
+                            <!-- Fallback: Show legacy start/end photos if no database photos -->
+                            <div class="row">
+                                {% if duty.start_photo and duty.start_photo.strip() %}
+                                <div class="col-md-6">
+                                    <div class="text-center">
+                                        <p class="small text-muted mb-2">Start Photo</p>
+                                        <img src="{{ url_for('uploaded_file', filename=duty.start_photo) }}" 
+                                             class="img-fluid rounded border" style="max-height: 200px;"
+                                             onerror="this.style.display='none';">
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if duty.end_photo and duty.end_photo.strip() %}
+                                <div class="col-md-6">
+                                    <div class="text-center">
+                                        <p class="small text-muted mb-2">End Photo</p>
+                                        <img src="{{ url_for('uploaded_file', filename=duty.end_photo) }}" 
+                                             class="img-fluid rounded border" style="max-height: 200px;"
+                                             onerror="this.style.display='none';">
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Duty Scheme Selection -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning bg-opacity-10">
+                                    <h6 class="mb-0 text-warning">
+                                        <i class="fas fa-cog me-2"></i>Admin Controls - Update Duty Scheme
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="POST" action="{{ url_for('admin.update_duty_scheme', duty_id=duty.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <div class="row align-items-end">
+                                            <div class="col-md-8">
+                                                <label for="duty_scheme_{{ duty.id }}" class="form-label">
+                                                    <strong>Select New Duty Scheme:</strong>
+                                                </label>
+                                                <select class="form-select" name="duty_scheme_id" id="duty_scheme_{{ duty.id }}" required>
+                                                    <option value="">Choose Duty Scheme</option>
+                                                    {% for scheme in duty_schemes %}
+                                                    <option value="{{ scheme.id }}" {% if duty.duty_scheme_id == scheme.id %}selected{% endif %}>
+                                                        {{ scheme.name }}
+                                                        {% if scheme.minimum_guarantee %} - BMG: ₹{{ scheme.minimum_guarantee }}{% endif %}
+                                                        {% if scheme.is_default %} (Default){% endif %}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="submit" class="btn btn-warning w-100" 
+                                                        onclick="return confirm('Are you sure you want to update the duty scheme? This will affect earnings calculation.')">
+                                                    <i class="fas fa-sync-alt me-1"></i>Update Scheme
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted mt-2 d-block">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Changing the duty scheme may recalculate driver earnings. This action will be logged for audit.
+                                        </small>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
