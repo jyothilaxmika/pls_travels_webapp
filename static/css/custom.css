@@ -2,21 +2,21 @@
 
 /* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    /* Primary brand colors - Professional Corporate Theme */
-    --pls-primary: #1e3a8a;          /* Professional navy blue */
-    --pls-primary-light: #3b82f6;     /* Medium blue */
-    --pls-primary-dark: #1e40af;      /* Dark blue */
-    --pls-accent: #059669;            /* Professional green */
-    --pls-accent-light: #10b981;      /* Light green */
-    --pls-accent-dark: #047857;       /* Dark green */
+    /* Primary brand colors - Vibrant Growth Theme */
+    --pls-primary: #38ce3c;          /* Vibrant green - growth and success */
+    --pls-primary-light: #4ade80;     /* Light vibrant green */
+    --pls-primary-dark: #16a34a;      /* Dark vibrant green */
+    --pls-accent: #8e32e9;            /* Electric purple - innovation edge */
+    --pls-accent-light: #a855f7;      /* Light electric purple */
+    --pls-accent-dark: #7c3aed;       /* Dark electric purple */
     
-    /* Status colors - Professional Palette */
-    --pls-success: #059669;           /* Professional green */
-    --pls-warning: #d97706;           /* Professional amber */
-    --pls-danger: #dc2626;            /* Professional red */
-    --pls-info: #2563eb;              /* Professional blue */
+    /* Status colors - Vibrant Energy Palette */
+    --pls-success: #38ce3c;           /* Vibrant green - growth */
+    --pls-warning: #ffde73;           /* Sunglow - warmth */
+    --pls-danger: #ff4d6b;            /* Fiery rose - energy */
+    --pls-info: #8e32e9;              /* Electric purple - innovation */
     
-    /* Neutral colors - light pastel palette */
+    /* Neutral colors - modern light/dark palette */
     --pls-slate-50: #ffffff;          /* Pure white */
     --pls-slate-100: #f8fafc;         /* Very light gray */
     --pls-slate-200: #f1f5f9;         /* Light gray */
@@ -26,7 +26,7 @@
     --pls-slate-600: #64748b;         /* Medium dark gray */
     --pls-slate-700: #475569;         /* Dark gray */
     --pls-slate-800: #334155;         /* Very dark gray */
-    --pls-slate-900: #1e293b;         /* Nearly black */
+    --pls-slate-900: #181824;         /* Rich black - elegant dark theme */
     
     /* Legacy support with enhanced colors */
     --pls-secondary: #475569;         /* Professional gray */
@@ -40,13 +40,24 @@
     --pls-gray-medium: var(--pls-slate-500);
     --pls-gray-dark: var(--pls-slate-700);
     
-    /* Additional professional colors */
-    --pls-purple: #6366f1;            /* Professional purple */
-    --pls-pink: #be185d;              /* Professional pink */
-    --pls-orange: #ea580c;            /* Professional orange */
-    --pls-teal: #0f766e;              /* Professional teal */
-    --pls-lime: #65a30d;              /* Professional lime */
-    --pls-rose: #be123c;              /* Professional rose */
+    /* Surface colors for light theme */
+    --pls-surface-primary: #ffffff;   /* Main light surface */
+    --pls-surface-secondary: #f8fafc; /* Secondary light surface */
+    --pls-surface-elevated: #ffffff;  /* Elevated components */
+    
+    /* Contrast text colors for vibrant backgrounds - WCAG AA compliant */
+    --pls-warning-contrast: #111827;  /* Dark text for sunglow backgrounds */
+    --pls-success-contrast: #ffffff;  /* White text for green backgrounds (verified contrast) */
+    --pls-danger-contrast: #ffffff;   /* White text for rose backgrounds (verified contrast) */
+    --pls-info-contrast: #ffffff;     /* White text for purple backgrounds (verified contrast) */
+    
+    /* Additional vibrant colors for energy and innovation */
+    --pls-purple: #8e32e9;            /* Electric purple - innovation */
+    --pls-pink: #ff4d6b;              /* Fiery rose - energy */
+    --pls-orange: #ffde73;            /* Sunglow - warmth */
+    --pls-teal: #06b6d4;              /* Vibrant teal */
+    --pls-lime: #38ce3c;              /* Vibrant green - growth */
+    --pls-rose: #ff4d6b;              /* Fiery rose - energy */
     
     /* Typography scale */
     --pls-font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
@@ -68,10 +79,78 @@
     --pls-spacing-3xl: 4rem;
 }
 
-/* Global body styling for better visibility */
+/* Dark theme variables */
+[data-bs-theme="dark"] {
+    /* Primary colors for dark mode - vibrant on dark */
+    --pls-primary: #4ade80;          /* Brighter vibrant green for dark mode */
+    --pls-primary-light: #6ee7b7;     /* Very light green */
+    --pls-primary-dark: #38ce3c;      /* Standard vibrant green */
+    --pls-accent: #a855f7;            /* Bright electric purple for dark mode */
+    --pls-accent-light: #c084fc;      /* Light purple */
+    --pls-accent-dark: #8e32e9;       /* Standard electric purple */
+    
+    /* Status colors for dark mode */
+    --pls-success: #4ade80;           /* Bright green for dark */
+    --pls-warning: #fbbf24;           /* Bright sunglow for dark */
+    --pls-danger: #fb7185;            /* Bright fiery rose for dark */
+    --pls-info: #a855f7;              /* Bright purple for dark */
+    
+    /* Dark theme background and text */
+    --pls-slate-50: #181824;          /* Rich black background */
+    --pls-slate-100: #1f1f2e;         /* Very dark background */
+    --pls-slate-200: #2a2a3a;         /* Dark background */
+    --pls-slate-300: #3a3a4a;         /* Medium dark */
+    --pls-slate-400: #4a4a5a;         /* Medium */
+    --pls-slate-500: #6b7280;         /* Medium light */
+    --pls-slate-600: #9ca3af;         /* Light */
+    --pls-slate-700: #d1d5db;         /* Very light */
+    --pls-slate-800: #e5e7eb;         /* Nearly white */
+    --pls-slate-900: #ffffff;         /* Pure white text */
+    
+    /* Text colors for dark theme */
+    --pls-text-dark: #ffffff;         /* White text for dark theme */
+    --pls-text-light: #181824;        /* Black text on light elements */
+    --pls-text-muted: #9ca3af;        /* Light gray for muted text */
+    --pls-text-strong: #ffffff;       /* Pure white for emphasis */
+    
+    /* Surface colors for dark theme */
+    --pls-surface-primary: #181824;   /* Main dark surface */
+    --pls-surface-secondary: #1f1f2e; /* Secondary dark surface */
+    --pls-surface-elevated: #2a2a3a;  /* Elevated components */
+    
+    /* Contrast text colors for vibrant backgrounds in dark mode */
+    --pls-warning-contrast: #111827;  /* Dark text for bright sunglow in dark mode */
+    --pls-success-contrast: #ffffff;  /* White text for bright green in dark mode */
+    --pls-danger-contrast: #ffffff;   /* White text for bright rose in dark mode */
+    --pls-info-contrast: #ffffff;     /* White text for bright purple in dark mode */
+}
+
+/* Dark theme toggle button */
+#theme-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1050;
+    border-radius: 50px;
+    width: 50px;
+    height: 50px;
+    border: 2px solid var(--pls-primary);
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(56, 206, 60, 0.3);
+    transition: all 0.3s ease;
+}
+
+#theme-toggle:hover {
+    background: linear-gradient(135deg, var(--pls-accent) 0%, var(--pls-primary) 100%);
+    box-shadow: 0 6px 20px rgba(56, 206, 60, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Global body styling for vibrant theme */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--pls-slate-50);
     color: var(--pls-text-dark) !important;
     line-height: 1.6;
     font-size: 0.95rem;
@@ -159,9 +238,9 @@ table {
     font-weight: 500;
 }
 
-/* Dropdown menu fixes with enhanced contrast */
+/* Dropdown menu fixes with enhanced contrast - THEME AWARE */
 .dropdown-menu {
-    background-color: #ffffff !important;
+    background-color: var(--pls-surface-elevated) !important;
     border: 2px solid var(--pls-slate-200) !important;
     box-shadow: 0 6px 16px rgba(0,0,0,0.2) !important;
 }
@@ -188,10 +267,10 @@ table {
     font-weight: 700;
 }
 
-/* Badge fixes with maximum contrast */
+/* Badge fixes with maximum contrast - REMOVED GLOBAL WHITE TEXT */
 .badge {
     font-weight: 700;
-    color: #ffffff !important;
+    /* Removed global color: #ffffff !important to allow contextual contrast */
     text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     border: 1px solid rgba(0,0,0,0.1);
 }
@@ -206,7 +285,7 @@ table {
 
 .list-group-item {
     color: var(--pls-text-dark) !important;
-    background-color: #ffffff;
+    background-color: var(--pls-surface-primary);
     border: 1px solid var(--pls-slate-200);
     font-weight: 500;
     white-space: nowrap;
@@ -266,7 +345,7 @@ table {
 
 /* Data display containers with scroll */
 .data-container {
-    background: #ffffff;
+    background: var(--pls-surface-primary);
     border: 2px solid var(--pls-slate-200);
     border-radius: 8px;
     overflow: auto;
@@ -277,7 +356,7 @@ table {
 
 /* Enhanced table wrapper for all data visibility */
 .table-wrapper {
-    background: #ffffff;
+    background: var(--pls-surface-primary);
     border: 2px solid var(--pls-slate-200);
     border-radius: 8px;
     overflow: auto;
@@ -608,12 +687,76 @@ table {
         }
     }
 
-/* Enhanced card styling */
+/* Fix dropdown and component backgrounds for theme consistency */
+.dropdown-menu {
+    background-color: var(--pls-surface-elevated) !important;
+    border: 1px solid var(--pls-slate-300);
+    color: var(--pls-text-dark);
+}
+
+.dropdown-item {
+    color: var(--pls-text-dark) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: var(--pls-slate-200) !important;
+    color: var(--pls-text-dark) !important;
+}
+
+.list-group-item {
+    background-color: var(--pls-surface-primary) !important;
+    border-color: var(--pls-slate-200);
+    color: var(--pls-text-dark);
+}
+
+.table-wrapper,
+.data-container,
+.form-section,
+.form-section.scrollable {
+    background-color: var(--pls-surface-primary) !important;
+    color: var(--pls-text-dark);
+}
+
+/* Additional component theme consistency */
+.modal-content {
+    background-color: var(--pls-surface-primary) !important;
+    color: var(--pls-text-dark);
+    border: 1px solid var(--pls-slate-300);
+}
+
+.popover {
+    background-color: var(--pls-surface-elevated) !important;
+    border: 1px solid var(--pls-slate-300);
+}
+
+.tooltip-inner {
+    background-color: var(--pls-slate-800) !important;
+    color: var(--pls-text-light);
+}
+
+/* Table enhancements for theme */
+.table {
+    background-color: transparent;
+    color: var(--pls-text-dark);
+}
+
+.table th,
+.table td {
+    border-color: var(--pls-slate-200);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td,
+.table-striped > tbody > tr:nth-of-type(odd) > th {
+    background-color: var(--pls-surface-secondary);
+}
+
+/* Enhanced card styling with proper surface colors */
 .card {
     border: 1px solid var(--pls-slate-200);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
     transition: all 0.2s ease;
-    background: #ffffff;
+    background: var(--pls-surface-primary);
     border-radius: 8px;
     color: var(--pls-text-dark);
 }
@@ -632,10 +775,130 @@ table {
     padding: 1rem 1.5rem;
 }
 
-/* Status badges enhancement */
+/* Enhanced navigation with vibrant theme */
+.navbar {
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
+    box-shadow: 0 2px 10px rgba(56, 206, 60, 0.2);
+}
+
+.navbar .navbar-brand,
+.navbar .nav-link {
+    color: white !important;
+    font-weight: 500;
+}
+
+.navbar .nav-link:hover {
+    color: var(--pls-warning) !important;
+    text-shadow: 0 0 8px rgba(255, 222, 115, 0.5);
+}
+
+/* Button enhancements with vibrant colors */
+.btn-primary {
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-primary-dark) 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(56, 206, 60, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--pls-primary-dark) 0%, var(--pls-primary) 100%);
+    box-shadow: 0 6px 20px rgba(56, 206, 60, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--pls-danger) 0%, var(--pls-rose) 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(255, 77, 107, 0.3);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--pls-warning) 0%, var(--pls-orange) 100%);
+    border: none;
+    color: #111827 !important; /* Dark text for better contrast on sunglow */
+    box-shadow: 0 4px 12px rgba(255, 222, 115, 0.3);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, var(--pls-info) 0%, var(--pls-accent-dark) 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(142, 50, 233, 0.3);
+}
+
+/* Vibrant gradient backgrounds for engaging design */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-primary-dark) 100%) !important;
+    color: white !important;
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, var(--pls-success) 0%, var(--pls-primary-dark) 100%) !important;
+    color: white !important;
+}
+
+.bg-gradient-innovation {
+    background: linear-gradient(135deg, var(--pls-accent) 0%, var(--pls-accent-dark) 100%) !important;
+    color: white !important;
+}
+
+.bg-gradient-energy {
+    background: linear-gradient(135deg, var(--pls-danger) 0%, var(--pls-rose) 100%) !important;
+    color: white !important;
+}
+
+.bg-gradient-warmth {
+    background: linear-gradient(135deg, var(--pls-warning) 0%, var(--pls-orange) 100%) !important;
+    color: #111827 !important; /* Dark text for better contrast on sunglow/warmth gradients */
+}
+
+/* Status badges enhancement with vibrant colors - REMOVED global white text */
 .badge {
     font-weight: 500;
     padding: 0.375em 0.75em;
+    /* Removed global color: #ffffff !important to allow contextual contrast */
+}
+
+.badge.bg-success {
+    background-color: var(--pls-success) !important;
+}
+
+/* Comprehensive warning/sunglow accessibility */
+.badge.bg-warning,
+.alert-warning,
+.bg-warning,
+.list-group-item-warning,
+.table-warning,
+.btn-warning:not(:hover):not(:focus):not(:active) {
+    background-color: var(--pls-warning) !important;
+    color: var(--pls-warning-contrast) !important;
+}
+
+/* Other status color badges with proper contrast */
+.badge.bg-success,
+.alert-success,
+.bg-success,
+.list-group-item-success,
+.table-success {
+    background-color: var(--pls-success) !important;
+    color: var(--pls-success-contrast) !important;
+}
+
+.badge.bg-danger,
+.alert-danger,
+.bg-danger,
+.list-group-item-danger,
+.table-danger {
+    background-color: var(--pls-danger) !important;
+    color: var(--pls-danger-contrast) !important;
+}
+
+.badge.bg-info,
+.alert-info,
+.bg-info,
+.list-group-item-info,
+.table-info {
+    background-color: var(--pls-info) !important;
+    color: var(--pls-info-contrast) !important;
 }
 
 .badge-danger {
@@ -733,7 +996,7 @@ table {
 .form-control {
     border: 1px solid var(--pls-slate-300);
     color: var(--pls-text-dark);
-    background-color: #ffffff;
+    background-color: var(--pls-surface-primary);
     font-size: 0.95rem;
     border-radius: 6px;
 }
@@ -747,7 +1010,7 @@ table {
 .form-select {
     border: 1px solid var(--pls-slate-300);
     color: var(--pls-text-dark);
-    background-color: #ffffff;
+    background-color: var(--pls-surface-primary);
     font-size: 0.95rem;
     border-radius: 6px;
 }
@@ -1124,7 +1387,7 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .card {
-    background-color: #ffffff;
+    background-color: var(--pls-surface-primary);
     border: 1px solid var(--pls-slate-200);
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 8px;
