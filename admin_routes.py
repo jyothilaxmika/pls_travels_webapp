@@ -153,7 +153,15 @@ def dashboard():
     recent_notifications = []  # Placeholder for notification system
     
     # Calculate additional metrics for modern dashboard
-    monthly_revenue = dashboard_stats['revenue_stats'].get('current_month_total', 0) if dashboard_stats['revenue_stats'] else 0
+    # Safely handle revenue_stats - could be dict or list
+    monthly_revenue = 0
+    if dashboard_stats.get('revenue_stats'):
+        revenue_stats = dashboard_stats['revenue_stats']
+        if isinstance(revenue_stats, dict):
+            monthly_revenue = revenue_stats.get('current_month_total', 0)
+        elif isinstance(revenue_stats, list) and len(revenue_stats) > 0:
+            # If it's a list, try to get the latest entry
+            monthly_revenue = revenue_stats[0].get('total', 0) if isinstance(revenue_stats[0], dict) else 0
     pending_approvals = (
         Driver.query.filter_by(status=DriverStatus.PENDING).count() +
         Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
