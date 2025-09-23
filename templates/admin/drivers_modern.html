@@ -94,16 +94,22 @@
             <div class="table-header">
                 <h3 class="table-title">All Drivers</h3>
                 <div class="table-actions">
-                    <div class="table-search">
+                    <form method="GET" class="table-search">
                         <div class="table-search-icon">
                             <i class="fas fa-search"></i>
                         </div>
                         <input type="text" 
+                               name="q"
+                               value="{{ search_query or '' }}"
                                class="table-search-input" 
                                placeholder="Search drivers..." 
                                id="driver-search"
                                aria-label="Search drivers">
-                    </div>
+                        <input type="hidden" name="status" value="{{ status_filter or '' }}">
+                        <input type="hidden" name="branch" value="{{ branch_filter or '' }}">
+                        <input type="hidden" name="sort" value="{{ sort_by or '' }}">
+                        <input type="hidden" name="dir" value="{{ sort_dir or '' }}">
+                    </form>
                     <button class="btn btn-outline btn-sm" data-modal="filter-modal">
                         <i class="fas fa-filter"></i>
                         Filter
