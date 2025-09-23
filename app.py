@@ -116,7 +116,7 @@ def create_app():
     
     # Initialize rate limiter with Redis storage for production
     redis_url = os.environ.get('REDIS_URL')
-    if redis_url:
+    if redis_url and redis_url.startswith(('redis://', 'rediss://')):
         # Production: Use Redis for distributed rate limiting
         app.config['RATELIMIT_STORAGE_URI'] = redis_url
         limiter.init_app(app)
@@ -124,6 +124,8 @@ def create_app():
     else:
         # Development: Use in-memory storage with warning
         limiter.init_app(app)
+        if redis_url and not redis_url.startswith(('redis://', 'rediss://')):
+            app.logger.warning("REDIS_URL provided but not in Redis format. Using in-memory storage.")
         if os.environ.get('FLASK_ENV') == 'production':
             app.logger.warning("PRODUCTION WARNING: Rate limiter using in-memory storage. Set REDIS_URL for distributed rate limiting.")
         else:
@@ -348,7 +350,7 @@ def create_app():
     setup_monitoring(app)
     
     # Configure application logger to use structured logging
-    app.logger = get_logger('app')
+    # Note: Using Flask's built-in logger instead of replacing it to avoid type conflicts
     current_db_url = app.config.get("SQLALCHEMY_DATABASE_URI", database_url)
     app.logger.info("PLS Travels application starting up", extra={
         'environment': os.environ.get('FLASK_ENV', 'development'),
@@ -691,6 +693,14 @@ def create_app():
         return send_from_directory(upload_folder, filename)
 
     # SEO routes
+    @app.route('/sw.js')
+    def service_worker():
+        """Serve service worker for PWA functionality"""
+        response = send_from_directory('static', 'sw.js')
+        response.headers['Content-Type'] = 'application/javascript'
+        response.headers['Cache-Control'] = 'no-cache'  # Service workers should not be cached
+        return response
+
     @app.route('/robots.txt')
     def robots_txt():
         """Serve robots.txt for search engine crawlers"""
