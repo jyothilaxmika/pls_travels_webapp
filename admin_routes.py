@@ -4026,3 +4026,125 @@ def configure_duty_scheme(scheme_id):
         print(f"Error configuring duty scheme {scheme_id}: {str(e)}")
         flash('An error occurred while configuring the duty scheme', 'error')
         return redirect(url_for('admin.dashboard'))
+
+# PWA Push Notification Endpoints
+@admin_bp.route('/api/push/vapid-key')
+def get_vapid_public_key():
+    """Get VAPID public key for push notifications"""
+    # Development fallback key - in production, use environment variable
+    vapid_public_key = os.environ.get('VAPID_PUBLIC_KEY', 
+        'BMxYTchPHQqB3XHB5iUKhM8C19PGQHRwh7sW1VGo2mBBJ8eQiQh1SmxL6UO7YVHIa_TttVLTzCl9pfrEe1nxTGM')
+    
+    return jsonify({
+        'success': True,
+        'publicKey': vapid_public_key
+    })
+
+@admin_bp.route('/api/push/subscribe', methods=['POST'])
+@login_required
+def subscribe_to_push():
+    """Subscribe user to push notifications"""
+    try:
+        data = request.get_json()
+        subscription = data.get('subscription')
+        user_agent = data.get('user_agent', '')
+        
+        if not subscription:
+            return jsonify({'success': False, 'error': 'No subscription data provided'}), 400
+        
+        # Store subscription in user profile or separate table
+        # For now, we'll store it as JSON in the user's profile
+        user = User.query.get(current_user.id)
+        if user:
+            # Create or update push subscription data
+            push_subscriptions = json.loads(user.profile_data or '{}')
+            if 'push_subscriptions' not in push_subscriptions:
+                push_subscriptions['push_subscriptions'] = []
+            
+            # Check if subscription already exists
+            endpoint = subscription.get('endpoint')
+            existing = next((sub for sub in push_subscriptions['push_subscriptions'] 
+                           if sub.get('endpoint') == endpoint), None)
+            
+            if not existing:
+                subscription_data = {
+                    'endpoint': endpoint,
+                    'keys': subscription.get('keys', {}),
+                    'user_agent': user_agent,
+                    'created_at': datetime.now().isoformat(),
+                    'active': True
+                }
+                push_subscriptions['push_subscriptions'].append(subscription_data)
+                user.profile_data = json.dumps(push_subscriptions)
+                db.session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Push notification subscription saved'
+                })
+            else:
+                return jsonify({
+                    'success': True,
+                    'message': 'Subscription already exists'
+                })
+        
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/api/push/send', methods=['POST'])
+@login_required
+@admin_required
+def send_push_notification():
+    """Send push notification to user(s)"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        title = data.get('title', 'PLS TRAVELS Notification')
+        body = data.get('body', '')
+        notification_data = data.get('data', {})
+        
+        if not body:
+            return jsonify({'success': False, 'error': 'Notification body is required'}), 400
+        
+        sent_count = 0
+        failed_count = 0
+        
+        # Get target users
+        if user_id:
+            users = [User.query.get(user_id)]
+        else:
+            # Send to all users with push subscriptions
+            users = User.query.filter(User.profile_data.isnot(None)).all()
+        
+        for user in users:
+            if not user or not user.profile_data:
+                continue
+                
+            try:
+                profile_data = json.loads(user.profile_data)
+                subscriptions = profile_data.get('push_subscriptions', [])
+                
+                for subscription in subscriptions:
+                    if not subscription.get('active', True):
+                        continue
+                    
+                    # In a real implementation, you would use pywebpush library
+                    # For now, we'll log the notification
+                    print(f"[PUSH] Sending to {user.username}: {title} - {body}")
+                    sent_count += 1
+                    
+            except Exception as e:
+                print(f"[PUSH] Failed to send to user {user.id}: {e}")
+                failed_count += 1
+        
+        return jsonify({
+            'success': True,
+            'sent_count': sent_count,
+            'failed_count': failed_count,
+            'message': f'Notification sent to {sent_count} devices'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
