@@ -173,7 +173,7 @@ def profile():
                 request.form, 'aadhar_photo', driver.user_id, 'aadhar', use_cloud=True
             )
             if aadhar_filename:
-                driver.aadhar_document = aadhar_filename
+                driver.aadhar_document_front = aadhar_filename
             
             # Fallback to traditional file upload if no camera capture
             elif 'aadhar_photo' in request.files:
@@ -181,14 +181,14 @@ def profile():
                 if file:
                     cloud_url = process_file_upload(file, driver.user_id, 'aadhar', use_cloud=True)
                     if cloud_url:
-                        driver.aadhar_document = cloud_url
+                        driver.aadhar_document_front = cloud_url
 
             # Process License photo
             license_filename, license_metadata = process_camera_capture(
                 request.form, 'license_photo', driver.user_id, 'license', use_cloud=True
             )
             if license_filename:
-                driver.license_document = license_filename
+                driver.license_document_front = license_filename
             
             # Fallback to traditional file upload if no camera capture
             elif 'license_photo' in request.files:
@@ -196,7 +196,7 @@ def profile():
                 if file:
                     cloud_url = process_file_upload(file, driver.user_id, 'license', use_cloud=True)
                     if cloud_url:
-                        driver.license_document = cloud_url
+                        driver.license_document_front = cloud_url
 
             # Process Profile photo
             profile_filename, profile_metadata = process_camera_capture(
@@ -274,7 +274,7 @@ def profile():
                 request.form, 'aadhar_photo', driver.user_id, 'aadhar', use_cloud=True
             )
             if aadhar_filename:
-                driver.aadhar_document = aadhar_filename
+                driver.aadhar_document_front = aadhar_filename
             
             # Fallback to traditional file upload if no camera capture
             elif 'aadhar_photo' in request.files:
@@ -282,14 +282,14 @@ def profile():
                 if file:
                     cloud_url = process_file_upload(file, driver.user_id, 'aadhar', use_cloud=True)
                     if cloud_url:
-                        driver.aadhar_document = cloud_url
+                        driver.aadhar_document_front = cloud_url
 
             # Process License photo
             license_filename, license_metadata = process_camera_capture(
                 request.form, 'license_photo', driver.user_id, 'license', use_cloud=True
             )
             if license_filename:
-                driver.license_document = license_filename
+                driver.license_document_front = license_filename
             
             # Fallback to traditional file upload if no camera capture
             elif 'license_photo' in request.files:
@@ -297,7 +297,7 @@ def profile():
                 if file:
                     cloud_url = process_file_upload(file, driver.user_id, 'license', use_cloud=True)
                     if cloud_url:
-                        driver.license_document = cloud_url
+                        driver.license_document_front = cloud_url
 
             # Process Profile photo
             profile_filename, profile_metadata = process_camera_capture(
@@ -579,7 +579,7 @@ def start_duty():
             'field': 'start_odometer',
             'auto_filled_value': odometer_original_value,
             'entered_value': start_odometer,
-            'difference': abs(start_odometer - odometer_original_value),
+            'difference': abs((start_odometer or 0) - (odometer_original_value or 0)),
             'vehicle_id': vehicle.id,
             'vehicle_registration': vehicle.registration_number,
             'duty_id': duty.id,
@@ -597,7 +597,7 @@ def start_duty():
             'field': 'start_cng_level',
             'auto_filled_value': cng_original_value,
             'entered_value': start_cng_level,
-            'difference': abs(start_cng_level - cng_original_value),
+            'difference': abs((start_cng_level or 0) - (cng_original_value or 0)),
             'vehicle_id': vehicle.id,
             'vehicle_registration': vehicle.registration_number,
             'duty_id': duty.id,
@@ -775,7 +775,7 @@ def end_duty():
         end_tracking_record.cng_point = cng_point
         end_tracking_record.cng_level = end_cng_bars
         end_tracking_record.cng_cost = cng_adjustment
-        end_tracking_record.cng_quantity = abs(bar_difference) if start_cng_bars and end_cng_bars else 0.0
+        end_tracking_record.cng_quantity = abs(bar_difference) if 'bar_difference' in locals() and start_cng_bars and end_cng_bars else 0.0
         
         # Calculate distance traveled during this duty
         if end_odometer and active_duty.start_odometer:

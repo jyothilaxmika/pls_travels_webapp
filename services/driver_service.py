@@ -146,7 +146,7 @@ class DriverService:
             ).all()
             
             for duty in active_duties:
-                duty.status = DutyStatus.TERMINATED
+                duty.status = DutyStatus.CANCELLED
                 duty.actual_end = get_ist_time_naive()
                 
                 # Free up the vehicle
