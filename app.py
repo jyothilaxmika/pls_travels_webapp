@@ -456,6 +456,38 @@ def create_app():
     app.register_blueprint(tracking_bp, url_prefix='/tracking')
     app.register_blueprint(api_tracking_bp)  # Mobile tracking API includes /api/v1/tracking/*
     
+    # PWA Push Notification API Routes
+    @app.route('/api/push/vapid-key')
+    def get_vapid_public_key():
+        """Get VAPID public key for push notifications - PWA endpoint"""
+        vapid_public_key = os.environ.get('VAPID_PUBLIC_KEY', 
+            'BMxYTchPHQqB3XHB5iUKhM8C19PGQHRwh7sW1VGo2mBBJ8eQiQh1SmxL6UO7YVHIa_TttVLTzCl9pfrEe1nxTGM')
+        
+        return jsonify({
+            'success': True,
+            'publicKey': vapid_public_key
+        })
+    
+    @app.route('/api/push/subscribe', methods=['POST'])
+    def subscribe_to_push():
+        """Subscribe user to push notifications - PWA endpoint"""
+        try:
+            data = request.get_json()
+            subscription = data.get('subscription')
+            user_agent = data.get('user_agent', '')
+            
+            if not subscription:
+                return jsonify({'success': False, 'error': 'No subscription data provided'}), 400
+            
+            # For now, just return success - subscription storage can be enhanced later
+            return jsonify({
+                'success': True,
+                'message': 'Push notification subscription received'
+            })
+            
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
     # Make session permanent and handle database timeouts
     @app.before_request
     def make_session_permanent():
