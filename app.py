@@ -348,7 +348,7 @@ def create_app():
     setup_monitoring(app)
     
     # Configure application logger to use structured logging
-    app.logger = get_logger('app')
+    # app.logger = get_logger('app')  # Commented out due to Flask logger being read-only
     current_db_url = app.config.get("SQLALCHEMY_DATABASE_URI", database_url)
     app.logger.info("PLS Travels application starting up", extra={
         'environment': os.environ.get('FLASK_ENV', 'development'),
