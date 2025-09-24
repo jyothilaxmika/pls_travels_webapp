@@ -48,6 +48,42 @@ class DutyService:
             if driver.status not in [DriverStatus.ACTIVE, DriverStatus.PENDING]:
                 return False, "Driver profile is not active. Please contact admin.", None
             
+            # Document verification check with database-based admin override
+            documents_verified = driver.aadhar_verified and driver.license_verified
+            if not documents_verified:
+                # Check for valid admin override (use UTC for consistency)
+                from datetime import datetime
+                current_time = datetime.utcnow()
+                
+                admin_override_active = (
+                    driver.doc_verification_override and 
+                    driver.doc_verification_override_until and 
+                    driver.doc_verification_override_until > current_time
+                )
+                
+                missing_docs = []
+                if not driver.aadhar_verified:
+                    missing_docs.append("Aadhar")
+                if not driver.license_verified:
+                    missing_docs.append("Driving License")
+                
+                if not admin_override_active:
+                    return False, f"Document verification required. Missing verified documents: {', '.join(missing_docs)}. Please contact admin for verification or emergency override.", None
+                else:
+                    # Log that override is being used
+                    self.audit_service.log_action(
+                        action='duty_start_with_doc_override',
+                        entity_type='driver',
+                        entity_id=driver_id,
+                        details={
+                            'missing_documents': missing_docs,
+                            'override_reason': driver.doc_verification_override_reason,
+                            'override_valid_until': driver.doc_verification_override_until.isoformat(),
+                            'override_authorized_by': driver.doc_verification_override_by
+                        },
+                        user_id=driver.user_id
+                    )
+            
             # Check for existing active duty
             active_duty = Duty.query.filter(
                 Duty.driver_id == driver_id,
