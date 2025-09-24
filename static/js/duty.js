@@ -164,6 +164,10 @@ function addCameraButton(input) {
     input.parentNode.appendChild(cameraBtn);
 }
 
+// Constants for validation
+const ODOMETER_PHOTO_MAX_AGE_MINUTES = 2;
+const ODOMETER_PHOTO_MAX_AGE_MS = ODOMETER_PHOTO_MAX_AGE_MINUTES * 60 * 1000;
+
 // GPS Location and Timestamp Capture
 function captureLocationAndTimestamp(file, input) {
     const timestamp = new Date().toISOString();
@@ -176,10 +180,14 @@ function captureLocationAndTimestamp(file, input) {
         const photoTimestamp = file.lastModified || Date.now();
         const now = Date.now();
         const timeDiff = now - photoTimestamp;
-        const maxAge = 2 * 60 * 1000; // 2 minutes in milliseconds
         
-        if (timeDiff > maxAge) {
-            showAlert('⚠️ Please take a fresh photo of the odometer reading. Old photos are not accepted for verification.', 'warning');
+        if (timeDiff > ODOMETER_PHOTO_MAX_AGE_MS) {
+            const isStartPhoto = input.id.includes('start');
+            if (isStartPhoto) {
+                showAlert('Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.', 'warning');
+            } else {
+                showAlert('Please take a fresh photo of the odometer reading. Old photos are not accepted for verification.', 'warning');
+            }
             input.value = '';
             return;
         }
@@ -465,7 +473,7 @@ function validateStartDuty(form) {
             const currentTime = new Date();
             const timeDiff = (currentTime - photoTime) / (1000 * 60); // difference in minutes
             
-            if (timeDiff > 2) {
+            if (timeDiff > ODOMETER_PHOTO_MAX_AGE_MINUTES) {
                 setFieldError(document.querySelector('.capture-photo-btn'), 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
                 isValid = false;
             }
@@ -535,7 +543,7 @@ function validateOdometerPhotos(form) {
                 const now = new Date();
                 const timeDiff = (now - captureTime) / (1000 * 60); // minutes
                 
-                if (timeDiff > 2) {
+                if (timeDiff > ODOMETER_PHOTO_MAX_AGE_MINUTES) {
                     showPhotoError('start_odometer_photo_container', 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
                     isValid = false;
                 }
