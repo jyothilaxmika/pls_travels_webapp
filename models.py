@@ -526,9 +526,18 @@ class DutyScheme(db.Model):
     effective_until = db.Column(db.Date)
     applicable_days = db.Column(db.String(20), default='1,2,3,4,5,6,7')  # Comma-separated day numbers
     
-    # Status
+    # Status and approval workflow
     is_active = db.Column(db.Boolean, default=True, index=True)
     is_default = db.Column(db.Boolean, default=False)
+    is_template = db.Column(db.Boolean, default=False, index=True)  # Is this a template
+    
+    # Secondary approval workflow
+    approval_status = db.Column(db.String(20), default='approved', index=True)  # pending, approved, rejected
+    requires_secondary_approval = db.Column(db.Boolean, default=False)  # Admin override needs approval
+    pending_changes = db.Column(db.Text)  # JSON of pending changes for approval
+    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))  # Who approved this scheme
+    approved_at = db.Column(db.DateTime)  # When it was approved
+    rejection_reason = db.Column(db.Text)  # Why it was rejected
     
     created_at = db.Column(db.DateTime, default=get_ist_time_naive)
     updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
@@ -554,6 +563,8 @@ class DutyScheme(db.Model):
     
     # Relationships
     duties = db.relationship('Duty', backref='duty_scheme', lazy=True)
+    creator = db.relationship('User', foreign_keys=[created_by], backref='created_schemes')
+    approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_schemes')
     
     def needs_approval(self, duty_data):
         """Check if a duty with given data needs approval based on this scheme's settings"""
@@ -598,6 +609,61 @@ class DutyScheme(db.Model):
     def set_config(self, config_dict):
         """Alias for set_configuration for compatibility"""
         self.set_configuration(config_dict)
+    
+    def get_pending_changes(self):
+        """Get pending changes as dictionary"""
+        return json.loads(self.pending_changes) if self.pending_changes else {}
+    
+    def set_pending_changes(self, changes_dict):
+        """Set pending changes as JSON"""
+        self.pending_changes = json.dumps(changes_dict)
+    
+    def can_be_used(self):
+        """Check if scheme can be used for new duties"""
+        return self.is_active and self.approval_status == 'approved' and not self.is_template
+    
+    def needs_secondary_approval(self):
+        """Check if this scheme needs secondary approval"""
+        return self.requires_secondary_approval or self.approval_status == 'pending'
+    
+    def approve_scheme(self, approver_id):
+        """Approve this scheme with dual-control enforcement"""
+        # Check for dual-control violation
+        if approver_id == self.created_by:
+            raise ValueError("Self-approval not allowed: approver cannot approve their own scheme")
+        
+        # Safe field allowlist for pending changes
+        SAFE_FIELDS = {
+            'name', 'description', 'scheme_type', 'minimum_guarantee', 'maximum_earning_cap',
+            'effective_from', 'effective_until', 'applicable_days', 'requires_approval',
+            'auto_approve_max_revenue', 'auto_approve_max_trips', 'auto_approve_max_hours',
+            'require_approval_weekend', 'require_approval_night_shift', 'require_approval_on_anomaly',
+            'approval_notes', 'approval_priority', 'configuration', 'calculation_formula'
+        }
+        
+        self.approval_status = 'approved'
+        self.approved_by = approver_id
+        self.approved_at = get_ist_time_naive()
+        self.rejection_reason = None
+        
+        # Apply pending changes if any (with safety restrictions)
+        if self.pending_changes:
+            changes = self.get_pending_changes()
+            applied_changes = {}
+            for field, value in changes.items():
+                if field in SAFE_FIELDS and hasattr(self, field):
+                    setattr(self, field, value)
+                    applied_changes[field] = value
+            self.pending_changes = None
+            return applied_changes
+        return {}
+    
+    def reject_scheme(self, reason):
+        """Reject this scheme"""
+        self.approval_status = 'rejected'
+        self.rejection_reason = reason
+        self.approved_by = None
+        self.approved_at = None
     
     @hybrid_property
     def bmg_amount(self):
