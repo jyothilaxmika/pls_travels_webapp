@@ -997,17 +997,23 @@ function toggleVerification(type, driverId, currentStatus) {
                 'X-CSRFToken': getCSRFToken()
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 location.reload();
             } else {
-                alert('Error updating verification status: ' + data.message);
+                const errorMsg = data && data.message ? data.message : 'Unknown error occurred';
+                alert('Error updating verification status: ' + errorMsg);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error updating verification status');
+            alert('Error updating verification status: ' + error.message);
         });
     }
 }
