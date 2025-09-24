@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from functools import wraps
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from timezone_utils import get_ist_time_naive
 from sqlalchemy import func, desc
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
@@ -524,20 +524,57 @@ def start_duty():
     duty.start_cng = start_cng_level  # Store the starting CNG level (preserving None for unknown)
     duty.status = DutyStatus.ACTIVE
 
+    # First attempt to capture photo, then validate presence
+    photo_validation_passed = False
+
     # Handle start photo camera capture
     start_photo_filename, start_photo_metadata = process_camera_capture(
-        request.form, 'start_photo', driver.id, 'duty_start'
+        request.form, 'start_odometer_photo', driver.id, 'duty_start_odometer'
     )
     if start_photo_filename:
         duty.start_photo = start_photo_filename
+        photo_validation_passed = True
     
     # Fallback to traditional file upload if no camera capture
-    elif 'start_photo' in request.files:
-        file = request.files['start_photo']
+    elif 'start_odometer_photo' in request.files:
+        file = request.files['start_odometer_photo']
         if file and allowed_file(file.filename):
-            filename = secure_filename(f"duty_start_{duty.driver_id}_{get_ist_time_naive().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
-            file.save(os.path.join('uploads', filename))
+            filename = secure_filename(f"duty_start_odometer_{duty.driver_id}_{get_ist_time_naive().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+            filepath = os.path.join('uploads', filename)
+            file.save(filepath)
             duty.start_photo = filename
+            photo_validation_passed = True
+    
+    # Validate photo presence - MANDATORY for odometer verification
+    if not photo_validation_passed or not duty.start_photo:
+        flash('Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.', 'error')
+        return redirect(url_for('driver.duty'))
+    
+    # Additional server-side validation: verify photo file exists
+    if duty.start_photo:
+        photo_path = os.path.join('uploads', duty.start_photo)
+        if not os.path.exists(photo_path):
+            flash('Photo upload failed. Please capture the odometer photo again.', 'error')
+            return redirect(url_for('driver.duty'))
+    
+    # Validate photo timestamp if provided (optional but if present, must be recent)
+    start_photo_timestamp = request.form.get('start_photo_timestamp')
+    if start_photo_timestamp:
+        try:
+            photo_time = datetime.fromisoformat(start_photo_timestamp.replace('Z', '+00:00'))
+            now = datetime.now(timezone.utc)
+            time_diff_seconds = (now - photo_time).total_seconds()
+            
+            # Reject future timestamps and very old ones
+            if time_diff_seconds < 0:
+                flash('Invalid photo timestamp detected. Please capture a fresh photo.', 'error')
+                return redirect(url_for('driver.duty'))
+            elif time_diff_seconds > 300:  # 5 minutes
+                flash('Photo is too old. Please capture a fresh odometer photo.', 'error')
+                return redirect(url_for('driver.duty'))
+        except (ValueError, AttributeError):
+            # Invalid timestamp format, but photo is still present so we can continue
+            pass
 
     # Location data removed per user request
     duty.start_location_lat = None
@@ -661,6 +698,9 @@ def end_duty():
         end_odometer = request.form.get('end_odometer', type=float)
         end_cng = request.form.get('end_cng', type=float)
         
+        # Initialize photo validation flag
+        end_photo_validation_passed = False
+        
         # Financial settlement data from driver form (audit fields removed)
         cash_collected_1 = request.form.get('cash_collected_1', type=float) or 0.0
         cash_collected_2 = request.form.get('cash_collected_2', type=float) or 0.0
@@ -709,20 +749,54 @@ def end_duty():
         if end_odometer and active_duty.start_odometer:
             active_duty.total_distance = end_odometer - active_duty.start_odometer
 
-        # Handle end photo camera capture
+        # Handle end odometer photo camera capture
         end_photo_filename, end_photo_metadata = process_camera_capture(
-            request.form, 'end_photo', driver.id, 'duty_end'
+            request.form, 'end_odometer_photo', driver.id, 'duty_end_odometer'
         )
         if end_photo_filename:
             active_duty.end_photo = end_photo_filename
+            end_photo_validation_passed = True
         
         # Fallback to traditional file upload if no camera capture
-        elif 'end_photo' in request.files:
-            file = request.files['end_photo']
+        elif 'end_odometer_photo' in request.files:
+            file = request.files['end_odometer_photo']
             if file and allowed_file(file.filename):
-                filename = secure_filename(f"duty_end_{driver.id}_{get_ist_time_naive().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
-                file.save(os.path.join('uploads', filename))
+                filename = secure_filename(f"duty_end_odometer_{driver.id}_{get_ist_time_naive().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+                filepath = os.path.join('uploads', filename)
+                file.save(filepath)
                 active_duty.end_photo = filename
+                end_photo_validation_passed = True
+        
+        # Validate photo presence - MANDATORY for odometer verification
+        if not end_photo_validation_passed or not active_duty.end_photo:
+            flash('End odometer photo is mandatory. Please capture a clear photo of the final odometer reading.', 'error')
+            return redirect(url_for('driver.duty'))
+        
+        # Additional server-side validation: verify photo file exists
+        if active_duty.end_photo:
+            photo_path = os.path.join('uploads', active_duty.end_photo)
+            if not os.path.exists(photo_path):
+                flash('Photo upload failed. Please capture the odometer photo again.', 'error')
+                return redirect(url_for('driver.duty'))
+        
+        # Validate photo timestamp if provided (optional but if present, must be recent)
+        end_photo_timestamp = request.form.get('end_photo_timestamp')
+        if end_photo_timestamp:
+            try:
+                photo_time = datetime.fromisoformat(end_photo_timestamp.replace('Z', '+00:00'))
+                now = datetime.now(timezone.utc)
+                time_diff_seconds = (now - photo_time).total_seconds()
+                
+                # Reject future timestamps and very old ones
+                if time_diff_seconds < 0:
+                    flash('Invalid photo timestamp detected. Please capture a fresh photo.', 'error')
+                    return redirect(url_for('driver.duty'))
+                elif time_diff_seconds > 300:  # 5 minutes
+                    flash('Photo is too old. Please capture a fresh odometer photo.', 'error')
+                    return redirect(url_for('driver.duty'))
+            except (ValueError, AttributeError):
+                # Invalid timestamp format, but photo is still present so we can continue
+                pass
 
         # Location data removed per user request
         active_duty.end_location_lat = None
