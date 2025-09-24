@@ -541,7 +541,7 @@
                         <tbody>
                             {% for duty in recent_duties %}
                             <tr>
-                                <td>{{ duty.start_time.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ duty.start_time.strftime('%Y-%m-%d') if duty.start_time else 'N/A' }}</td>
                                 <td>{{ duty.vehicle.registration_number if duty.vehicle else 'N/A' }}</td>
                                 <td>
                                     {% if duty.end_time %}
