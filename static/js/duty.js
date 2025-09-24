@@ -8,7 +8,7 @@ function initializeDutyManagement() {
     setupPhotoCapture();
     setupFormValidation();
     setupDurationTracking();
-    setupEarningsCalculation();
+    setupRevenueCalculation();  // Use the new revenue calculation instead of earnings
     setupOfflineSupport();
 }
 
@@ -384,7 +384,7 @@ function validateFileField(field) {
 function validateStartDuty(form) {
     const vehicleSelect = form.querySelector('#vehicle_id');
     const odometerInput = form.querySelector('#start_odometer');
-    const photoInput = form.querySelector('#start_photo');
+    const photoInput = form.querySelector('#start_odometer_photo');
     
     let isValid = true;
     
@@ -400,10 +400,23 @@ function validateStartDuty(form) {
         isValid = false;
     }
     
-    // Photo requirement
-    if (!photoInput.files.length) {
-        setFieldError(photoInput, 'Please take a start duty photo');
+    // Mandatory odometer photo with timestamp validation
+    if (!photoInput.value) {
+        setFieldError(document.querySelector('.capture-photo-btn'), 'Odometer photo is required. Please capture a clear photo of the odometer reading.');
         isValid = false;
+    } else {
+        // Check if photo was taken recently (within last 10 minutes)
+        const photoTimestamp = photoInput.getAttribute('data-timestamp');
+        if (photoTimestamp) {
+            const photoTime = new Date(parseInt(photoTimestamp));
+            const currentTime = new Date();
+            const timeDiff = (currentTime - photoTime) / (1000 * 60); // difference in minutes
+            
+            if (timeDiff > 10) {
+                setFieldError(document.querySelector('.capture-photo-btn'), 'Photo is too old. Please take a fresh photo of the current odometer reading.');
+                isValid = false;
+            }
+        }
     }
     
     return isValid;
@@ -472,18 +485,88 @@ function updateDurationDisplay() {
     
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+}
+
+// Real-time revenue calculation for simplified revenue form
+function setupRevenueCalculation() {
+    const platformCash = document.getElementById('platform_cash');
+    const platformDigital = document.getElementById('platform_digital');
+    const directCash = document.getElementById('direct_cash');
+    const directDigital = document.getElementById('direct_digital');
     
-    durationElement.textContent = `${hours}h ${minutes}m`;
-    
-    // Change color based on duration
-    if (hours >= 12) {
-        durationElement.className = 'text-danger fw-bold';
-    } else if (hours >= 8) {
-        durationElement.className = 'text-warning fw-bold';
-    } else {
-        durationElement.className = 'text-success';
+    if (platformCash && platformDigital && directCash && directDigital) {
+        [platformCash, platformDigital, directCash, directDigital].forEach(input => {
+            input.addEventListener('input', updateRevenueTotals);
+        });
     }
 }
+
+function updateRevenueTotals() {
+    const platformCash = parseFloat(document.getElementById('platform_cash')?.value || 0);
+    const platformDigital = parseFloat(document.getElementById('platform_digital')?.value || 0);
+    const directCash = parseFloat(document.getElementById('direct_cash')?.value || 0);
+    const directDigital = parseFloat(document.getElementById('direct_digital')?.value || 0);
+    
+    const platformTotal = platformCash + platformDigital;
+    const directTotal = directCash + directDigital;
+    const grandTotal = platformTotal + directTotal;
+    
+    // Update display elements
+    const platformTotalElement = document.getElementById('platform_total');
+    const directTotalElement = document.getElementById('direct_total');
+    const grandTotalElement = document.getElementById('grand_total');
+    
+    if (platformTotalElement) platformTotalElement.textContent = platformTotal.toFixed(2);
+    if (directTotalElement) directTotalElement.textContent = directTotal.toFixed(2);
+    if (grandTotalElement) grandTotalElement.textContent = grandTotal.toFixed(2);
+    
+    // Basic anomaly detection
+    performRevenueAnomalyCheck(grandTotal, platformTotal, directTotal);
+}
+
+function performRevenueAnomalyCheck(grandTotal, platformTotal, directTotal) {
+    const warningContainer = document.getElementById('revenue_warning');
+    let warnings = [];
+    
+    // Remove existing warnings
+    if (warningContainer) {
+        warningContainer.remove();
+    }
+    
+    // Check for unusual patterns
+    if (grandTotal > 5000) {
+        warnings.push('⚠️ High revenue detected. Please verify all amounts.');
+    }
+    
+    if (directTotal > platformTotal * 2 && platformTotal > 0) {
+        warnings.push('⚠️ Direct revenue significantly higher than platform revenue. Please verify.');
+    }
+    
+    if (grandTotal > 0 && platformTotal === 0 && directTotal === 0) {
+        warnings.push('⚠️ Total revenue calculated but no individual amounts entered.');
+    }
+    
+    // Show warnings if any
+    if (warnings.length > 0) {
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'revenue_warning';
+        alertDiv.className = 'alert alert-warning mt-2';
+        alertDiv.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Revenue Check:</strong><br>
+            ${warnings.join('<br>')}
+        `;
+        
+        const revenueCard = document.querySelector('.card.border-primary');
+        if (revenueCard) {
+            revenueCard.appendChild(alertDiv);
+        }
+}
+
+// Initialize revenue calculation on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setupRevenueCalculation();
+});
 
 // Real-time earnings calculation
 function setupEarningsCalculation() {

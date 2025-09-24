@@ -251,6 +251,12 @@ class Driver(db.Model):
     license_verified = db.Column(db.Boolean, default=False)
     license_verified_at = db.Column(db.DateTime)
     
+    # Document verification override system
+    doc_verification_override = db.Column(db.Boolean, default=False)
+    doc_verification_override_until = db.Column(db.DateTime)
+    doc_verification_override_reason = db.Column(db.Text)
+    doc_verification_override_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
     profile_photo = db.Column(db.String(255))
     
     # Bank Details with encryption consideration

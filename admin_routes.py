@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
@@ -3628,6 +3628,54 @@ def reject_duty(duty_id):
     
     flash(f'Duty rejected for {duty.driver.full_name if duty.driver else "Unknown"}. Reason: {rejection_reason}', 'warning')
     return redirect(url_for('admin.pending_duties'))
+
+@admin_bp.route('/drivers/<int:driver_id>/document-override', methods=['POST'])
+@login_required
+@admin_required
+def toggle_document_override(driver_id):
+    """Enable/disable emergency override for document verification for specific driver"""
+    driver = Driver.query.get_or_404(driver_id)
+    action = request.form.get('action')  # 'enable' or 'disable'
+    
+    if action == 'enable':
+        from datetime import datetime, timedelta
+        override_hours = int(request.form.get('override_hours', 24))  # Default 24 hours
+        reason = request.form.get('reason', 'Emergency override for duty start')
+        
+        # Enable override with expiry
+        driver.doc_verification_override = True
+        driver.doc_verification_override_until = datetime.utcnow() + timedelta(hours=override_hours)
+        driver.doc_verification_override_reason = reason
+        driver.doc_verification_override_by = current_user.id
+        
+        db.session.commit()
+        
+        log_audit('enable_driver_document_override', 'driver', driver_id, {
+            'driver_name': driver.full_name,
+            'admin_user': current_user.username,
+            'reason': reason,
+            'valid_until': driver.doc_verification_override_until.isoformat(),
+            'override_hours': override_hours
+        })
+        
+        flash(f'Document verification override enabled for {driver.full_name} for {override_hours} hours. Reason: {reason}', 'warning')
+    else:
+        # Disable override
+        driver.doc_verification_override = False
+        driver.doc_verification_override_until = None
+        driver.doc_verification_override_reason = None
+        driver.doc_verification_override_by = None
+        
+        db.session.commit()
+        
+        log_audit('disable_driver_document_override', 'driver', driver_id, {
+            'driver_name': driver.full_name,
+            'admin_user': current_user.username
+        })
+        
+        flash(f'Document verification override disabled for {driver.full_name}. Normal verification rules apply.', 'info')
+    
+    return redirect(request.referrer or url_for('admin.driver_details', driver_id=driver_id))
 
 @admin_bp.route('/duties/<int:duty_id>/update-scheme', methods=['POST'])
 @login_required
