@@ -444,6 +444,10 @@ def delete_driver_document(driver_id, document_type):
 @admin_required
 def verify_driver_document(driver_id, document_type):
     """Mark a driver's document as verified"""
+    # Validate document type
+    if document_type not in ['aadhar', 'license']:
+        return jsonify({'success': False, 'message': 'Invalid document type'}), 400
+    
     driver = Driver.query.get_or_404(driver_id)
     
     if document_type == 'aadhar':
@@ -460,13 +464,17 @@ def verify_driver_document(driver_id, document_type):
         return jsonify({'success': True, 'message': 'Document verified successfully'})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
 
 @admin_bp.route('/drivers/<int:driver_id>/documents/<document_type>/unverify', methods=['POST'])
 @login_required
 @admin_required
 def unverify_driver_document(driver_id, document_type):
     """Mark a driver's document as unverified"""
+    # Validate document type
+    if document_type not in ['aadhar', 'license']:
+        return jsonify({'success': False, 'message': 'Invalid document type'}), 400
+    
     driver = Driver.query.get_or_404(driver_id)
     
     if document_type == 'aadhar':
@@ -483,7 +491,7 @@ def unverify_driver_document(driver_id, document_type):
         return jsonify({'success': True, 'message': 'Document marked as unverified'})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'}), 500
 
 # Financial Transaction Management Routes
 @admin_bp.route('/transactions/add', methods=['POST'])
