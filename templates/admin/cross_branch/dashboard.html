@@ -1,0 +1,515 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Cross-Branch Vehicle Assignments{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 text-gray-800 mb-0">Cross-Branch Vehicle Assignments</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Cross-Branch Assignments</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{{ url_for('admin_cross_branch.create_assignment') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Cross-Branch Assignment
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Cross-Branch Assignments
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_cross_branch }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Approval
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending_approval }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Assignments
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.active_assignments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Expiring Soon
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.expiring_soon }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pending Assignments -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Pending Approval</h6>
+                    <a href="{{ url_for('admin_cross_branch.list_assignments', status='pending_approval') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if pending_assignments %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Driver</th>
+                                        <th>Vehicle</th>
+                                        <th>Branches</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in pending_assignments %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ assignment.driver.full_name }}</strong><br>
+                                            <small class="text-muted">{{ assignment.driver.branch.name }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>{{ assignment.vehicle.registration_number }}</strong><br>
+                                            <small class="text-muted">{{ assignment.vehicle.branch.name }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-warning">
+                                                {{ assignment.driver.branch.name }} → {{ assignment.vehicle.branch.name }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-success btn-sm" onclick="approveAssignment({{ assignment.id }})" title="Approve">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="rejectAssignment({{ assignment.id }})" title="Reject">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No pending cross-branch assignments.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Assignments -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Active Assignments</h6>
+                    <a href="{{ url_for('admin_cross_branch.list_assignments', status='active') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if active_assignments %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Driver</th>
+                                        <th>Vehicle</th>
+                                        <th>Since</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in active_assignments %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ assignment.driver.full_name }}</strong><br>
+                                            <small class="text-muted">{{ assignment.driver.branch.name }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>{{ assignment.vehicle.registration_number }}</strong><br>
+                                            <small class="text-muted">{{ assignment.vehicle.branch.name }}</small>
+                                        </td>
+                                        <td>
+                                            {{ moment(assignment.start_date).format('MMM DD, YYYY') }}
+                                            {% if assignment.cross_branch_expires_at %}
+                                                <br><small class="text-warning">Expires: {{ moment(assignment.cross_branch_expires_at).format('MMM DD, YYYY') }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-info btn-sm" onclick="extendAssignment({{ assignment.id }})" title="Extend">
+                                                    <i class="fas fa-calendar-plus"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="endAssignment({{ assignment.id }})" title="End">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No active cross-branch assignments.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expiring Assignments -->
+    {% if expiring_assignments %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-exclamation-triangle text-warning"></i> 
+                        Assignments Expiring Soon
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Driver</th>
+                                    <th>Vehicle</th>
+                                    <th>Branches</th>
+                                    <th>Expires</th>
+                                    <th>Days Left</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in expiring_assignments %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ assignment.driver.full_name }}</strong><br>
+                                        <small class="text-muted">{{ assignment.driver.branch.name }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ assignment.vehicle.registration_number }}</strong><br>
+                                        <small class="text-muted">{{ assignment.vehicle.branch.name }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-warning">
+                                            {{ assignment.driver.branch.name }} → {{ assignment.vehicle.branch.name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ moment(assignment.cross_branch_expires_at).format('MMM DD, YYYY') }}</td>
+                                    <td>
+                                        {% set days_left = (assignment.cross_branch_expires_at - moment().datetime).days %}
+                                        <span class="badge {% if days_left <= 2 %}badge-danger{% elif days_left <= 5 %}badge-warning{% else %}badge-info{% endif %}">
+                                            {{ days_left }} days
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-info btn-sm" onclick="extendAssignment({{ assignment.id }})" title="Extend">
+                                                <i class="fas fa-calendar-plus"></i> Extend
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="endAssignment({{ assignment.id }})" title="End">
+                                                <i class="fas fa-stop"></i> End
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Approve Cross-Branch Assignment</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to approve this cross-branch vehicle assignment?</p>
+                <div id="approvalDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmApproval">Approve Assignment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectionModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reject Cross-Branch Assignment</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rejectionReason">Reason for rejection:</label>
+                    <textarea class="form-control" id="rejectionReason" rows="3" placeholder="Enter reason for rejecting this assignment..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmRejection">Reject Assignment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Extension Modal -->
+<div class="modal fade" id="extensionModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Extend Cross-Branch Assignment</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newExpiryDate">New expiry date:</label>
+                    <input type="date" class="form-control" id="newExpiryDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="extensionReason">Reason for extension:</label>
+                    <textarea class="form-control" id="extensionReason" rows="3" placeholder="Enter reason for extending this assignment..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info" id="confirmExtension">Extend Assignment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- End Assignment Modal -->
+<div class="modal fade" id="endModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">End Cross-Branch Assignment</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="endReason">Reason for ending:</label>
+                    <textarea class="form-control" id="endReason" rows="3" placeholder="Enter reason for ending this assignment..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmEnd">End Assignment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentAssignmentId = null;
+
+function approveAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    $('#approvalModal').modal('show');
+}
+
+function rejectAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    $('#rejectionModal').modal('show');
+}
+
+function extendAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    // Set minimum date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('newExpiryDate').min = tomorrow.toISOString().split('T')[0];
+    $('#extensionModal').modal('show');
+}
+
+function endAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    $('#endModal').modal('show');
+}
+
+// Approval confirmation
+document.getElementById('confirmApproval').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const formData = new FormData();
+    
+    fetch(`{{ url_for('admin_cross_branch.approve_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+
+// Rejection confirmation
+document.getElementById('confirmRejection').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const reason = document.getElementById('rejectionReason').value;
+    const formData = new FormData();
+    formData.append('rejection_reason', reason);
+    
+    fetch(`{{ url_for('admin_cross_branch.reject_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+
+// Extension confirmation
+document.getElementById('confirmExtension').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const newExpiry = document.getElementById('newExpiryDate').value;
+    const reason = document.getElementById('extensionReason').value;
+    
+    if (!newExpiry) {
+        alert('Please select a new expiry date');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('new_expiry', newExpiry);
+    formData.append('extension_reason', reason);
+    
+    fetch(`{{ url_for('admin_cross_branch.extend_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+
+// End assignment confirmation
+document.getElementById('confirmEnd').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const reason = document.getElementById('endReason').value;
+    const formData = new FormData();
+    formData.append('end_reason', reason);
+    
+    fetch(`{{ url_for('admin_cross_branch.end_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+</script>
+{% endblock %}

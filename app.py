@@ -443,6 +443,7 @@ def create_app():
     from vehicle_tracking_routes import tracking_bp
     from api_tracking_routes import api_tracking_bp
     from admin_reminder_routes import admin_reminder_bp
+    from admin_cross_branch_routes import admin_cross_branch_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(otp_bp, url_prefix='/otp')
@@ -457,6 +458,7 @@ def create_app():
     app.register_blueprint(tracking_bp, url_prefix='/tracking')
     app.register_blueprint(api_tracking_bp)  # Mobile tracking API includes /api/v1/tracking/*
     app.register_blueprint(admin_reminder_bp)  # Admin reminder management routes
+    app.register_blueprint(admin_cross_branch_bp)  # Admin cross-branch vehicle assignment routes
     
     # PWA Push Notification API Routes
     @app.route('/api/push/vapid-key')
