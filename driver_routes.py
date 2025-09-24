@@ -703,42 +703,49 @@ def end_duty():
         end_photo_validation_passed = False
         server_capture_time = get_ist_time_naive()  # Record server time for validation
         
-        # Financial settlement data from driver form (audit fields removed)
-        cash_collected_1 = request.form.get('cash_collected_1', type=float) or 0.0
-        cash_collected_2 = request.form.get('cash_collected_2', type=float) or 0.0
-        operator_amount_1 = request.form.get('operator_amount_1', type=float) or 0.0
-        operator_amount_2 = request.form.get('operator_amount_2', type=float) or 0.0
+        # Simplified Platform vs Direct Revenue Collection
+        platform_cash = request.form.get('cash_collected_1', type=float) or 0.0      # Platform cash from passengers
+        platform_digital = request.form.get('operator_amount_1', type=float) or 0.0  # Platform digital payments (UPI, cards)
+        direct_cash = request.form.get('cash_collected_2', type=float) or 0.0         # Direct cash from bookings
+        direct_digital = request.form.get('operator_amount_2', type=float) or 0.0     # Direct QR/digital payments
         
-        # Admin audit fields - will be filled during admin approval process
-        out_cash = 0.0          # To be set during admin audit
-        pass_deduction = 0.0    # To be set during admin audit  
-        out_operator = 0.0      # To be set during admin audit
+        # Calculate category totals
+        platform_total = platform_cash + platform_digital
+        direct_total = direct_cash + direct_digital
+        grand_total = platform_total + direct_total
         
-        # Store financial data for Final Settlement Calculator
-        active_duty.cash_collection = cash_collected_1 + cash_collected_2  # Total cash collections (out_cash added during audit)
-        active_duty.qr_payment = 0.0       # Not used in scheme 1
-        active_duty.digital_payments = 0.0  # Not used in scheme 1
-        active_duty.operator_out = 0.0  # Out operator amount - to be set during admin audit
-        active_duty.toll_expense = 0.0      # To be set during audit
-        active_duty.fuel_expense = 0.0      # To be set during audit
-        active_duty.other_expenses = 0.0    # To be set during audit
-        active_duty.maintenance_expense = 0.0  # To be set during audit
-        active_duty.company_pay = 0.0       # To be set during audit
-        active_duty.advance_deduction = 0.0  # To be set during audit
-        active_duty.fuel_deduction = 0.0  # Pass deduction - to be set during admin audit
-        active_duty.penalty_deduction = 0.0  # To be set during audit
-        active_duty.total_trips = 0         # To be set during audit
+        # Store simplified revenue structure in duty fields with correct semantics
+        # Primary revenue totals for settlement calculations
+        active_duty.gross_revenue = grand_total                         # Total revenue across all sources (standard field)
+        active_duty.cash_collection = platform_cash + direct_cash       # Total cash across both categories
+        active_duty.digital_payments = platform_digital + direct_digital # Total digital across both categories
+        active_duty.qr_payment = direct_digital                         # Direct digital payments specifically
         
-        # Store additional financial data in appropriate fields
-        # Map operator amounts to revenue fields for Final Settlement Calculator
-        active_duty.gross_revenue = operator_amount_1
-        active_duty.net_revenue = operator_amount_2
+        # Store category breakdown in available fields for reporting
+        # PLATFORM vs DIRECT BREAKDOWN PRESERVATION (using available schema fields):
+        active_duty.card_payments = platform_digital                    # Stores: Platform digital payments
+        active_duty.wallet_payments = direct_cash                       # Stores: Direct cash payments  
         
-        # Store individual cash amounts in available fields for detailed tracking
-        # Since model doesn't have cash_collected_1/2 fields, store breakdown in digital_payments and card_payments
-        active_duty.digital_payments = cash_collected_1  # Repurpose for cash_collected_1
-        active_duty.card_payments = cash_collected_2     # Repurpose for cash_collected_2
-        active_duty.wallet_payments = 0.0  # Out cash - to be set during admin audit
+        # BREAKDOWN RECONSTRUCTION FORMULAS for reporting/admin views:
+        # platform_cash = cash_collection - wallet_payments              # Platform cash component
+        # platform_digital = card_payments                               # Platform digital component  
+        # platform_total = platform_cash + platform_digital             # Total platform revenue
+        # direct_cash = wallet_payments                                  # Direct cash component
+        # direct_digital = qr_payment                                    # Direct digital component
+        # direct_total = direct_cash + direct_digital                    # Total direct revenue
+        # VERIFICATION: platform_total + direct_total = gross_revenue    # Must equal grand total
+        
+        # Reinstate admin audit fields - will be filled during admin approval process
+        active_duty.operator_out = 0.0        # Out operator amount - to be set during admin audit
+        active_duty.toll_expense = 0.0        # To be set during audit
+        active_duty.fuel_expense = 0.0        # To be set during audit
+        active_duty.other_expenses = 0.0      # To be set during audit
+        active_duty.maintenance_expense = 0.0 # To be set during audit
+        active_duty.company_pay = 0.0         # To be set during audit
+        active_duty.advance_deduction = 0.0   # To be set during audit
+        active_duty.fuel_deduction = 0.0      # Pass deduction - to be set during admin audit
+        active_duty.penalty_deduction = 0.0   # To be set during audit
+        active_duty.total_trips = 0           # To be set during audit
         
         # Update basic duty info
         active_duty.actual_end = get_ist_time_naive()
@@ -887,10 +894,19 @@ def end_duty():
         
         db.session.commit()
 
-        log_audit('end_duty', 'duty', active_duty.id,
-                 {'revenue': active_duty.gross_revenue, 'earnings': active_duty.driver_earnings})
+        # Log detailed revenue breakdown for audit trail
+        log_audit('end_duty', 'duty', active_duty.id, {
+            'total_revenue': grand_total,
+            'platform_revenue': platform_total, 
+            'direct_revenue': direct_total,
+            'platform_cash': platform_cash,
+            'platform_digital': platform_digital,
+            'direct_cash': direct_cash, 
+            'direct_digital': direct_digital,
+            'earnings': active_duty.driver_earnings
+        })
 
-        flash(f'Duty submitted for approval! Expected earnings: ₹{active_duty.driver_earnings:.2f}. Please wait for admin approval.', 'info')
+        flash(f'Duty submitted for approval! Total Revenue: ₹{grand_total:.2f} (Platform: ₹{platform_total:.2f}, Direct: ₹{direct_total:.2f}). Expected earnings: ₹{active_duty.driver_earnings:.2f}. Please wait for admin approval.', 'info')
         return redirect(url_for('driver.earnings'))
     
     except Exception as e:
