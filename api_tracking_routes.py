@@ -364,6 +364,20 @@ def submit_location_batch():
                 'code': 'DUTY_NOT_FOUND'
             }), 404
         
+        # Check if tracking is paused and handle auto-resume
+        auto_resumed, _ = duty.check_and_auto_resume()
+        if auto_resumed:
+            db.session.commit()  # Save auto-resume changes
+        
+        # If still paused after auto-resume check, reject location data
+        if duty.is_tracking_paused():
+            return jsonify({
+                'success': False,
+                'error': 'Location tracking is currently paused',
+                'code': 'TRACKING_PAUSED',
+                'pause_status': duty.get_pause_status()
+            }), 400
+        
         # Check privacy settings - ensure tracking is allowed
         if not PrivacySettings.should_track_location(driver.id, duty.status.value):
             logger.info(f"Location tracking blocked by privacy settings for driver {driver.id}")

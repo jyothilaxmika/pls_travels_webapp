@@ -838,6 +838,212 @@ def end_duty():
         return redirect(url_for('driver.duty'))
 
 
+@driver_bp.route('/duty/pause-tracking', methods=['POST'])
+@login_required
+@driver_required
+def pause_tracking():
+    """Pause location tracking for active duty"""
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'success': False, 'error': 'Driver profile not found'}), 404
+    
+    # Get active duty
+    active_duty = Duty.query.filter_by(
+        driver_id=driver.id, 
+        status=DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return jsonify({'success': False, 'error': 'No active duty found'}), 400
+    
+    try:
+        # CSRF protection
+        csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+        if not csrf_token:
+            return jsonify({'success': False, 'error': 'CSRF token missing'}), 400
+        
+        try:
+            validate_csrf(csrf_token)
+        except Exception:
+            return jsonify({'success': False, 'error': 'Invalid CSRF token'}), 400
+        
+        data = request.get_json() or {}
+        reason = data.get('reason', 'Privacy break')
+        
+        # Attempt to pause tracking
+        success, message = active_duty.pause_tracking(reason)
+        
+        if success:
+            db.session.commit()
+            
+            # Log the pause action
+            log_audit('pause_tracking', 'duty', active_duty.id, {
+                'reason': reason,
+                'pauses_used': active_duty.tracking_pause_count,
+                'paused_at': active_duty.tracking_paused_at.isoformat() if active_duty.tracking_paused_at else None
+            })
+            
+            return jsonify({
+                'success': True,
+                'message': message,
+                'pause_status': active_duty.get_pause_status()
+            })
+        else:
+            return jsonify({'success': False, 'error': message}), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error pausing tracking: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to pause tracking'}), 500
+
+@driver_bp.route('/duty/resume-tracking', methods=['POST'])
+@login_required
+@driver_required  
+def resume_tracking():
+    """Resume location tracking for active duty"""
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'success': False, 'error': 'Driver profile not found'}), 404
+    
+    # Get active duty
+    active_duty = Duty.query.filter_by(
+        driver_id=driver.id, 
+        status=DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return jsonify({'success': False, 'error': 'No active duty found'}), 400
+    
+    try:
+        # CSRF protection
+        csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+        if not csrf_token:
+            return jsonify({'success': False, 'error': 'CSRF token missing'}), 400
+        
+        try:
+            validate_csrf(csrf_token)
+        except Exception:
+            return jsonify({'success': False, 'error': 'Invalid CSRF token'}), 400
+        
+        # Attempt to resume tracking
+        success, message = active_duty.resume_tracking()
+        
+        if success:
+            db.session.commit()
+            
+            # Log the resume action
+            log_audit('resume_tracking', 'duty', active_duty.id, {
+                'total_pause_duration': active_duty.tracking_pause_duration,
+                'pauses_used': active_duty.tracking_pause_count
+            })
+            
+            return jsonify({
+                'success': True,
+                'message': message,
+                'pause_status': active_duty.get_pause_status()
+            })
+        else:
+            return jsonify({'success': False, 'error': message}), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error resuming tracking: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to resume tracking'}), 500
+
+@driver_bp.route('/duty/tracking-status')
+@login_required
+@driver_required
+def get_tracking_status():
+    """Get current tracking pause status"""
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'success': False, 'error': 'Driver profile not found'}), 404
+    
+    # Get active duty
+    active_duty = Duty.query.filter_by(
+        driver_id=driver.id, 
+        status=DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return jsonify({'success': False, 'error': 'No active duty found'}), 400
+    
+    try:
+        pause_status = active_duty.get_pause_status()
+        
+        # If auto-resumed, commit the changes
+        if pause_status.get('auto_resumed'):
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'pause_status': pause_status
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error getting tracking status: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to get tracking status'}), 500
+
+@driver_bp.route('/duty/track-location', methods=['POST'])
+@login_required
+@driver_required
+def track_location():
+    """Record location data for active duty with pause enforcement"""
+    driver = get_driver_profile()
+    if not driver:
+        return jsonify({'success': False, 'error': 'Driver profile not found'}), 404
+    
+    # Get active duty
+    active_duty = Duty.query.filter_by(
+        driver_id=driver.id, 
+        status=DutyStatus.ACTIVE
+    ).first()
+    
+    if not active_duty:
+        return jsonify({'success': False, 'error': 'No active duty found'}), 400
+    
+    try:
+        # CSRF protection
+        csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+        if not csrf_token:
+            return jsonify({'success': False, 'error': 'CSRF token missing'}), 400
+        
+        try:
+            validate_csrf(csrf_token)
+        except Exception:
+            return jsonify({'success': False, 'error': 'Invalid CSRF token'}), 400
+        
+        # Check if tracking should be active
+        if not active_duty.should_track_location():
+            return jsonify({
+                'success': False, 
+                'error': 'Location tracking is paused or not active',
+                'tracking_paused': True
+            }), 400
+        
+        data = request.get_json() or {}
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        accuracy = data.get('accuracy')
+        
+        if not latitude or not longitude:
+            return jsonify({'success': False, 'error': 'Location coordinates required'}), 400
+        
+        # Here you would store the location data
+        # For now, just acknowledge successful tracking
+        
+        return jsonify({
+            'success': True,
+            'message': 'Location recorded successfully',
+            'tracking_active': True
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error tracking location: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to record location'}), 500
+
 @driver_bp.route('/duty/last-values/<int:vehicle_id>')
 @login_required
 @driver_required

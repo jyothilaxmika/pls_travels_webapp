@@ -10,6 +10,7 @@ function initializeDutyManagement() {
     setupDurationTracking();
     setupRevenueCalculation();  // Use the new revenue calculation instead of earnings
     setupOfflineSupport();
+    setupTrackingPauseControls();  // Add pause/resume tracking functionality
 }
 
 // Photo capture and preview functionality
@@ -707,3 +708,234 @@ document.addEventListener('DOMContentLoaded', function() {
         trackLocation();
     }
 });
+
+// Tracking Pause Controls Functionality
+function setupTrackingPauseControls() {
+    const pauseBtn = document.getElementById('pauseTrackingBtn');
+    const resumeBtn = document.getElementById('resumeTrackingBtn');
+    
+    if (pauseBtn && resumeBtn) {
+        pauseBtn.addEventListener('click', pauseTracking);
+        resumeBtn.addEventListener('click', resumeTracking);
+        
+        // Initialize tracking status
+        loadTrackingStatus();
+        
+        // Update status every 30 seconds
+        setInterval(loadTrackingStatus, 30000);
+    }
+}
+
+function loadTrackingStatus() {
+    fetch('/driver/duty/tracking-status', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateTrackingUI(data.pause_status);
+            
+            // Show auto-resume notification if tracking was auto-resumed
+            if (data.pause_status.auto_resumed) {
+                showAlert('Tracking automatically resumed after 10-minute limit', 'info');
+            }
+        }
+    })
+    .catch(error => {
+        console.log('Error loading tracking status:', error);
+    });
+}
+
+function pauseTracking() {
+    const pauseReason = prompt('Why are you pausing location tracking?', 'Privacy break') || 'Privacy break';
+    
+    fetch('/driver/duty/pause-tracking', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            reason: pauseReason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            updateTrackingUI(data.pause_status);
+            startPauseTimer();
+        } else {
+            showAlert(data.error || 'Failed to pause tracking', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error pausing tracking:', error);
+        showAlert('Network error - failed to pause tracking', 'danger');
+    });
+}
+
+function resumeTracking() {
+    fetch('/driver/duty/resume-tracking', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            updateTrackingUI(data.pause_status);
+            stopPauseTimer();
+        } else {
+            showAlert(data.error || 'Failed to resume tracking', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error resuming tracking:', error);
+        showAlert('Network error - failed to resume tracking', 'danger');
+    });
+}
+
+function updateTrackingUI(pauseStatus) {
+    const activeBadge = document.getElementById('tracking-active-badge');
+    const pausedBadge = document.getElementById('tracking-paused-badge');
+    const pausesUsed = document.getElementById('pauses-used');
+    const pauseBtn = document.getElementById('pauseTrackingBtn');
+    const resumeBtn = document.getElementById('resumeTrackingBtn');
+    const pauseTimer = document.getElementById('pause-timer');
+    
+    if (!activeBadge || !pausedBadge || !pausesUsed || !pauseBtn || !resumeBtn) {
+        return; // UI elements not found
+    }
+    
+    // Update pause count display
+    pausesUsed.textContent = `${pauseStatus.pauses_used}/3`;
+    
+    if (pauseStatus.is_paused) {
+        // Show paused state
+        activeBadge.style.display = 'none';
+        pausedBadge.style.display = 'inline-block';
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'block';
+        pauseTimer.style.display = 'block';
+        
+        // Start pause timer
+        startPauseTimer();
+    } else {
+        // Show active state
+        activeBadge.style.display = 'inline-block';
+        pausedBadge.style.display = 'none';
+        pauseTimer.style.display = 'none';
+        resumeBtn.style.display = 'none';
+        
+        // Show/hide pause button based on remaining pauses
+        if (pauseStatus.remaining_pauses > 0) {
+            pauseBtn.style.display = 'block';
+            pauseBtn.disabled = false;
+            pauseBtn.innerHTML = '<i class="fas fa-pause me-2"></i>Pause Tracking';
+        } else {
+            pauseBtn.style.display = 'block';
+            pauseBtn.disabled = true;
+            pauseBtn.innerHTML = '<i class="fas fa-ban me-2"></i>No Pauses Left';
+        }
+        
+        // Stop pause timer
+        stopPauseTimer();
+    }
+}
+
+let pauseTimerInterval;
+
+function startPauseTimer() {
+    // Clear existing timer
+    stopPauseTimer();
+    
+    // Start new timer
+    pauseTimerInterval = setInterval(updatePauseTimer, 1000);
+    updatePauseTimer(); // Update immediately
+}
+
+function stopPauseTimer() {
+    if (pauseTimerInterval) {
+        clearInterval(pauseTimerInterval);
+        pauseTimerInterval = null;
+    }
+}
+
+function updatePauseTimer() {
+    // Get current tracking status to calculate remaining time
+    fetch('/driver/duty/tracking-status', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.pause_status.is_paused) {
+            const remainingTime = data.pause_status.current_pause_time || 0;
+            updatePauseTimerDisplay(remainingTime);
+            
+            // Show auto-resume notification if applicable
+            if (data.pause_status.auto_resumed) {
+                showAlert('Tracking automatically resumed after 10-minute limit', 'info');
+                stopPauseTimer();
+                loadTrackingStatus();
+            }
+        } else {
+            // Not paused anymore, stop timer
+            stopPauseTimer();
+            loadTrackingStatus(); // Refresh UI
+        }
+    })
+    .catch(error => {
+        console.log('Error updating pause timer:', error);
+    });
+}
+
+function updatePauseTimerDisplay(remainingMinutes) {
+    const remainingSeconds = Math.max(0, remainingMinutes * 60);
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = Math.floor(remainingSeconds % 60);
+    
+    const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const progressPercent = Math.max(0, (remainingMinutes / 10) * 100);
+    
+    const timeDisplay = document.getElementById('pause-time-remaining');
+    const progressBar = document.getElementById('pause-progress');
+    
+    if (timeDisplay) timeDisplay.textContent = timeText;
+    if (progressBar) progressBar.style.width = `${progressPercent}%`;
+    
+    // Auto-resume warning when time is running out
+    if (remainingMinutes < 1) {
+        const progressBar = document.getElementById('pause-progress');
+        if (progressBar) {
+            progressBar.classList.add('bg-danger');
+            progressBar.classList.remove('bg-warning');
+        }
+        
+        if (remainingMinutes < 0.5) {
+            showAlert('Tracking will resume automatically in less than 30 seconds', 'warning');
+        }
+    }
+}
+
+function getCsrfToken() {
+    const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfTokenMeta) {
+        return csrfTokenMeta.getAttribute('content');
+    }
+    
+    // Fallback: try to get from form
+    const csrfInput = document.querySelector('input[name="csrf_token"]');
+    return csrfInput ? csrfInput.value : '';
+}
