@@ -515,7 +515,7 @@ function setFieldError(field, message) {
     field.parentNode.appendChild(errorDiv);
 }
 
-// Validate mandatory odometer photos with timestamp validation
+// Validate odometer photos with timestamp validation (start photo is optional, end photo is mandatory)
 function validateOdometerPhotos(form) {
     let isValid = true;
     
