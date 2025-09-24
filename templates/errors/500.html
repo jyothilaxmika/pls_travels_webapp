@@ -70,7 +70,7 @@
                 We apologize for the inconvenience. Our technical team has been notified and is working to resolve this issue.
             </p>
             <div class="d-flex gap-3 justify-content-center flex-wrap">
-                <a href="/" class="btn btn-primary">
+                <a href="javascript:void(0)" onclick="goToDashboard()" class="btn btn-primary">
                     <i class="fas fa-home me-2"></i>Go Home
                 </a>
                 <button onclick="history.back()" class="btn btn-outline-secondary">
@@ -85,5 +85,41 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function goToDashboard() {
+        // First try to get user role from server
+        fetch('/api/user-role', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.authenticated) {
+                // Redirect based on user role
+                switch(data.role) {
+                    case 'ADMIN':
+                        window.location.href = '/admin';
+                        break;
+                    case 'MANAGER':
+                        window.location.href = '/manager';
+                        break;
+                    case 'DRIVER':
+                        window.location.href = '/driver';
+                        break;
+                    default:
+                        window.location.href = '/';
+                }
+            } else {
+                // Not authenticated, go to login
+                window.location.href = '/auth/login';
+            }
+        })
+        .catch(error => {
+            // Fallback to root route if API fails
+            console.error('Failed to get user role:', error);
+            window.location.href = '/';
+        });
+    }
+    </script>
 </body>
 </html>

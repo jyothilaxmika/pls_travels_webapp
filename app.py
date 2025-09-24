@@ -619,6 +619,25 @@ def create_app():
         db.session.commit()
 
     # API routes
+    @app.route('/api/user-role', methods=['GET'])
+    def get_user_role():
+        """API endpoint to get current user's authentication status and role"""
+        from flask import jsonify
+        from flask_login import current_user
+        
+        if current_user.is_authenticated:
+            return jsonify({
+                'authenticated': True,
+                'role': current_user.role.name,
+                'username': current_user.username
+            })
+        else:
+            return jsonify({
+                'authenticated': False,
+                'role': None,
+                'username': None
+            })
+
     @app.route('/api/calculate-salary', methods=['POST'])
     def calculate_salary():
         from flask import request, jsonify
