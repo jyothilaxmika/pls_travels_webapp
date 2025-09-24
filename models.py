@@ -46,6 +46,7 @@ class DutyStatus(Enum):
 
 class AssignmentStatus(Enum):
     SCHEDULED = 'scheduled'
+    PENDING_APPROVAL = 'pending_approval'
     ACTIVE = 'active'
     COMPLETED = 'completed'
     CANCELLED = 'cancelled'
@@ -874,9 +875,16 @@ class VehicleAssignment(db.Model):
     shift_type = db.Column(db.String(20), default='full_day')  # full_day, morning, evening, night
     
     # Assignment details
-    assignment_type = db.Column(db.String(20), default='regular')  # regular, temporary, replacement
+    assignment_type = db.Column(db.String(20), default='regular')  # regular, temporary, replacement, cross_branch
     priority = db.Column(db.Integer, default=1)  # 1=high, 2=medium, 3=low
     notes = db.Column(db.Text)
+    
+    # Cross-branch assignment support
+    is_cross_branch = db.Column(db.Boolean, default=False, index=True)
+    cross_branch_reason = db.Column(db.Text)  # Reason for cross-branch assignment
+    cross_branch_approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    cross_branch_approved_at = db.Column(db.DateTime)
+    cross_branch_expires_at = db.Column(db.DateTime)  # Optional expiry for temporary assignments
     
     # Status tracking
     status = db.Column(db.Enum(AssignmentStatus), nullable=False, default=AssignmentStatus.SCHEDULED, index=True)
@@ -894,6 +902,7 @@ class VehicleAssignment(db.Model):
     vehicle = db.relationship('Vehicle', backref='vehicle_assignments')
     assigner = db.relationship('User', foreign_keys=[assigned_by])
     approver = db.relationship('User', foreign_keys=[approved_by])
+    cross_branch_approver = db.relationship('User', foreign_keys=[cross_branch_approved_by])
     
     @hybrid_property
     def assignment_notes(self):
@@ -907,10 +916,32 @@ class VehicleAssignment(db.Model):
     def assignment_vehicle(self):
         return self.vehicle
     
+    @hybrid_property
+    def requires_cross_branch_approval(self):
+        """Check if this assignment requires cross-branch approval"""
+        if not self.is_cross_branch:
+            return False
+        return self.driver.branch_id != self.vehicle.branch_id
+    
+    @hybrid_property
+    def is_cross_branch_approved(self):
+        """Check if cross-branch assignment is approved"""
+        return self.cross_branch_approved_by is not None and self.cross_branch_approved_at is not None
+    
+    @hybrid_property
+    def cross_branch_expired(self):
+        """Check if cross-branch assignment has expired"""
+        if not self.cross_branch_expires_at:
+            return False
+        from datetime import datetime
+        return datetime.utcnow() > self.cross_branch_expires_at
+    
     # Constraints
     __table_args__ = (
         Index('idx_assignment_dates', 'start_date', 'end_date'),
+        Index('idx_cross_branch', 'is_cross_branch', 'cross_branch_approved_at'),
         CheckConstraint('end_date IS NULL OR end_date >= start_date'),
+        CheckConstraint('cross_branch_expires_at IS NULL OR cross_branch_approved_at IS NULL OR cross_branch_expires_at > cross_branch_approved_at'),
     )
     
     def __repr__(self):

@@ -1,0 +1,308 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Create Cross-Branch Assignment{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 text-gray-800 mb-0">Create Cross-Branch Vehicle Assignment</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_cross_branch.cross_branch_dashboard') }}">Cross-Branch</a></li>
+                    <li class="breadcrumb-item active">Create Assignment</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{{ url_for('admin_cross_branch.list_assignments') }}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> View All Assignments
+        </a>
+    </div>
+
+    <!-- Assignment Form -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-exchange-alt"></i> Assignment Details
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin_cross_branch.create_assignment') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <div class="row">
+                    <!-- Driver Selection -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="driver_branch">Driver Branch:</label>
+                            <select name="driver_branch" id="driver_branch" class="form-control" onchange="loadDrivers()">
+                                <option value="">Select Driver Branch</option>
+                                {% for branch in branches %}
+                                    <option value="{{ branch.id }}">{{ branch.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="driver_id">Driver: <span class="text-danger">*</span></label>
+                            <select name="driver_id" id="driver_id" class="form-control" required>
+                                <option value="">Select a driver branch first</option>
+                                {% for driver in drivers %}
+                                    <option value="{{ driver.id }}" data-branch="{{ driver.branch_id }}">
+                                        {{ driver.full_name }} ({{ driver.branch.name }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">The driver who will use the vehicle from another branch</small>
+                        </div>
+                        
+                        <div id="driverInfo" class="alert alert-info" style="display: none;">
+                            <h6>Driver Information:</h6>
+                            <div id="driverDetails"></div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Selection -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="vehicle_branch">Vehicle Branch:</label>
+                            <select name="vehicle_branch" id="vehicle_branch" class="form-control" onchange="loadVehicles()">
+                                <option value="">Select Vehicle Branch</option>
+                                {% for branch in branches %}
+                                    <option value="{{ branch.id }}">{{ branch.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="vehicle_id">Vehicle: <span class="text-danger">*</span></label>
+                            <select name="vehicle_id" id="vehicle_id" class="form-control" required>
+                                <option value="">Select a vehicle branch first</option>
+                                {% for vehicle in vehicles %}
+                                    <option value="{{ vehicle.id }}" data-branch="{{ vehicle.branch_id }}">
+                                        {{ vehicle.registration_number }} - {{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.branch.name }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">The vehicle that will be assigned to the driver from another branch</small>
+                        </div>
+                        
+                        <div id="vehicleInfo" class="alert alert-info" style="display: none;">
+                            <h6>Vehicle Information:</h6>
+                            <div id="vehicleDetails"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cross-Branch Warning -->
+                <div id="crossBranchWarning" class="alert alert-warning" style="display: none;">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Cross-Branch Assignment Warning</h6>
+                    <p>You are creating a cross-branch assignment where a driver from one branch will use a vehicle from another branch.</p>
+                    <div id="assignmentSummary"></div>
+                </div>
+
+                <!-- Assignment Details -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="reason">Reason for Cross-Branch Assignment: <span class="text-danger">*</span></label>
+                            <textarea name="reason" id="reason" class="form-control" rows="3" required placeholder="Explain why this cross-branch assignment is necessary..."></textarea>
+                            <small class="form-text text-muted">This reason will be logged for audit purposes</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="assignment_type">Assignment Type:</label>
+                            <select name="assignment_type" id="assignment_type" class="form-control">
+                                <option value="cross_branch">Cross-Branch</option>
+                                <option value="temporary">Temporary</option>
+                                <option value="replacement">Replacement</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="expires_at">Expiry Date (Optional):</label>
+                            <input type="date" name="expires_at" id="expires_at" class="form-control">
+                            <small class="form-text text-muted">Leave blank for no expiry. Assignment will auto-end on this date if set.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-group">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin_cross_branch.cross_branch_dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-check"></i> Create Cross-Branch Assignment
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set minimum date to today
+document.getElementById('expires_at').min = new Date().toISOString().split('T')[0];
+
+// Load drivers based on selected branch
+function loadDrivers() {
+    const branchId = document.getElementById('driver_branch').value;
+    const driverSelect = document.getElementById('driver_id');
+    
+    // Clear current options
+    driverSelect.innerHTML = '<option value="">Loading drivers...</option>';
+    
+    if (!branchId) {
+        driverSelect.innerHTML = '<option value="">Select a driver branch first</option>';
+        return;
+    }
+    
+    fetch(`{{ url_for('admin_cross_branch.get_drivers_by_branch', branch_id=0) }}`.replace('0', branchId))
+        .then(response => response.json())
+        .then(data => {
+            driverSelect.innerHTML = '<option value="">Select a driver</option>';
+            
+            if (data.success && data.drivers.length > 0) {
+                data.drivers.forEach(driver => {
+                    const option = document.createElement('option');
+                    option.value = driver.id;
+                    option.textContent = `${driver.name} (${driver.phone || 'No phone'})`;
+                    option.dataset.currentVehicle = driver.current_vehicle || '';
+                    driverSelect.appendChild(option);
+                });
+            } else {
+                driverSelect.innerHTML = '<option value="">No active drivers in this branch</option>';
+            }
+            
+            checkCrossBranchAssignment();
+        })
+        .catch(error => {
+            console.error('Error loading drivers:', error);
+            driverSelect.innerHTML = '<option value="">Error loading drivers</option>';
+        });
+}
+
+// Load vehicles based on selected branch
+function loadVehicles() {
+    const branchId = document.getElementById('vehicle_branch').value;
+    const vehicleSelect = document.getElementById('vehicle_id');
+    
+    // Clear current options
+    vehicleSelect.innerHTML = '<option value="">Loading vehicles...</option>';
+    
+    if (!branchId) {
+        vehicleSelect.innerHTML = '<option value="">Select a vehicle branch first</option>';
+        return;
+    }
+    
+    fetch(`{{ url_for('admin_cross_branch.get_vehicles_by_branch', branch_id=0) }}`.replace('0', branchId))
+        .then(response => response.json())
+        .then(data => {
+            vehicleSelect.innerHTML = '<option value="">Select a vehicle</option>';
+            
+            if (data.success && data.vehicles.length > 0) {
+                data.vehicles.forEach(vehicle => {
+                    const option = document.createElement('option');
+                    option.value = vehicle.id;
+                    option.textContent = `${vehicle.registration} - ${vehicle.make_model} (${vehicle.seating_capacity} seats)`;
+                    vehicleSelect.appendChild(option);
+                });
+            } else {
+                vehicleSelect.innerHTML = '<option value="">No available vehicles in this branch</option>';
+            }
+            
+            checkCrossBranchAssignment();
+        })
+        .catch(error => {
+            console.error('Error loading vehicles:', error);
+            vehicleSelect.innerHTML = '<option value="">Error loading vehicles</option>';
+        });
+}
+
+// Check if this is a cross-branch assignment and show warning
+function checkCrossBranchAssignment() {
+    const driverBranch = document.getElementById('driver_branch').value;
+    const vehicleBranch = document.getElementById('vehicle_branch').value;
+    const warning = document.getElementById('crossBranchWarning');
+    const summary = document.getElementById('assignmentSummary');
+    
+    if (driverBranch && vehicleBranch && driverBranch !== vehicleBranch) {
+        const driverBranchName = document.getElementById('driver_branch').selectedOptions[0].textContent;
+        const vehicleBranchName = document.getElementById('vehicle_branch').selectedOptions[0].textContent;
+        
+        summary.innerHTML = `
+            <strong>Driver Branch:</strong> ${driverBranchName}<br>
+            <strong>Vehicle Branch:</strong> ${vehicleBranchName}<br>
+            <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> This is a cross-branch assignment requiring admin approval.</span>
+        `;
+        warning.style.display = 'block';
+    } else {
+        warning.style.display = 'none';
+    }
+}
+
+// Show driver info when selected
+document.getElementById('driver_id').addEventListener('change', function() {
+    const selectedOption = this.selectedOptions[0];
+    const driverInfo = document.getElementById('driverInfo');
+    const driverDetails = document.getElementById('driverDetails');
+    
+    if (this.value && selectedOption) {
+        const currentVehicle = selectedOption.dataset.currentVehicle;
+        driverDetails.innerHTML = `
+            <strong>Selected Driver:</strong> ${selectedOption.textContent}<br>
+            <strong>Current Vehicle:</strong> ${currentVehicle || 'No vehicle assigned'}
+        `;
+        driverInfo.style.display = 'block';
+    } else {
+        driverInfo.style.display = 'none';
+    }
+});
+
+// Show vehicle info when selected
+document.getElementById('vehicle_id').addEventListener('change', function() {
+    const selectedOption = this.selectedOptions[0];
+    const vehicleInfo = document.getElementById('vehicleInfo');
+    const vehicleDetails = document.getElementById('vehicleDetails');
+    
+    if (this.value && selectedOption) {
+        vehicleDetails.innerHTML = `
+            <strong>Selected Vehicle:</strong> ${selectedOption.textContent}<br>
+            <strong>Status:</strong> Available for assignment
+        `;
+        vehicleInfo.style.display = 'block';
+    } else {
+        vehicleInfo.style.display = 'none';
+    }
+});
+
+// Add event listeners for branch changes
+document.getElementById('driver_branch').addEventListener('change', checkCrossBranchAssignment);
+document.getElementById('vehicle_branch').addEventListener('change', checkCrossBranchAssignment);
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const driverBranch = document.getElementById('driver_branch').value;
+    const vehicleBranch = document.getElementById('vehicle_branch').value;
+    const reason = document.getElementById('reason').value.trim();
+    
+    if (driverBranch && vehicleBranch && driverBranch !== vehicleBranch && !reason) {
+        e.preventDefault();
+        alert('Reason is required for cross-branch assignments');
+        document.getElementById('reason').focus();
+        return false;
+    }
+    
+    // Disable submit button to prevent double submission
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Assignment...';
+});
+</script>
+{% endblock %}

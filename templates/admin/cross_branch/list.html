@@ -1,0 +1,394 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Cross-Branch Assignments{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 text-gray-800 mb-0">Cross-Branch Vehicle Assignments</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_cross_branch.cross_branch_dashboard') }}">Cross-Branch</a></li>
+                    <li class="breadcrumb-item active">All Assignments</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{{ url_for('admin_cross_branch.create_assignment') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Assignment
+        </a>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Assignments</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin_cross_branch.list_assignments') }}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="status">Status:</label>
+                        <select name="status" id="status" class="form-control">
+                            <option value="">All Statuses</option>
+                            {% for status in statuses %}
+                                <option value="{{ status }}" {% if current_filters.status == status %}selected{% endif %}>
+                                    {{ status.replace('_', ' ').title() }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="branch">Branch:</label>
+                        <select name="branch" id="branch" class="form-control">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch.id }}" {% if current_filters.branch == branch.id|string %}selected{% endif %}>
+                                    {{ branch.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label>&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label>&nbsp;</label>
+                        <div>
+                            <a href="{{ url_for('admin_cross_branch.list_assignments') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assignments Table -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Cross-Branch Assignments</h6>
+        </div>
+        <div class="card-body">
+            {% if assignments.items %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Driver</th>
+                                <th>Vehicle</th>
+                                <th>Cross-Branch</th>
+                                <th>Start Date</th>
+                                <th>Expires</th>
+                                <th>Status</th>
+                                <th>Approved By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments.items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ assignment.driver.full_name }}</strong><br>
+                                    <small class="text-muted">{{ assignment.driver.branch.name }}</small><br>
+                                    <small class="text-muted">{{ assignment.driver.user.phone if assignment.driver.user.phone }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ assignment.vehicle.registration_number }}</strong><br>
+                                    <small class="text-muted">{{ assignment.vehicle.make }} {{ assignment.vehicle.model }}</small><br>
+                                    <small class="text-muted">{{ assignment.vehicle.branch.name }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge badge-warning">
+                                        {{ assignment.driver.branch.name }} → {{ assignment.vehicle.branch.name }}
+                                    </span>
+                                    {% if assignment.cross_branch_reason %}
+                                        <br><small class="text-muted" title="{{ assignment.cross_branch_reason }}">
+                                            {{ assignment.cross_branch_reason[:50] }}{% if assignment.cross_branch_reason|length > 50 %}...{% endif %}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ moment(assignment.start_date).format('MMM DD, YYYY') }}</td>
+                                <td>
+                                    {% if assignment.cross_branch_expires_at %}
+                                        {{ moment(assignment.cross_branch_expires_at).format('MMM DD, YYYY') }}
+                                        {% set days_left = (assignment.cross_branch_expires_at - moment().datetime).days %}
+                                        {% if days_left >= 0 %}
+                                            <br><small class="{% if days_left <= 2 %}text-danger{% elif days_left <= 5 %}text-warning{% else %}text-info{% endif %}">
+                                                {{ days_left }} days left
+                                            </small>
+                                        {% else %}
+                                            <br><small class="text-danger">Expired</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">No expiry</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if assignment.status.value == 'pending_approval' %}
+                                        <span class="badge badge-warning">Pending Approval</span>
+                                    {% elif assignment.status.value == 'active' %}
+                                        <span class="badge badge-success">Active</span>
+                                    {% elif assignment.status.value == 'completed' %}
+                                        <span class="badge badge-secondary">Completed</span>
+                                    {% elif assignment.status.value == 'cancelled' %}
+                                        <span class="badge badge-danger">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge badge-light">{{ assignment.status.value.title() }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if assignment.cross_branch_approver %}
+                                        <strong>{{ assignment.cross_branch_approver.username }}</strong><br>
+                                        <small class="text-muted">{{ moment(assignment.cross_branch_approved_at).format('MMM DD, HH:mm') }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Not approved</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group-vertical btn-group-sm">
+                                        {% if assignment.status.value == 'pending_approval' %}
+                                            <button class="btn btn-success btn-sm" onclick="approveAssignment({{ assignment.id }})" title="Approve">
+                                                <i class="fas fa-check"></i> Approve
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="rejectAssignment({{ assignment.id }})" title="Reject">
+                                                <i class="fas fa-times"></i> Reject
+                                            </button>
+                                        {% elif assignment.status.value == 'active' %}
+                                            <button class="btn btn-info btn-sm" onclick="extendAssignment({{ assignment.id }})" title="Extend">
+                                                <i class="fas fa-calendar-plus"></i> Extend
+                                            </button>
+                                            <button class="btn btn-warning btn-sm" onclick="endAssignment({{ assignment.id }})" title="End">
+                                                <i class="fas fa-stop"></i> End
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if assignment.notes %}
+                                            <button class="btn btn-outline-info btn-sm" onclick="showNotes('{{ assignment.notes|escape }}')" title="View Notes">
+                                                <i class="fas fa-sticky-note"></i> Notes
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if assignments.pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if assignments.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_cross_branch.list_assignments', page=assignments.prev_num, status=current_filters.status, branch=current_filters.branch) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in assignments.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != assignments.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_cross_branch.list_assignments', page=page_num, status=current_filters.status, branch=current_filters.branch) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if assignments.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin_cross_branch.list_assignments', page=assignments.next_num, status=current_filters.status, branch=current_filters.branch) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No cross-branch assignments found</h5>
+                    <p class="text-muted">Create a new cross-branch assignment to get started.</p>
+                    <a href="{{ url_for('admin_cross_branch.create_assignment') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Assignment
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assignment Notes</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="notesContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include modals from dashboard -->
+{% include 'admin/cross_branch/_modals.html' %}
+
+<script>
+let currentAssignmentId = null;
+
+function showNotes(notes) {
+    document.getElementById('notesContent').innerHTML = notes.replace(/\n/g, '<br>');
+    $('#notesModal').modal('show');
+}
+
+function approveAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    $('#approvalModal').modal('show');
+}
+
+function rejectAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    $('#rejectionModal').modal('show');
+}
+
+function extendAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('newExpiryDate').min = tomorrow.toISOString().split('T')[0];
+    $('#extensionModal').modal('show');
+}
+
+function endAssignment(assignmentId) {
+    currentAssignmentId = assignmentId;
+    $('#endModal').modal('show');
+}
+
+// Action handlers (same as dashboard)
+document.getElementById('confirmApproval').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const formData = new FormData();
+    
+    fetch(`{{ url_for('admin_cross_branch.approve_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+
+document.getElementById('confirmRejection').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const reason = document.getElementById('rejectionReason').value;
+    const formData = new FormData();
+    formData.append('rejection_reason', reason);
+    
+    fetch(`{{ url_for('admin_cross_branch.reject_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+
+document.getElementById('confirmExtension').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const newExpiry = document.getElementById('newExpiryDate').value;
+    const reason = document.getElementById('extensionReason').value;
+    
+    if (!newExpiry) {
+        alert('Please select a new expiry date');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('new_expiry', newExpiry);
+    formData.append('extension_reason', reason);
+    
+    fetch(`{{ url_for('admin_cross_branch.extend_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+
+document.getElementById('confirmEnd').addEventListener('click', function() {
+    if (!currentAssignmentId) return;
+    
+    const reason = document.getElementById('endReason').value;
+    const formData = new FormData();
+    formData.append('end_reason', reason);
+    
+    fetch(`{{ url_for('admin_cross_branch.end_assignment', assignment_id=0) }}`.replace('0', currentAssignmentId), {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+</script>
+{% endblock %}
