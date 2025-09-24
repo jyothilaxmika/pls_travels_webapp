@@ -546,36 +546,34 @@ def start_duty():
             duty.start_photo = filename
             photo_validation_passed = True
     
-    # MANDATORY SERVER-SIDE VALIDATION: Verify photo was actually submitted and saved
-    if not photo_validation_passed or not duty.start_photo:
-        flash('Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.', 'error')
-        return redirect(url_for('driver.duty'))
-    
-    # Verify photo file exists on disk and has reasonable size
-    photo_path = os.path.join('uploads', duty.start_photo)
-    if not os.path.exists(photo_path):
-        flash('Photo upload failed. Please capture the odometer photo again.', 'error')
-        return redirect(url_for('driver.duty'))
-    
-    # Verify file is actually an image and has reasonable size
-    try:
-        file_size = os.path.getsize(photo_path)
-        if file_size < 1024:  # Less than 1KB - likely corrupted
-            flash('Photo file appears corrupted. Please capture the odometer photo again.', 'error')
+    # OPTIONAL SERVER-SIDE VALIDATION: Only validate photo if one was submitted
+    if photo_validation_passed and duty.start_photo:
+        # Verify photo file exists on disk and has reasonable size
+        photo_path = os.path.join('uploads', duty.start_photo)
+        if not os.path.exists(photo_path):
+            flash('Photo upload failed. Please capture the odometer photo again.', 'error')
             return redirect(url_for('driver.duty'))
-        elif file_size > 10 * 1024 * 1024:  # More than 10MB - too large
-            flash('Photo file is too large. Please capture a smaller photo.', 'error')
+        
+        # Verify file is actually an image and has reasonable size
+        try:
+            file_size = os.path.getsize(photo_path)
+            if file_size < 1024:  # Less than 1KB - likely corrupted
+                flash('Photo file appears corrupted. Please capture the odometer photo again.', 'error')
+                return redirect(url_for('driver.duty'))
+            elif file_size > 10 * 1024 * 1024:  # More than 10MB - too large
+                flash('Photo file is too large. Please capture a smaller photo.', 'error')
+                return redirect(url_for('driver.duty'))
+        except OSError:
+            flash('Unable to verify photo file. Please capture the odometer photo again.', 'error')
             return redirect(url_for('driver.duty'))
-    except OSError:
-        flash('Unable to verify photo file. Please capture the odometer photo again.', 'error')
-        return redirect(url_for('driver.duty'))
     
-    # SERVER-SIDE TIMESTAMP VALIDATION: Use server time, not client time
-    # Photos must be captured within last 5 minutes (from server perspective)
-    time_since_capture = (server_capture_time - duty.actual_start).total_seconds() if duty.actual_start else 0
-    if time_since_capture > 300:  # 5 minutes in seconds
-        flash('Photo upload took too long. Please capture a fresh odometer photo.', 'error')
-        return redirect(url_for('driver.duty'))
+    # SERVER-SIDE TIMESTAMP VALIDATION: Only validate timestamp if photo was provided
+    if photo_validation_passed and duty.start_photo:
+        # Photos must be captured within last 5 minutes (from server perspective)
+        time_since_capture = (server_capture_time - duty.actual_start).total_seconds() if duty.actual_start else 0
+        if time_since_capture > 300:  # 5 minutes in seconds
+            flash('Photo upload took too long. Please capture a fresh odometer photo.', 'error')
+            return redirect(url_for('driver.duty'))
 
     # Location data removed per user request
     duty.start_location_lat = None
