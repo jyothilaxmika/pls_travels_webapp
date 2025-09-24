@@ -39,14 +39,14 @@ def cross_branch_dashboard():
     pending_assignments = VehicleAssignment.query.filter(
         VehicleAssignment.is_cross_branch == True,
         VehicleAssignment.status == AssignmentStatus.PENDING_APPROVAL
-    ).join(Driver).join(Vehicle).order_by(desc(VehicleAssignment.created_at)).limit(10).all()
+    ).join(Driver, VehicleAssignment.driver_id == Driver.id).join(Vehicle, VehicleAssignment.vehicle_id == Vehicle.id).order_by(desc(VehicleAssignment.created_at)).limit(10).all()
     
     # Get active cross-branch assignments
     active_assignments = VehicleAssignment.query.filter(
         VehicleAssignment.is_cross_branch == True,
         VehicleAssignment.status == AssignmentStatus.ACTIVE,
         VehicleAssignment.end_date.is_(None)
-    ).join(Driver).join(Vehicle).order_by(desc(VehicleAssignment.created_at)).limit(10).all()
+    ).join(Driver, VehicleAssignment.driver_id == Driver.id).join(Vehicle, VehicleAssignment.vehicle_id == Vehicle.id).order_by(desc(VehicleAssignment.created_at)).limit(10).all()
     
     # Get expiring assignments (within 7 days)
     one_week_from_now = datetime.utcnow() + timedelta(days=7)
@@ -55,7 +55,7 @@ def cross_branch_dashboard():
         VehicleAssignment.cross_branch_expires_at <= one_week_from_now,
         VehicleAssignment.cross_branch_expires_at > datetime.utcnow(),
         VehicleAssignment.status == AssignmentStatus.ACTIVE
-    ).join(Driver).join(Vehicle).order_by(VehicleAssignment.cross_branch_expires_at).all()
+    ).join(Driver, VehicleAssignment.driver_id == Driver.id).join(Vehicle, VehicleAssignment.vehicle_id == Vehicle.id).order_by(VehicleAssignment.cross_branch_expires_at).all()
     
     # Statistics
     stats = {
@@ -85,7 +85,7 @@ def list_assignments():
     # Build query
     query = VehicleAssignment.query.filter(
         VehicleAssignment.is_cross_branch == True
-    ).join(Driver).join(Vehicle)
+    ).join(Driver, VehicleAssignment.driver_id == Driver.id).join(Vehicle, VehicleAssignment.vehicle_id == Vehicle.id)
     
     if status_filter:
         try:
