@@ -666,6 +666,12 @@ class Duty(db.Model):
     cng_average = db.Column(db.Float, default=0.0)  # CNG AVERAGE
     cng_point = db.Column(db.String(100))  # CNG POINT
     
+    # Location tracking pause controls  
+    tracking_pause_count = db.Column(db.Integer, default=0)  # Number of pauses used
+    tracking_pause_duration = db.Column(db.Integer, default=0)  # Total pause time in minutes
+    tracking_paused_at = db.Column(db.DateTime)  # When tracking was paused (null if not paused)
+    tracking_pause_reason = db.Column(db.String(100))  # Reason for pause
+    
     # Other tracking fields
     pass_amount = db.Column(db.Float, default=0.0)  # PASS
     insurance_amount = db.Column(db.Float, default=0.0)  # INSURANCE
@@ -742,6 +748,113 @@ class Duty(db.Model):
     @hybrid_property
     def distance_km(self):
         return self.total_distance
+    
+    # Tracking pause management methods
+    def can_pause_tracking(self):
+        """Check if tracking can be paused (max 3 pauses allowed)"""
+        return self.tracking_pause_count < 3 and self.tracking_paused_at is None
+    
+    def get_remaining_pauses(self):
+        """Get number of remaining pauses available"""
+        return max(0, 3 - (self.tracking_pause_count or 0))
+    
+    def get_remaining_pause_time(self):
+        """Get remaining pause time in minutes (max 10 minutes per pause)"""
+        if self.tracking_paused_at is None:
+            return 10  # Full 10 minutes available for next pause
+        
+        # Calculate time already used in current pause
+        now = get_ist_time_naive()
+        current_pause_duration = (now - self.tracking_paused_at).total_seconds() / 60
+        return max(0, 10 - int(current_pause_duration))
+    
+    def pause_tracking(self, reason="Privacy break"):
+        """Pause location tracking with validation"""
+        if not self.can_pause_tracking():
+            return False, "Cannot pause tracking: limit exceeded or already paused"
+        
+        if self.status != DutyStatus.ACTIVE:
+            return False, "Can only pause tracking during active duty"
+        
+        self.tracking_paused_at = get_ist_time_naive()
+        self.tracking_pause_reason = reason
+        self.tracking_pause_count = (self.tracking_pause_count or 0) + 1
+        
+        return True, "Tracking paused successfully"
+    
+    def resume_tracking(self):
+        """Resume location tracking and calculate pause duration"""
+        if self.tracking_paused_at is None:
+            return False, "Tracking is not currently paused"
+        
+        # Calculate pause duration
+        now = get_ist_time_naive()
+        pause_duration = (now - self.tracking_paused_at).total_seconds() / 60
+        
+        # Check if pause exceeded 10 minutes (auto-resume)
+        if pause_duration > 10:
+            pause_duration = 10  # Cap at 10 minutes
+        
+        # Update total pause duration
+        self.tracking_pause_duration = (self.tracking_pause_duration or 0) + int(pause_duration)
+        
+        # Clear pause state
+        self.tracking_paused_at = None
+        self.tracking_pause_reason = None
+        
+        return True, f"Tracking resumed after {int(pause_duration)} minutes"
+    
+    def is_tracking_paused(self):
+        """Check if tracking is currently paused (read-only check)"""
+        if self.tracking_paused_at is None:
+            return False
+        
+        # Check if paused for more than 10 minutes (but don't auto-resume here)
+        now = get_ist_time_naive()
+        pause_duration = (now - self.tracking_paused_at).total_seconds() / 60
+        
+        return pause_duration <= 10
+    
+    def check_and_auto_resume(self):
+        """Check if tracking should auto-resume due to time limit and handle it"""
+        if self.tracking_paused_at is None:
+            return False, "Tracking is not paused"
+        
+        now = get_ist_time_naive()
+        pause_duration = (now - self.tracking_paused_at).total_seconds() / 60
+        
+        if pause_duration > 10:
+            # Auto-resume due to time limit
+            return self.resume_tracking()
+        
+        return False, "Still within pause time limit"
+    
+    def should_track_location(self):
+        """Check if location tracking should be active (for integration with tracking system)"""
+        if self.status != DutyStatus.ACTIVE:
+            return False
+        
+        # Check for auto-resume first
+        self.check_and_auto_resume()
+        
+        # Return false if paused
+        return not self.is_tracking_paused()
+    
+    def get_pause_status(self):
+        """Get comprehensive pause status information"""
+        # Check for auto-resume first
+        auto_resumed, _ = self.check_and_auto_resume()
+        
+        return {
+            'is_paused': self.is_tracking_paused(),
+            'pauses_used': self.tracking_pause_count or 0,
+            'remaining_pauses': self.get_remaining_pauses(),
+            'total_pause_time': self.tracking_pause_duration or 0,
+            'current_pause_time': self.get_remaining_pause_time() if self.tracking_paused_at else None,
+            'paused_at': self.tracking_paused_at,
+            'pause_reason': self.tracking_pause_reason,
+            'auto_resumed': auto_resumed
+        }
     
     def __repr__(self):
         return f'<Duty {self.uuid}>'
