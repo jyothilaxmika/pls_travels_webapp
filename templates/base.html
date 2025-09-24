@@ -40,7 +40,7 @@
                 <button class="btn btn-outline-primary btn-sm me-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
                     <i class="fas fa-bars"></i>
                 </button>
-                <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="{{ url_for('index') }}">
+                <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="{% if current_user.role.name == 'ADMIN' %}{{ url_for('admin.dashboard') }}{% elif current_user.role.name == 'MANAGER' %}{{ url_for('manager.dashboard') }}{% elif current_user.role.name == 'DRIVER' %}{{ url_for('driver.dashboard') }}{% else %}{{ url_for('index') }}{% endif %}">
                     <img src="{{ url_for('static', filename='images/pls-logo.jpg') }}" alt="PLS TRAVELS" 
                          style="height: 32px; width: auto; margin-right: 8px;">
                     <span class="d-none d-sm-inline">PLS TRAVELS</span>
