@@ -194,15 +194,15 @@
                                                 <li><a class="dropdown-item" href="#" onclick="viewDocument('aadhar', '{{ driver.aadhar_document_front or driver.aadhar_document_back }}')">
                                                     <i class="fas fa-eye me-2"></i>View
                                                 </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="editDocument('aadhar', {{ driver.id }})">
+                                                <li><a class="dropdown-item" href="#" onclick="editDocument('aadhar', '{{ driver.id }}')">
                                                     <i class="fas fa-edit me-2"></i>Edit
                                                 </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="toggleVerification('aadhar', {{ driver.id }}, {{ 'true' if driver.aadhar_verified else 'false' }})">
+                                                <li><a class="dropdown-item" href="#" onclick="toggleVerification('aadhar', '{{ driver.id }}', {{ 'true' if driver.aadhar_verified else 'false' }})">
                                                     <i class="fas fa-{% if driver.aadhar_verified %}times{% else %}check{% endif %} me-2"></i>
                                                     {% if driver.aadhar_verified %}Mark Unverified{% else %}Mark Verified{% endif %}
                                                 </a></li>
                                                 <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteDocument('aadhar', {{ driver.id }})">
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteDocument('aadhar', '{{ driver.id }}')">
                                                     <i class="fas fa-trash me-2"></i>Delete
                                                 </a></li>
                                             </ul>
@@ -261,15 +261,15 @@
                                                 <li><a class="dropdown-item" href="#" onclick="viewDocument('license', '{{ driver.license_document_front or driver.license_document_back }}')">
                                                     <i class="fas fa-eye me-2"></i>View
                                                 </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="editDocument('license', {{ driver.id }})">
+                                                <li><a class="dropdown-item" href="#" onclick="editDocument('license', '{{ driver.id }}')">
                                                     <i class="fas fa-edit me-2"></i>Edit
                                                 </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="toggleVerification('license', {{ driver.id }}, {{ 'true' if driver.license_verified else 'false' }})">
+                                                <li><a class="dropdown-item" href="#" onclick="toggleVerification('license', '{{ driver.id }}', {{ 'true' if driver.license_verified else 'false' }})">
                                                     <i class="fas fa-{% if driver.license_verified %}times{% else %}check{% endif %} me-2"></i>
                                                     {% if driver.license_verified %}Mark Unverified{% else %}Mark Verified{% endif %}
                                                 </a></li>
                                                 <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteDocument('license', {{ driver.id }})">
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteDocument('license', '{{ driver.id }}')">
                                                     <i class="fas fa-trash me-2"></i>Delete
                                                 </a></li>
                                             </ul>
@@ -311,7 +311,7 @@
                                         <tr>
                                             <td><strong>Bank Name:</strong></td>
                                             <td>{{ driver.bank_name or 'Not provided' }}</td>
-                                            <td><button class="btn btn-sm btn-outline-warning" onclick="editBankDetails({{ driver.id }})"><i class="fas fa-edit"></i></button></td>
+                                            <td><button class="btn btn-sm btn-outline-warning" onclick="editBankDetails('{{ driver.id }}')"><i class="fas fa-edit"></i></button></td>
                                         </tr>
                                         <tr>
                                             <td><strong>Account Number:</strong></td>
@@ -354,11 +354,11 @@
                                                     <li><a class="dropdown-item" href="#" onclick="viewDocument('profile', '{{ driver.profile_photo }}')">
                                                         <i class="fas fa-eye me-2"></i>View
                                                     </a></li>
-                                                    <li><a class="dropdown-item" href="#" onclick="editDocument('profile', {{ driver.id }})">
+                                                    <li><a class="dropdown-item" href="#" onclick="editDocument('profile', '{{ driver.id }}')">
                                                         <i class="fas fa-edit me-2"></i>Edit
                                                     </a></li>
                                                     <li><hr class="dropdown-divider"></li>
-                                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteDocument('profile', {{ driver.id }})">
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteDocument('profile', '{{ driver.id }}')">
                                                         <i class="fas fa-trash me-2"></i>Delete
                                                     </a></li>
                                                 </ul>
@@ -471,10 +471,10 @@
                                         <td class="text-end"><strong>₹{{ "{:,.2f}".format(running_balance) }}</strong></td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-info" onclick="viewTransaction('duty', {{ duty.id }})">
+                                                <button class="btn btn-outline-info" onclick="viewTransaction('duty', '{{ duty.id }}')">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <button class="btn btn-outline-warning" onclick="editTransaction('duty', {{ duty.id }})">
+                                                <button class="btn btn-outline-warning" onclick="editTransaction('duty', '{{ duty.id }}')">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                             </div>
@@ -495,10 +495,10 @@
                                     <td class="text-end"><strong>₹{{ "{:,.2f}".format(running_balance) }}</strong></td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-info" onclick="viewTransaction('penalty', {{ penalty.id }})">
+                                            <button class="btn btn-outline-info" onclick="viewTransaction('penalty', '{{ penalty.id }}')">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger" onclick="removeTransaction('penalty', {{ penalty.id }})">
+                                            <button class="btn btn-outline-danger" onclick="removeTransaction('penalty', '{{ penalty.id }}')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -742,7 +742,7 @@
                         {% endif %}
                     </div>
                     <div class="d-grid">
-                        <button type="button" class="btn btn-success w-100" onclick="unblockDriver({{ driver.id }})">
+                        <button type="button" class="btn btn-success w-100" onclick="unblockDriver('{{ driver.id }}')">
                             <i class="fas fa-unlock me-2"></i>Unblock Driver
                         </button>
                     </div>
@@ -752,7 +752,7 @@
                         <strong>Driver is currently ACTIVE</strong>
                     </div>
                     <div class="d-grid">
-                        <button type="button" class="btn btn-danger w-100" onclick="showBlockDriverModal({{ driver.id }}, '{{ driver.full_name }}')">
+                        <button type="button" class="btn btn-danger w-100" onclick="showBlockDriverModal('{{ driver.id }}', '{{ driver.full_name }}')">
                             <i class="fas fa-ban me-2"></i>Block Driver
                         </button>
                     </div>
