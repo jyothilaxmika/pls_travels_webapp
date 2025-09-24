@@ -308,19 +308,34 @@ def add_driver_document():
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
         
-        # Update driver document fields
-        if document_type == 'aadhar':
-            # Handle legacy uploads - map to front document for now
+        # Update driver document fields based on specific type
+        if document_type == 'aadhar_front':
+            driver.aadhar_document_front = filename
+            if document_number:
+                driver.aadhar_number = document_number
+        elif document_type == 'aadhar_back':
+            driver.aadhar_document_back = filename
+            if document_number and not driver.aadhar_number:
+                driver.aadhar_number = document_number
+        elif document_type == 'license_front':
+            driver.license_document_front = filename
+            if document_number:
+                driver.license_number = document_number
+        elif document_type == 'license_back':
+            driver.license_document_back = filename
+            if document_number and not driver.license_number:
+                driver.license_number = document_number
+        elif document_type == 'profile':
+            driver.profile_photo = filename
+        # Handle legacy generic types for backward compatibility
+        elif document_type == 'aadhar':
             driver.aadhar_document_front = filename
             if document_number:
                 driver.aadhar_number = document_number
         elif document_type == 'license':
-            # Handle legacy uploads - map to front document for now
             driver.license_document_front = filename
             if document_number:
                 driver.license_number = document_number
-        elif document_type == 'profile':
-            driver.profile_photo = filename
         
         try:
             db.session.commit()
@@ -343,7 +358,45 @@ def delete_driver_document(driver_id, document_type):
     # Collect all filenames to delete
     files_to_delete = []
     
-    if document_type == 'aadhar':
+    # Handle specific document side deletion
+    if document_type == 'aadhar_front':
+        if driver.aadhar_document_front:
+            files_to_delete.append(driver.aadhar_document_front)
+        driver.aadhar_document_front = None
+        # Only reset verification if both sides are gone
+        if not driver.aadhar_document_back:
+            driver.aadhar_verified = False
+            driver.aadhar_verified_at = None
+    elif document_type == 'aadhar_back':
+        if driver.aadhar_document_back:
+            files_to_delete.append(driver.aadhar_document_back)
+        driver.aadhar_document_back = None
+        # Only reset verification if both sides are gone
+        if not driver.aadhar_document_front:
+            driver.aadhar_verified = False
+            driver.aadhar_verified_at = None
+    elif document_type == 'license_front':
+        if driver.license_document_front:
+            files_to_delete.append(driver.license_document_front)
+        driver.license_document_front = None
+        # Only reset verification if both sides are gone
+        if not driver.license_document_back:
+            driver.license_verified = False
+            driver.license_verified_at = None
+    elif document_type == 'license_back':
+        if driver.license_document_back:
+            files_to_delete.append(driver.license_document_back)
+        driver.license_document_back = None
+        # Only reset verification if both sides are gone
+        if not driver.license_document_front:
+            driver.license_verified = False
+            driver.license_verified_at = None
+    elif document_type == 'profile':
+        if driver.profile_photo:
+            files_to_delete.append(driver.profile_photo)
+        driver.profile_photo = None
+    # Handle legacy generic types for backward compatibility  
+    elif document_type == 'aadhar':
         # Handle deletion of both front and back documents
         if driver.aadhar_document_front:
             files_to_delete.append(driver.aadhar_document_front)
@@ -363,10 +416,6 @@ def delete_driver_document(driver_id, document_type):
         driver.license_document_back = None
         driver.license_verified = False
         driver.license_verified_at = None
-    elif document_type == 'profile':
-        if driver.profile_photo:
-            files_to_delete.append(driver.profile_photo)
-        driver.profile_photo = None
     
     # Delete all physical files
     deleted_files = []
