@@ -699,6 +699,7 @@ def end_duty():
         
         # Initialize photo validation flag and server timestamp
         end_photo_validation_passed = False
+        end_photo_filename = None  # Initialize to prevent NameError
         server_capture_time = get_ist_time_naive()  # Record server time for validation
         
         # Simplified Platform vs Direct Revenue Collection
@@ -774,37 +775,40 @@ def end_duty():
                 active_duty.end_photo = filename
                 end_photo_validation_passed = True
         
-        # MANDATORY SERVER-SIDE VALIDATION: Verify photo was actually submitted and saved
-        if not end_photo_validation_passed or not active_duty.end_photo:
-            flash('End odometer photo is mandatory. Please capture a clear photo of the final odometer reading.', 'error')
-            return redirect(url_for('driver.duty'))
-        
-        # Verify photo file exists on disk and has reasonable size
-        photo_path = os.path.join('uploads', active_duty.end_photo)
-        if not os.path.exists(photo_path):
-            flash('Photo upload failed. Please capture the odometer photo again.', 'error')
-            return redirect(url_for('driver.duty'))
-        
-        # Verify file is actually an image and has reasonable size
-        try:
-            file_size = os.path.getsize(photo_path)
-            if file_size < 1024:  # Less than 1KB - likely corrupted
-                flash('Photo file appears corrupted. Please capture the odometer photo again.', 'error')
+        # OPTIONAL SERVER-SIDE VALIDATION: Only validate photo if one was provided
+        if active_duty.end_photo:
+            # Determine correct file path based on how photo was stored
+            if end_photo_filename:
+                # Camera capture - use the path returned by process_camera_capture
+                photo_path = end_photo_filename
+            else:
+                # Manual upload - file is in uploads directory
+                photo_path = os.path.join('uploads', active_duty.end_photo)
+            
+            # Verify photo file exists and has reasonable size
+            try:
+                if os.path.exists(photo_path):
+                    file_size = os.path.getsize(photo_path)
+                    if file_size < 1024:  # Less than 1KB - likely corrupted
+                        flash('Photo file appears corrupted. Please capture the odometer photo again.', 'error')
+                        return redirect(url_for('driver.duty'))
+                    elif file_size > 5 * 1024 * 1024:  # More than 5MB - match frontend limit
+                        flash('Photo file is too large. Please capture a smaller photo.', 'error')
+                        return redirect(url_for('driver.duty'))
+                else:
+                    flash('Photo upload failed. Please capture the odometer photo again.', 'error')
+                    return redirect(url_for('driver.duty'))
+            except OSError:
+                flash('Unable to verify photo file. Please capture the odometer photo again.', 'error')
                 return redirect(url_for('driver.duty'))
-            elif file_size > 10 * 1024 * 1024:  # More than 10MB - too large
-                flash('Photo file is too large. Please capture a smaller photo.', 'error')
-                return redirect(url_for('driver.duty'))
-        except OSError:
-            flash('Unable to verify photo file. Please capture the odometer photo again.', 'error')
-            return redirect(url_for('driver.duty'))
         
-        # SERVER-SIDE TIMESTAMP VALIDATION: Use server time, not client time
-        # Photos must be captured within a reasonable time window (from server perspective)
-        duty_duration = (server_capture_time - active_duty.actual_start).total_seconds() if active_duty.actual_start else 0
-        # Allow longer time for end photos as duty might be long, but still enforce freshness
-        if duty_duration < 0:  # Safety check for clock issues
-            flash('Invalid timing detected. Please capture the odometer photo again.', 'error')
-            return redirect(url_for('driver.duty'))
+            # SERVER-SIDE TIMESTAMP VALIDATION: Only when photo provided
+            # Photos must be captured within a reasonable time window (from server perspective)
+            duty_duration = (server_capture_time - active_duty.actual_start).total_seconds() if active_duty.actual_start else 0
+            # Allow longer time for end photos as duty might be long, but still enforce freshness
+            if duty_duration < 0:  # Safety check for clock issues
+                flash('Invalid timing detected. Please capture the odometer photo again.', 'error')
+                return redirect(url_for('driver.duty'))
 
         # Location data removed per user request
         active_duty.end_location_lat = None

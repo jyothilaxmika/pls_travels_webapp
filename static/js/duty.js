@@ -328,7 +328,7 @@ function validateDutyForm(event) {
         }
     });
     
-    // Validate mandatory odometer photos
+    // Validate optional odometer photos (timestamp freshness when provided)
     if (!validateOdometerPhotos(form)) {
         isValid = false;
     }
