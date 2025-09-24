@@ -106,13 +106,13 @@ def create_app():
     app.config["UPLOAD_FOLDER"] = "uploads"
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB max file size for camera captures
     
+    # CSRF configuration - extend timeout for duty management and document verification forms
+    app.config['WTF_CSRF_TIME_LIMIT'] = 14400  # 4 hours for lengthy document verification processes
+    
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
-    
-    # CSRF configuration - extend timeout for duty management forms
-    app.config['WTF_CSRF_TIME_LIMIT'] = 7200  # 2 hours instead of default 1 hour
     
     # Initialize Flask-Migrate for database migrations
     migrate = Migrate(app, db)

@@ -423,17 +423,35 @@ function quickBlockDriver(driverId, driverName) {
             },
             body: formData
         })
-        .then(response => response.json())
+        .then(async response => {
+            if (response.status === 400) {
+                const contentType = response.headers.get('content-type');
+                if (contentType?.includes('application/json')) {
+                    const errorData = await response.json();
+                    if (errorData.error_code === 'CSRF_ERROR' || errorData.error?.includes('CSRF') || errorData.error?.includes('token')) {
+                        alert('Security token expired. Please refresh the page and try again.');
+                        location.reload();
+                        return;
+                    }
+                    throw new Error(errorData.error || 'Request failed');
+                } else if (contentType?.includes('text/html')) {
+                    alert('Security token expired. Please refresh the page and try again.');
+                    location.reload();
+                    return;
+                }
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 location.reload();
-            } else {
-                alert('Error blocking driver: ' + data.message);
+            } else if (data) {
+                alert('Error blocking driver: ' + (data.error || data.message));
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error blocking driver');
+            alert('Error blocking driver. Please refresh the page and try again.');
         });
     }
 }
@@ -455,12 +473,30 @@ function quickUnblockDriver(driverId) {
             },
             body: formData
         })
-        .then(response => response.json())
+        .then(async response => {
+            if (response.status === 400) {
+                const contentType = response.headers.get('content-type');
+                if (contentType?.includes('application/json')) {
+                    const errorData = await response.json();
+                    if (errorData.error_code === 'CSRF_ERROR' || errorData.error?.includes('CSRF') || errorData.error?.includes('token')) {
+                        alert('Security token expired. Please refresh the page and try again.');
+                        location.reload();
+                        return;
+                    }
+                    throw new Error(errorData.error || 'Request failed');
+                } else if (contentType?.includes('text/html')) {
+                    alert('Security token expired. Please refresh the page and try again.');
+                    location.reload();
+                    return;
+                }
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 location.reload();
-            } else {
-                alert('Error unblocking driver: ' + data.message);
+            } else if (data) {
+                alert('Error unblocking driver: ' + (data.error || data.message));
             }
         })
         .catch(error => {
