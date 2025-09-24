@@ -3521,7 +3521,7 @@ def uber_reset_sync(record_type, record_id):
 @login_required
 @admin_required
 def pending_duties():
-    """View duties pending approval"""
+    """View duties pending approval with AI anomaly detection"""
     page = request.args.get('page', 1, type=int)
     branch_filter = request.args.get('branch', '', type=int)
     date_filter = request.args.get('date', '')
@@ -3541,19 +3541,52 @@ def pending_duties():
     duties = query.order_by(desc(Duty.submitted_at)).paginate(page=page, per_page=20, error_out=False)
     branches = Branch.query.filter_by(is_active=True).all()
     
-    # Load photos for each duty
+    # Run AI anomaly detection on current page of duties
+    from services.anomaly_detection_service import AnomalyDetectionService
+    anomaly_service = AnomalyDetectionService()
+    
+    # Analyze each duty for anomalies and attach results
     for duty in duties.items:
+        # Load photos for each duty
         duty.all_photos = Photo.query.filter_by(duty_id=duty.id).order_by(Photo.timestamp.desc()).all()
+        
+        # Run anomaly detection
+        try:
+            anomaly_result = anomaly_service.analyze_duty_for_anomalies(duty.id)
+            duty.anomaly_analysis = anomaly_result
+        except Exception as e:
+            # Don't fail the whole page if anomaly detection fails
+            duty.anomaly_analysis = {
+                'anomalies_detected': False,
+                'error': f'Analysis failed: {str(e)}'
+            }
+            logger.warning(f"Anomaly detection failed for duty {duty.id}: {str(e)}")
     
     # Load duty schemes for admin editing
     duty_schemes = DutyScheme.query.filter_by(is_active=True).all()
+    
+    # Get overall anomaly statistics for the filtered duties
+    total_duties = duties.total
+    duties_with_anomalies = sum(1 for duty in duties.items if duty.anomaly_analysis.get('anomalies_detected', False))
+    critical_anomalies = sum(1 for duty in duties.items if duty.anomaly_analysis.get('severity') == 'critical')
+    high_anomalies = sum(1 for duty in duties.items if duty.anomaly_analysis.get('severity') == 'high')
+    
+    anomaly_summary = {
+        'total_duties': total_duties,
+        'duties_with_anomalies': duties_with_anomalies,
+        'anomaly_rate': f"{(duties_with_anomalies/total_duties*100):.1f}%" if total_duties > 0 else "0%",
+        'critical_count': critical_anomalies,
+        'high_count': high_anomalies,
+        'needs_immediate_attention': critical_anomalies + high_anomalies
+    }
     
     return render_template('admin/pending_duties.html', 
                          duties=duties, 
                          branches=branches,
                          duty_schemes=duty_schemes,
                          branch_filter=branch_filter,
-                         date_filter=date_filter)
+                         date_filter=date_filter,
+                         anomaly_summary=anomaly_summary)
 
 @admin_bp.route('/duties/<int:duty_id>/approve', methods=['GET', 'POST'])
 @login_required
