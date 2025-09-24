@@ -580,6 +580,144 @@
             color: rgba(30, 41, 59, 0.6);
         }
         
+        /* Mobile Layout Fixes */
+        @media (max-width: 768px) {
+            /* Remove container constraints on mobile */
+            .container {
+                max-width: 100% !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            
+            /* Ensure full width sections on mobile */
+            section {
+                margin-left: -0.75rem !important;
+                margin-right: -0.75rem !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            
+            /* Fix card layouts on mobile */
+            .card {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                border-radius: 12px !important;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+            }
+            
+            /* Mobile-specific padding adjustments */
+            .py-5 {
+                padding-top: 2rem !important;
+                padding-bottom: 2rem !important;
+            }
+            
+            /* Better mobile typography */
+            .display-5 {
+                font-size: 1.75rem !important;
+                line-height: 1.2 !important;
+            }
+            
+            .lead {
+                font-size: 1rem !important;
+                line-height: 1.4 !important;
+            }
+            
+            /* Mobile feature cards */
+            .feature-item {
+                margin-bottom: 1rem !important;
+                padding: 1rem !important;
+                background: rgba(255, 255, 255, 0.9) !important;
+                border-radius: 8px !important;
+                border: 1px solid rgba(0,0,0,0.1) !important;
+            }
+            
+            /* Mobile stats cards */
+            .stat-card {
+                margin-bottom: 1rem !important;
+                padding: 1.5rem 1rem !important;
+            }
+            
+            /* Mobile project cards */
+            .project-card {
+                margin-bottom: 1.5rem !important;
+                padding: 1.5rem 1rem !important;
+            }
+            
+            /* Mobile contact items */
+            .contact-item {
+                margin-bottom: 1rem !important;
+                padding: 1rem !important;
+            }
+            
+            /* Mission card mobile */
+            .mission-card {
+                margin-top: 2rem !important;
+                padding: 1.5rem !important;
+            }
+            
+            /* Contact form card mobile */
+            .contact-form-card {
+                padding: 1.5rem !important;
+                margin-top: 2rem !important;
+            }
+            
+            /* Navigation improvements */
+            .navbar {
+                padding: 0.5rem 0.75rem !important;
+            }
+            
+            .navbar-brand {
+                font-size: 1.25rem !important;
+            }
+            
+            /* Row spacing on mobile */
+            .row {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+            
+            .row > * {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+            
+            /* Fix login/auth section mobile layout */
+            .login-section {
+                margin-left: -0.75rem !important;
+                margin-right: -0.75rem !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            
+            .login-section .card {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                border-radius: 12px !important;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+                background: rgba(255, 255, 255, 0.95) !important;
+                backdrop-filter: blur(10px) !important;
+            }
+            
+            .login-section .card-body {
+                padding: 2rem 1.5rem !important;
+            }
+            
+            .login-section .btn {
+                width: 100% !important;
+                min-height: 56px !important;
+                font-size: 1.1rem !important;
+                padding: 1rem 2rem !important;
+                border-radius: 12px !important;
+                margin-bottom: 0.75rem !important;
+            }
+            
+            .login-section h3 {
+                font-size: 1.5rem !important;
+                margin-bottom: 1.5rem !important;
+                text-align: center !important;
+            }
+        }
+        
         /* Floating Elements */
         .floating-elements {
             position: absolute;
@@ -865,37 +1003,7 @@
             }
         }
         
-        /* Simplified login section styling */
-        @media (max-width: 768px) {
-            .login-section .btn {
-                min-height: 56px !important;
-                font-size: 18px !important;
-                padding: 1rem 2rem !important;
-                border-radius: 10px !important;
-                width: 100%;
-            }
-            
-            .login-section h3 {
-                font-size: 1.5rem;
-            }
-            
-            .login-section .lead {
-                font-size: 1rem;
-            }
-        }
-        
-        /* Ultra mobile specific */
-        @media (max-width: 480px) {
-            .login-section .btn {
-                min-height: 60px !important;
-                font-size: 18px !important;
-                padding: 1.125rem 2rem !important;
-            }
-            
-            .login-section h3 {
-                font-size: 1.25rem;
-            }
-        }
+        /* Mobile responsive adjustments handled in main mobile section above */
     </style>
 </head>
 <body>
