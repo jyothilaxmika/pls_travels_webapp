@@ -12,12 +12,9 @@
     
     {% if active_duty %}
     <!-- Active Duty Information -->
-    <div class="card border-success mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Active Duty</h5>
-        </div>
-        <div class="card-body">
-            <!-- Current Duty Information -->
+    <div class="mb-4">
+        <h5 class="mb-3 text-success"><i class="fas fa-play-circle me-2"></i>Active Duty</h5>
+        <!-- Current Duty Information -->
             <div class="row mb-3">
                 <div class="col-6">
                     <strong>Vehicle:</strong><br>
@@ -222,22 +219,17 @@
                     </div>
                     {% endif %}
                 </div>
-            </div>
-            {% endif %}
         </div>
-    </div>
+        {% endif %}
 
     <!-- End Duty Form -->
-    <div class="card border-danger">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0"><i class="fas fa-stop-circle me-2"></i>End Duty</h5>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                
-                <!-- End Odometer Photo Capture -->
-                <div class="mb-3" id="end_odometer_photo_container">
+    <div class="mb-4">
+        <h5 class="mb-3 text-danger"><i class="fas fa-stop-circle me-2"></i>End Duty</h5>
+        <form method="POST" action="{{ url_for('driver.end_duty') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <!-- End Odometer Photo Capture -->
+            <div class="mb-3" id="end_odometer_photo_container">
                     <label class="form-label fw-bold text-danger">
                         <i class="fas fa-camera text-danger me-2"></i>End Odometer Photo *
                         <span class="badge bg-danger ms-2">REQUIRED</span>
@@ -312,90 +304,79 @@
                     </div>
                 </div>
 
-                <!-- Simplified Revenue Collection Section -->
-                <div class="card border-primary mb-3">
-                    <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Revenue Collection Summary</h6>
-                    </div>
-                    <div class="card-body">
-                        <!-- Platform Revenue (Uber) -->
-                        <div class="card border-info mb-3">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Platform Revenue (Uber)</h6>
+            <!-- Simplified Revenue Collection Section -->
+            <div class="mb-3 p-3 bg-light rounded border">
+                <h6 class="mb-3 text-primary"><i class="fas fa-calculator me-2"></i>Revenue Collection Summary</h6>
+                
+                <!-- Platform Revenue (Uber) -->
+                <div class="mb-3 p-3 bg-info bg-opacity-10 rounded border border-info">
+                    <h6 class="mb-3 text-info"><i class="fas fa-mobile-alt me-2"></i>Platform Revenue (Uber)</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="platform_cash" class="form-label fw-bold">
+                                <i class="fas fa-money-bill-wave text-success me-2"></i>Cash from Passengers *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" name="cash_collected_1" id="platform_cash" 
+                                       min="0" step="0.01" required placeholder="0.00">
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="platform_cash" class="form-label fw-bold">
-                                            <i class="fas fa-money-bill-wave text-success me-2"></i>Cash from Passengers *
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" name="cash_collected_1" id="platform_cash" 
-                                                   min="0" step="0.01" required placeholder="0.00">
-                                        </div>
-                                        <small class="text-muted">Cash collected from Uber rides</small>
-                                    </div>
-                                    
-                                    <div class="col-md-6 mb-3">
-                                        <label for="platform_digital" class="form-label fw-bold">
-                                            <i class="fas fa-credit-card text-info me-2"></i>Digital Payments *
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" name="operator_amount_1" id="platform_digital" 
-                                                   min="0" step="0.01" required placeholder="0.00">
-                                        </div>
-                                        <small class="text-muted">UPI, Cards, Wallets from Uber</small>
-                                    </div>
-                                </div>
-                            </div>
+                            <small class="text-muted">Cash collected from Uber rides</small>
                         </div>
                         
-                        <!-- Direct Revenue (Outside Platform) -->
-                        <div class="card border-success mb-3">
-                            <div class="card-header bg-success text-white">
-                                <h6 class="mb-0"><i class="fas fa-handshake me-2"></i>Direct Revenue (Outside Platform)</h6>
+                        <div class="col-md-6 mb-3">
+                            <label for="platform_digital" class="form-label fw-bold">
+                                <i class="fas fa-credit-card text-info me-2"></i>Digital Payments *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" name="operator_amount_1" id="platform_digital" 
+                                       min="0" step="0.01" required placeholder="0.00">
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="direct_cash" class="form-label fw-bold">
-                                            <i class="fas fa-money-bill-wave text-success me-2"></i>Direct Cash *
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" name="cash_collected_2" id="direct_cash" 
-                                                   min="0" step="0.01" required placeholder="0.00">
-                                        </div>
-                                        <small class="text-muted">Cash from direct bookings</small>
-                                    </div>
-                                    
-                                    <div class="col-md-6 mb-3">
-                                        <label for="direct_digital" class="form-label fw-bold">
-                                            <i class="fas fa-qrcode text-warning me-2"></i>QR/Digital Payments *
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">₹</span>
-                                            <input type="number" class="form-control" name="operator_amount_2" id="direct_digital" 
-                                                   min="0" step="0.01" required placeholder="0.00">
-                                        </div>
-                                        <small class="text-muted">QR codes, UPI from direct customers</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Revenue Summary -->
-                        <div class="alert alert-info mt-3">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Revenue Calculation:</strong> 
-                            <span id="revenue_summary">
-                                Platform: ₹<span id="platform_total">0</span> + Direct: ₹<span id="direct_total">0</span> = Total: ₹<span id="grand_total">0</span>
-                            </span>
+                            <small class="text-muted">UPI, Cards, Wallets from Uber</small>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Direct Revenue (Outside Platform) -->
+                <div class="mb-3 p-3 bg-success bg-opacity-10 rounded border border-success">
+                    <h6 class="mb-3 text-success"><i class="fas fa-handshake me-2"></i>Direct Revenue (Outside Platform)</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="direct_cash" class="form-label fw-bold">
+                                <i class="fas fa-money-bill-wave text-success me-2"></i>Direct Cash *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" name="cash_collected_2" id="direct_cash" 
+                                       min="0" step="0.01" required placeholder="0.00">
+                            </div>
+                            <small class="text-muted">Cash from direct bookings</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="direct_digital" class="form-label fw-bold">
+                                <i class="fas fa-qrcode text-warning me-2"></i>QR/Digital Payments *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" name="operator_amount_2" id="direct_digital" 
+                                       min="0" step="0.01" required placeholder="0.00">
+                            </div>
+                            <small class="text-muted">QR codes, UPI from direct customers</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Revenue Summary -->
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Revenue Calculation:</strong> 
+                    <span id="revenue_summary">
+                        Platform: ₹<span id="platform_total">0</span> + Direct: ₹<span id="direct_total">0</span> = Total: ₹<span id="grand_total">0</span>
+                    </span>
+                </div>
+            </div>
                 
                 <!-- End Duty Photo Capture -->
                 <div class="mb-3" id="end_photo_container">
@@ -413,27 +394,22 @@
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-danger btn-lg w-100" id="end-duty-btn">
-                    <i class="fas fa-stop-circle me-2"></i>End Duty
-                </button>
-            </form>
-        </div>
+            <button type="submit" class="btn btn-danger btn-lg w-100" id="end-duty-btn">
+                <i class="fas fa-stop-circle me-2"></i>End Duty
+            </button>
+        </form>
     </div>
     
     {% else %}
     
-    
     <!-- Start New Duty Form -->
-    <div class="card border-success mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0"><i class="fas fa-play me-2"></i>Start New Duty</h5>
-        </div>
-        <div class="card-body">
-            <form action="{{ url_for('driver.start_duty') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                
-                <!-- Vehicle Selection -->
-                <div class="mb-3">
+    <div class="mb-4">
+        <h5 class="mb-3 text-success"><i class="fas fa-play me-2"></i>Start New Duty</h5>
+        <form action="{{ url_for('driver.start_duty') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <!-- Vehicle Selection -->
+            <div class="mb-3">
                     <label for="vehicle_id" class="form-label fw-bold">
                         <i class="fas fa-car text-primary me-2"></i>Select Vehicle
                     </label>
@@ -517,11 +493,10 @@
                     <small class="text-muted" id="cng_hint">Check the CNG pressure gauge in your vehicle</small>
                 </div>
                 
-                <button type="submit" class="btn btn-success btn-lg w-100">
-                    <i class="fas fa-play-circle me-2"></i>Start Duty
-                </button>
-            </form>
-        </div>
+            <button type="submit" class="btn btn-success btn-lg w-100">
+                <i class="fas fa-play-circle me-2"></i>Start Duty
+            </button>
+        </form>
     </div>
     
     {% endif %}
