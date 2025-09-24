@@ -446,22 +446,37 @@ def get_vehicle_last_duty_data(vehicle_id):
 def start_duty():
     driver = get_driver_profile()
 
-    if not driver or driver.status not in [DriverStatus.ACTIVE, DriverStatus.PENDING]:
-        flash('Your driver profile has been rejected or suspended. Please contact admin.', 'error')
+    if not driver:
+        flash('Driver profile not found.', 'error')
         return redirect(url_for('driver.duty'))
 
-    # Check if already has active duty
-    active_duty = Duty.query.filter(
-        Duty.driver_id == driver.id,
-        Duty.status == DutyStatus.ACTIVE
-    ).first()
-
-    if active_duty:
-        flash('You already have an active duty.', 'error')
-        return redirect(url_for('driver.duty'))
-
-    vehicle_id = request.form.get('vehicle_id')
+    vehicle_id_str = request.form.get('vehicle_id')
     start_odometer = request.form.get('start_odometer', type=float)
+    
+    # Validate vehicle_id is provided and numeric
+    if not vehicle_id_str:
+        flash('Please select a vehicle.', 'error')
+        return redirect(url_for('driver.duty'))
+    
+    try:
+        vehicle_id = int(vehicle_id_str)
+    except (ValueError, TypeError):
+        flash('Invalid vehicle selection.', 'error')
+        return redirect(url_for('driver.duty'))
+    
+    # Comprehensive duty start validation using DutyService
+    from services.duty_service import DutyService
+    duty_service = DutyService()
+    
+    is_valid, error_message, validation_data = duty_service.validate_duty_start(
+        driver.id, vehicle_id, start_odometer
+    )
+    
+    if not is_valid:
+        flash(error_message or 'Duty start validation failed.', 'error')
+        return redirect(url_for('driver.duty'))
+    
+    # Get additional form data
     start_cng_level = request.form.get('start_cng_level', type=float)
     
     # Anomaly detection flags
@@ -470,35 +485,15 @@ def start_duty():
     cng_anomaly_detected = request.form.get('cng_anomaly_detected') == 'true'
     cng_original_value = request.form.get('cng_original_value', type=float)
 
-    if not vehicle_id:
-        flash('Please select a vehicle.', 'error')
-        return redirect(url_for('driver.duty'))
-
-    # Get last duty data for validation and auto-fill
-    last_duty_data = get_last_duty_values(driver.id, int(vehicle_id))
+    # Get last duty data for auto-fill
+    last_duty_data = get_last_duty_values(driver.id, vehicle_id)
     
-    # Validate odometer reading continuity
-    if start_odometer and last_duty_data['vehicle_current_odometer']:
-        # Check if start reading is less than vehicle's current odometer
-        if start_odometer < last_duty_data['vehicle_current_odometer']:
-            flash(f'Invalid odometer reading. Vehicle last reading was {last_duty_data["vehicle_current_odometer"]} km. New reading cannot be less than this.', 'error')
-            return redirect(url_for('driver.duty'))
-        
-        # Warning if reading differs significantly from expected
-        expected_reading = last_duty_data['vehicle_current_odometer']
-        if abs(start_odometer - expected_reading) > 50:  # More than 50 km difference
-            flash(f'Warning: Odometer reading differs significantly from expected value ({expected_reading} km). Please verify the reading is correct.', 'warning')
-    
-    # Auto-fill from last duty if not provided
+    # Auto-fill odometer from last duty if not provided (DutyService validation already passed)
     if not start_odometer:
         if last_duty_data['vehicle_current_odometer']:
             start_odometer = last_duty_data['vehicle_current_odometer']
         elif last_duty_data['last_odometer']:
             start_odometer = last_duty_data['last_odometer']
-    
-    if not start_odometer:
-        flash('Please enter a valid starting odometer reading.', 'error')
-        return redirect(url_for('driver.duty'))
     
     # Validate CNG level if provided
     if start_cng_level is not None:
@@ -506,20 +501,14 @@ def start_duty():
             flash('Please select a valid CNG level between 0 and 10 bars.', 'error')
             return redirect(url_for('driver.duty'))
     else:
-        # Default to last end CNG level if available, otherwise None to preserve unknown state
+        # Default to last end CNG level if available
         if last_duty_data and 'last_end_cng' in last_duty_data and last_duty_data['last_end_cng'] is not None:
             start_cng_level = last_duty_data['last_end_cng']
-        else:
-            start_cng_level = None  # Preserve unknown state instead of assuming full tank
 
-    vehicle = Vehicle.query.filter(
-        Vehicle.id == vehicle_id,
-        Vehicle.branch_id == driver.branch_id,
-        Vehicle.is_available == True
-    ).first()
-
+    # Get vehicle from validation data (already validated by DutyService)
+    vehicle = Vehicle.query.get(vehicle_id)
     if not vehicle:
-        flash('Selected vehicle is not available.', 'error')
+        flash('Selected vehicle not found.', 'error')
         return redirect(url_for('driver.duty'))
 
     # No duty scheme required for starting duties - removed automatic assignment
