@@ -968,11 +968,8 @@ function editDocument(type, driverId) {
 
 function deleteDocument(type, driverId) {
     if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
-        fetch(`/admin/drivers/${driverId}/documents/${type}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCSRFToken()
-            }
+        fetchWithCSRF(`/admin/drivers/${driverId}/documents/${type}`, {
+            method: 'DELETE'
         })
         .then(response => {
             if (!response.ok) {
@@ -1000,20 +997,12 @@ function toggleVerification(type, driverId, currentStatus) {
     const confirmMsg = currentStatus === 'true' ? 'Mark this document as unverified?' : 'Mark this document as verified?';
     
     if (confirm(confirmMsg)) {
-        // Get CSRF token
-        const csrfToken = getCSRFToken();
-        if (!csrfToken) {
-            alert('Error: CSRF token not found. Please refresh the page and try again.');
-            return;
-        }
-        
         console.log('Sending request to:', `/admin/drivers/${driverId}/documents/${type}/${action}`);
         
-        fetch(`/admin/drivers/${driverId}/documents/${type}/${action}`, {
+        fetchWithCSRF(`/admin/drivers/${driverId}/documents/${type}/${action}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
+                'Content-Type': 'application/json'
             }
         })
         .then(response => {
@@ -1046,17 +1035,9 @@ function submitDocumentForm() {
     const form = document.getElementById('addDocumentForm');
     const formData = new FormData(form);
     
-    // Add CSRF token to form data
-    const csrfToken = getCSRFToken();
-    if (csrfToken) {
-        formData.append('csrf_token', csrfToken);
-    }
-    
-    fetch('/admin/drivers/documents/add', {
+    // CSRF token and credentials automatically handled by fetchWithCSRF
+    fetchWithCSRF('/admin/drivers/documents/add', {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken
-        },
         body: formData
     })
     .then(response => {

@@ -20,7 +20,7 @@ The backend is built with Flask, utilizing a Blueprint pattern for modularity an
 - **File Upload System**: Allows camera capture or traditional file uploads for documents (Aadhar, license) and photos, with support for JPG, PNG, PDF formats, file previews, and local filesystem storage.
 - **Compensation Engine**: Implements flexible duty schemes (fixed, per-trip, slab-based, mixed) with JSON configuration, Business Minimum Guarantee (BMG) support, and real-time earnings calculation.
 - **PWA Features**: Includes advanced service worker for offline caching, background sync, push notification support, and IndexedDB-based offline storage for critical data.
-- **CSRF Token Handling**: Extended CSRF token validity to 4 hours with enhanced error handling and user guidance for expired tokens.
+- **CSRF Token Handling**: Extended CSRF token validity to 4 hours with centralized fetchWithCSRF helper that ensures session cookies are sent with all requests, proper CSRF headers, and enhanced error handling for expired tokens.
 - **Duty Workflow Enhancements**: Implemented a secondary approval system for scheme templates with dual-control security, database migrations for approval status, and enhanced audit logging.
 
 ## System Design Choices
