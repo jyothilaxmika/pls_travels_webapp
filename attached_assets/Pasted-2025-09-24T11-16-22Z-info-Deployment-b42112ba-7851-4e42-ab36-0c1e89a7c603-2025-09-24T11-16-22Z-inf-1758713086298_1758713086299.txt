@@ -1,0 +1,59 @@
+2025-09-24T11:16:22Z info: Deployment: b42112ba-7851-4e42-ab36-0c1e89a7c603
+2025-09-24T11:16:22Z info: Build: 78d67ec7-2d51-434c-b967-a92cf73c2007
+2025-09-24T11:16:22Z info: Connecting to builder
+2025-09-24T11:16:24Z info: Builder connected
+2025-09-24T11:16:24Z info: Installing packages
+2025-09-24T11:16:25Z info: Skipping Build as no Build command set
+2025-09-24T11:16:25Z info: Pushing pid1 binary layer...
+2025-09-24T11:16:26Z info: Created pid1 binary layer
+2025-09-24T11:16:30Z info: Pushing Repl layer...
+2025-09-24T11:16:30Z info: Nix layers for this Repl are uncached.
+2025-09-24T11:16:30Z info: Retrieved cached nix layer
+2025-09-24T11:16:30Z info: Created hosting layer
+2025-09-24T11:16:57Z info: Created Repl layer
+2025-09-24T11:16:57Z info: Pushing Repl (cache) layer...
+2025-09-24T11:16:57Z info: Created Repl (cache) layer
+2025-09-24T11:19:33Z info: Created nix-0 layer
+2025-09-24T11:19:33Z info: uploading image for cached layer
+2025-09-24T11:19:33Z info: pushed cache image manifest
+2025-09-24T11:19:34Z info: pushed cache soci index manifest
+2025-09-24T11:19:34Z info: uploading cached layer
+2025-09-24T11:19:34Z info: successfully uploaded cached layer
+2025-09-24T11:19:36Z info: Pushed image manifest
+2025-09-24T11:19:37Z info: Pushed soci index manifest
+2025-09-24T11:19:41Z info: Creating Autoscale service
+[2025-09-24 11:22:16 +0000] [26] [INFO] Starting gunicorn 23.0.0
+[2025-09-24 11:22:16 +0000] [26] [INFO] Using worker: sync
+[2025-09-24 11:22:25 +0000] [31] [ERROR] Exception in worker process
+    self.callable = self.load()
+    worker.init_process()
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+    from app import create_app
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    ^^^^^^^^^^^
+    self.load_wsgi()
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "/home/runner/workspace/main.py", line 2, in <module>
+[2025-09-24 11:22:35 +0000] [57] [ERROR] Shutting down: Master
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+[2025-09-24 11:22:37 +0000] [68] [INFO] Booting worker with pid: 68
+    self.callable = self.load()
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+           ^^^^^^^^^^^^^^^^^^^
+    worker.init_process()
+[2025-09-24 11:22:46 +0000] [75] [INFO] Starting gunicorn 23.0.0
+                ^^^^^^^^^^^^^^^
+    self.wsgi = self.app.wsgi()
+  File "/home/runner/workspace/app.py", line 21, in <module>
+    self.load_wsgi()
+    self.callable = self.load()
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+2025-09-24T11:23:33Z error: The deployment is crash looping. This can happen if the run command fails or exits immediately after starting. Check the logs for more information.

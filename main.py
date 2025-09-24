@@ -1,9 +1,6 @@
 import os
-from app import create_app
+from app import app
 from flask import render_template
-
-# Create the app instance for gunicorn
-app = create_app()
 
 # Legal pages for Play Store compliance
 @app.route('/privacy-policy')
