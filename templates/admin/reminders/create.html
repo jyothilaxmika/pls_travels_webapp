@@ -1,0 +1,238 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Create Manual Reminder{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Create Manual Reminder</h1>
+        <div>
+            <a href="{{ url_for('admin_reminder.list_reminders') }}" class="btn btn-secondary">
+                <i class="fas fa-list me-2"></i>Back to List
+            </a>
+            <a href="{{ url_for('admin_reminder.reminders_dashboard') }}" class="btn btn-info">
+                <i class="fas fa-dashboard me-2"></i>Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Reminder Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="driver_id" class="form-label">Driver <span class="text-danger">*</span></label>
+                            <select name="driver_id" id="driver_id" class="form-select" required>
+                                <option value="">Select a driver...</option>
+                                {% for driver in drivers %}
+                                <option value="{{ driver.id }}" 
+                                    {% if request.form.get('driver_id')|int == driver.id %}selected{% endif %}>
+                                    {{ driver.full_name }} ({{ driver.phone }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the driver who should receive this reminder.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reminder_type" class="form-label">Reminder Type <span class="text-danger">*</span></label>
+                            <select name="reminder_type" id="reminder_type" class="form-select" required>
+                                <option value="">Select reminder type...</option>
+                                {% for type in types %}
+                                <option value="{{ type }}" 
+                                    {% if request.form.get('reminder_type') == type %}selected{% endif %}>
+                                    {{ type.replace('_', ' ').title() }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Type of reminder to send.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="duty_id" class="form-label">Related Duty</label>
+                            <select name="duty_id" id="duty_id" class="form-select">
+                                <option value="">No specific duty (general reminder)</option>
+                                {% for duty in active_duties %}
+                                <option value="{{ duty.id }}" 
+                                    {% if request.form.get('duty_id')|int == duty.id %}selected{% endif %}>
+                                    Duty #{{ duty.id }} - {{ duty.driver.full_name }} 
+                                    ({{ duty.actual_start.strftime('%Y-%m-%d %H:%M') if duty.actual_start else 'Not started' }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optional: Link this reminder to a specific duty.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message <span class="text-danger">*</span></label>
+                            <textarea name="message" id="message" class="form-control" rows="4" required 
+                                placeholder="Enter the reminder message...">{{ request.form.get('message', '') }}</textarea>
+                            <div class="form-text">The message that will be sent to the driver.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="channel" class="form-label">Delivery Channel <span class="text-danger">*</span></label>
+                            <select name="channel" id="channel" class="form-select" required>
+                                <option value="">Select channel...</option>
+                                <option value="sms" {% if request.form.get('channel') == 'sms' %}selected{% endif %}>SMS</option>
+                                <option value="whatsapp" {% if request.form.get('channel') == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+                                <option value="push" {% if request.form.get('channel') == 'push' %}selected{% endif %}>Push Notification</option>
+                                <option value="email" {% if request.form.get('channel') == 'email' %}selected{% endif %}>Email</option>
+                            </select>
+                            <div class="form-text">How the reminder will be delivered.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select name="priority" id="priority" class="form-select">
+                                <option value="normal" {% if request.form.get('priority', 'normal') == 'normal' %}selected{% endif %}>Normal</option>
+                                <option value="high" {% if request.form.get('priority') == 'high' %}selected{% endif %}>High</option>
+                                <option value="urgent" {% if request.form.get('priority') == 'urgent' %}selected{% endif %}>Urgent</option>
+                                <option value="low" {% if request.form.get('priority') == 'low' %}selected{% endif %}>Low</option>
+                            </select>
+                            <div class="form-text">Priority level for this reminder.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="scheduled_at" class="form-label">Schedule For</label>
+                            <input type="datetime-local" name="scheduled_at" id="scheduled_at" class="form-control"
+                                value="{{ request.form.get('scheduled_at', '') }}">
+                            <div class="form-text">Leave empty to send immediately, or select a future time to schedule.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="send_immediately" id="send_immediately" 
+                                    {% if request.form.get('send_immediately') %}checked{% endif %}>
+                                <label class="form-check-label" for="send_immediately">
+                                    Send immediately after creation
+                                </label>
+                                <div class="form-text">If unchecked, reminder will be created but not sent until manually triggered.</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Create Reminder
+                            </button>
+                            <a href="{{ url_for('admin_reminder.list_reminders') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-info">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-success btn-sm mb-2 w-100" onclick="generateReminders()">
+                        <i class="fas fa-magic me-2"></i>Auto-Generate Reminders
+                    </button>
+                    <button class="btn btn-info btn-sm mb-2 w-100" onclick="processPendingReminders()">
+                        <i class="fas fa-paper-plane me-2"></i>Process Pending Reminders
+                    </button>
+                    <a href="{{ url_for('admin_reminder.list_reminders') }}" class="btn btn-secondary btn-sm w-100">
+                        <i class="fas fa-list me-2"></i>View All Reminders
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow mt-3">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-warning">Message Templates</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-outline-primary btn-sm mb-2 w-100" onclick="useTemplate('long_duty')">
+                        Long Active Duty
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm mb-2 w-100" onclick="useTemplate('missing_photo')">
+                        Missing Photo
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm mb-2 w-100" onclick="useTemplate('duty_not_ended')">
+                        Duty Not Ended
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateReminders() {
+    if (!confirm('Generate new reminders for drivers with issues?')) return;
+    
+    fetch('{{ url_for("admin_reminder.api_generate_reminders") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success: ' + data.message);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+function processPendingReminders() {
+    if (!confirm('Process all pending reminders?')) return;
+    
+    fetch('{{ url_for("admin_reminder.api_process_pending") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success: ' + data.message);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+function useTemplate(templateType) {
+    const messageField = document.getElementById('message');
+    const templates = {
+        'long_duty': 'Dear Driver, your duty has been active for several hours. Please check if you need to take a break or end your duty. If you continue, please ensure you are safe and alert.',
+        'missing_photo': 'Dear Driver, please upload the required photo for your duty. This is mandatory for completing your duty record.',
+        'duty_not_ended': 'Dear Driver, your duty appears to be completed but not properly ended in the system. Please end your duty and upload the required end photo.'
+    };
+    
+    if (templates[templateType]) {
+        messageField.value = templates[templateType];
+    }
+}
+</script>
+{% endblock %}
