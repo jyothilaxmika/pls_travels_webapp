@@ -1,0 +1,259 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Driver Reminders Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Driver Reminders Dashboard</h1>
+        <div>
+            <a href="{{ url_for('admin_reminder.create_reminder') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Manual Reminder
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Reminders</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Sent Today</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.sent_today }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Failed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.failed }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Overdue</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.overdue }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bell fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-success me-2" onclick="generateReminders()">
+                        <i class="fas fa-magic me-2"></i>Generate New Reminders
+                    </button>
+                    <button class="btn btn-info me-2" onclick="processPendingReminders()">
+                        <i class="fas fa-paper-plane me-2"></i>Process Pending Reminders
+                    </button>
+                    <a href="{{ url_for('admin_reminder.list_reminders') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-list me-2"></i>View All Reminders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reminders -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Reminders</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_reminders %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Driver</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Channel</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reminder in recent_reminders %}
+                                <tr>
+                                    <td>{{ reminder.driver.full_name }}</td>
+                                    <td>
+                                        <span class="badge badge-info">{{ reminder.reminder_type.replace('_', ' ').title() }}</span>
+                                    </td>
+                                    <td>
+                                        {% if reminder.status == 'pending' %}
+                                            <span class="badge badge-warning">{{ reminder.status.title() }}</span>
+                                        {% elif reminder.status == 'sent' %}
+                                            <span class="badge badge-success">{{ reminder.status.title() }}</span>
+                                        {% elif reminder.status == 'failed' %}
+                                            <span class="badge badge-danger">{{ reminder.status.title() }}</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">{{ reminder.status.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ reminder.channel.title() }}</td>
+                                    <td>{{ reminder.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if reminder.status == 'pending' %}
+                                            <button class="btn btn-sm btn-primary" onclick="sendReminder({{ reminder.id }})">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        {% endif %}
+                                        {% if reminder.status != 'resolved' %}
+                                            <button class="btn btn-sm btn-success" onclick="resolveReminder({{ reminder.id }})">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No recent reminders found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateReminders() {
+    if (!confirm('Generate new reminders for drivers with issues?')) return;
+    
+    fetch('{{ url_for("admin_reminder.api_generate_reminders") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success: ' + data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+function processPendingReminders() {
+    if (!confirm('Process all pending reminders?')) return;
+    
+    fetch('{{ url_for("admin_reminder.api_process_pending") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success: ' + data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+function sendReminder(reminderId) {
+    fetch(`{{ url_for("admin_reminder.send_reminder", reminder_id=0) }}`.replace('0', reminderId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Reminder sent successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+function resolveReminder(reminderId) {
+    fetch(`{{ url_for("admin_reminder.resolve_reminder", reminder_id=0) }}`.replace('0', reminderId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Reminder resolved');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

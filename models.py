@@ -1918,6 +1918,106 @@ class OAuth(db.Model):
     def __repr__(self):
         return f'<OAuth {self.provider}:{self.user_id}>'
 
+# Driver Reminder System Models
+import enum
+
+class ReminderType(enum.Enum):
+    ACTIVE_DUTY_OVERDUE = 'active_duty_overdue'
+    MISSING_END_PHOTO = 'missing_end_photo'
+    MISSING_START_PHOTO = 'missing_start_photo'
+    DUTY_NOT_ENDED = 'duty_not_ended'
+    LONG_ACTIVE_DUTY = 'long_active_duty'
+
+class ReminderStatus(enum.Enum):
+    PENDING = 'pending'
+    SENT = 'sent'
+    FAILED = 'failed'
+    RESOLVED = 'resolved'
+
+class DriverReminder(db.Model):
+    """Track reminders sent to drivers for missing actions"""
+    __tablename__ = 'driver_reminders'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    
+    # Core relationships
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'), nullable=False, index=True)
+    duty_id = db.Column(db.Integer, db.ForeignKey('duties.id'), nullable=True, index=True)
+    
+    # Reminder details
+    reminder_type = db.Column(db.String(50), nullable=False, index=True)
+    status = db.Column(db.String(20), nullable=False, default=ReminderStatus.PENDING.value, index=True)
+    priority = db.Column(db.String(20), default='normal')  # low, normal, high, urgent
+    
+    # Message content
+    message = db.Column(db.Text, nullable=False)
+    channel = db.Column(db.String(20), nullable=False)  # sms, whatsapp, push, email
+    
+    # Timing and attempts
+    scheduled_at = db.Column(db.DateTime, nullable=False, default=get_ist_time_naive, index=True)
+    sent_at = db.Column(db.DateTime)
+    resolved_at = db.Column(db.DateTime)
+    attempts = db.Column(db.Integer, default=0)
+    max_attempts = db.Column(db.Integer, default=3)
+    
+    # Context data
+    context_data = db.Column(db.JSON)  # Additional data for reminder context
+    failure_reason = db.Column(db.Text)
+    
+    # Administrative
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    auto_generated = db.Column(db.Boolean, default=True)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=get_ist_time_naive)
+    updated_at = db.Column(db.DateTime, default=get_ist_time_naive, onupdate=get_ist_time_naive)
+    
+    # Relationships
+    driver = db.relationship('Driver', backref='reminders')
+    duty = db.relationship('Duty', backref='reminders')
+    creator = db.relationship('User', foreign_keys=[created_by])
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_reminder_driver_status', 'driver_id', 'status'),
+        Index('idx_reminder_type_scheduled', 'reminder_type', 'scheduled_at'),
+        Index('idx_reminder_pending_due', 'status', 'scheduled_at'),
+    )
+    
+    def mark_sent(self, channel_response=None):
+        """Mark reminder as successfully sent"""
+        self.status = ReminderStatus.SENT.value
+        self.sent_at = get_ist_time_naive()
+        self.attempts += 1
+        if channel_response:
+            self.context_data = self.context_data or {}
+            self.context_data['send_response'] = channel_response
+    
+    def mark_failed(self, error_message):
+        """Mark reminder as failed"""
+        self.status = ReminderStatus.FAILED.value
+        self.failure_reason = error_message
+        self.attempts += 1
+    
+    def mark_resolved(self):
+        """Mark reminder as resolved (action completed)"""
+        self.status = ReminderStatus.RESOLVED.value
+        self.resolved_at = get_ist_time_naive()
+    
+    def can_retry(self):
+        """Check if reminder can be retried"""
+        return self.attempts < self.max_attempts and self.status == ReminderStatus.FAILED.value
+    
+    def is_overdue(self, minutes=30):
+        """Check if pending reminder is overdue"""
+        if self.status != ReminderStatus.PENDING.value:
+            return False
+        return (get_ist_time_naive() - self.scheduled_at).total_seconds() > (minutes * 60)
+    
+    def __repr__(self):
+        return f'<DriverReminder {self.reminder_type} for driver {self.driver_id}>'
+
 
 # Create all indexes
 def create_performance_indexes():
