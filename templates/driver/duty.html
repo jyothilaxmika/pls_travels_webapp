@@ -425,25 +425,24 @@
                 
                 <!-- Start Odometer Photo Capture -->
                 <div class="mb-3" id="start_odometer_photo_container">
-                    <label class="form-label fw-bold text-danger">
-                        <i class="fas fa-camera text-danger me-2"></i>Start Odometer Photo *
-                        <span class="badge bg-danger ms-2">REQUIRED</span>
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-camera text-info me-2"></i>Start Odometer Photo (Optional)
                     </label>
                     <div class="camera-capture-container">
-                        <button type="button" class="btn btn-danger btn-lg capture-photo-btn w-100" 
+                        <button type="button" class="btn btn-info btn-lg capture-photo-btn w-100" 
                                 onclick="initCameraCapture('start_odometer_photo', 'Capture Start Odometer Photo')">
-                            <i class="fas fa-camera me-2"></i>📸 Capture Odometer Photo NOW
+                            <i class="fas fa-camera me-2"></i>📸 Capture Odometer Photo (Optional)
                         </button>
-                        <small class="d-block text-danger mt-2">
-                            <i class="fas fa-exclamation-triangle me-1"></i><strong>Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.</strong>
+                        <small class="d-block text-muted mt-2">
+                            <i class="fas fa-info-circle me-1"></i>Take a photo of the odometer reading for record keeping (optional).
                         </small>
                     </div>
                     <input type="hidden" name="start_odometer_photo" id="start_odometer_photo">
                     
                     <!-- Photo Status Indicator -->
                     <div class="mt-2">
-                        <div id="start_photo_status" class="alert alert-danger d-none">
-                            <i class="fas fa-camera me-2"></i><strong>Start odometer photo is mandatory.</strong> Please capture a clear photo of the current odometer reading.
+                        <div id="start_photo_status" class="alert alert-info d-none">
+                            <i class="fas fa-camera me-2"></i>Photo capture ready...
                         </div>
                     </div>
                 </div>
