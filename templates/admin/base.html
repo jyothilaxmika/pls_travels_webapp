@@ -378,6 +378,16 @@
         function fetchWithCSRF(url, options = {}) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             
+            // Debug logging
+            console.log('fetchWithCSRF called for URL:', url);
+            console.log('CSRF token found:', csrfToken ? 'Yes' : 'No');
+            console.log('CSRF token value:', csrfToken);
+            
+            if (!csrfToken) {
+                console.error('CSRF token not found in meta tag');
+                throw new Error('CSRF token not found. Please refresh the page and try again.');
+            }
+            
             const defaultOptions = {
                 credentials: 'same-origin', // Critical: ensures session cookie is sent
                 headers: {
@@ -391,6 +401,7 @@
                 options.body.append('csrf_token', csrfToken);
             }
             
+            console.log('Making fetch request with options:', defaultOptions);
             return fetch(url, { ...defaultOptions, ...options });
         }
         
