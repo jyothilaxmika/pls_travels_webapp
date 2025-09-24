@@ -969,19 +969,28 @@ function editDocument(type, driverId) {
 function deleteDocument(type, driverId) {
     if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
         fetch(`/admin/drivers/${driverId}/documents/${type}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 location.reload();
             } else {
-                alert('Error deleting document: ' + data.message);
+                const errorMsg = data && data.message ? data.message : 'Unknown error occurred';
+                alert('Error deleting document: ' + errorMsg);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error deleting document');
+            alert('Error deleting document: ' + error.message);
         });
     }
 }
@@ -1035,17 +1044,23 @@ function submitDocumentForm() {
         },
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             location.reload();
         } else {
-            alert('Error adding document: ' + data.message);
+            const errorMsg = data && data.message ? data.message : 'Unknown error occurred';
+            alert('Error adding document: ' + errorMsg);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error adding document');
+        alert('Error adding document: ' + error.message);
     });
 }
 
