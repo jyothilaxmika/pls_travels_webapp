@@ -524,7 +524,7 @@ function setFieldError(field, message) {
     field.parentNode.appendChild(errorDiv);
 }
 
-// Validate odometer photos with timestamp validation (start photo is optional, end photo is mandatory)
+// Validate odometer photos with timestamp validation (both start and end photos are optional)
 function validateOdometerPhotos(form) {
     let isValid = true;
     
@@ -550,24 +550,22 @@ function validateOdometerPhotos(form) {
         }
     }
     
-    // Check for end duty - requires end odometer photo
+    // Check for end duty - optional end odometer photo
     if (form.action.includes('end_duty')) {
         const endOdometerPhoto = form.querySelector('#end_odometer_photo');
         if (endOdometerPhoto) {
             const photoCaptured = form.querySelector('input[name="end_odometer_photo_captured"]');
             const photoTimestamp = form.querySelector('input[name="end_photo_timestamp"]');
             
-            if (!photoCaptured || !photoTimestamp) {
-                showPhotoError('end_odometer_photo_container', '📸 End odometer photo is required. Please capture a fresh photo of the final odometer reading.');
-                isValid = false;
-            } else {
-                // Validate timestamp is recent (within last 5 minutes)
+            // Only validate if photo was captured (photo is optional)
+            if (photoCaptured && photoTimestamp) {
+                // Validate timestamp is recent (within last 2 minutes)
                 const captureTime = new Date(photoTimestamp.value);
                 const now = new Date();
                 const timeDiff = (now - captureTime) / (1000 * 60); // minutes
                 
-                if (timeDiff > 5) {
-                    showPhotoError('end_odometer_photo_container', '⏰ End odometer photo is too old. Please capture a fresh photo.');
+                if (timeDiff > ODOMETER_PHOTO_MAX_AGE_MINUTES) {
+                    showPhotoError('end_odometer_photo_container', 'Photo is too old. Please capture a fresh photo of the current odometer reading.');
                     isValid = false;
                 }
             }
