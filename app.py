@@ -5,7 +5,7 @@ import traceback
 from flask import Flask, send_from_directory, session, request, jsonify, render_template, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from sqlalchemy.orm import DeclarativeBase
@@ -113,6 +113,12 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    
+    # Make CSRF token function available in all templates
+    @app.template_global()
+    def csrf_token():
+        """Generate CSRF token for templates"""
+        return generate_csrf()
     
     # Initialize Flask-Migrate for database migrations
     migrate = Migrate(app, db)
