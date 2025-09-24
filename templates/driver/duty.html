@@ -895,31 +895,68 @@ function handleCameraPhoto(file, inputId) {
     if (file && file.type.startsWith('image/')) {
         console.log('Photo captured for:', inputId);
         
-        // Store the file reference
-        const hiddenInput = document.getElementById(inputId);
-        if (hiddenInput) {
-            hiddenInput.setAttribute('data-photo-file', file.name);
-            hiddenInput.value = 'captured';
-        }
-        
-        // Create preview
-        const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
-        const captureContainer = captureButton ? captureButton.parentElement : null;
-        
-        if (captureContainer) {
-            let previewContainer = captureContainer.querySelector('.photo-preview');
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Data = e.target.result;
             
-            if (!previewContainer) {
-                previewContainer = document.createElement('div');
-                previewContainer.className = 'photo-preview mt-2';
-                captureContainer.appendChild(previewContainer);
+            // Store the base64 data in the format expected by backend
+            const hiddenInput = document.getElementById(inputId);
+            if (hiddenInput) {
+                hiddenInput.value = 'captured';
             }
             
-            const reader = new FileReader();
-            reader.onload = function(e) {
+            // Create hidden inputs for data and metadata in the format backend expects
+            const form = hiddenInput.closest('form');
+            if (form) {
+                // Remove existing data inputs if any
+                const existingDataInput = form.querySelector(`input[name="${inputId}_data"]`);
+                if (existingDataInput) existingDataInput.remove();
+                
+                const existingMetadataInput = form.querySelector(`input[name="${inputId}_metadata"]`);
+                if (existingMetadataInput) existingMetadataInput.remove();
+                
+                // Create new data input with base64 image
+                const dataInput = document.createElement('input');
+                dataInput.type = 'hidden';
+                dataInput.name = `${inputId}_data`;
+                dataInput.value = base64Data;
+                form.appendChild(dataInput);
+                
+                // Create metadata input
+                const metadata = {
+                    filename: file.name,
+                    size: file.size,
+                    type: file.type,
+                    lastModified: file.lastModified,
+                    capturedAt: new Date().toISOString(),
+                    source: 'mobile_camera'
+                };
+                
+                const metadataInput = document.createElement('input');
+                metadataInput.type = 'hidden';
+                metadataInput.name = `${inputId}_metadata`;
+                metadataInput.value = JSON.stringify(metadata);
+                form.appendChild(metadataInput);
+                
+                console.log('Base64 data and metadata stored for:', inputId);
+            }
+            
+            // Create preview
+            const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
+            const captureContainer = captureButton ? captureButton.parentElement : null;
+            
+            if (captureContainer) {
+                let previewContainer = captureContainer.querySelector('.photo-preview');
+                
+                if (!previewContainer) {
+                    previewContainer = document.createElement('div');
+                    previewContainer.className = 'photo-preview mt-2';
+                    captureContainer.appendChild(previewContainer);
+                }
+                
                 previewContainer.innerHTML = `
                     <div class="position-relative d-inline-block">
-                        <img src="${e.target.result}" class="img-fluid rounded shadow" style="max-height: 150px;">
+                        <img src="${base64Data}" class="img-fluid rounded shadow" style="max-height: 150px;">
                         <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
                                 onclick="removePhoto('${inputId}')">
                             <i class="fas fa-times"></i>
@@ -929,15 +966,15 @@ function handleCameraPhoto(file, inputId) {
                         <i class="fas fa-check-circle me-1"></i>Photo captured successfully
                     </small>
                 `;
-            };
-            reader.readAsDataURL(file);
-            
-            // Update button text
-            if (captureButton) {
-                captureButton.innerHTML = '<i class="fas fa-camera me-2"></i>Retake Photo';
-                captureButton.classList.replace('btn-info', 'btn-success');
+                
+                // Update button text
+                if (captureButton) {
+                    captureButton.innerHTML = '<i class="fas fa-camera me-2"></i>Retake Photo';
+                    captureButton.classList.replace('btn-danger', 'btn-success');
+                }
             }
-        }
+        };
+        reader.readAsDataURL(file);
     }
 }
 
@@ -947,6 +984,18 @@ function removePhoto(inputId) {
     if (hiddenInput) {
         hiddenInput.removeAttribute('data-photo-file');
         hiddenInput.value = '';
+    }
+    
+    // Remove hidden data inputs
+    const form = hiddenInput ? hiddenInput.closest('form') : null;
+    if (form) {
+        const dataInput = form.querySelector(`input[name="${inputId}_data"]`);
+        if (dataInput) dataInput.remove();
+        
+        const metadataInput = form.querySelector(`input[name="${inputId}_metadata"]`);
+        if (metadataInput) metadataInput.remove();
+        
+        console.log('Removed photo data for:', inputId);
     }
     
     const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
@@ -960,8 +1009,8 @@ function removePhoto(inputId) {
         
         // Reset button
         if (captureButton) {
-            captureButton.innerHTML = '<i class="fas fa-camera me-2"></i>Capture Odometer Photo';
-            captureButton.classList.replace('btn-success', 'btn-info');
+            captureButton.innerHTML = '<i class="fas fa-camera me-2"></i>📸 Capture Odometer Photo NOW';
+            captureButton.classList.replace('btn-success', 'btn-danger');
         }
     }
 }
