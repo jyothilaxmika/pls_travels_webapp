@@ -1056,6 +1056,3 @@ def verify_duty_photos_and_move_to_permanent(duty_id):
     except Exception as e:
         print(f"Error verifying and moving photos for duty {duty_id}: {e}")
         return False
-    try:
-        temp_dir = ensure_temp_dir()
-        upload_dir = ensure_upload_dir()
