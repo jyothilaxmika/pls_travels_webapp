@@ -129,6 +129,22 @@ function removePhoto(button, inputId) {
     
     input.value = '';
     previewContainer.remove();
+    
+    // Remove associated validation fields for odometer photos
+    if (inputId.includes('odometer')) {
+        const timestampField = input.parentNode.querySelector(`input[name*="photo_timestamp"]`);
+        const capturedField = input.parentNode.querySelector(`input[name*="${inputId}_captured"]`);
+        
+        if (timestampField) timestampField.remove();
+        if (capturedField) capturedField.remove();
+        
+        // Show waiting status again
+        const photoType = inputId.includes('start') ? 'start' : 'end';
+        const statusDiv = document.getElementById(`${photoType}_photo_status`);
+        if (statusDiv) {
+            statusDiv.classList.remove('d-none');
+        }
+    }
 }
 
 function addCameraButton(input) {
@@ -153,16 +169,47 @@ function captureLocationAndTimestamp(file, input) {
     const timestamp = new Date().toISOString();
     const inputType = input.id.includes('start') ? 'start' : 'end';
     
+    // Validate timestamp freshness for odometer photos
+    const isOdometerPhoto = input.id.includes('odometer');
+    if (isOdometerPhoto) {
+        // Check if photo is recent (within last 2 minutes for freshness)
+        const photoTimestamp = file.lastModified || Date.now();
+        const now = Date.now();
+        const timeDiff = now - photoTimestamp;
+        const maxAge = 2 * 60 * 1000; // 2 minutes in milliseconds
+        
+        if (timeDiff > maxAge) {
+            showAlert('⚠️ Please take a fresh photo of the odometer reading. Old photos are not accepted for verification.', 'warning');
+            input.value = '';
+            return;
+        }
+    }
+    
     // Store timestamp immediately
+    const existingTimestamp = input.parentNode.querySelector(`input[name="${inputType}_photo_timestamp"]`);
+    if (existingTimestamp) {
+        existingTimestamp.remove();
+    }
+    
     const timestampField = document.createElement('input');
     timestampField.type = 'hidden';
     timestampField.name = `${inputType}_photo_timestamp`;
     timestampField.value = timestamp;
     input.parentNode.appendChild(timestampField);
     
+    // Store file data for validation
+    if (isOdometerPhoto) {
+        const photoDataField = document.createElement('input');
+        photoDataField.type = 'hidden';
+        photoDataField.name = `${input.id}_captured`;
+        photoDataField.value = 'true';
+        input.parentNode.appendChild(photoDataField);
+    }
+    
     // Location capture removed per user request
-    // Just show that photo was captured successfully
-    showLocationStatus(input.parentNode, '📸 Photo captured', 'success');
+    // Show that photo was captured successfully with timestamp
+    const timeStr = new Date(timestamp).toLocaleTimeString();
+    showLocationStatus(input.parentNode, `📸 Photo captured at ${timeStr}`, 'success');
 }
 
 function showLocationStatus(container, message, type = 'info') {
@@ -268,6 +315,11 @@ function validateDutyForm(event) {
             isValid = false;
         }
     });
+    
+    // Validate mandatory odometer photos
+    if (!validateOdometerPhotos(form)) {
+        isValid = false;
+    }
     
     // Specific validations
     if (form.action.includes('start_duty')) {
@@ -461,6 +513,81 @@ function setFieldError(field, message) {
     errorDiv.className = 'invalid-feedback';
     errorDiv.textContent = message;
     field.parentNode.appendChild(errorDiv);
+}
+
+// Validate mandatory odometer photos with timestamp validation
+function validateOdometerPhotos(form) {
+    let isValid = true;
+    
+    // Check for start duty - requires start odometer photo
+    if (form.action.includes('start_duty')) {
+        const startOdometerPhoto = form.querySelector('#start_odometer_photo');
+        if (startOdometerPhoto) {
+            const photoCaptured = form.querySelector('input[name="start_odometer_photo_captured"]');
+            const photoTimestamp = form.querySelector('input[name="start_photo_timestamp"]');
+            
+            if (!photoCaptured || !photoTimestamp) {
+                showPhotoError('start_odometer_photo_container', '📸 Start odometer photo is required. Please capture a fresh photo of the odometer reading.');
+                isValid = false;
+            } else {
+                // Validate timestamp is recent (within last 5 minutes)
+                const captureTime = new Date(photoTimestamp.value);
+                const now = new Date();
+                const timeDiff = (now - captureTime) / (1000 * 60); // minutes
+                
+                if (timeDiff > 5) {
+                    showPhotoError('start_odometer_photo_container', '⏰ Start odometer photo is too old. Please capture a fresh photo.');
+                    isValid = false;
+                }
+            }
+        }
+    }
+    
+    // Check for end duty - requires end odometer photo
+    if (form.action.includes('end_duty')) {
+        const endOdometerPhoto = form.querySelector('#end_odometer_photo');
+        if (endOdometerPhoto) {
+            const photoCaptured = form.querySelector('input[name="end_odometer_photo_captured"]');
+            const photoTimestamp = form.querySelector('input[name="end_photo_timestamp"]');
+            
+            if (!photoCaptured || !photoTimestamp) {
+                showPhotoError('end_odometer_photo_container', '📸 End odometer photo is required. Please capture a fresh photo of the final odometer reading.');
+                isValid = false;
+            } else {
+                // Validate timestamp is recent (within last 5 minutes)
+                const captureTime = new Date(photoTimestamp.value);
+                const now = new Date();
+                const timeDiff = (now - captureTime) / (1000 * 60); // minutes
+                
+                if (timeDiff > 5) {
+                    showPhotoError('end_odometer_photo_container', '⏰ End odometer photo is too old. Please capture a fresh photo.');
+                    isValid = false;
+                }
+            }
+        }
+    }
+    
+    return isValid;
+}
+
+function showPhotoError(containerId, message) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Remove existing error
+    const existingError = container.querySelector('.photo-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Add new error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'photo-error alert alert-danger mt-2';
+    errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${message}`;
+    container.appendChild(errorDiv);
+    
+    // Scroll to error
+    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // Duration tracking for active duties

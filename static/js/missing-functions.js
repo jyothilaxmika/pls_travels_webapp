@@ -49,6 +49,21 @@ function handleCameraPhoto(file, inputId) {
     if (file && file.type.startsWith('image/')) {
         console.log('Photo captured for:', inputId);
         
+        // Validate timestamp freshness for odometer photos
+        const isOdometerPhoto = inputId.includes('odometer');
+        if (isOdometerPhoto) {
+            // Check if photo is recent (within last 2 minutes for freshness)
+            const photoTimestamp = file.lastModified || Date.now();
+            const now = Date.now();
+            const timeDiff = now - photoTimestamp;
+            const maxAge = 2 * 60 * 1000; // 2 minutes in milliseconds
+            
+            if (timeDiff > maxAge) {
+                showAlert('⚠️ Please take a fresh photo of the odometer reading. Old photos are not accepted for verification.', 'warning');
+                return;
+            }
+        }
+        
         // Find the hidden input field for the photo
         const hiddenInput = document.getElementById(inputId);
         if (hiddenInput) {
@@ -56,8 +71,42 @@ function handleCameraPhoto(file, inputId) {
             hiddenInput.file = file;
             console.log('Photo stored in hidden input:', inputId);
             
-            // Show success message
-            showAlert('Photo captured successfully!', 'success');
+            // Set validation fields for odometer photos
+            if (isOdometerPhoto) {
+                const container = hiddenInput.parentNode;
+                const timestamp = new Date().toISOString();
+                const inputType = inputId.includes('start') ? 'start' : 'end';
+                
+                // Remove existing validation fields
+                const existingTimestamp = container.querySelector(`input[name="${inputType}_photo_timestamp"]`);
+                const existingCaptured = container.querySelector(`input[name="${inputId}_captured"]`);
+                if (existingTimestamp) existingTimestamp.remove();
+                if (existingCaptured) existingCaptured.remove();
+                
+                // Add timestamp field
+                const timestampField = document.createElement('input');
+                timestampField.type = 'hidden';
+                timestampField.name = `${inputType}_photo_timestamp`;
+                timestampField.value = timestamp;
+                container.appendChild(timestampField);
+                
+                // Add captured flag field
+                const capturedField = document.createElement('input');
+                capturedField.type = 'hidden';
+                capturedField.name = `${inputId}_captured`;
+                capturedField.value = 'true';
+                container.appendChild(capturedField);
+                
+                // Hide photo status indicator
+                const statusDiv = document.getElementById(`${inputType}_photo_status`);
+                if (statusDiv) {
+                    statusDiv.classList.add('d-none');
+                }
+            }
+            
+            // Show success message with timestamp
+            const timeStr = new Date().toLocaleTimeString();
+            showAlert(`📸 Photo captured successfully at ${timeStr}!`, 'success');
             
             // Update button text to show photo captured
             const captureButton = document.querySelector(`button[onclick*="${inputId}"]`);
@@ -66,7 +115,7 @@ function handleCameraPhoto(file, inputId) {
                 if (icon) {
                     icon.className = 'fas fa-check-circle me-2';
                 }
-                captureButton.innerHTML = captureButton.innerHTML.replace(/Capture.*Photo/, 'Photo Captured ✓');
+                captureButton.innerHTML = captureButton.innerHTML.replace(/Capture.*Photo.*NOW?/, 'Photo Captured ✓');
                 captureButton.classList.remove('btn-info', 'btn-danger');
                 captureButton.classList.add('btn-success');
             }
