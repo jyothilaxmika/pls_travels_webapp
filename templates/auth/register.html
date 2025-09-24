@@ -6,25 +6,24 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10 col-lg-8">
-        <div class="card shadow">
-            <div class="card-body p-4">
-                <div class="text-center mb-4">
-                    <i class="fas fa-user-plus fa-2x text-warning mb-3"></i>
-                    <h3>Create Account</h3>
-                    <p class="text-muted">Join PLS TRAVELS team</p>
-                </div>
+        <div class="border-0 shadow p-4 bg-white rounded">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-plus fa-2x text-warning mb-3"></i>
+                <h3>Create Account</h3>
+                <p class="text-muted">Join PLS TRAVELS team</p>
+            </div>
 
                 <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
                     <!-- Account Credentials Section -->
-                    <div class="card bg-warning bg-opacity-10 border-warning mb-4">
-                        <div class="card-header bg-warning bg-opacity-25">
-                            <h5 class="mb-0">
+                    <div class="bg-warning bg-opacity-10 border border-warning rounded p-3 mb-4">
+                        <div class="border-bottom border-warning pb-2 mb-3">
+                            <h5 class="mb-0 text-dark">
                                 <i class="fas fa-key me-2"></i>Account Credentials
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     {{ form.username.label(class="form-label") }}
@@ -95,13 +94,13 @@
                     <!-- Driver Profile Section (hidden for managers) -->
                     <div id="driver-sections">
                         <!-- Personal Information -->
-                        <div class="card bg-light mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">
+                        <div class="bg-light border rounded p-3 mb-4">
+                            <div class="border-bottom border-secondary pb-2 mb-3">
+                                <h5 class="mb-0 text-dark">
                                     <i class="fas fa-user me-2"></i>Personal Information
                                 </h5>
                             </div>
-                            <div class="card-body">
+                            <div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.full_name.label(class="form-label") }}
@@ -143,13 +142,13 @@
                         </div>
 
                         <!-- License & Identification -->
-                        <div class="card bg-light mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">
+                        <div class="bg-light border rounded p-3 mb-4">
+                            <div class="border-bottom border-secondary pb-2 mb-3">
+                                <h5 class="mb-0 text-dark">
                                     <i class="fas fa-id-card me-2"></i>License & Identification
                                 </h5>
                             </div>
-                            <div class="card-body">
+                            <div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.aadhar_number.label(class="form-label") }}
@@ -164,13 +163,13 @@
                         </div>
 
                         <!-- Bank Details -->
-                        <div class="card bg-light mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">
+                        <div class="bg-light border rounded p-3 mb-4">
+                            <div class="border-bottom border-secondary pb-2 mb-3">
+                                <h5 class="mb-0 text-dark">
                                     <i class="fas fa-university me-2"></i>Bank Details
                                 </h5>
                             </div>
-                            <div class="card-body">
+                            <div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         {{ form.bank_name.label(class="form-label") }}
@@ -196,14 +195,14 @@
                         </div>
 
                         <!-- Document Uploads -->
-                        <div class="card bg-warning bg-opacity-10 border-warning mb-4">
-                            <div class="card-header bg-warning bg-opacity-25">
-                                <h5 class="mb-0">
+                        <div class="bg-warning bg-opacity-10 border border-warning rounded p-3 mb-4">
+                            <div class="border-bottom border-warning pb-2 mb-3">
+                                <h5 class="mb-0 text-dark">
                                     <i class="fas fa-camera me-2"></i>Document Uploads
                                 </h5>
                                 <small class="text-dark">Optional - You can upload these later from your profile</small>
                             </div>
-                            <div class="card-body">
+                            <div>
                                 <div class="row">
                                     <!-- Aadhar Front -->
                                     <div class="col-md-3 mb-3">
@@ -278,9 +277,8 @@
                     </button>
                 </form>
 
-                <div class="text-center">
-                    <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}" class="text-warning">Login here</a></p>
-                </div>
+            <div class="text-center">
+                <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}" class="text-warning">Login here</a></p>
             </div>
         </div>
     </div>
