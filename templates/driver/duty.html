@@ -1048,16 +1048,7 @@ function validateOdometerReading() {
 
 // Smart CNG estimation based on distance and typical consumption (functionality removed as requested)
 
-// Auto-validate odometer when value changes
-document.addEventListener('DOMContentLoaded', function() {
-    const endOdometerInput = document.getElementById('end_odometer');
-    if (endOdometerInput) {
-        endOdometerInput.addEventListener('input', function() {
-            // Reset validation styling when user types
-            this.classList.remove('is-valid', 'is-invalid');
-        });
-    }
-});
+// Auto-validate odometer when value changes (moved to duty.js to avoid duplicate initialization)
 
 </script>
 {% endblock %}

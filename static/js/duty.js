@@ -2,6 +2,15 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeDutyManagement();
+    
+    // Auto-validate odometer when value changes
+    const endOdometerInput = document.getElementById('end_odometer');
+    if (endOdometerInput) {
+        endOdometerInput.addEventListener('input', function() {
+            // Reset validation styling when user types
+            this.classList.remove('is-valid', 'is-invalid');
+        });
+    }
 });
 
 function initializeDutyManagement() {
