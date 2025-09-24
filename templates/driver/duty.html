@@ -434,16 +434,16 @@
                                 onclick="initCameraCapture('start_odometer_photo', 'Capture Start Odometer Photo')">
                             <i class="fas fa-camera me-2"></i>📸 Capture Odometer Photo NOW
                         </button>
-                        <small class="d-block text-warning mt-2">
-                            <i class="fas fa-exclamation-triangle me-1"></i><strong>MANDATORY:</strong> Take a clear, fresh photo of the current odometer reading. Old photos will be rejected.
+                        <small class="d-block text-danger mt-2">
+                            <i class="fas fa-exclamation-triangle me-1"></i><strong>Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.</strong>
                         </small>
                     </div>
                     <input type="hidden" name="start_odometer_photo" id="start_odometer_photo">
                     
                     <!-- Photo Status Indicator -->
                     <div class="mt-2">
-                        <div id="start_photo_status" class="alert alert-warning d-none">
-                            <i class="fas fa-clock me-2"></i>Waiting for odometer photo...
+                        <div id="start_photo_status" class="alert alert-danger d-none">
+                            <i class="fas fa-camera me-2"></i><strong>Start odometer photo is mandatory.</strong> Please capture a clear photo of the current odometer reading.
                         </div>
                     </div>
                 </div>

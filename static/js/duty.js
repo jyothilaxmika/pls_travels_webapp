@@ -455,7 +455,7 @@ function validateStartDuty(form) {
     
     // Mandatory odometer photo with timestamp validation
     if (!photoInput.value) {
-        setFieldError(document.querySelector('.capture-photo-btn'), 'Odometer photo is required. Please capture a clear photo of the odometer reading.');
+        setFieldError(document.querySelector('.capture-photo-btn'), 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
         isValid = false;
     } else {
         // Check if photo was taken recently (within last 10 minutes)
@@ -466,7 +466,7 @@ function validateStartDuty(form) {
             const timeDiff = (currentTime - photoTime) / (1000 * 60); // difference in minutes
             
             if (timeDiff > 10) {
-                setFieldError(document.querySelector('.capture-photo-btn'), 'Photo is too old. Please take a fresh photo of the current odometer reading.');
+                setFieldError(document.querySelector('.capture-photo-btn'), 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
                 isValid = false;
             }
         }
