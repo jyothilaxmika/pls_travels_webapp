@@ -18,7 +18,7 @@ function initCameraCapture(inputId, buttonText) {
             return;
         }
         
-        // Create file input for camera
+        // Create file input for camera - properly named for server submission
         let fileInput = captureContainer.querySelector('input[type="file"]');
         if (!fileInput) {
             fileInput = document.createElement('input');
@@ -27,11 +27,12 @@ function initCameraCapture(inputId, buttonText) {
             fileInput.capture = 'camera';
             fileInput.style.display = 'none';
             fileInput.id = `${inputId}_file_input`;
+            fileInput.name = inputId; // Critical: set name for server submission
             captureContainer.appendChild(fileInput);
             
             fileInput.addEventListener('change', function(e) {
                 if (e.target.files.length > 0) {
-                    handleCameraPhoto(e.target.files[0], inputId);
+                    handleCameraPhoto(e.target.files[0], inputId, fileInput);
                 }
             });
         }
@@ -45,7 +46,7 @@ function initCameraCapture(inputId, buttonText) {
 }
 
 // Handle captured photo
-function handleCameraPhoto(file, inputId) {
+function handleCameraPhoto(file, inputId, fileInput) {
     if (file && file.type.startsWith('image/')) {
         console.log('Photo captured for:', inputId);
         
@@ -64,16 +65,14 @@ function handleCameraPhoto(file, inputId) {
             }
         }
         
-        // Find the hidden input field for the photo
-        const hiddenInput = document.getElementById(inputId);
-        if (hiddenInput) {
-            // Store file reference or process for upload
-            hiddenInput.file = file;
-            console.log('Photo stored in hidden input:', inputId);
+        // Ensure the file is properly stored in the file input for server submission
+        if (fileInput) {
+            // File is already in the file input from the change event
+            console.log('Photo stored in file input for server submission:', inputId);
             
             // Set validation fields for odometer photos
             if (isOdometerPhoto) {
-                const container = hiddenInput.parentNode;
+                const container = fileInput.parentNode;
                 const timestamp = new Date().toISOString();
                 const inputType = inputId.includes('start') ? 'start' : 'end';
                 
@@ -83,14 +82,14 @@ function handleCameraPhoto(file, inputId) {
                 if (existingTimestamp) existingTimestamp.remove();
                 if (existingCaptured) existingCaptured.remove();
                 
-                // Add timestamp field
+                // Add timestamp field (for UX only - server will use its own timestamp)
                 const timestampField = document.createElement('input');
                 timestampField.type = 'hidden';
                 timestampField.name = `${inputType}_photo_timestamp`;
                 timestampField.value = timestamp;
                 container.appendChild(timestampField);
                 
-                // Add captured flag field
+                // Add captured flag field (for UX only)
                 const capturedField = document.createElement('input');
                 capturedField.type = 'hidden';
                 capturedField.name = `${inputId}_captured`;
