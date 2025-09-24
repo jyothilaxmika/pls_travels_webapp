@@ -1000,19 +1000,33 @@ function toggleVerification(type, driverId, currentStatus) {
     const confirmMsg = currentStatus === 'true' ? 'Mark this document as unverified?' : 'Mark this document as verified?';
     
     if (confirm(confirmMsg)) {
+        // Get CSRF token
+        const csrfToken = getCSRFToken();
+        if (!csrfToken) {
+            alert('Error: CSRF token not found. Please refresh the page and try again.');
+            return;
+        }
+        
+        console.log('Sending request to:', `/admin/drivers/${driverId}/documents/${type}/${action}`);
+        
         fetch(`/admin/drivers/${driverId}/documents/${type}/${action}`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCSRFToken()
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             }
         })
         .then(response => {
+            console.log('Response status:', response.status);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+                });
             }
             return response.json();
         })
         .then(data => {
+            console.log('Response data:', data);
             if (data && data.success) {
                 location.reload();
             } else {
@@ -1021,8 +1035,9 @@ function toggleVerification(type, driverId, currentStatus) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Error updating verification status: ' + error.message);
+            console.error('Error details:', error);
+            const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+            alert('Error updating verification status: ' + errorMessage);
         });
     }
 }
