@@ -721,6 +721,13 @@ def ensure_upload_dir():
         os.makedirs(upload_dir)
     return upload_dir
 
+def ensure_temp_dir():
+    """Ensure temporary storage directory exists for duty photos pending audit"""
+    temp_dir = 'temp_duty_photos'
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
+    return temp_dir
+
 def upload_to_cloud(file_data, original_filename, bucket_type='assets', content_type=None):
     """
     Upload file to cloud storage with automatic bucket selection
@@ -869,14 +876,36 @@ def process_camera_capture(form_data, field_name, user_id, photo_type="photo", u
         
         result_path = None
         
-        # Always use local storage for now due to cloud API limitations
-        upload_dir = ensure_upload_dir()
-        file_path = os.path.join(upload_dir, filename)
+        # Check if this is a duty photo - if so, use temporary storage until audit verification
+        is_duty_photo = photo_type in ['duty_start_odometer', 'duty_end_odometer', 'duty_start', 'duty_end']
         
-        # Save image file
-        with open(file_path, 'wb') as f:
-            f.write(image_bytes)
-        result_path = filename
+        if is_duty_photo:
+            # Store duty photos in temporary directory until audit verification
+            temp_dir = ensure_temp_dir()
+            file_path = os.path.join(temp_dir, filename)
+            
+            # Save image file to temporary storage
+            with open(file_path, 'wb') as f:
+                f.write(image_bytes)
+            result_path = filename
+            
+            # Mark in metadata that this is temporary storage
+            metadata['storage_type'] = 'temporary'
+            metadata['requires_audit'] = True
+            metadata['temp_path'] = file_path
+        else:
+            # Always use local storage for non-duty photos
+            upload_dir = ensure_upload_dir()
+            file_path = os.path.join(upload_dir, filename)
+            
+            # Save image file to permanent storage
+            with open(file_path, 'wb') as f:
+                f.write(image_bytes)
+            result_path = filename
+            
+            # Mark in metadata that this is permanent storage
+            metadata['storage_type'] = 'permanent'
+            metadata['requires_audit'] = False
         
         # Optional: Try cloud storage as backup (commented out for now)
         # if use_cloud:
@@ -890,7 +919,12 @@ def process_camera_capture(form_data, field_name, user_id, photo_type="photo", u
         # Save metadata as separate JSON file if metadata exists
         if metadata:
             metadata_filename = secure_filename(f"{photo_type}_{user_id}_{timestamp}_metadata.json")
-            metadata_path = os.path.join(upload_dir, metadata_filename)
+            
+            # Store metadata in same directory as the photo (temp or permanent)
+            if is_duty_photo:
+                metadata_path = os.path.join(temp_dir, metadata_filename)
+            else:
+                metadata_path = os.path.join(upload_dir, metadata_filename)
             
             # Add processed timestamp to metadata
             metadata['processed_at'] = datetime.now().isoformat()
@@ -917,17 +951,111 @@ def get_photo_metadata(filename):
     """
     if not filename:
         return {}
+
+def move_photo_from_temp_to_permanent(filename, photo_type, user_id):
+    """
+    Move duty photo from temporary storage to permanent storage after audit verification
     
+    Args:
+        filename: Name of the photo file
+        photo_type: Type of photo (duty_start_odometer, duty_end_odometer, etc.)
+        user_id: User ID associated with the photo
+    
+    Returns:
+        bool: True if move successful, False otherwise
+    """
     try:
-        # Construct metadata filename
-        name, ext = os.path.splitext(filename)
-        metadata_filename = f"{name}_metadata.json"
-        metadata_path = os.path.join(ensure_upload_dir(), metadata_filename)
+        temp_dir = ensure_temp_dir()
+        upload_dir = ensure_upload_dir()
         
-        if os.path.exists(metadata_path):
-            with open(metadata_path, 'r') as f:
-                return json.load(f)
-    except Exception:
-        pass
+        # Source paths (temporary storage)
+        temp_photo_path = os.path.join(temp_dir, filename)
+        temp_metadata_path = os.path.join(temp_dir, filename.replace('.jpg', '_metadata.json').replace('.png', '_metadata.json').replace('.webp', '_metadata.json'))
+        
+        # Destination paths (permanent storage)
+        perm_photo_path = os.path.join(upload_dir, filename)
+        perm_metadata_path = os.path.join(upload_dir, filename.replace('.jpg', '_metadata.json').replace('.png', '_metadata.json').replace('.webp', '_metadata.json'))
+        
+        # Check if temporary files exist
+        if not os.path.exists(temp_photo_path):
+            print(f"Temporary photo not found: {temp_photo_path}")
+            return False
+        
+        # Move photo file
+        import shutil
+        shutil.move(temp_photo_path, perm_photo_path)
+        
+        # Move and update metadata if it exists
+        if os.path.exists(temp_metadata_path):
+            # Read metadata, update it, and save to permanent location
+            with open(temp_metadata_path, 'r') as f:
+                metadata = json.load(f)
+            
+            # Update metadata to reflect permanent storage
+            metadata['storage_type'] = 'permanent'
+            metadata['requires_audit'] = False
+            metadata['audit_verified_at'] = datetime.now().isoformat()
+            metadata['moved_to_permanent'] = True
+            
+            # Remove temporary path reference
+            if 'temp_path' in metadata:
+                del metadata['temp_path']
+            
+            # Save updated metadata to permanent location
+            with open(perm_metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            
+            # Remove temporary metadata file
+            os.remove(temp_metadata_path)
+        
+        print(f"Successfully moved photo {filename} from temporary to permanent storage")
+        return True
+        
+    except Exception as e:
+        print(f"Error moving photo {filename} from temp to permanent storage: {e}")
+        return False
+
+def verify_duty_photos_and_move_to_permanent(duty_id):
+    """
+    Verify duty photos after audit and move them to permanent storage
     
-    return {}
+    Args:
+        duty_id: ID of the duty being verified
+    
+    Returns:
+        bool: True if all photos moved successfully, False otherwise
+    """
+    try:
+        from models import Duty, db
+        duty = Duty.query.get(duty_id)
+        if not duty:
+            print(f"Duty {duty_id} not found")
+            return False
+        
+        success = True
+        
+        # Move start photo if it exists
+        if duty.start_photo:
+            photo_type = 'duty_start_odometer'
+            if not move_photo_from_temp_to_permanent(duty.start_photo, photo_type, duty.driver_id):
+                success = False
+                print(f"Failed to move start photo for duty {duty_id}")
+        
+        # Move end photo if it exists  
+        if duty.end_photo:
+            photo_type = 'duty_end_odometer'
+            if not move_photo_from_temp_to_permanent(duty.end_photo, photo_type, duty.driver_id):
+                success = False
+                print(f"Failed to move end photo for duty {duty_id}")
+        
+        if success:
+            print(f"All photos for duty {duty_id} successfully moved to permanent storage")
+        
+        return success
+        
+    except Exception as e:
+        print(f"Error verifying and moving photos for duty {duty_id}: {e}")
+        return False
+    try:
+        temp_dir = ensure_temp_dir()
+        upload_dir = ensure_upload_dir()
