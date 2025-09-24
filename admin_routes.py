@@ -3088,6 +3088,101 @@ def compare_duty_schemes():
         flash(f'Error comparing schemes: {str(e)}', 'error')
         return redirect(url_for('admin.duty_schemes'))
 
+# Duty Scheme Secondary Approval Routes
+@admin_bp.route('/duty-schemes/pending-approval')
+@login_required
+@admin_required
+def pending_scheme_approvals():
+    """View duty schemes pending secondary approval"""
+    page = request.args.get('page', 1, type=int)
+    
+    # Get schemes pending approval
+    pending_schemes = DutyScheme.query.filter_by(approval_status='pending').order_by(desc(DutyScheme.created_at)).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    # Get statistics
+    total_pending = DutyScheme.query.filter_by(approval_status='pending').count()
+    total_rejected = DutyScheme.query.filter_by(approval_status='rejected').count()
+    
+    return render_template('admin/pending_scheme_approvals.html',
+                         schemes=pending_schemes,
+                         total_pending=total_pending,
+                         total_rejected=total_rejected)
+
+@admin_bp.route('/duty-schemes/<int:scheme_id>/approve', methods=['POST'])
+@login_required
+@admin_required
+def approve_scheme(scheme_id):
+    """Approve a duty scheme pending secondary approval"""
+    scheme = DutyScheme.query.get_or_404(scheme_id)
+    
+    if scheme.approval_status != 'pending':
+        flash('Scheme is not pending approval', 'error')
+        return redirect(url_for('admin.pending_scheme_approvals'))
+    
+    try:
+        # Check for dual-control violation before approval
+        if current_user.id == scheme.created_by:
+            flash('Self-approval not allowed: You cannot approve a scheme you created', 'error')
+            return redirect(url_for('admin.pending_scheme_approvals'))
+        
+        applied_changes = scheme.approve_scheme(current_user.id)
+        db.session.commit()
+        
+        log_audit('approve_duty_scheme', 'duty_scheme', scheme_id, {
+            'scheme_name': scheme.name,
+            'approved_by': current_user.username,
+            'created_by_id': scheme.created_by,
+            'applied_changes': applied_changes,
+            'approval_notes': 'Secondary approval granted with dual-control'
+        })
+        
+        flash(f'Duty scheme "{scheme.name}" has been approved successfully!', 'success')
+        
+    except ValueError as ve:
+        # Handle specific dual-control violations
+        flash(str(ve), 'error')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error approving scheme: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.pending_scheme_approvals'))
+
+@admin_bp.route('/duty-schemes/<int:scheme_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_scheme(scheme_id):
+    """Reject a duty scheme pending secondary approval"""
+    scheme = DutyScheme.query.get_or_404(scheme_id)
+    
+    if scheme.approval_status != 'pending':
+        flash('Scheme is not pending approval', 'error')
+        return redirect(url_for('admin.pending_scheme_approvals'))
+    
+    rejection_reason = request.form.get('rejection_reason', '').strip()
+    if not rejection_reason:
+        flash('Rejection reason is required', 'error')
+        return redirect(url_for('admin.pending_scheme_approvals'))
+    
+    try:
+        scheme.reject_scheme(rejection_reason)
+        db.session.commit()
+        
+        log_audit('reject_duty_scheme', 'duty_scheme', scheme_id, {
+            'scheme_name': scheme.name,
+            'rejected_by': current_user.username,
+            'rejection_reason': rejection_reason
+        })
+        
+        flash(f'Duty scheme "{scheme.name}" has been rejected', 'warning')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error rejecting scheme: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.pending_scheme_approvals'))
+
 @admin_bp.route('/vehicle-tracking')
 @login_required
 @admin_required
