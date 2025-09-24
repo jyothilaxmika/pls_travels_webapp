@@ -458,14 +458,14 @@ function validateStartDuty(form) {
         setFieldError(document.querySelector('.capture-photo-btn'), 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
         isValid = false;
     } else {
-        // Check if photo was taken recently (within last 10 minutes)
+        // Check if photo was taken recently (within last 2 minutes)
         const photoTimestamp = photoInput.getAttribute('data-timestamp');
         if (photoTimestamp) {
             const photoTime = new Date(parseInt(photoTimestamp));
             const currentTime = new Date();
             const timeDiff = (currentTime - photoTime) / (1000 * 60); // difference in minutes
             
-            if (timeDiff > 10) {
+            if (timeDiff > 2) {
                 setFieldError(document.querySelector('.capture-photo-btn'), 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
                 isValid = false;
             }
@@ -527,16 +527,16 @@ function validateOdometerPhotos(form) {
             const photoTimestamp = form.querySelector('input[name="start_photo_timestamp"]');
             
             if (!photoCaptured || !photoTimestamp) {
-                showPhotoError('start_odometer_photo_container', '📸 Start odometer photo is required. Please capture a fresh photo of the odometer reading.');
+                showPhotoError('start_odometer_photo_container', 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
                 isValid = false;
             } else {
-                // Validate timestamp is recent (within last 5 minutes)
+                // Validate timestamp is recent (within last 2 minutes)
                 const captureTime = new Date(photoTimestamp.value);
                 const now = new Date();
                 const timeDiff = (now - captureTime) / (1000 * 60); // minutes
                 
-                if (timeDiff > 5) {
-                    showPhotoError('start_odometer_photo_container', '⏰ Start odometer photo is too old. Please capture a fresh photo.');
+                if (timeDiff > 2) {
+                    showPhotoError('start_odometer_photo_container', 'Start odometer photo is mandatory. Please capture a clear photo of the current odometer reading.');
                     isValid = false;
                 }
             }
