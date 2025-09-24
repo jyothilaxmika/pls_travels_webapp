@@ -91,13 +91,13 @@
                 // Redirect based on user role
                 switch(data.role) {
                     case 'ADMIN':
-                        window.location.href = '/admin';
+                        window.location.href = '/admin/dashboard';
                         break;
                     case 'MANAGER':
-                        window.location.href = '/manager';
+                        window.location.href = '/manager/dashboard';
                         break;
                     case 'DRIVER':
-                        window.location.href = '/driver';
+                        window.location.href = '/driver/dashboard';
                         break;
                     default:
                         window.location.href = '/';
