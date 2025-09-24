@@ -191,7 +191,7 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('aadhar', '{{ driver.aadhar_document }}')">
+                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('aadhar', '{{ driver.aadhar_document_front or driver.aadhar_document_back }}')">
                                                     <i class="fas fa-eye me-2"></i>View
                                                 </a></li>
                                                 <li><a class="dropdown-item" href="#" onclick="editDocument('aadhar', {{ driver.id }})">
@@ -208,9 +208,20 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    {% if driver.aadhar_document %}
+                                    {% if driver.aadhar_document_front or driver.aadhar_document_back %}
                                         <div class="document-preview mt-2">
-                                            <img src="/uploads/{{ driver.aadhar_document }}" class="img-fluid rounded cursor-pointer" alt="Aadhar Document" onclick="viewDocument('aadhar', '{{ driver.aadhar_document }}')" style="max-height: 120px;">
+                                            {% if driver.aadhar_document_front %}
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Front:</small>
+                                                    <img src="/uploads/{{ driver.aadhar_document_front }}" class="img-fluid rounded cursor-pointer d-block" alt="Aadhar Front" onclick="viewDocument('aadhar', '{{ driver.aadhar_document_front }}')" style="max-height: 120px;">
+                                                </div>
+                                            {% endif %}
+                                            {% if driver.aadhar_document_back %}
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Back:</small>
+                                                    <img src="/uploads/{{ driver.aadhar_document_back }}" class="img-fluid rounded cursor-pointer d-block" alt="Aadhar Back" onclick="viewDocument('aadhar', '{{ driver.aadhar_document_back }}')" style="max-height: 120px;">
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     {% else %}
                                         <div class="text-center text-muted py-3 bg-light rounded">
@@ -247,7 +258,7 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('license', '{{ driver.license_document }}')">
+                                                <li><a class="dropdown-item" href="#" onclick="viewDocument('license', '{{ driver.license_document_front or driver.license_document_back }}')">
                                                     <i class="fas fa-eye me-2"></i>View
                                                 </a></li>
                                                 <li><a class="dropdown-item" href="#" onclick="editDocument('license', {{ driver.id }})">
@@ -264,9 +275,20 @@
                                             </ul>
                                         </div>
                                     </div>
-                                    {% if driver.license_document %}
+                                    {% if driver.license_document_front or driver.license_document_back %}
                                         <div class="document-preview mt-2">
-                                            <img src="/uploads/{{ driver.license_document }}" class="img-fluid rounded cursor-pointer" alt="License Document" onclick="viewDocument('license', '{{ driver.license_document }}')" style="max-height: 120px;">
+                                            {% if driver.license_document_front %}
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Front:</small>
+                                                    <img src="/uploads/{{ driver.license_document_front }}" class="img-fluid rounded cursor-pointer d-block" alt="License Front" onclick="viewDocument('license', '{{ driver.license_document_front }}')" style="max-height: 120px;">
+                                                </div>
+                                            {% endif %}
+                                            {% if driver.license_document_back %}
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Back:</small>
+                                                    <img src="/uploads/{{ driver.license_document_back }}" class="img-fluid rounded cursor-pointer d-block" alt="License Back" onclick="viewDocument('license', '{{ driver.license_document_back }}')" style="max-height: 120px;">
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     {% else %}
                                         <div class="text-center text-muted py-3 bg-light rounded">
@@ -756,11 +778,11 @@
                         <label class="form-label">Document Type</label>
                         <select name="document_type" class="form-select" required>
                             <option value="">Select Document Type</option>
-                            <option value="aadhar">Aadhar Card</option>
-                            <option value="license">Driving License</option>
+                            <option value="aadhar_front">Aadhar Card - Front</option>
+                            <option value="aadhar_back">Aadhar Card - Back</option>
+                            <option value="license_front">Driving License - Front</option>
+                            <option value="license_back">Driving License - Back</option>
                             <option value="profile">Profile Photo</option>
-                            <option value="insurance">Insurance Document</option>
-                            <option value="medical">Medical Certificate</option>
                         </select>
                     </div>
                     <div class="mb-3">
