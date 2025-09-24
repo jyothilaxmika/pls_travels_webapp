@@ -230,17 +230,17 @@
             
             <!-- End Odometer Photo Capture -->
             <div class="mb-3" id="end_odometer_photo_container">
-                    <label class="form-label fw-bold text-danger">
-                        <i class="fas fa-camera text-danger me-2"></i>End Odometer Photo *
-                        <span class="badge bg-danger ms-2">REQUIRED</span>
+                    <label class="form-label fw-bold text-success">
+                        <i class="fas fa-camera text-success me-2"></i>End Odometer Photo
+                        <span class="badge bg-secondary ms-2">OPTIONAL</span>
                     </label>
                     <div class="camera-capture-container">
-                        <button type="button" class="btn btn-danger btn-lg capture-photo-btn w-100" 
+                        <button type="button" class="btn btn-success btn-lg capture-photo-btn w-100" 
                                 onclick="initCameraCapture('end_odometer_photo', 'Capture End Odometer Photo')">
-                            <i class="fas fa-camera me-2"></i>📸 Capture Final Odometer Photo NOW
+                            <i class="fas fa-camera me-2"></i>📸 Capture Final Odometer Photo (Optional)
                         </button>
-                        <small class="d-block text-warning mt-2">
-                            <i class="fas fa-exclamation-triangle me-1"></i><strong>MANDATORY:</strong> Take a clear, fresh photo of the final odometer reading. Old photos will be rejected.
+                        <small class="d-block text-info mt-2">
+                            <i class="fas fa-info-circle me-1"></i><strong>OPTIONAL:</strong> Take a photo showing final odometer reading for verification
                         </small>
                     </div>
                     <input type="hidden" name="end_odometer_photo" id="end_odometer_photo">
