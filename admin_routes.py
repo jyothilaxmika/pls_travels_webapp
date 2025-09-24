@@ -2233,7 +2233,7 @@ def assignments():
     status_filter = request.args.get('status', '')
     branch_filter = request.args.get('branch', '', type=int)
     
-    query = VehicleAssignment.query.join(Driver).join(Vehicle)
+    query = VehicleAssignment.query.join(Driver, VehicleAssignment.driver_id == Driver.id).join(Vehicle, VehicleAssignment.vehicle_id == Vehicle.id)
     
     if status_filter:
         query = query.filter(VehicleAssignment.status == status_filter)
