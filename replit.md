@@ -5,6 +5,10 @@ PLS TRAVELS is a comprehensive multi-city driver and fleet management system bui
 # Recent Changes
 
 ## September 24, 2025
+- **CSRF Token Timeout Resolution**: Fixed "security token expired" issue when drivers start duty
+  - **Extended CSRF Timeout**: Increased CSRF token validity from 1 hour to 2 hours (7200 seconds)
+  - **Driver Experience Improvement**: Drivers can now take more time filling out duty start forms without token expiration
+  - **Security Maintained**: CSRF protection remains intact with extended practical timeout for duty management
 - **Complete Enhancement Package**: Successfully implemented all 8 comprehensive duty workflow enhancements
   - **Secondary Approval System**: Completed scheme templates with dual-control approval workflow for administrative oversight
   - **Dual-Control Security**: Enforced no self-approval with creator ID checks and safe field allowlisting for pending changes
