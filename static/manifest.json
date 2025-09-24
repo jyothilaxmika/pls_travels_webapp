@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/auth/login",
   "categories": ["business", "productivity", "travel"],
   "lang": "en",
   "icons": [
