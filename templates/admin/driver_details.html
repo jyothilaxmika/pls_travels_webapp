@@ -468,7 +468,7 @@
                                         <td><small>DUTY-{{ duty.id }}</small></td>
                                         <td class="text-end">-</td>
                                         <td class="text-end text-success">₹{{ "{:,.2f}".format(duty.driver_earnings) }}</td>
-                                        <td class="text-end"><strong>₹{{ "{:,.2f}".format(running_balance) }}</strong></td>
+                                        <td class="text-end"><strong>₹{{ "{:,.2f}".format(running_balance or 0) }}</strong></td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 <button class="btn btn-outline-info" onclick="viewTransaction('duty', '{{ duty.id }}')">
@@ -492,7 +492,7 @@
                                     <td><small>PEN-{{ penalty.id }}</small></td>
                                     <td class="text-end text-danger">₹{{ "{:,.2f}".format(penalty.amount) }}</td>
                                     <td class="text-end">-</td>
-                                    <td class="text-end"><strong>₹{{ "{:,.2f}".format(running_balance) }}</strong></td>
+                                    <td class="text-end"><strong>₹{{ "{:,.2f}".format(running_balance or 0) }}</strong></td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button class="btn btn-outline-info" onclick="viewTransaction('penalty', '{{ penalty.id }}')">
