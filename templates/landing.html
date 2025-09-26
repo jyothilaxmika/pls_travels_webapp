@@ -1003,8 +1003,138 @@
             }
         }
         
+        /* Google Maps Store Locator Styling */
+        .locations-section {
+            background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
+            padding: 4rem 0;
+            color: white;
+        }
+        
+        .map-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .map-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+            animation: topGlow 3s ease-in-out infinite;
+        }
+        
+        gmpx-store-locator {
+            width: 100%;
+            height: 500px;
+            border-radius: 16px;
+            overflow: hidden;
+            /* Custom styling for the store locator */
+            --gmpx-color-surface: #1e293b;
+            --gmpx-color-on-surface: #ffffff;
+            --gmpx-color-on-surface-variant: #94a3b8;
+            --gmpx-color-primary: #00d4ff;
+            --gmpx-color-outline: #334155;
+            --gmpx-fixed-panel-width-row-layout: 28.5em;
+            --gmpx-fixed-panel-height-column-layout: 65%;
+            --gmpx-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --gmpx-font-family-headings: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --gmpx-font-size-base: 0.875rem;
+            --gmpx-hours-color-open: #22c55e;
+            --gmpx-hours-color-closed: #ef4444;
+            --gmpx-rating-color: #f59e0b;
+            --gmpx-rating-color-empty: #6b7280;
+        }
+        
+        .location-info {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .location-info:hover {
+            background: rgba(0, 212, 255, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+        
+        .location-icon {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #00d4ff, #0ea5e9);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            gmpx-store-locator {
+                height: 400px;
+            }
+            
+            .map-container {
+                padding: 1rem;
+                margin: 1rem 0;
+            }
+        }
+        
         /* Mobile responsive adjustments handled in main mobile section above */
     </style>
+    
+    <!-- Google Maps Store Locator Configuration -->
+    <script>
+        const STORE_LOCATOR_CONFIG = {
+            "locations": [
+                {
+                    "title": "PLS TRAVELS - Chennai Office",
+                    "address1": "2/6, Kennedy St, Radha Nagar, Chromepet",
+                    "address2": "Chennai, Tamil Nadu 600044, India",
+                    "coords": {"lat": 12.9533524, "lng": 80.1472445},
+                    "placeId": "ChIJGd-zFABfUjoRiD-Jd7_1P8w"
+                },
+                {
+                    "title": "E-WORLD ELECTRONICS - Trichy Partner",
+                    "address1": "M3, Royal Enclave, 1st cross, Thillai nagar main road",
+                    "address2": "Trichy, Tamil Nadu, India",
+                    "coords": {"lat": 10.8270062, "lng": 78.6833302},
+                    "placeId": "ChIJWa0cFwX1qjsRPI5GNmOE5Jc"
+                }
+            ],
+            "mapOptions": {
+                "center": {"lat": 11.8, "lng": 79.5},
+                "fullscreenControl": true,
+                "mapTypeControl": false,
+                "streetViewControl": false,
+                "zoom": 7,
+                "zoomControl": true,
+                "maxZoom": 17,
+                "mapId": "DEMO_MAP_ID"
+            },
+            "mapsApiKey": "AIzaSyAOODW6aVe202qcfsw3AOU_1VqFDNBmmT0",
+            "capabilities": {
+                "input": true,
+                "autocomplete": true,
+                "directions": false,
+                "distanceMatrix": true,
+                "details": false,
+                "actions": false
+            }
+        };
+    </script>
 </head>
 <body>
     <!-- Navigation -->
