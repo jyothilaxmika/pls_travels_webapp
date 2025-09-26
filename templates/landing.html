@@ -1100,29 +1100,22 @@
         const STORE_LOCATOR_CONFIG = {
             "locations": [
                 {
-                    "title": "PLS TRAVELS - Chennai Office",
-                    "address1": "2/6, Kennedy St, Radha Nagar, Chromepet",
-                    "address2": "Chennai, Tamil Nadu 600044, India",
+                    "title": "PLS TRAVELS",
+                    "address1": "2/6, Kennedy St, Radha Nagar, Chromepet, Chennai, Tamil Nadu 600044",
+                    "address2": "CHENNAI, Tamil Nadu, India",
                     "coords": {"lat": 12.9533524, "lng": 80.1472445},
                     "placeId": "ChIJGd-zFABfUjoRiD-Jd7_1P8w"
-                },
-                {
-                    "title": "E-WORLD ELECTRONICS - Trichy Partner",
-                    "address1": "M3, Royal Enclave, 1st cross, Thillai nagar main road",
-                    "address2": "Trichy, Tamil Nadu, India",
-                    "coords": {"lat": 10.8270062, "lng": 78.6833302},
-                    "placeId": "ChIJWa0cFwX1qjsRPI5GNmOE5Jc"
                 }
             ],
             "mapOptions": {
-                "center": {"lat": 11.8, "lng": 79.5},
+                "center": {"lat": 38.0, "lng": -100.0},
                 "fullscreenControl": true,
                 "mapTypeControl": false,
                 "streetViewControl": false,
-                "zoom": 7,
+                "zoom": 4,
                 "zoomControl": true,
                 "maxZoom": 17,
-                "mapId": "DEMO_MAP_ID"
+                "mapId": ""
             },
             "mapsApiKey": "AIzaSyAOODW6aVe202qcfsw3AOU_1VqFDNBmmT0",
             "capabilities": {
@@ -1706,6 +1699,85 @@
         </div>
     </section>
 
+    <!-- Our Locations Section -->
+    <section id="locations" class="locations-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold text-white mb-3">
+                    <i class="fas fa-map-marker-alt me-2 text-primary"></i>Our Locations | எங்கள் இடங்கள்
+                </h2>
+                <p class="lead text-white-75">Find us across major cities in Tamil Nadu</p>
+            </div>
+            
+            <!-- Location Info Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-6 offset-lg-3">
+                    <div class="location-info text-center">
+                        <div class="location-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <h4 class="text-white mb-2">PLS TRAVELS - Chennai Office</h4>
+                        <p class="text-white-75 mb-3">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            2/6, Kennedy St, Radha Nagar, Chromepet<br>
+                            Chennai, Tamil Nadu 600044
+                        </p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="tel:+919787247132" class="btn btn-primary btn-sm">
+                                <i class="fas fa-phone me-2"></i>Call Office
+                            </a>
+                            <a href="https://wa.me/+918610693364" target="_blank" class="btn btn-whatsapp btn-sm">
+                                <i class="fab fa-whatsapp me-2"></i>WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Interactive Map -->
+            <div class="map-container">
+                <h4 class="text-white mb-3 text-center">
+                    <i class="fas fa-search-location me-2"></i>Find Us on Map
+                </h4>
+                <gmpx-store-locator map-id="DEMO_MAP_ID"></gmpx-store-locator>
+            </div>
+            
+            <!-- Additional Location Services -->
+            <div class="row mt-5">
+                <div class="col-lg-4 mb-3">
+                    <div class="location-info text-center">
+                        <i class="fas fa-clock location-icon"></i>
+                        <h5 class="text-white">Office Hours</h5>
+                        <p class="text-white-75 mb-0">
+                            Monday - Saturday: 9:00 AM - 7:00 PM<br>
+                            Sunday: 10:00 AM - 5:00 PM
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <div class="location-info text-center">
+                        <i class="fas fa-car location-icon"></i>
+                        <h5 class="text-white">Fleet Services</h5>
+                        <p class="text-white-75 mb-0">
+                            Vehicle allocation, maintenance,<br>
+                            and 24/7 support available
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <div class="location-info text-center">
+                        <i class="fas fa-users location-icon"></i>
+                        <h5 class="text-white">Driver Support</h5>
+                        <p class="text-white-75 mb-0">
+                            Registration, training, and<br>
+                            onboarding assistance
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Future Projects Section -->
     <section id="future" class="py-5" style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);">
         <div class="container">
@@ -1966,6 +2038,21 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Google Maps Store Locator Scripts -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/@googlemaps/extended-component-library/0.6.11/index.min.js"></script>
+    <gmpx-api-loader key="AIzaSyAOODW6aVe202qcfsw3AOU_1VqFDNBmmT0" solution-channel="GMP_QB_locatorplus_v11_cABD"></gmpx-api-loader>
+    
+    <!-- Initialize Store Locator -->
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', async () => {
+            await customElements.whenDefined('gmpx-store-locator');
+            const locator = document.querySelector('gmpx-store-locator');
+            if (locator) {
+                locator.configureFromQuickBuilder(STORE_LOCATOR_CONFIG);
+            }
+        });
+    </script>
     
     <!-- Application Form Script -->
     <script>
