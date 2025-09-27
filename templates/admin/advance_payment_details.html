@@ -101,7 +101,7 @@
                         <h6 class="text-muted">Driver Name</h6>
                         <p class="mb-0">
                             <strong>{{ advance_request.driver.full_name }}</strong>
-                            <a href="{{ url_for('admin.driver_details', driver_id=advance_request.driver.id) }}" class="btn btn-sm btn-outline-primary ms-2">
+                            <a href="{{ url_for('admin.view_driver', driver_id=advance_request.driver.id) }}" class="btn btn-sm btn-outline-primary ms-2">
                                 <i class="fas fa-external-link-alt"></i> View Profile
                             </a>
                         </p>

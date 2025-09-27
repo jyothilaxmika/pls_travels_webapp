@@ -1,0 +1,66 @@
+2025-09-20T09:10:43Z info: Deployment: 7d978cce-1844-482d-be8b-3b448fce57b1
+2025-09-20T09:10:43Z info: Build: 3b89fac7-b3c0-4318-913d-0f4d6fbcedfa
+2025-09-20T09:10:43Z info: Connecting to builder
+2025-09-20T09:10:44Z info: Builder connected
+2025-09-20T09:10:45Z info: Installing packages
+2025-09-20T09:10:45Z info: Skipping Build as no Build command set
+2025-09-20T09:10:45Z info: Pushing pid1 binary layer...
+2025-09-20T09:10:48Z info: Created pid1 binary layer
+2025-09-20T09:10:51Z info: Pushing Repl layer...
+2025-09-20T09:10:51Z info: Pushing hosting layer...
+2025-09-20T09:10:51Z info: Nix layers for this Repl are uncached.
+2025-09-20T09:10:51Z info: Pushing nix-0 layer...
+2025-09-20T09:10:51Z info: Retrieved cached nix layer
+2025-09-20T09:10:51Z info: Created hosting layer
+2025-09-20T09:11:20Z info: Created Repl layer
+2025-09-20T09:11:20Z info: Pushing Repl (cache) layer...
+2025-09-20T09:11:21Z info: Created Repl (cache) layer
+2025-09-20T09:14:26Z info: Created nix-0 layer
+2025-09-20T09:14:26Z info: uploading image for cached layer
+2025-09-20T09:14:27Z info: pushed cache image manifest
+2025-09-20T09:14:28Z info: pushed cache soci index manifest
+2025-09-20T09:14:28Z info: uploading cached layer
+2025-09-20T09:14:28Z info: successfully uploaded cached layer
+2025-09-20T09:14:31Z info: Pushed image manifest
+2025-09-20T09:14:32Z info: Pushed soci index manifest
+2025-09-20T09:14:36Z info: Creating Autoscale service
+[2025-09-20 09:18:32 +0000] [25] [INFO] Using worker: sync
+starting up user application
+[2025-09-20 09:18:32 +0000] [25] [INFO] Starting gunicorn 23.0.0
+forwarding local port 5000 to external port 80 (mapped as 1104)
+[2025-09-20 09:18:32 +0000] [25] [INFO] Listening at: http://0.0.0.0:5000 (25)
+[2025-09-20 09:18:32 +0000] [31] [INFO] Booting worker with pid: 31
+[2025-09-20 09:18:32 +0000] [30] [INFO] Booting worker with pid: 30
+Successfully imported functions from utils_main
+[2025-09-20 09:18:42,659] INFO in utils.config_validator: OTP_CONFIG: Production readiness check PASSED
+  warnings.warn(
+🔌 Connecting to PostgreSQL: host=ep-twilight-feather-adgboov1.c-2.us-east-1.aws.neon.tech, db=neondb, user=neondb_owner, password_present=****************
+[2025-09-20 09:18:41,996] WARNING in app: JWT_SECRET_KEY not set. Using derived secret. Set JWT_SECRET_KEY in production.
+[2025-09-20 09:18:41,820] INFO in app: Rate limiter initialized with in-memory storage (development)
+[2025-09-20 09:18:41,999] INFO in app: PLS Travels application starting up
+[2025-09-20 09:18:41,999] INFO in utils.monitoring: Monitoring middleware and endpoints configured
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_limiter/extension.py:364: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+[2025-09-20 09:18:42,656] INFO in utils.config_validator: OTP_CONFIG: Production readiness check PASSED
+  warnings.warn(
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_limiter/extension.py:364: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+Successfully imported functions from utils_main
+[2025-09-20 09:18:41,998] INFO in app: PLS Travels application starting up
+[2025-09-20 09:18:41,998] INFO in utils.monitoring: Monitoring middleware and endpoints configured
+[2025-09-20 09:18:41,996] WARNING in app: JWT_SECRET_KEY not set. Using derived secret. Set JWT_SECRET_KEY in production.
+🔌 Connecting to PostgreSQL: host=ep-twilight-feather-adgboov1.c-2.us-east-1.aws.neon.tech, db=neondb, user=neondb_owner, password_present=****************
+[2025-09-20 09:18:41,820] INFO in app: Rate limiter initialized with in-memory storage (development)
+🔌 Connecting to PostgreSQL: host=ep-twilight-feather-adgboov1.c-2.us-east-1.aws.neon.tech, db=neondb, user=neondb_owner, password_present=****************
+[2025-09-20 09:18:46,160] INFO in app: PLS Travels application starting up
+[2025-09-20 09:18:46,239] INFO in utils.config_validator: OTP_CONFIG: Production readiness check PASSED
+[2025-09-20 09:18:46,158] WARNING in app: JWT_SECRET_KEY not set. Using derived secret. Set JWT_SECRET_KEY in production.
+[2025-09-20 09:18:46,157] INFO in app: Rate limiter initialized with in-memory storage (development)
+[2025-09-20 09:18:46,512] WARNING in app: JWT_SECRET_KEY not set. Using derived secret. Set JWT_SECRET_KEY in production.
+[2025-09-20 09:18:46,512] INFO in app: Rate limiter initialized with in-memory storage (development)
+[2025-09-20 09:18:46,160] INFO in utils.monitoring: Monitoring middleware and endpoints configured
+OTP Configuration: ✅ OTP system is production-ready with Twilio SMS
+🔌 Connecting to PostgreSQL: host=ep-twilight-feather-adgboov1.c-2.us-east-1.aws.neon.tech, db=neondb, user=neondb_owner, password_present=****************
+[2025-09-20 09:18:46,514] INFO in utils.monitoring: Monitoring middleware and endpoints configured
+[2025-09-20 09:18:46,592] INFO in utils.config_validator: OTP_CONFIG: Production readiness check PASSED
+OTP Configuration: ✅ OTP system is production-ready with Twilio SMS
+[2025-09-20 09:18:46,514] INFO in app: PLS Travels application starting up
+2025-09-20T09:19:36Z error: The deployment is failing health checks. This can happen if the application isn't responding, responds with an error, or doesn't respond in time. Health checks are sent to the / endpoint by default and must respond as soon as possible. Make sure that the / endpoint is implemented and returns a 200 status code in a timely manner. Avoid doing expensive or long running operations on the / endpoint, prefer deferring them to a different route. Check the logs for more information.

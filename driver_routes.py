@@ -12,7 +12,7 @@ from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme,
                    DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus,
                    TrackingSession, AdvancePaymentRequest)
 from forms import DriverProfileForm, DutyForm
-from utils import (allowed_file, calculate_earnings, calculate_advanced_salary, 
+from utils_main import (allowed_file, calculate_earnings, calculate_advanced_salary, 
                    process_file_upload, process_camera_capture, calculate_tripsheet)
 from auth import log_audit
 
@@ -136,7 +136,7 @@ def profile():
             driver.user_id = current_user.id
             
             # Generate unique employee ID - ensure it's not None
-            from utils import generate_employee_id
+            from utils_main import generate_employee_id
             employee_id = generate_employee_id()
             if not employee_id:
                 flash('Error generating employee ID. Please try again.', 'error')
@@ -1145,104 +1145,135 @@ def get_last_values(vehicle_id):
 @login_required
 @driver_required
 def earnings():
-    driver = get_driver_profile()
-
-    if not driver:
-        flash('Driver profile not found.', 'error')
-        return redirect(url_for('driver.profile'))
-
-    # Date range filter
-    start_date = request.args.get('start_date', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
-    end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
-
     try:
-        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-    except ValueError:
-        start_date_obj = (datetime.now() - timedelta(days=30)).date()
-        end_date_obj = datetime.now().date()
+        driver = get_driver_profile()
 
-    # Get duties in date range
-    duties = Duty.query.filter(
-        Duty.driver_id == driver.id,
-        func.date(Duty.start_time) >= start_date_obj,
-        func.date(Duty.start_time) <= end_date_obj,
-        Duty.status == DutyStatus.COMPLETED
-    ).order_by(desc(Duty.start_time)).all()
+        if not driver:
+            flash('Driver profile not found.', 'error')
+            return redirect(url_for('driver.profile'))
 
-    # Import manual calculations model
-    from models import ManualEarningsCalculation
-    
-    # Calculate totals with manual calculations override
-    total_earnings = 0
-    total_manual_earnings = 0
-    total_revenue = sum(duty.revenue or 0 for duty in duties)
-    total_bmg = 0  # BMG applied data not stored in Duty model
-    total_incentive = sum(duty.incentive_payment or 0 for duty in duties)
-    
-    # Enhanced earnings calculation with manual overrides
-    duties_with_manual = []
-    for duty in duties:
-        # Check if manual calculation exists for this duty
-        manual_calc = ManualEarningsCalculation.query.filter_by(
-            duty_id=duty.id, 
-            status='approved'
-        ).first()
+        # Date range filter
+        start_date = request.args.get('start_date', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+        end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
+
+        try:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except ValueError:
+            start_date_obj = (datetime.now() - timedelta(days=30)).date()
+            end_date_obj = datetime.now().date()
+
+        # Get duties in date range - use safe query with proper attribute names
+        duties = Duty.query.filter(
+            Duty.driver_id == driver.id,
+            func.date(Duty.actual_start) >= start_date_obj,
+            func.date(Duty.actual_start) <= end_date_obj,
+            Duty.status == DutyStatus.COMPLETED
+        ).order_by(desc(Duty.actual_start)).all()
+
+        # Import manual calculations model safely
+        try:
+            from models import ManualEarningsCalculation
+        except ImportError:
+            ManualEarningsCalculation = None
         
-        if manual_calc:
-            # Use manual calculation earnings
-            duty_earnings = manual_calc.net_earnings or 0
-            total_manual_earnings += duty_earnings
-            # Add manual calculation info to duty object for template
-            duty.manual_calculation = manual_calc
-        else:
-            # Use regular duty earnings
-            duty_earnings = duty.driver_earnings or 0
-            duty.manual_calculation = None
+        # Calculate totals with manual calculations override
+        total_earnings = 0
+        total_manual_earnings = 0
+        total_revenue = sum(getattr(duty, 'revenue', 0) or 0 for duty in duties)
+        total_bmg = 0  # BMG applied data not stored in Duty model
+        total_incentive = sum(getattr(duty, 'incentive_payment', 0) or 0 for duty in duties)
         
-        total_earnings += duty_earnings
-        duties_with_manual.append(duty)
+        # Enhanced earnings calculation with manual overrides
+        duties_with_manual = []
+        for duty in duties:
+            # Check if manual calculation exists for this duty
+            manual_calc = None
+            if ManualEarningsCalculation:
+                manual_calc = ManualEarningsCalculation.query.filter_by(
+                    duty_id=duty.id, 
+                    status='approved'
+                ).first()
+            
+            if manual_calc:
+                # Use manual calculation earnings
+                duty_earnings = getattr(manual_calc, 'net_earnings', 0) or 0
+                total_manual_earnings += duty_earnings
+                # Add manual calculation info to duty object for template
+                duty.manual_calculation = manual_calc
+            else:
+                # Use regular duty earnings
+                duty_earnings = getattr(duty, 'driver_earnings', 0) or 0
+                duty.manual_calculation = None
+            
+            total_earnings += duty_earnings
+            duties_with_manual.append(duty)
+        
+        # Convert duties to JSON-serializable format for frontend
+        duties_json = []
+        for duty in duties_with_manual:
+            duty_dict = {
+                'id': duty.id,
+                'start_time': duty.start_time.isoformat() if duty.start_time else None,
+                'end_time': duty.end_duty_time.isoformat() if hasattr(duty, 'end_duty_time') and duty.end_duty_time else None,
+                'revenue': float(duty.revenue or 0),
+                'driver_earnings': float(duty.driver_earnings or 0),
+                'incentive_payment': float(duty.incentive_payment or 0),
+                'status': duty.status.value if duty.status else None,
+                'manual_calculation': {
+                    'net_earnings': float(duty.manual_calculation.net_earnings or 0),
+                    'notes': duty.manual_calculation.notes
+                } if duty.manual_calculation else None
+            }
+            duties_json.append(duty_dict)
+
+        # Get penalties in date range safely
+        try:
+            penalties = Penalty.query.filter(
+                Penalty.driver_id == driver.id,
+                func.date(Penalty.applied_at) >= start_date_obj,
+                func.date(Penalty.applied_at) <= end_date_obj
+            ).all()
+        except:
+            penalties = []
+
+        total_penalties = sum(getattr(penalty, 'amount', 0) or 0 for penalty in penalties)
+
+        return render_template('driver/earnings.html',
+                             driver=driver,
+                             duties=duties_with_manual,
+                             duties_json=duties_json,
+                             penalties=penalties,
+                             total_earnings=total_earnings,
+                             total_manual_earnings=total_manual_earnings,
+                             total_revenue=total_revenue,
+                             total_bmg=total_bmg,
+                             total_incentive=total_incentive,
+                             total_penalties=total_penalties,
+                             start_date=start_date,
+                             end_date=end_date)
     
-    # Convert duties to JSON-serializable format for frontend
-    duties_json = []
-    for duty in duties_with_manual:
-        duty_dict = {
-            'id': duty.id,
-            'start_time': duty.start_time.isoformat() if duty.start_time else None,
-            'end_time': duty.end_duty_time.isoformat() if hasattr(duty, 'end_duty_time') and duty.end_duty_time else None,
-            'revenue': float(duty.revenue or 0),
-            'driver_earnings': float(duty.driver_earnings or 0),
-            'incentive_payment': float(duty.incentive_payment or 0),
-            'status': duty.status.value if duty.status else None,
-            'manual_calculation': {
-                'net_earnings': float(duty.manual_calculation.net_earnings or 0),
-                'notes': duty.manual_calculation.notes
-            } if duty.manual_calculation else None
-        }
-        duties_json.append(duty_dict)
-
-    # Get penalties in date range
-    penalties = Penalty.query.filter(
-        Penalty.driver_id == driver.id,
-        func.date(Penalty.applied_at) >= start_date_obj,
-        func.date(Penalty.applied_at) <= end_date_obj
-    ).all()
-
-    total_penalties = sum(penalty.amount or 0 for penalty in penalties)
-
-    return render_template('driver/earnings.html',
-                         driver=driver,
-                         duties=duties_with_manual,
-                         duties_json=duties_json,
-                         penalties=penalties,
-                         total_earnings=total_earnings,
-                         total_manual_earnings=total_manual_earnings,
-                         total_revenue=total_revenue,
-                         total_bmg=total_bmg,
-                         total_incentive=total_incentive,
-                         total_penalties=total_penalties,
-                         start_date=start_date,
-                         end_date=end_date)
+    except Exception as e:
+        import traceback
+        error_message = str(e)
+        print(f"ERROR in driver earnings: {error_message}")
+        print("Full traceback:")
+        traceback.print_exc()
+        
+        # Return a safe fallback page
+        flash(f'Error loading earnings: {error_message}', 'error')
+        return render_template('driver/earnings.html',
+                             driver=get_driver_profile(),
+                             duties=[],
+                             penalties=[],
+                             total_earnings=0,
+                             total_manual_earnings=0,
+                             total_revenue=0,
+                             total_bmg=0,
+                             total_incentive=0,
+                             total_penalties=0,
+                             start_date=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'),
+                             end_date=datetime.now().strftime('%Y-%m-%d'))
 
 # === ADVANCE PAYMENT REQUEST ENDPOINTS ===
 
@@ -1714,6 +1745,9 @@ def resign():
             return render_template('driver/resign.html', driver=driver)
         
         try:
+            if not preferred_last_working_date:
+                flash('Please provide a preferred last working date.', 'error')
+                return render_template('driver/resign.html', driver=driver)
             preferred_date = datetime.strptime(preferred_last_working_date, '%Y-%m-%d').date()
             
             # Ensure preferred date is at least 30 days from today

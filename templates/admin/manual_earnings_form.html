@@ -59,6 +59,7 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">
+
                                     <i class="fas fa-clock text-info me-1"></i>Online Hours
                                     <span class="badge bg-info ms-1">Auto-fetch</span>
                                 </label>
@@ -80,12 +81,39 @@
                                 </label>
                                 {{ form.cash_collected(class="form-control border-success") }}
                                 <small class="text-muted">Driver input - adjustable by admin</small>
+
+                                    <i class="fas fa-sync text-success me-1" title="Auto-calculated from duty start to end time"></i>
+                                    {{ form.online_hours.label }}
+                                    <small class="text-success">Auto-calculated</small>
+                                </label>
+                                {{ form.online_hours(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Calculated from duty start to end time</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.uber_trips.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.uber_trips(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.cash_collected.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.cash_collected(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
+
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">
+
                                     <i class="fas fa-money-bill-wave text-success me-1"></i>Cash Collected 2
                                     <span class="badge bg-success ms-1">Driver Fill</span>
                                 </label>
@@ -107,6 +135,32 @@
                                 </label>
                                 {{ form.operator_bill_2(class="form-control border-success") }}
                                 <small class="text-muted">Driver input - adjustable by admin</small>
+
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.cash_collected_2.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.cash_collected_2(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.operator_bill.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.operator_bill(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.operator_bill_2.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.operator_bill_2(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
+
                             </div>
                         </div>
                         
@@ -150,6 +204,7 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">
+
                                     <i class="fas fa-money-check-alt text-info me-1"></i>Advance
                                     <span class="badge bg-info ms-1">Auto-fetch</span>
                                     {% if duty.advance_requests %}
@@ -178,6 +233,30 @@
                                 </label>
                                 {{ form.toll_expense(class="form-control border-danger") }}
                                 <small class="text-muted">Admin fills this field</small>
+
+                                    <i class="fas fa-sync text-success me-1" title="Auto-fetched from WhatsApp advance requests"></i>
+                                    {{ form.advance_deduction.label }}
+                                    <small class="text-success">Auto-fetched</small>
+                                    <span id="advance-highlight" class="badge bg-info ms-2" style="display: none;">WhatsApp Request</span>
+                                </label>
+                                {{ form.advance_deduction(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Auto-fetched from approved WhatsApp advance requests</small>
+                                <div id="advance-details" class="mt-2" style="display: none;">
+                                    <small class="text-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span id="advance-summary"></span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-edit text-warning me-1" title="Driver to fill, admin verifies"></i>
+                                    {{ form.toll_expense.label }}
+                                    <small class="text-warning">Driver Input</small>
+                                </label>
+                                {{ form.toll_expense(class="form-control border-warning manual-input-field") }}
+                                <small class="form-text text-muted">Driver fills, admin verifies during manual calculation</small>
+
                             </div>
                         </div>
                         
@@ -186,6 +265,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">
+
                                     <i class="fas fa-gas-pump text-success me-1"></i>Start CNG
                                     <span class="badge bg-success ms-1">Driver Fill</span>
                                 </label>
@@ -199,6 +279,95 @@
                                 </label>
                                 {{ form.end_cng(class="form-control border-success") }}
                                 <small class="text-muted">Driver input - adjustable by admin</small>
+
+                                    <i class="fas fa-sync text-success me-1" title="Auto-fetched from duty start"></i>
+                                    {{ form.start_cng.label }}
+                                    <small class="text-success">Auto-fetched</small>
+                                </label>
+                                {{ form.start_cng(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Automatically fetched from duty start CNG level</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-sync text-success me-1" title="Auto-fetched from duty end"></i>
+                                    {{ form.end_cng.label }}
+                                    <small class="text-success">Auto-fetched</small>
+                                </label>
+                                {{ form.end_cng(class="form-control border-success auto-fetch-field", readonly=true) }}
+                                <small class="form-text text-muted">Automatically fetched from duty end CNG level</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Odometer Photos for Verification -->
+                        <h5 class="text-info">📷 Odometer Verification Photos</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <h6 class="text-success mb-3">
+                                        <i class="fas fa-play-circle me-1"></i>Start Odometer Photo
+                                        <small class="text-muted d-block">{{ duty.start_odometer or 'N/A' }} km</small>
+                                    </h6>
+                                    {% if duty.start_photo %}
+                                        <div class="position-relative">
+                                            <img src="/uploads/{{ duty.start_photo }}" 
+                                                 class="img-fluid rounded border shadow-sm" 
+                                                 style="max-height: 200px; cursor: pointer; width: 100%;"
+                                                 onclick="showPhotoModal('/uploads/{{ duty.start_photo }}', 'Start Odometer - {{ duty.driver.full_name if duty.driver else 'Unknown' }}')">
+                                            <div class="position-absolute top-0 start-0 m-2">
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check"></i> Verified
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted mt-2 d-block">
+                                            <i class="fas fa-info-circle"></i> Click to view full size
+                                        </small>
+                                    {% else %}
+                                        <div class="border rounded d-flex align-items-center justify-content-center bg-light" 
+                                             style="height: 200px;">
+                                            <div class="text-center">
+                                                <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted mb-0">No start odometer photo available</p>
+                                                <small class="text-danger">⚠️ Photo required for verification</small>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <h6 class="text-danger mb-3">
+                                        <i class="fas fa-stop-circle me-1"></i>End Odometer Photo
+                                        <small class="text-muted d-block">{{ duty.end_odometer or 'N/A' }} km</small>
+                                    </h6>
+                                    {% if duty.end_photo %}
+                                        <div class="position-relative">
+                                            <img src="/uploads/{{ duty.end_photo }}" 
+                                                 class="img-fluid rounded border shadow-sm" 
+                                                 style="max-height: 200px; cursor: pointer; width: 100%;"
+                                                 onclick="showPhotoModal('/uploads/{{ duty.end_photo }}', 'End Odometer - {{ duty.driver.full_name if duty.driver else 'Unknown' }}')">
+                                            <div class="position-absolute top-0 start-0 m-2">
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check"></i> Verified
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted mt-2 d-block">
+                                            <i class="fas fa-info-circle"></i> Click to view full size
+                                        </small>
+                                    {% else %}
+                                        <div class="border rounded d-flex align-items-center justify-content-center bg-light" 
+                                             style="height: 200px;">
+                                            <div class="text-center">
+                                                <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted mb-0">No end odometer photo available</p>
+                                                <small class="text-danger">⚠️ Photo required for verification</small>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
                             </div>
                         </div>
                         
@@ -400,9 +569,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 Object.keys(data.data).forEach(fieldName => {
                     const field = document.querySelector(`[name="${fieldName}"]`);
-                    if (field) {
+                    if (field && data.data[fieldName] !== null) {
                         field.value = data.data[fieldName];
                         
+
                         // Apply styling based on field category
                         const category = data.field_categories[fieldName];
                         if (category === 'auto') {
@@ -416,10 +586,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             driverFields++;
                         } else if (category === 'admin') {
                             adminFields++;
+
+                        // Add visual indicators based on field category
+                        if (data.auto_fetched_fields && data.auto_fetched_fields.includes(fieldName)) {
+                            field.classList.add('border-success', 'auto-fetch-field');
+                            field.setAttribute('readonly', true);
+                            field.style.backgroundColor = '#e8f5e8'; // Green tint for auto-fetched
+                        } else if (data.manual_fields && data.manual_fields.includes(fieldName)) {
+                            field.classList.add('border-warning', 'manual-input-field');
+                            field.style.backgroundColor = '#fff3cd'; // Yellow tint for manual input
+
                         }
                     }
                 });
                 
+
                 // Show detailed success message
                 const advanceHighlighted = data.advance_highlighted ? ' 🔥 ADVANCE HIGHLIGHTED!' : '';
                 const message = `✅ Data auto-fetched successfully!${advanceHighlighted}\n\n📊 Fields Updated:\n• ${autoFields} Auto-fetch fields (blue)\n• ${driverFields} Driver-filled fields (green)\n• ${adminFields} Admin-only fields remain unchanged\n\n💡 Blue fields are calculated automatically\n💡 Green fields contain driver input (adjustable)`;
@@ -441,8 +622,84 @@ document.addEventListener('DOMContentLoaded', function() {
                         toast.parentNode.removeChild(toast);
                     }
                 }, 5000);
+
+                // Update odometer displays and photo verification status
+                if (data.duty_info) {
+                    const startOdometerDisplay = document.querySelector('.text-success small.text-muted');
+                    const endOdometerDisplay = document.querySelector('.text-danger small.text-muted');
+                    
+                    if (startOdometerDisplay && data.duty_info.start_odometer) {
+                        startOdometerDisplay.textContent = `${data.duty_info.start_odometer} km`;
+                    }
+                    if (endOdometerDisplay && data.duty_info.end_odometer) {
+                        endOdometerDisplay.textContent = `${data.duty_info.end_odometer} km`;
+                    }
+                    
+                    // Update photo verification badges
+                    const startPhotoSection = document.querySelector('.col-md-6:first-child .position-relative');
+                    const endPhotoSection = document.querySelector('.col-md-6:last-child .position-relative');
+                    
+                    if (data.duty_info.start_photo_available && startPhotoSection) {
+                        const badge = startPhotoSection.querySelector('.badge');
+                        if (badge) badge.textContent = '✓ Verified';
+                    }
+                    
+                    if (data.duty_info.end_photo_available && endPhotoSection) {
+                        const badge = endPhotoSection.querySelector('.badge');
+                        if (badge) badge.textContent = '✓ Verified';
+                    }
+                }
+                
+                // Handle WhatsApp advance highlighting
+                if (data.advance_highlight && data.whatsapp_advance_details) {
+                    const highlight = document.getElementById('advance-highlight');
+                    const details = document.getElementById('advance-details');
+                    const summary = document.getElementById('advance-summary');
+                    
+                    if (highlight) {
+                        highlight.style.display = 'inline';
+                        highlight.textContent = `${data.whatsapp_advance_details.count} Request(s)`;
+                    }
+                    
+                    if (details && summary) {
+                        details.style.display = 'block';
+                        summary.innerHTML = `
+                            <strong>WhatsApp Advance Requests:</strong><br>
+                            Total: ₹${data.whatsapp_advance_details.total_amount}<br>
+                            Count: ${data.whatsapp_advance_details.count} request(s)
+                        `;
+                    }
+                    
+                    // Pulse animation for advance field to highlight WhatsApp integration
+                    const advanceField = document.querySelector('[name="advance_deduction"]');
+                    if (advanceField) {
+                        advanceField.style.animation = 'pulse 2s infinite';
+                        setTimeout(() => { 
+                            advanceField.style.animation = ''; 
+                        }, 6000);
+                    }
+                }
+                
+                // Show success message with duty info
+                let message = 'Auto-fetch completed!\n\n';
+                if (data.duty_info) {
+                    message += `Driver: ${data.duty_info.driver_name}\n`;
+                    message += `Date: ${data.duty_info.duty_date}\n`;
+                    message += `Vehicle: ${data.duty_info.vehicle}\n`;
+                    if (data.duty_info.duration_calculated) {
+                        message += `Online Hours: ${data.data.online_hours} hours calculated\n`;
+                    }
+                }
+                if (data.advance_highlight) {
+                    message += `\n💰 WhatsApp Advance: ₹${data.whatsapp_advance_details.total_amount} auto-fetched`;
+                }
+                message += '\n\n✅ Auto-fetched fields (green): ' + (data.auto_fetched_fields?.length || 0);
+                message += '\n⚠️ Manual input fields (yellow): ' + (data.manual_fields?.length || 0);
+                
+                alert(message);
+
             } else {
-                alert('Error auto-fetching data: ' + (data.message || 'Unknown error'));
+                alert('Failed to auto-fetch data: ' + (data.error || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -459,5 +716,89 @@ document.addEventListener('DOMContentLoaded', function() {
         photoModal.show();
     };
 });
-</script>
+
+
+<style>
+/* Auto-fetch and manual input field styling */
+.auto-fetch-field {
+    background-color: #e8f5e8 !important;
+    border-color: #28a745 !important;
+}
+
+.manual-input-field {
+    background-color: #fff3cd !important;
+    border-color: #ffc107 !important;
+}
+
+.manual-input-field:focus {
+    background-color: #ffffff !important;
+    border-color: #ffc107 !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+}
+
+/* Pulse animation for WhatsApp advance highlighting */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+/* Enhanced field labels */
+.form-label small {
+    font-weight: normal;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+/* Badge styling for WhatsApp requests */
+.badge.bg-info {
+    animation: fadeInScale 0.5s ease-in-out;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Enhanced visual separation between field categories */
+.text-primary, .text-warning, .text-success {
+    border-bottom: 2px solid currentColor;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Admin verification indicators */
+.verification-status {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.verification-status.verified {
+    color: #28a745;
+}
+
+.verification-status.pending {
+    color: #ffc107;
+}
+
+.verification-status.rejected {
+    color: #dc3545;
+}
+</style>
 {% endblock %}

@@ -329,6 +329,51 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Final Settlement Calculator Configuration -->
+                            <div id="final-settlement-fields" class="scheme-fields" style="display: none;">
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-calculator me-2"></i>🧮 Final Settlement Calculator</h6>
+                                    <p>Tamil-style comprehensive settlement with CNG adjustments, operator thresholds, and insurance deductions!</p>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-gas-pump me-2"></i>⛽ CNG Rate (₹ per liter)</label>
+                                        {{ form.cng_rate(class="form-control form-control-lg", placeholder="90") }}
+                                        <div class="form-text">Rate used for CNG adjustment calculations</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-shield-alt me-2"></i>🛡️ Insurance Deduction (₹)</label>
+                                        {{ form.insurance_deduction_amount(class="form-control form-control-lg", placeholder="60") }}
+                                        <div class="form-text">Fixed insurance amount deducted from gross salary</div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-chart-line me-2"></i>📊 Operator Threshold (₹)</label>
+                                        {{ form.operator_threshold(class="form-control form-control-lg", placeholder="4500") }}
+                                        <div class="form-text">Revenue threshold for higher percentage calculation</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-percentage me-2"></i>📈 Base Percentage (%)</label>
+                                        {{ form.operator_low_percentage(class="form-control form-control-lg", placeholder="30") }}
+                                        <div class="form-text">Base percentage for amounts up to threshold</div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-rocket me-2"></i>🚀 High Percentage (%)</label>
+                                        {{ form.operator_high_percentage(class="form-control form-control-lg", placeholder="70") }}
+                                        <div class="form-text">Higher percentage for amounts above threshold</div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <strong>💡 Tamil Settlement Example:</strong><br>
+                                    In-house Operator: ₹5000 → (₹4500 × 30%) + (₹500 × 70%) = ₹1700<br>
+                                    Out Operator: ₹1000 → ₹1000 × 30% = ₹300<br>
+                                    <strong>Gross Salary: ₹2000, Net Salary: ₹1940 (after ₹60 insurance)</strong>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -482,8 +527,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const selectedType = schemeTypeSelect.value;
         
-        // Complete mapping for all 9 salary methods
+        // Complete mapping for all 10 salary methods
         const fieldMapping = {
+            'final_settlement': 'final-settlement-fields',
             'daily_payout': 'daily-payout-fields',
             'monthly_payout': 'monthly-payout-fields', 
             'performance_based': 'performance-based-fields',

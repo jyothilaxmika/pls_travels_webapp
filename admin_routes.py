@@ -5,12 +5,14 @@ from werkzeug.security import generate_password_hash
 from functools import wraps
 import os
 import math
+import logging
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc, or_, and_
 from models import (User, Driver, Vehicle, Branch, Duty, DutyScheme, 
                    Penalty, Asset, AuditLog, VehicleAssignment, VehicleType, VehicleTracking, 
                    UberSyncJob, UberSyncLog, UberIntegrationSettings, db, AssignmentTemplate, Photo, PhotoType,
-                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus, AdvancePaymentRequest, ManualEarningsCalculation)
+                   DriverStatus, VehicleStatus, DutyStatus, AssignmentStatus, ResignationRequest, ResignationStatus, UserRole, UserStatus, AdvancePaymentRequest, ManualEarningsCalculation,
+                   DriverLocation, TrackingSession)
 from forms import DriverForm, VehicleForm, DutySchemeForm, VehicleAssignmentForm, ScheduledAssignmentForm, QuickAssignmentForm, AssignmentTemplateForm, ManualEarningsCalculationForm
 from utils_main import allowed_file, calculate_earnings, process_file_upload, process_camera_capture
 import json
@@ -37,9 +39,10 @@ except ImportError:
     def create_recurring_assignments(base_assignment_data, pattern, until_date, assigned_by_user_id):
         return {'success': False, 'created_count': 0, 'errors': ['Function not available']}
 from auth import log_audit
-from recommendation_engine import recommendation_engine
+from recommendation_engine import recommendation_engine, SmartRecommendationEngine
 
 admin_bp = Blueprint('admin', __name__)
+logger = logging.getLogger(__name__)
 
 def safe_float_conversion(value, default=0.0):
     """Safely convert a value to float, preventing NaN injection"""
@@ -655,6 +658,134 @@ def advance_payments():
                          total_approved=total_approved,
                          total_rejected=total_rejected)
 
+@admin_bp.route('/bulk-approve-advance-payments', methods=['POST'])
+@login_required
+@admin_required
+def bulk_approve_advance_payments():
+    """Bulk approve advance payment requests"""
+    from services import NotificationService
+    
+    request_ids = request.form.getlist('request_ids')
+    if not request_ids:
+        flash('No requests selected for approval.', 'error')
+        return redirect(url_for('admin.advance_payments'))
+    
+    approved_count = 0
+    failed_count = 0
+    
+    for request_id in request_ids:
+        try:
+            advance_request = AdvancePaymentRequest.query.get(int(request_id))
+            if not advance_request or advance_request.status != 'pending':
+                failed_count += 1
+                continue
+            
+            # Approve with requested amount
+            advance_request.status = 'approved'
+            advance_request.approved_amount = advance_request.amount_requested
+            advance_request.reviewed_by = current_user.id
+            advance_request.reviewed_at = get_ist_time_naive()
+            advance_request.response_notes = f'Bulk approved by {current_user.username}'
+            
+            # Send notification
+            notification_service = NotificationService()
+            notification_service.send_advance_payment_response(
+                advance_request.id, approved=True, 
+                comments=f'Bulk approved - ₹{advance_request.approved_amount}'
+            )
+            
+            approved_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    try:
+        db.session.commit()
+        log_audit('bulk_approve_advance_payments', 'admin', None, {
+            'approved_count': approved_count,
+            'failed_count': failed_count,
+            'request_ids': request_ids
+        })
+        
+        if approved_count > 0:
+            flash(f'Successfully approved {approved_count} advance payment requests.', 'success')
+        if failed_count > 0:
+            flash(f'{failed_count} requests could not be processed.', 'warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('Error processing bulk approval. Please try again.', 'error')
+    
+    return redirect(url_for('admin.advance_payments'))
+
+@admin_bp.route('/bulk-reject-advance-payments', methods=['POST'])
+@login_required
+@admin_required
+def bulk_reject_advance_payments():
+    """Bulk reject advance payment requests"""
+    from services import NotificationService
+    
+    request_ids = request.form.getlist('request_ids')
+    rejection_reason = request.form.get('rejection_reason', '').strip()
+    
+    if not request_ids:
+        flash('No requests selected for rejection.', 'error')
+        return redirect(url_for('admin.advance_payments'))
+    
+    if not rejection_reason:
+        flash('Rejection reason is required for bulk rejection.', 'error')
+        return redirect(url_for('admin.advance_payments'))
+    
+    rejected_count = 0
+    failed_count = 0
+    
+    for request_id in request_ids:
+        try:
+            advance_request = AdvancePaymentRequest.query.get(int(request_id))
+            if not advance_request or advance_request.status != 'pending':
+                failed_count += 1
+                continue
+            
+            # Reject the request
+            advance_request.status = 'rejected'
+            advance_request.reviewed_by = current_user.id
+            advance_request.reviewed_at = get_ist_time_naive()
+            advance_request.response_notes = f'Bulk rejected: {rejection_reason}'
+            
+            # Send notification
+            notification_service = NotificationService()
+            notification_service.send_advance_payment_response(
+                advance_request.id, approved=False, 
+                comments=rejection_reason
+            )
+            
+            rejected_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    try:
+        db.session.commit()
+        log_audit('bulk_reject_advance_payments', 'admin', None, {
+            'rejected_count': rejected_count,
+            'failed_count': failed_count,
+            'rejection_reason': rejection_reason,
+            'request_ids': request_ids
+        })
+        
+        if rejected_count > 0:
+            flash(f'Successfully rejected {rejected_count} advance payment requests.', 'info')
+        if failed_count > 0:
+            flash(f'{failed_count} requests could not be processed.', 'warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('Error processing bulk rejection. Please try again.', 'error')
+    
+    return redirect(url_for('admin.advance_payments'))
+
 @admin_bp.route('/advance-payments/<int:request_id>/respond', methods=['POST'])
 @login_required
 @admin_required
@@ -708,6 +839,283 @@ def respond_to_advance_request(request_id):
         flash(f'Error processing request: {str(e)}', 'error')
     
     return redirect(url_for('admin.advance_payments'))
+
+# Auto-Assignment Routes
+@admin_bp.route('/auto-assignment')
+@login_required
+@admin_required 
+def auto_assignment():
+    """Auto-assignment management dashboard"""
+    branches = Branch.query.all()
+    
+    # Get auto-assignment statistics
+    auto_enabled_branches = Branch.query.filter_by(auto_assignment_enabled=True).count()
+    total_branches = Branch.query.count()
+    
+    # Recent auto-assignments (if we track them)
+    recent_assignments = VehicleAssignment.query.filter(
+        VehicleAssignment.created_at >= get_ist_time_naive() - timedelta(days=7)
+    ).order_by(VehicleAssignment.created_at.desc()).limit(10).all()
+    
+    return render_template('admin/auto_assignment.html',
+                         branches=branches,
+                         auto_enabled_branches=auto_enabled_branches,
+                         total_branches=total_branches,
+                         recent_assignments=recent_assignments)
+
+@admin_bp.route('/auto-assignment/settings/<int:branch_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def auto_assignment_settings(branch_id):
+    """Configure auto-assignment settings for a specific branch"""
+    branch = Branch.query.get_or_404(branch_id)
+    
+    if request.method == 'POST':
+        # Update auto-assignment settings
+        branch.auto_assignment_enabled = request.form.get('auto_assignment_enabled') == 'on'
+        
+        # Validate and save auto-assignment preferences
+        try:
+            assignment_window_hours = int(request.form.get('assignment_window_hours', 24))
+            max_assignments_per_driver = int(request.form.get('max_assignments_per_driver', 1))
+            
+            # Validate ranges
+            if not (1 <= assignment_window_hours <= 168):
+                flash('Assignment window hours must be between 1 and 168', 'error')
+                return redirect(url_for('admin.auto_assignment_settings', branch_id=branch_id))
+            
+            if not (1 <= max_assignments_per_driver <= 5):
+                flash('Max assignments per driver must be between 1 and 5', 'error')
+                return redirect(url_for('admin.auto_assignment_settings', branch_id=branch_id))
+                
+        except (ValueError, TypeError):
+            flash('Invalid numeric values provided', 'error')
+            return redirect(url_for('admin.auto_assignment_settings', branch_id=branch_id))
+        
+        auto_preferences = {
+            'strategy': request.form.get('strategy', 'balanced'),
+            'assignment_window_hours': assignment_window_hours,
+            'max_assignments_per_driver': max_assignments_per_driver,
+            'prefer_experienced_drivers': request.form.get('prefer_experienced_drivers') == 'on',
+            'balance_workload': request.form.get('balance_workload') == 'on',
+            'auto_assign_time': request.form.get('auto_assign_time', '06:00'),
+            'notification_enabled': request.form.get('notification_enabled') == 'on'
+        }
+        
+        # Store preferences in branch metadata or create a new field
+        branch.auto_assignment_config = json.dumps(auto_preferences)
+        
+        try:
+            db.session.commit()
+            flash(f'Auto-assignment settings updated for {branch.name}', 'success')
+            log_audit('update_auto_assignment_settings', 'admin', branch.id, auto_preferences)
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating auto-assignment settings', 'error')
+        
+        return redirect(url_for('admin.auto_assignment'))
+    
+    # Load existing preferences
+    auto_preferences = {}
+    if hasattr(branch, 'auto_assignment_config') and branch.auto_assignment_config:
+        try:
+            auto_preferences = json.loads(branch.auto_assignment_config)
+        except:
+            pass
+    
+    # Set defaults
+    auto_preferences.setdefault('strategy', 'balanced')
+    auto_preferences.setdefault('assignment_window_hours', 24)
+    auto_preferences.setdefault('max_assignments_per_driver', 1)
+    auto_preferences.setdefault('prefer_experienced_drivers', True)
+    auto_preferences.setdefault('balance_workload', True)
+    auto_preferences.setdefault('auto_assign_time', '06:00')
+    auto_preferences.setdefault('notification_enabled', True)
+    
+    return render_template('admin/auto_assignment_settings.html',
+                         branch=branch,
+                         auto_preferences=auto_preferences)
+
+@admin_bp.route('/auto-assignment/run/<int:branch_id>', methods=['POST'])
+@login_required
+@admin_required
+def run_auto_assignment(branch_id):
+    """Manually trigger auto-assignment for a branch"""
+    branch = Branch.query.get_or_404(branch_id)
+    
+    if not branch.auto_assignment_enabled:
+        flash('Auto-assignment is not enabled for this branch', 'error')
+        return redirect(url_for('admin.auto_assignment'))
+    
+    try:
+        # Load auto-assignment preferences
+        auto_preferences = {}
+        if hasattr(branch, 'auto_assignment_config') and branch.auto_assignment_config:
+            auto_preferences = json.loads(branch.auto_assignment_config)
+        
+        # Run auto-assignment
+        result = run_branch_auto_assignment(branch, auto_preferences)
+        
+        if result['success']:
+            flash(f"Auto-assignment completed for {branch.name}: {result['assignments_created']} assignments created", 'success')
+            log_audit('manual_auto_assignment', 'admin', branch.id, result)
+        else:
+            flash(f"Auto-assignment failed for {branch.name}: {', '.join(result['errors'])}", 'error')
+    
+    except Exception as e:
+        flash(f'Error running auto-assignment: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.auto_assignment'))
+
+def run_branch_auto_assignment(branch, preferences=None):
+    """
+    Execute auto-assignment logic for a specific branch
+    
+    Args:
+        branch: Branch object
+        preferences: Auto-assignment preferences dict
+        
+    Returns:
+        dict: Result with success status and details
+    """
+    if preferences is None:
+        preferences = {}
+    
+    strategy = preferences.get('strategy', 'balanced')
+    assignment_window_hours = preferences.get('assignment_window_hours', 24)
+    max_assignments_per_driver = preferences.get('max_assignments_per_driver', 1)
+    
+    try:
+        # Initialize recommendation engine
+        engine = SmartRecommendationEngine()
+        
+        # Get date range for auto-assignment (typically next day)
+        start_date = get_ist_time_naive() + timedelta(hours=assignment_window_hours)
+        end_date = start_date + timedelta(days=1)
+        
+        # Get recommendations for this branch
+        recommendations = engine.get_recommendations(
+            branch_id=branch.id,
+            shift_type='full_day',
+            date_range=(start_date, end_date),
+            limit=20,
+            strategy=strategy
+        )
+        
+        if not recommendations:
+            return {
+                'success': False,
+                'assignments_created': 0,
+                'errors': ['No recommendations available for auto-assignment']
+            }
+        
+        # Track assignments created and drivers already assigned
+        assignments_created = 0
+        assigned_drivers = set()
+        assigned_vehicles = set()
+        
+        for recommendation in recommendations:
+            # Check if we've already assigned this driver or vehicle
+            if (recommendation.driver.id in assigned_drivers or 
+                recommendation.vehicle.id in assigned_vehicles):
+                continue
+            
+            # Check if driver already has assignments for the day
+            existing_assignments = VehicleAssignment.query.filter(
+                VehicleAssignment.driver_id == recommendation.driver.id,
+                VehicleAssignment.start_date <= end_date,
+                VehicleAssignment.end_date >= start_date,
+                VehicleAssignment.status.in_([AssignmentStatus.ACTIVE, AssignmentStatus.SCHEDULED])
+            ).count()
+            
+            if existing_assignments >= max_assignments_per_driver:
+                continue
+            
+            # Create the assignment
+            assignment = VehicleAssignment(
+                driver_id=recommendation.driver.id,
+                vehicle_id=recommendation.vehicle.id,
+                branch_id=branch.id,
+                start_date=start_date.date(),
+                end_date=end_date.date(),
+                shift_type='full_day',
+                status=AssignmentStatus.SCHEDULED,
+                assigned_by=current_user.id,
+                notes=f'Auto-assigned (Score: {recommendation.total_score:.2f})',
+                created_at=get_ist_time_naive()
+            )
+            
+            db.session.add(assignment)
+            assignments_created += 1
+            assigned_drivers.add(recommendation.driver.id)
+            assigned_vehicles.add(recommendation.vehicle.id)
+            
+            # Stop if we've made enough assignments
+            if assignments_created >= 10:  # Reasonable limit per run
+                break
+        
+        db.session.commit()
+        
+        return {
+            'success': True,
+            'assignments_created': assignments_created,
+            'total_recommendations': len(recommendations),
+            'branch_id': branch.id
+        }
+        
+    except Exception as e:
+        db.session.rollback()
+        return {
+            'success': False,
+            'assignments_created': 0,
+            'errors': [str(e)]
+        }
+
+@admin_bp.route('/auto-assignment/preview/<int:branch_id>')
+@login_required
+@admin_required
+def preview_auto_assignment(branch_id):
+    """Preview what auto-assignment would create for a branch"""
+    branch = Branch.query.get_or_404(branch_id)
+    
+    # Load preferences
+    auto_preferences = {}
+    if hasattr(branch, 'auto_assignment_config') and branch.auto_assignment_config:
+        try:
+            auto_preferences = json.loads(branch.auto_assignment_config)
+        except:
+            pass
+    
+    strategy = auto_preferences.get('strategy', 'balanced')
+    assignment_window_hours = auto_preferences.get('assignment_window_hours', 24)
+    
+    try:
+        # Initialize recommendation engine
+        engine = SmartRecommendationEngine()
+        
+        # Get date range
+        start_date = get_ist_time_naive() + timedelta(hours=assignment_window_hours)
+        end_date = start_date + timedelta(days=1)
+        
+        # Get recommendations
+        recommendations = engine.get_recommendations(
+            branch_id=branch.id,
+            shift_type='full_day',
+            date_range=(start_date, end_date),
+            limit=20,
+            strategy=strategy
+        )
+        
+        return render_template('admin/auto_assignment_preview.html',
+                             branch=branch,
+                             recommendations=recommendations,
+                             start_date=start_date,
+                             end_date=end_date,
+                             strategy=strategy)
+        
+    except Exception as e:
+        flash(f'Error generating preview: {str(e)}', 'error')
+        return redirect(url_for('admin.auto_assignment'))
 
 @admin_bp.route('/advance-payments/<int:request_id>/details')
 @login_required
@@ -1126,7 +1534,7 @@ def bulk_approve_verified_drivers():
 @admin_bp.route('/api/bulk-approve-advance-payments', methods=['POST'])
 @login_required
 @admin_required
-def bulk_approve_advance_payments():
+def api_bulk_approve_advance_payments():
     """Bulk approve advance payment requests with WhatsApp notifications"""
     try:
         request_ids = request.get_json().get('request_ids', [])
@@ -2225,6 +2633,324 @@ def recommendations_dashboard():
                          total_vehicles=total_vehicles,
                          top_drivers=top_drivers)
 
+# Driver Location Tracking Routes
+@admin_bp.route('/driver-locations')
+@login_required
+@admin_required
+def driver_locations():
+    """Main driver location tracking dashboard"""
+    # Get filters from request
+    branch_filter = request.args.get('branch', '', type=int)
+    status_filter = request.args.get('status', '')
+    hours_back = request.args.get('hours_back', default=24, type=int)
+    
+    # Get active drivers for dropdown - specify explicit join condition
+    query = Driver.query.join(User, Driver.user_id == User.id).filter(User.status == UserStatus.ACTIVE)
+    
+    if branch_filter:
+        query = query.filter(Driver.branch_id == branch_filter)
+    if status_filter:
+        try:
+            status_enum = DriverStatus(status_filter)
+            query = query.filter(Driver.status == status_enum)
+        except ValueError:
+            pass
+    
+    drivers = query.all()
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    # Get current active duties for context
+    active_duties = Duty.query.filter_by(status=DutyStatus.ACTIVE).count()
+    
+    log_audit('driver_location_tracking_accessed', 'admin', None,
+             {'accessed_by': current_user.username})
+    
+    return render_template('admin/driver_locations.html',
+                         drivers=drivers,
+                         branches=branches,
+                         active_duties=active_duties,
+                         branch_filter=branch_filter,
+                         status_filter=status_filter,
+                         hours_back=hours_back,
+                         title='Driver Location Tracking')
+
+@admin_bp.route('/api/driver-locations')
+@login_required
+@admin_required  
+def api_driver_locations():
+    """API endpoint to get current driver locations with real-time data"""
+    # Get filter parameters with validation
+    driver_ids_raw = request.args.getlist('driver_ids')
+    driver_ids = []
+    # Cast driver_ids to integers for proper index usage
+    for driver_id in driver_ids_raw:
+        try:
+            driver_ids.append(int(driver_id))
+        except (ValueError, TypeError):
+            continue  # Skip invalid IDs
+    
+    branch_id = request.args.get('branch_id', type=int)
+    hours_back = min(max(int(request.args.get('hours_back', 24)), 1), 168)  # Clamp 1-168 hours
+    only_active_duties = request.args.get('only_active_duties', 'false').lower() == 'true'
+    
+    # Build time threshold
+    time_threshold = get_ist_time_naive() - timedelta(hours=hours_back)
+    
+    # Base query for driver locations
+    query = DriverLocation.query.join(Driver).join(User).filter(
+        DriverLocation.captured_at >= time_threshold,
+        DriverLocation.latitude.isnot(None),
+        DriverLocation.longitude.isnot(None),
+        DriverLocation.is_mocked == False  # Only real locations
+    )
+    
+    # Apply filters
+    if driver_ids:
+        query = query.filter(DriverLocation.driver_id.in_(driver_ids))
+    
+    if branch_id:
+        query = query.filter(Driver.branch_id == branch_id)
+    
+    if only_active_duties:
+        # Only show drivers with active duties
+        query = query.join(Duty, DriverLocation.duty_id == Duty.id).filter(
+            Duty.status == DutyStatus.ACTIVE
+        )
+    
+    # Get latest location for each driver using efficient subquery approach
+    # Build subquery for latest captured_at per driver
+    latest_subquery = db.session.query(
+        DriverLocation.driver_id,
+        func.max(DriverLocation.captured_at).label('latest_time')
+    ).filter(
+        DriverLocation.captured_at >= time_threshold,
+        DriverLocation.latitude.isnot(None),
+        DriverLocation.longitude.isnot(None),
+        DriverLocation.is_mocked == False
+    )
+    
+    # Apply driver filter early if specified
+    if driver_ids:
+        latest_subquery = latest_subquery.filter(DriverLocation.driver_id.in_(driver_ids))
+        
+    latest_subquery = latest_subquery.group_by(DriverLocation.driver_id).subquery()
+    
+    # Join back to get full location records
+    query = db.session.query(DriverLocation).join(
+        latest_subquery,
+        and_(
+            DriverLocation.driver_id == latest_subquery.c.driver_id,
+            DriverLocation.captured_at == latest_subquery.c.latest_time
+        )
+    ).join(Driver).join(User)
+    
+    # Apply branch filter
+    if branch_id:
+        query = query.filter(Driver.branch_id == branch_id)
+    
+    # Apply active duty filter
+    if only_active_duties:
+        query = query.join(Duty, DriverLocation.duty_id == Duty.id).filter(
+            Duty.status == DutyStatus.ACTIVE
+        )
+    
+    latest_locations = query.limit(500).all()  # Limit results for performance
+    
+    # Format response with comprehensive driver data
+    locations = []
+    for location in latest_locations:
+        driver = location.driver
+        user = driver.user
+        
+        # Get current duty info
+        current_duty = Duty.query.filter_by(
+            driver_id=driver.id,
+            status=DutyStatus.ACTIVE
+        ).first()
+        
+        # Get tracking session info
+        tracking_session = None
+        if location.tracking_session_id:
+            tracking_session = TrackingSession.query.get(location.tracking_session_id)
+        
+        location_data = {
+            'driver_id': driver.id,
+            'driver_name': user.full_name,
+            'driver_phone': driver.primary_phone,
+            'driver_status': driver.status.value,
+            'branch_name': driver.branch.name if driver.branch else 'Unknown',
+            'latitude': float(location.latitude),
+            'longitude': float(location.longitude),
+            'accuracy': float(location.accuracy) if location.accuracy else None,
+            'speed': float(location.speed) if location.speed else None,
+            'address': location.address,
+            'city': location.city,
+            'captured_at': location.captured_at.isoformat(),
+            'received_at': location.received_at.isoformat(),
+            'battery_level': location.battery_level,
+            'network_type': location.network_type,
+            'source': location.source,
+            
+            # Current duty information - ensure always present for template compatibility
+            'current_duty': {
+                'duty_id': current_duty.id if current_duty else None,
+                'vehicle_number': current_duty.vehicle.number if current_duty and current_duty.vehicle else None,
+                'start_time': current_duty.start_time.isoformat() if current_duty and current_duty.start_time else None,
+                'duty_status': current_duty.status.value if current_duty else 'inactive'
+            },
+            
+            # Tracking session info
+            'tracking_session': {
+                'session_id': tracking_session.uuid if tracking_session else None,
+                'session_active': tracking_session.is_active if tracking_session else False,
+                'total_points': tracking_session.total_points if tracking_session else 0,
+                'distance_covered': tracking_session.distance_covered if tracking_session else 0
+            }
+        }
+        
+        locations.append(location_data)
+    
+    # Log audit for location data access
+    log_audit('driver_locations_api_access', 'admin', None, {
+        'accessed_by': current_user.username,
+        'filters': {
+            'hours_back': hours_back,
+            'branch_id': branch_id,
+            'only_active_duties': only_active_duties,
+            'driver_count': len(driver_ids) if driver_ids else 'all'
+        },
+        'results_count': len(locations)
+    })
+    
+    return jsonify({
+        'success': True,
+        'locations': locations,
+        'total_drivers_tracked': len(locations),
+        'timestamp': get_ist_time_naive().isoformat(),
+        'filters_applied': {
+            'hours_back': hours_back,
+            'branch_id': branch_id,
+            'only_active_duties': only_active_duties,
+            'driver_count': len(driver_ids) if driver_ids else 'all'
+        }
+    })
+
+@admin_bp.route('/api/driver-path/<int:driver_id>')
+@login_required
+@admin_required
+def api_driver_path(driver_id):
+    """API endpoint to get driver's location path history"""
+    # Input validation
+    hours_back = min(max(int(request.args.get('hours_back', 24)), 1), 168)  # Clamp 1-168 hours
+    duty_id = request.args.get('duty_id', type=int)
+    
+    # Verify driver exists and current user has access
+    driver = Driver.query.get_or_404(driver_id)
+    
+    # Build time threshold
+    time_threshold = get_ist_time_naive() - timedelta(hours=hours_back)
+    
+    # Base query for driver path with performance optimization
+    query = DriverLocation.query.filter(
+        DriverLocation.driver_id == driver_id,
+        DriverLocation.captured_at >= time_threshold,
+        DriverLocation.is_mocked == False
+    )
+    
+    # Filter by specific duty if provided and validate duty belongs to driver
+    if duty_id:
+        duty = Duty.query.filter_by(id=duty_id, driver_id=driver_id).first()
+        if duty:
+            query = query.filter(DriverLocation.duty_id == duty_id)
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid duty ID for this driver'
+            }), 400
+    
+    # Limit points for performance (max 2000 points) and use decimation if needed
+    total_count = query.count()
+    if total_count > 2000:
+        # Use decimation - take every Nth point to keep it manageable
+        step = max(1, total_count // 2000)
+        locations = query.order_by(DriverLocation.captured_at)[::step][:2000]
+    else:
+        locations = query.order_by(DriverLocation.captured_at).limit(2000).all()
+    
+    # Format path data
+    path_points = []
+    for location in locations:
+        path_points.append({
+            'latitude': float(location.latitude),
+            'longitude': float(location.longitude),
+            'timestamp': location.captured_at.isoformat(),
+            'speed': float(location.speed) if location.speed else 0,
+            'accuracy': float(location.accuracy) if location.accuracy else None,
+            'duty_id': location.duty_id
+        })
+    
+    # Get driver info
+    driver = Driver.query.get(driver_id)
+    driver_name = driver.user.full_name if driver and driver.user else 'Unknown'
+    
+    # Log audit for driver path access
+    log_audit('driver_path_api_access', 'driver', driver_id, {
+        'accessed_by': current_user.username,
+        'driver_name': driver_name,
+        'hours_back': hours_back,
+        'duty_id': duty_id,
+        'points_returned': len(path_points)
+    })
+    
+    return jsonify({
+        'success': True,
+        'driver_id': driver_id,
+        'driver_name': driver_name,
+        'path': path_points,
+        'total_points': len(path_points),
+        'decimated': total_count > 2000 if 'total_count' in locals() else False,
+        'time_range': {
+            'from': time_threshold.isoformat(),
+            'to': get_ist_time_naive().isoformat()
+        }
+    })
+
+@admin_bp.route('/driver-tracking/<int:driver_id>')
+@login_required
+@admin_required
+def driver_tracking_detail(driver_id):
+    """Detailed driver tracking page with history and analytics"""
+    driver = Driver.query.get_or_404(driver_id)
+    
+    # Get recent tracking sessions
+    recent_sessions = TrackingSession.query.filter_by(
+        driver_id=driver_id
+    ).order_by(desc(TrackingSession.session_start)).limit(10).all()
+    
+    # Get recent duties with tracking data
+    recent_duties = Duty.query.filter_by(
+        driver_id=driver_id
+    ).order_by(desc(Duty.created_at)).limit(5).all()
+    
+    # Get location statistics
+    total_locations = DriverLocation.query.filter_by(driver_id=driver_id).count()
+    
+    # Get latest location
+    latest_location = DriverLocation.query.filter_by(
+        driver_id=driver_id
+    ).order_by(desc(DriverLocation.captured_at)).first()
+    
+    log_audit('driver_tracking_detail_accessed', 'driver', driver_id,
+             {'accessed_by': current_user.username, 'driver_name': driver.user.full_name})
+    
+    return render_template('admin/driver_tracking_detail.html',
+                         driver=driver,
+                         recent_sessions=recent_sessions,
+                         recent_duties=recent_duties,
+                         total_locations=total_locations,
+                         latest_location=latest_location,
+                         title=f'Driver Tracking - {driver.user.full_name}')
+
 @admin_bp.route('/assignments')
 @login_required
 @admin_required
@@ -2746,6 +3472,7 @@ def duty_schemes():
     
     branches = Branch.query.filter_by(is_active=True).all()
     scheme_types = [
+        ('final_settlement', 'Final Settlement Calculator'),
         ('daily_payout', 'Daily Salary'),
         ('monthly_payout', 'Monthly Salary'),
         ('performance_based', 'Performance Based'),
@@ -2824,7 +3551,14 @@ def add_duty_scheme():
             'slab1_percent': safe_float_conversion(form.slab1_percent.data, 0),
             'slab2_max': safe_float_conversion(form.slab2_max.data, 0),
             'slab2_percent': safe_float_conversion(form.slab2_percent.data, 0),
-            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0)
+            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0),
+            
+            # Final Settlement Calculator specific configurations
+            'cng_rate': safe_float_conversion(form.cng_rate.data, 90.0),
+            'insurance_deduction_amount': safe_float_conversion(form.insurance_deduction_amount.data, 60.0),
+            'operator_threshold': safe_float_conversion(form.operator_threshold.data, 4500.0),
+            'operator_low_percentage': safe_float_conversion(form.operator_low_percentage.data, 30.0),
+            'operator_high_percentage': safe_float_conversion(form.operator_high_percentage.data, 70.0)
         }
         
         scheme = DutyScheme()
@@ -2904,6 +3638,13 @@ def edit_duty_scheme(scheme_id):
         form.slab2_max.data = config.get('slab2_max', 0)
         form.slab2_percent.data = config.get('slab2_percent', 0)
         form.slab3_percent.data = config.get('slab3_percent', 0)
+        
+        # Final Settlement Calculator specific fields
+        form.cng_rate.data = config.get('cng_rate', 90.0)
+        form.insurance_deduction_amount.data = config.get('insurance_deduction_amount', 60.0)
+        form.operator_threshold.data = config.get('operator_threshold', 4500.0)
+        form.operator_low_percentage.data = config.get('operator_low_percentage', 30.0)
+        form.operator_high_percentage.data = config.get('operator_high_percentage', 70.0)
     
     if form.validate_on_submit():
         # Enhanced configuration for all salary methods
@@ -2952,7 +3693,14 @@ def edit_duty_scheme(scheme_id):
             'slab1_percent': safe_float_conversion(form.slab1_percent.data, 0),
             'slab2_max': safe_float_conversion(form.slab2_max.data, 0),
             'slab2_percent': safe_float_conversion(form.slab2_percent.data, 0),
-            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0)
+            'slab3_percent': safe_float_conversion(form.slab3_percent.data, 0),
+            
+            # Final Settlement Calculator specific configurations
+            'cng_rate': safe_float_conversion(form.cng_rate.data, 90.0),
+            'insurance_deduction_amount': safe_float_conversion(form.insurance_deduction_amount.data, 60.0),
+            'operator_threshold': safe_float_conversion(form.operator_threshold.data, 4500.0),
+            'operator_low_percentage': safe_float_conversion(form.operator_low_percentage.data, 30.0),
+            'operator_high_percentage': safe_float_conversion(form.operator_high_percentage.data, 70.0)
         }
         
         # Validation for salary method configurations
@@ -3379,10 +4127,15 @@ def reports():
      .filter(Vehicle.status == VehicleStatus.ACTIVE) \
      .group_by(Vehicle.id, Vehicle.registration_number, Branch.name).all()
     
+    # Convert Row objects to dictionaries for JSON serialization
+    branch_revenue_dict = [{'name': row.name, 'total_revenue': float(row.total_revenue or 0)} for row in branch_revenue]
+    top_drivers_dict = [{'full_name': row.full_name, 'branch_name': row.branch_name, 'total_earnings': float(row.total_earnings or 0)} for row in top_drivers]
+    vehicle_stats_dict = [{'registration_number': row.registration_number, 'branch_name': row.branch_name, 'duty_count': int(row.duty_count or 0), 'total_distance': float(row.total_distance or 0)} for row in vehicle_stats]
+    
     return render_template('admin/reports.html',
-                         branch_revenue=branch_revenue,
-                         top_drivers=top_drivers,
-                         vehicle_stats=vehicle_stats)
+                         branch_revenue=branch_revenue_dict,
+                         top_drivers=top_drivers_dict,
+                         vehicle_stats=vehicle_stats_dict)
 
 @admin_bp.route('/api/revenue-chart')
 @login_required
@@ -4385,66 +5138,101 @@ def create_manual_earnings_calculation(duty_id):
 @login_required
 @admin_required  
 def auto_fetch_duty_data(duty_id):
-    """Auto-fetch duty data for manual calculation"""
+    """Auto-fetch duty data for manual calculation with WhatsApp advance integration"""
     duty = Duty.query.get_or_404(duty_id)
     
-    # Calculate total advance payment requests for this duty
-    total_advance_requested = 0.0
-    if duty.advance_requests:
-        total_advance_requested = sum(req.amount for req in duty.advance_requests if req.status in ['pending', 'approved'])
+    # Auto-fetch advance payments from WhatsApp requests
+    advance_amount = 0.0
+    advance_highlight = False
+    whatsapp_advance_details = None
     
-    # Prepare auto-fetched data according to specification
+    try:
+        from models import AdvancePaymentRequest
+        from sqlalchemy import func
+        # Get approved advance requests for this driver on duty date
+        advance_requests = AdvancePaymentRequest.query.filter(
+            AdvancePaymentRequest.driver_id == duty.driver_id,
+            AdvancePaymentRequest.status == 'approved',
+            func.date(AdvancePaymentRequest.created_at) == duty.duty_date
+        ).all()
+        
+        if advance_requests:
+            advance_amount = sum(req.approved_amount or 0 for req in advance_requests)
+            advance_highlight = True
+            whatsapp_advance_details = {
+                'count': len(advance_requests),
+                'total_amount': advance_amount,
+                'requests': [
+                    {
+                        'amount': req.approved_amount,
+                        'requested_at': req.created_at.strftime('%H:%M'),
+                        'notes': req.reason
+                    } for req in advance_requests
+                ]
+            }
+    except Exception as e:
+        logger.warning(f"Could not fetch advance payment data: {str(e)}")
+    
+    # Prepare auto-fetched data with clear categorization
     auto_fetched_data = {
-        # 📈 Income Sources - Auto-fetch from duty
-        'online_hours': 0.0,  # Calculate from duty duration
-        'cash_collected': duty.cash_collection or 0.0,  # Driver-filled (adjustable)
-        'cash_collected_2': duty.digital_payments or 0.0,  # Driver-filled (adjustable) 
-        'operator_bill': duty.operator_out or 0.0,  # Driver-filled (adjustable)
-        'operator_bill_2': duty.card_payments or 0.0,  # Driver-filled (adjustable)
+        # AUTO-FETCH FIELDS (system calculates)
+        'online_hours': 0.0,  # Calculated from start_time to end_time
+        'advance_deduction': advance_amount,  # Auto-fetched from WhatsApp requests
+        'start_cng': duty.start_cng if duty.start_cng is not None else None,  # From duty start
+        'end_cng': duty.end_cng if duty.end_cng is not None else None,  # From duty end
         
-        # 📉 Deductions - Auto-fetch advance from requests
-        'advance_deduction': total_advance_requested,  # Auto-fetch from advance requests
+        # MANUAL INPUT FIELDS (driver fills, admin verifies)
+        'uber_trips': None,  # Driver to fill
+        'cash_collected': None,  # Driver to fill
+        'cash_collected_2': None,  # Driver to fill  
+        'operator_bill': None,  # Driver to fill
+        'operator_bill_2': None,  # Driver to fill
+        'toll_expense': None,  # Driver to fill
         
-        # ⛽ CNG Tracking - Driver-filled (adjustable)
-        'start_cng': duty.start_cng if duty.start_cng is not None else None,
-        'end_cng': duty.end_cng if duty.end_cng is not None else None,
+        # Additional fields for reference
+        'qr_payment': duty.qr_payment or 0.0,
+        'outside_cash_amount': duty.digital_payments or 0.0,
+        'outside_operator_bill': duty.operator_out or 0.0,
+        'pass_deduction': duty.pass_amount or 0.0
+
     }
     
-    # Calculate online hours from duty duration
-    if duty.actual_start and duty.actual_end:
+    # Calculate online hours from duty start to end times
+    if duty.start_time and duty.end_time:
+        duration = duty.end_time - duty.start_time
+        auto_fetched_data['online_hours'] = round(duration.total_seconds() / 3600, 2)
+    elif duty.actual_start and duty.actual_end:
         duration = duty.actual_end - duty.actual_start
         auto_fetched_data['online_hours'] = round(duration.total_seconds() / 3600, 2)
     
-    # Field categorization for proper styling
-    field_categories = {
-        # Auto-fetch fields (blue styling)
-        'online_hours': 'auto',
-        'advance_deduction': 'auto',
-        
-        # Driver-filled fields (green styling) - adjustable by admin
-        'cash_collected': 'driver',
-        'cash_collected_2': 'driver', 
-        'operator_bill': 'driver',
-        'operator_bill_2': 'driver',
-        'start_cng': 'driver',
-        'end_cng': 'driver',
-        
-        # Admin-only fields (red styling) - filled by admin only
-        'uber_trips': 'admin',
-        'out_cash': 'admin',
-        'out_operator': 'admin', 
-        'qr_payment': 'admin',
-        'pass_deduction': 'admin',
-        'toll_expense': 'admin'
+    # Categorize fields for UI display  
+    auto_fetch_categories = {
+        'auto_calculated': ['online_hours', 'start_cng', 'end_cng'],
+        'whatsapp_advance': ['advance_deduction'],
+        'driver_manual': ['uber_trips', 'cash_collected', 'cash_collected_2', 
+                         'operator_bill', 'operator_bill_2', 'toll_expense'],
+        'pre_filled': ['qr_payment', 'outside_cash_amount', 'outside_operator_bill', 'pass_deduction']
     }
-
+    
     return jsonify({
         'success': True, 
         'data': auto_fetched_data,
-        'field_categories': field_categories,
-        'auto_fetched_fields': list(auto_fetched_data.keys()),
-        'advance_highlighted': total_advance_requested > 0,
-        'advance_requests_count': len(duty.advance_requests) if duty.advance_requests else 0
+        'auto_fetched_fields': auto_fetch_categories['auto_calculated'] + auto_fetch_categories['whatsapp_advance'],
+        'manual_fields': auto_fetch_categories['driver_manual'],
+        'field_categories': auto_fetch_categories,
+        'advance_highlight': advance_highlight,
+        'whatsapp_advance_details': whatsapp_advance_details,
+        'duty_info': {
+            'driver_name': duty.driver.full_name if duty.driver else 'Unknown',
+            'duty_date': duty.duty_date.strftime('%Y-%m-%d') if duty.duty_date else '',
+            'vehicle': duty.vehicle.registration_number if duty.vehicle else 'N/A',
+            'duration_calculated': auto_fetched_data['online_hours'] > 0,
+            'start_odometer': duty.start_odometer,
+            'end_odometer': duty.end_odometer,
+            'start_photo_available': bool(duty.start_photo),
+            'end_photo_available': bool(duty.end_photo)
+        }
+
     })
 
 @admin_bp.route('/manual-earnings/calculate', methods=['POST'])

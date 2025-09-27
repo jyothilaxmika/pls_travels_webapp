@@ -921,10 +921,13 @@ def process_camera_capture(form_data, field_name, user_id, photo_type="photo", u
             metadata_filename = secure_filename(f"{photo_type}_{user_id}_{timestamp}_metadata.json")
             
             # Store metadata in same directory as the photo (temp or permanent)
-            if is_duty_photo:
+            if is_duty_photo and 'temp_dir' in locals():
                 metadata_path = os.path.join(temp_dir, metadata_filename)
-            else:
+            elif 'upload_dir' in locals():
                 metadata_path = os.path.join(upload_dir, metadata_filename)
+            else:
+                # Fallback to uploads directory
+                metadata_path = os.path.join(ensure_upload_dir(), metadata_filename)
             
             # Add processed timestamp to metadata
             metadata['processed_at'] = datetime.now().isoformat()
@@ -1056,3 +1059,43 @@ def verify_duty_photos_and_move_to_permanent(duty_id):
     except Exception as e:
         print(f"Error verifying and moving photos for duty {duty_id}: {e}")
         return False
+
+def get_last_duty_values(driver_id, vehicle_id=None):
+    """Get odometer values and CNG point from the last completed duty"""
+    from models import Duty, DutyStatus, Vehicle, VehicleTracking, db
+    from sqlalchemy import func, desc
+    
+    query = Duty.query.filter_by(driver_id=driver_id, status=DutyStatus.COMPLETED)
+    if vehicle_id:
+        query = query.filter_by(vehicle_id=vehicle_id)
+
+    last_duty = query.order_by(desc(Duty.created_at)).first()
+    
+    # Get most commonly used CNG point for this vehicle
+    most_common_cng_point = None
+    if vehicle_id:
+        cng_usage = db.session.query(VehicleTracking.cng_point, func.count(VehicleTracking.cng_point).label('usage_count')).filter(
+            VehicleTracking.vehicle_id == vehicle_id,
+            VehicleTracking.cng_point.isnot(None)
+        ).group_by(VehicleTracking.cng_point).order_by(desc('usage_count')).first()
+        
+        if cng_usage:
+            most_common_cng_point = cng_usage[0]
+
+    if last_duty:
+        vehicle = Vehicle.query.get(vehicle_id) if vehicle_id else None
+        return {
+            'last_odometer': last_duty.end_odometer,
+            'last_duty_date': last_duty.actual_end.strftime('%Y-%m-%d %H:%M') if last_duty.actual_end else None,
+            'last_end_cng': last_duty.end_cng,
+            'most_common_cng_point': most_common_cng_point,
+            'vehicle_current_odometer': vehicle.current_odometer if vehicle else None
+        }
+    vehicle = Vehicle.query.get(vehicle_id) if vehicle_id else None
+    return {
+        'last_odometer': vehicle.current_odometer if vehicle else None,
+        'last_duty_date': None,
+        'last_end_cng': None,
+        'most_common_cng_point': most_common_cng_point,
+        'vehicle_current_odometer': vehicle.current_odometer if vehicle else None
+    }

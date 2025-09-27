@@ -1,0 +1,490 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Driver Location Tracking - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+<style>
+    #map {
+        height: 70vh !important;
+        min-height: 500px !important;
+        width: 100% !important;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .map-controls {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .driver-marker-online {
+        background: #22c55e;
+        border: 2px solid white;
+    }
+    
+    .driver-marker-offline {
+        background: #ef4444;
+        border: 2px solid white;
+    }
+    
+    .driver-marker-inactive {
+        background: #94a3b8;
+        border: 2px solid white;
+    }
+    
+    .driver-info-popup {
+        max-width: 300px;
+    }
+    
+    .driver-info-popup h6 {
+        color: var(--pls-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-inactive { background: #f3f4f6; color: #374151; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        #map {
+            height: 50vh;
+            min-height: 300px;
+        }
+        
+        .map-controls {
+            padding: 0.75rem;
+        }
+        
+        .stats-number {
+            font-size: 1.5rem;
+        }
+        
+        .btn-group {
+            width: 100%;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+            font-size: 0.8rem;
+        }
+    }
+    
+    .refresh-indicator {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        background: var(--pls-primary);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .refresh-indicator.show {
+        display: block;
+        animation: fadeInOut 2s ease-in-out;
+    }
+    
+    @keyframes fadeInOut {
+        0%, 100% { opacity: 0; transform: translateY(-20px); }
+        50% { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">
+            <i class="fas fa-map-marker-alt me-2"></i>
+            Driver Location Tracking
+        </h4>
+        <p class="text-muted mb-0">Real-time driver locations and tracking status</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" onclick="refreshDriverLocations()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+        <button class="btn btn-outline-secondary" onclick="toggleAutoRefresh()">
+            <i class="fas fa-clock me-1"></i> Auto Refresh: <span id="autoRefreshStatus">OFF</span>
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stats-card">
+            <span class="stats-number" id="totalDrivers">{{ drivers|length }}</span>
+            <span class="stats-label">Total Drivers</span>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stats-card">
+            <span class="stats-number" id="onlineDrivers">-</span>
+            <span class="stats-label">Currently Tracked</span>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stats-card">
+            <span class="stats-number" id="activeDuties">{{ active_duties }}</span>
+            <span class="stats-label">Active Duties</span>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stats-card">
+            <span class="stats-number" id="lastUpdate">-</span>
+            <span class="stats-label">Last Update</span>
+        </div>
+    </div>
+</div>
+
+<!-- Map Controls -->
+<div class="map-controls">
+    <div class="row align-items-center">
+        <div class="col-md-3">
+            <label class="form-label">Branch Filter</label>
+            <select class="form-select" id="branchFilter" onchange="filterDrivers()">
+                <option value="">All Branches</option>
+                {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if branch_filter == branch.id %}selected{% endif %}>
+                    {{ branch.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Driver Status</label>
+            <select class="form-select" id="statusFilter" onchange="filterDrivers()">
+                <option value="">All Statuses</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Time Range</label>
+            <select class="form-select" id="timeRange" onchange="filterDrivers()">
+                <option value="1" {% if hours_back == 1 %}selected{% endif %}>Last 1 Hour</option>
+                <option value="6" {% if hours_back == 6 %}selected{% endif %}>Last 6 Hours</option>
+                <option value="24" {% if hours_back == 24 %}selected{% endif %}>Last 24 Hours</option>
+                <option value="72" {% if hours_back == 72 %}selected{% endif %}>Last 3 Days</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Display Options</label>
+            <div class="btn-group w-100" role="group">
+                <input type="checkbox" class="btn-check" id="onlyActiveDuties" onchange="filterDrivers()">
+                <label class="btn btn-outline-primary" for="onlyActiveDuties">Active Duties Only</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Container -->
+<div id="map"></div>
+
+<!-- Driver List (Mobile View) -->
+<div class="d-md-none mt-3">
+    <h6>Driver List</h6>
+    <div id="mobileDriverList" class="list-group">
+        <!-- Will be populated by JavaScript -->
+    </div>
+</div>
+
+<!-- Refresh Indicator -->
+<div id="refreshIndicator" class="refresh-indicator">
+    <i class="fas fa-sync-alt me-1"></i> Locations updated
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" 
+     style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border mb-3" role="status"></div>
+            <div>Loading driver locations...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script>
+let map;
+let driverMarkers = {};
+let autoRefreshInterval = null;
+let lastUpdateTime = null;
+
+// Initialize map
+function initMap() {
+    // Center on India (Chennai-Bangalore area)
+    map = L.map('map').setView([13.0827, 80.2707], 8);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Initial load
+    refreshDriverLocations();
+}
+
+// Refresh driver locations
+function refreshDriverLocations() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+    
+    const params = new URLSearchParams({
+        branch_id: document.getElementById('branchFilter').value || '',
+        hours_back: document.getElementById('timeRange').value || '24',
+        only_active_duties: document.getElementById('onlyActiveDuties').checked ? 'true' : 'false'
+    });
+    
+    fetch(`/admin/api/driver-locations?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDriverMarkers(data.locations);
+                updateStatistics(data);
+                updateMobileList(data.locations);
+                showRefreshIndicator();
+                lastUpdateTime = new Date();
+                updateLastUpdateDisplay();
+            } else {
+                console.error('Error fetching driver locations:', data.error);
+                alert('Error loading driver locations');
+            }
+        })
+        .catch(error => {
+            console.error('Network error:', error);
+            alert('Network error loading driver locations');
+        })
+        .finally(() => {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        });
+}
+
+// Update driver markers on map
+function updateDriverMarkers(locations) {
+    // Clear existing markers
+    Object.values(driverMarkers).forEach(marker => map.removeLayer(marker));
+    driverMarkers = {};
+    
+    locations.forEach(location => {
+        const marker = createDriverMarker(location);
+        driverMarkers[location.driver_id] = marker;
+        marker.addTo(map);
+    });
+    
+    // Fit map to show all markers
+    if (locations.length > 0) {
+        const group = new L.featureGroup(Object.values(driverMarkers));
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+// Create driver marker
+function createDriverMarker(location) {
+    const isActive = location.current_duty.duty_status === 'active';
+    const markerClass = isActive ? 'driver-marker-online' : 'driver-marker-offline';
+    
+    const marker = L.circleMarker([location.latitude, location.longitude], {
+        radius: 10,
+        fillColor: isActive ? '#22c55e' : '#ef4444',
+        color: 'white',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    });
+    
+    // Create popup content
+    const popupContent = `
+        <div class="driver-info-popup">
+            <h6><i class="fas fa-user me-2"></i>${location.driver_name}</h6>
+            <div class="info-row">
+                <span>Phone:</span>
+                <span>${location.driver_phone || 'N/A'}</span>
+            </div>
+            <div class="info-row">
+                <span>Status:</span>
+                <span class="status-badge status-${location.driver_status}">${location.driver_status}</span>
+            </div>
+            <div class="info-row">
+                <span>Branch:</span>
+                <span>${location.branch_name}</span>
+            </div>
+            ${location.current_duty.vehicle_number ? `
+            <div class="info-row">
+                <span>Vehicle:</span>
+                <span>${location.current_duty.vehicle_number}</span>
+            </div>
+            ` : ''}
+            <div class="info-row">
+                <span>Last Update:</span>
+                <span>${new Date(location.captured_at).toLocaleString()}</span>
+            </div>
+            <div class="info-row">
+                <span>Accuracy:</span>
+                <span>${location.accuracy ? Math.round(location.accuracy) + 'm' : 'Unknown'}</span>
+            </div>
+            ${location.speed ? `
+            <div class="info-row">
+                <span>Speed:</span>
+                <span>${Math.round(location.speed * 3.6)} km/h</span>
+            </div>
+            ` : ''}
+            <div class="mt-2">
+                <a href="/admin/driver-tracking/${location.driver_id}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-chart-line me-1"></i>View Details
+                </a>
+            </div>
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent);
+    return marker;
+}
+
+// Update statistics
+function updateStatistics(data) {
+    document.getElementById('onlineDrivers').textContent = data.total_drivers_tracked;
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+}
+
+// Update mobile driver list
+function updateMobileList(locations) {
+    const mobileList = document.getElementById('mobileDriverList');
+    if (!mobileList) return;
+    
+    mobileList.innerHTML = locations.map(location => `
+        <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6 class="mb-1">${location.driver_name}</h6>
+                    <p class="mb-1 small">${location.branch_name}</p>
+                </div>
+                <div class="text-end">
+                    <span class="status-badge status-${location.driver_status}">${location.driver_status}</span>
+                    <div class="small text-muted mt-1">
+                        ${new Date(location.captured_at).toLocaleTimeString()}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Show refresh indicator
+function showRefreshIndicator() {
+    const indicator = document.getElementById('refreshIndicator');
+    indicator.classList.add('show');
+    setTimeout(() => indicator.classList.remove('show'), 2000);
+}
+
+// Filter drivers based on controls
+function filterDrivers() {
+    refreshDriverLocations();
+}
+
+// Toggle auto refresh
+function toggleAutoRefresh() {
+    const statusElement = document.getElementById('autoRefreshStatus');
+    
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        statusElement.textContent = 'OFF';
+    } else {
+        autoRefreshInterval = setInterval(refreshDriverLocations, 30000); // 30 seconds
+        statusElement.textContent = 'ON';
+    }
+}
+
+// Update last update display
+function updateLastUpdateDisplay() {
+    if (lastUpdateTime) {
+        const now = new Date();
+        const diff = Math.floor((now - lastUpdateTime) / 1000);
+        
+        let display = '';
+        if (diff < 60) {
+            display = `${diff}s ago`;
+        } else if (diff < 3600) {
+            display = `${Math.floor(diff / 60)}m ago`;
+        } else {
+            display = `${Math.floor(diff / 3600)}h ago`;
+        }
+        
+        document.getElementById('lastUpdate').textContent = display;
+    }
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    
+    // Update "ago" time every 30 seconds
+    setInterval(updateLastUpdateDisplay, 30000);
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+});
+</script>
+{% endblock %}

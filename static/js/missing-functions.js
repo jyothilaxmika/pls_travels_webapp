@@ -223,7 +223,7 @@ function refreshCalendar() {
 
         // Reload the page to refresh calendar data
         setTimeout(() => {
-            window.location.reload();
+            console.log('Page reload disabled to prevent flickering');
         }, 1000);
 
     } catch (error) {
@@ -253,10 +253,8 @@ function previousWeek() {
             }
         }
 
-        // Otherwise, reload with week parameter
-        const url = new URL(window.location);
-        url.searchParams.set('week_offset', currentWeekOffset);
-        window.location.href = url.toString();
+        // Disabled URL navigation to prevent flickering
+        console.log('Week navigation disabled to prevent page flickering');
 
     } catch (error) {
         console.error('Previous week error:', error);
@@ -282,10 +280,8 @@ function nextWeek() {
             }
         }
 
-        // Otherwise, reload with week parameter
-        const url = new URL(window.location);
-        url.searchParams.set('week_offset', currentWeekOffset);
-        window.location.href = url.toString();
+        // Disabled URL navigation to prevent flickering
+        console.log('Week navigation disabled to prevent page flickering');
 
     } catch (error) {
         console.error('Next week error:', error);

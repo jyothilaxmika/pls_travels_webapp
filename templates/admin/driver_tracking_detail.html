@@ -1,0 +1,495 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Driver Tracking - {{ driver.user.full_name }} - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+<style>
+    #driverMap {
+        height: 50vh;
+        min-height: 400px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .driver-status {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+    
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-suspended { background: #fecaca; color: #991b1b; }
+    
+    .metric-card {
+        text-align: center;
+        padding: 1rem;
+        background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
+        color: white;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-number {
+        font-size: 2rem;
+        font-weight: bold;
+        display: block;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .session-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        background: white;
+    }
+    
+    .session-active {
+        border-left: 4px solid #22c55e;
+        background: #f0fdf4;
+    }
+    
+    .duty-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        background: white;
+    }
+    
+    .duty-active {
+        border-left: 4px solid #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .path-controls {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        #driverMap {
+            height: 40vh;
+            min-height: 300px;
+        }
+        
+        .info-card {
+            padding: 1rem;
+        }
+        
+        .metric-number {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('admin.driver_locations') }}">Driver Tracking</a>
+                </li>
+                <li class="breadcrumb-item active">{{ driver.user.full_name }}</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0">
+            <i class="fas fa-user me-2"></i>
+            {{ driver.user.full_name }}
+        </h4>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.driver_details', driver_id=driver.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-user-circle me-1"></i> Profile
+        </a>
+        <button class="btn btn-primary" onclick="refreshDriverPath()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Driver Info Card -->
+<div class="info-card">
+    <div class="row">
+        <div class="col-md-3">
+            <strong>Driver Status:</strong><br>
+            <span class="driver-status status-{{ driver.status.value }}">{{ driver.status.value }}</span>
+        </div>
+        <div class="col-md-3">
+            <strong>Phone:</strong><br>
+            <span>{{ driver.primary_phone or 'Not provided' }}</span>
+        </div>
+        <div class="col-md-3">
+            <strong>Branch:</strong><br>
+            <span>{{ driver.branch.name if driver.branch else 'Not assigned' }}</span>
+        </div>
+        <div class="col-md-3">
+            <strong>Last Location:</strong><br>
+            {% if latest_location %}
+                <small>{{ latest_location.captured_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            {% else %}
+                <small class="text-muted">No location data</small>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="metric-card">
+            <span class="metric-number">{{ total_locations|default(0) }}</span>
+            <span class="metric-label">Total Locations</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <span class="metric-number">{{ recent_sessions|length }}</span>
+            <span class="metric-label">Recent Sessions</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <span class="metric-number">{{ recent_duties|length }}</span>
+            <span class="metric-label">Recent Duties</span>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <span class="metric-number" id="pathPointsCount">-</span>
+            <span class="metric-label">Path Points</span>
+        </div>
+    </div>
+</div>
+
+<!-- Path Controls -->
+<div class="path-controls">
+    <div class="row align-items-center">
+        <div class="col-md-4">
+            <label class="form-label">Time Range</label>
+            <select class="form-select" id="pathTimeRange" onchange="refreshDriverPath()">
+                <option value="6">Last 6 Hours</option>
+                <option value="24" selected>Last 24 Hours</option>
+                <option value="72">Last 3 Days</option>
+                <option value="168">Last Week</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Filter by Duty</label>
+            <select class="form-select" id="dutyFilter" onchange="refreshDriverPath()">
+                <option value="">All Duties</option>
+                {% for duty in recent_duties %}
+                <option value="{{ duty.id }}">
+                    Duty #{{ duty.id }} - {{ duty.created_at.strftime('%m/%d') }}
+                    {% if duty.vehicle %}({{ duty.vehicle.number }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Display Options</label>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="showDriverPath()">
+                    <i class="fas fa-route me-1"></i> Show Path
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearDriverPath()">
+                    <i class="fas fa-eraser me-1"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map -->
+<div id="driverMap"></div>
+
+<div class="row mt-4">
+    <!-- Recent Tracking Sessions -->
+    <div class="col-md-6">
+        <h5><i class="fas fa-satellite-dish me-2"></i>Recent Tracking Sessions</h5>
+        
+        {% if recent_sessions %}
+            {% for session in recent_sessions %}
+            <div class="session-card {% if session.is_active %}session-active{% endif %}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">
+                            Session {{ session.uuid[:8] }}
+                            {% if session.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% endif %}
+                        </h6>
+                        <p class="mb-1 small text-muted">
+                            Started: {{ session.session_start.strftime('%Y-%m-%d %H:%M') }}
+                        </p>
+                        {% if session.session_end %}
+                            <p class="mb-1 small text-muted">
+                                Ended: {{ session.session_end.strftime('%Y-%m-%d %H:%M') }}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted">
+                            {{ session.total_points }} points
+                        </div>
+                        {% if session.distance_covered > 0 %}
+                            <div class="small text-muted">
+                                {{ "%.2f"|format(session.distance_covered) }} km
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if session.duty %}
+                    <div class="mt-2 small">
+                        <strong>Duty:</strong> #{{ session.duty.id }}
+                        {% if session.duty.vehicle %}
+                            ({{ session.duty.vehicle.number }})
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No recent tracking sessions found.
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Recent Duties -->
+    <div class="col-md-6">
+        <h5><i class="fas fa-car me-2"></i>Recent Duties</h5>
+        
+        {% if recent_duties %}
+            {% for duty in recent_duties %}
+            <div class="duty-card {% if duty.status.value == 'active' %}duty-active{% endif %}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">
+                            Duty #{{ duty.id }}
+                            <span class="badge bg-{{ 'primary' if duty.status.value == 'active' else 'secondary' }}">
+                                {{ duty.status.value }}
+                            </span>
+                        </h6>
+                        <p class="mb-1 small text-muted">
+                            Created: {{ duty.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </p>
+                        {% if duty.vehicle %}
+                            <p class="mb-1 small">
+                                <strong>Vehicle:</strong> {{ duty.vehicle.number }}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        {% if duty.gross_revenue %}
+                            <div class="small">
+                                <strong>₹{{ "%.2f"|format(duty.gross_revenue) }}</strong>
+                            </div>
+                        {% endif %}
+                        {% if duty.total_trips %}
+                            <div class="small text-muted">
+                                {{ duty.total_trips }} trips
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mt-2">
+                    <a href="{{ url_for('admin.duty_details', duty_id=duty.id) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i> View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No recent duties found.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" 
+     style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border mb-3" role="status"></div>
+            <div>Loading driver path...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script>
+let map;
+let driverPath = null;
+let driverMarker = null;
+const driverId = {{ driver.id }};
+
+// Initialize map
+function initMap() {
+    // Default center (India)
+    map = L.map('driverMap').setView([13.0827, 80.2707], 10);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Load initial path
+    refreshDriverPath();
+}
+
+// Refresh driver path
+function refreshDriverPath() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+    
+    const timeRange = document.getElementById('pathTimeRange').value;
+    const dutyFilter = document.getElementById('dutyFilter').value;
+    
+    const params = new URLSearchParams({
+        hours_back: timeRange || '24'
+    });
+    
+    if (dutyFilter) {
+        params.append('duty_id', dutyFilter);
+    }
+    
+    fetch(`/admin/api/driver-path/${driverId}?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDriverPath(data.path);
+                updatePathStatistics(data);
+            } else {
+                console.error('Error fetching driver path:', data.error);
+                alert('Error loading driver path');
+            }
+        })
+        .catch(error => {
+            console.error('Network error:', error);
+            alert('Network error loading driver path');
+        })
+        .finally(() => {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        });
+}
+
+// Update driver path on map
+function updateDriverPath(pathPoints) {
+    // Clear existing path and marker
+    if (driverPath) {
+        map.removeLayer(driverPath);
+    }
+    if (driverMarker) {
+        map.removeLayer(driverMarker);
+    }
+    
+    if (pathPoints.length === 0) {
+        document.getElementById('pathPointsCount').textContent = '0';
+        return;
+    }
+    
+    // Create path polyline
+    const pathCoordinates = pathPoints.map(point => [point.latitude, point.longitude]);
+    
+    driverPath = L.polyline(pathCoordinates, {
+        color: '#3b82f6',
+        weight: 3,
+        opacity: 0.8,
+        smoothFactor: 1
+    }).addTo(map);
+    
+    // Add markers for start and end points
+    if (pathPoints.length > 0) {
+        const startPoint = pathPoints[0];
+        const endPoint = pathPoints[pathPoints.length - 1];
+        
+        // Start marker (green)
+        L.marker([startPoint.latitude, startPoint.longitude], {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: '<div style="background: #22c55e; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">S</div>',
+                iconSize: [20, 20]
+            })
+        }).bindPopup(`<strong>Start</strong><br>${new Date(startPoint.timestamp).toLocaleString()}`).addTo(map);
+        
+        // End marker (red)
+        if (pathPoints.length > 1) {
+            L.marker([endPoint.latitude, endPoint.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: '<div style="background: #ef4444; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">E</div>',
+                    iconSize: [20, 20]
+                })
+            }).bindPopup(`<strong>End</strong><br>${new Date(endPoint.timestamp).toLocaleString()}`).addTo(map);
+        }
+        
+        // Fit map to show the path
+        map.fitBounds(driverPath.getBounds().pad(0.1));
+    }
+}
+
+// Update path statistics
+function updatePathStatistics(data) {
+    document.getElementById('pathPointsCount').textContent = data.total_points || '0';
+}
+
+// Show driver path
+function showDriverPath() {
+    if (driverPath) {
+        map.fitBounds(driverPath.getBounds().pad(0.1));
+    }
+}
+
+// Clear driver path
+function clearDriverPath() {
+    if (driverPath) {
+        map.removeLayer(driverPath);
+        driverPath = null;
+    }
+    if (driverMarker) {
+        map.removeLayer(driverMarker);
+        driverMarker = null;
+    }
+    document.getElementById('pathPointsCount').textContent = '-';
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+</script>
+{% endblock %}

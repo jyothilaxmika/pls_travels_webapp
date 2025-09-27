@@ -7,6 +7,7 @@ GPS tracking, and complex business logic from driver_routes.py.
 
 from typing import Optional, Dict, Any, Tuple, List
 import logging
+import json
 from datetime import datetime, timedelta
 from flask import current_app
 from models import (db, Duty, Driver, Vehicle, DutyStatus, DriverStatus, 
@@ -15,7 +16,8 @@ from .transaction_helper import TransactionHelper
 from .audit_service import AuditService
 from .vehicle_service import VehicleService
 from timezone_utils import get_ist_time_naive
-from driver_routes import get_last_duty_values
+from utils_main import get_last_duty_values
+
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +311,7 @@ class DutyService:
     
     def calculate_duty_earnings(self, duty_id: int) -> Tuple[bool, Optional[Dict[str, float]], Optional[str]]:
         """
-        Calculate earnings for a completed duty based on the duty scheme.
+        Calculate earnings for a completed duty using the new 5-method salary calculation system.
         
         Args:
             duty_id: ID of duty to calculate earnings for
@@ -322,68 +324,203 @@ class DutyService:
             if not duty:
                 return False, None, "Duty not found"
             
-            if not duty.duty_scheme:
-                return False, None, "No duty scheme assigned"
+            # Use new salary calculation system
+            from services.new_salary_service import NewSalaryCalculationService
+            salary_service = NewSalaryCalculationService()
             
-            scheme = duty.duty_scheme
-            revenue = duty.revenue or 0.0
-            trips = duty.total_trips or 0
+            # Determine method based on duty scheme or default to D2D
+            method = 'd2d'  # Default to D2D method
+            custom_config = None
             
-            earnings = 0.0
+            if duty.duty_scheme:
+                # Map old scheme types to new methods - use consistent attributes
+                scheme = duty.duty_scheme
+                scheme_type = getattr(scheme, 'scheme_type', None) or getattr(scheme, 'type', 'revenue_share')
+                
+                if scheme_type == 'final_settlement' or scheme_type == 'mixed' or scheme_type == 'd2d':
+                    method = 'd2d'
+                    # Load scheme configuration JSON for D2D method
+                    try:
+                        import json
+                        if hasattr(scheme, 'configuration') and scheme.configuration:
+                            scheme_config = json.loads(scheme.configuration)
+                            if isinstance(scheme_config, dict):
+                                custom_config = scheme_config
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Failed to parse D2D scheme configuration: {e}")
+                        custom_config = None
+                elif scheme_type == 'fixed':
+                    method = 'fixed_daily'
+                    custom_config = {'daily_rate': getattr(scheme, 'fixed_amount', 500.0) or 500.0}
+                elif scheme_type == 'per_trip':
+                    method = 'hybrid_commission'
+                    # Proper conversion: per trip rate becomes base salary, not commission percentage
+                    per_trip_rate = getattr(scheme, 'per_trip_rate', 50.0) or 50.0
+                    custom_config = {
+                        'base_salary': per_trip_rate,  # Fixed amount per trip as base
+                        'commission_threshold': 1000.0,  # Start commission after reasonable threshold
+                        'commission_percentage': 10.0  # Small percentage for additional revenue
+                    }
+                elif scheme_type == 'slab':
+                    method = 'slab_incentive'
+                    revenue_pct = getattr(scheme, 'revenue_percentage', 60.0) or 60.0
+                    bmg_amount = getattr(scheme, 'bmg_amount', 400.0) or 400.0
+                    custom_config = {
+                        'slabs': [
+                            {'min_revenue': 0, 'max_revenue': 2000, 'percentage': revenue_pct},
+                            {'min_revenue': 2001, 'max_revenue': 99999, 'percentage': min(revenue_pct + 10, 80.0)}
+                        ],
+                        'minimum_guarantee': bmg_amount
+                    }
+                else:
+                    method = 'revenue_share'
+                    custom_config = {
+                        'driver_percentage': getattr(scheme, 'revenue_percentage', 70.0) or 70.0,
+                        'minimum_guarantee': getattr(scheme, 'bmg_amount', 0.0) or 0.0
+                    }
+            
+            # Calculate using new system
+            result = salary_service.calculate_salary(
+                duty_id=duty_id,
+                method=method,
+                custom_config=custom_config
+            )
+            
+            # Update duty record
+            duty.driver_earnings = result.net_salary
+            import json
+            from datetime import datetime
+            duty.earnings_breakdown = json.dumps({
+                'method': result.method_name,
+                'total_salary': result.total_salary,
+                'deductions': result.deductions,
+                'net_salary': result.net_salary,
+                'breakdown': result.breakdown,
+                'calculation_notes': result.calculation_notes,
+                'calculated_at': datetime.now().isoformat(),
+                'system_version': 'new_5_method_system'
+            })
+            
+            # Convert new system result to old format for backward compatibility
             breakdown = {
-                'base_amount': 0.0,
-                'revenue_share': 0.0,
-                'trip_bonus': 0.0,
-                'bmg_guarantee': 0.0,
-                'final_earnings': 0.0
+                'base_amount': result.base_amount,
+                'incentive_amount': result.incentive_amount,
+                'revenue_share': result.base_amount if method == 'revenue_share' else 0.0,
+                'trip_bonus': result.incentive_amount if method == 'hybrid_commission' else 0.0,
+                'bmg_guarantee': max(0, result.total_salary - result.base_amount - result.incentive_amount),
+                'total_deductions': result.deductions,
+                'final_earnings': result.net_salary,
+                'method_used': result.method_name,
+                'calculation_notes': result.calculation_notes
             }
             
-            if scheme.scheme_type == 'fixed':
-                earnings = scheme.fixed_amount or 0.0
-                breakdown['base_amount'] = earnings
-                
-            elif scheme.scheme_type == 'per_trip':
-                earnings = trips * (scheme.per_trip_rate or 0.0)
-                breakdown['trip_bonus'] = earnings
-                
-            elif scheme.scheme_type == 'slab':
-                # Implement slab-based calculation
-                # This would need the slab configuration from the scheme
-                earnings = revenue * (scheme.revenue_percentage or 0.0) / 100
-                breakdown['revenue_share'] = earnings
-                
-            elif scheme.scheme_type == 'mixed':
-                # Combination of fixed + revenue share
-                base_amount = scheme.fixed_amount or 0.0
-                revenue_share = revenue * (scheme.revenue_percentage or 0.0) / 100
-                earnings = base_amount + revenue_share
-                breakdown['base_amount'] = base_amount
-                breakdown['revenue_share'] = revenue_share
-                
-            elif scheme.scheme_type == 'custom_formula':
-                # Final Settlement Calculator (Scheme 1) Logic
-                earnings, breakdown = self._calculate_custom_formula_earnings(duty, scheme)
-            
-            else:
-                logger.warning(f"Unknown scheme type: {scheme.scheme_type}")
-                earnings = 0.0
-            
-            # Apply BMG (Business Minimum Guarantee) if applicable
-            if scheme.bmg_amount and earnings < scheme.bmg_amount:
-                breakdown['bmg_guarantee'] = scheme.bmg_amount - earnings
-                earnings = scheme.bmg_amount
-            
-            breakdown['final_earnings'] = earnings
-            
-            # Update duty with calculated earnings
-            duty.driver_earnings = earnings
-            db.session.commit()
+            # Commit the changes in a transaction
+            try:
+                db.session.commit()
+                logger.info(f"Salary calculated for duty {duty_id}: ₹{result.net_salary:.2f} using {result.method_name}")
+            except Exception as commit_error:
+                db.session.rollback()
+                logger.error(f"Error committing salary calculation for duty {duty_id}: {str(commit_error)}")
+                raise commit_error
+
             
             return True, breakdown, None
             
         except Exception as e:
+            db.session.rollback()
             logger.error(f"Error calculating earnings for duty {duty_id}: {str(e)}")
             return False, None, f"Calculation error: {str(e)}"
+            
+    def _calculate_final_settlement_earnings(self, duty, scheme) -> Tuple[float, Dict[str, float]]:
+        """
+        Calculate earnings using Final Settlement Calculator logic
+        Based on the Tamil-style settlement with CNG adjustments
+        """
+        # Get configuration from scheme (JSON stored configuration)
+        config = {}
+        if scheme.configuration:
+            import json
+            try:
+                config = json.loads(scheme.configuration)
+            except:
+                config = {}
+        
+        # Configuration parameters with defaults
+        cng_rate = config.get('cng_rate', 90.0)
+        insurance_deduction = config.get('insurance_deduction_amount', 60.0)
+        operator_threshold = config.get('operator_threshold', 4500.0)
+        operator_low_percent = config.get('operator_low_percentage', 30.0) / 100
+        operator_high_percent = config.get('operator_high_percentage', 70.0) / 100
+        
+        # Extract data from duty with safe attribute access
+        # Cash collection inputs (map to existing fields)
+        cash1 = getattr(duty, 'cash_collection', 0.0) or 0.0  # Cash Collected 1
+        cash2 = getattr(duty, 'digital_payments', 0.0) or 0.0  # Cash Collected 2  
+        out_cash = getattr(duty, 'card_payments', 0.0) or 0.0  # Out Cash
+        
+        # Operator inputs
+        op1 = getattr(duty, 'uber_collected', 0.0) or 0.0  # Operator 1
+        op2 = getattr(duty, 'wallet_payments', 0.0) or 0.0  # Operator 2
+        out_operator = getattr(duty, 'operator_out', 0.0) or 0.0  # Out Operator
+        
+        # Other inputs
+        pass_deduction = getattr(duty, 'pass_amount', 0.0) or 0.0  # Pass Deduction
+        start_cng = getattr(duty, 'start_cng', 0.0) or 0.0  # Start CNG
+        end_cng = getattr(duty, 'end_cng', 0.0) or 0.0  # End CNG
+        
+        # 1. Calculate totals
+        total_cash = cash1 + cash2 + out_cash
+        in_house_operator_total = op1 + op2
+        grand_total_operator = in_house_operator_total + out_operator
+        
+        # 2. Gross Salary Calculation
+        in_house_salary = 0.0
+        if in_house_operator_total > operator_threshold:
+            in_house_salary = (operator_threshold * operator_low_percent) + \
+                            ((in_house_operator_total - operator_threshold) * operator_high_percent)
+        else:
+            in_house_salary = in_house_operator_total * operator_low_percent
+        
+        out_operator_salary = out_operator * operator_low_percent
+        gross_salary = in_house_salary + out_operator_salary
+        
+        # 3. Net Salary Calculation  
+        net_salary = gross_salary - insurance_deduction
+        
+        # 4. CNG Calculation
+        base_cng = grand_total_operator * operator_low_percent  # 30% of total operator
+        cng_adjustment = (start_cng - end_cng) * cng_rate
+        final_cng = base_cng - cng_adjustment
+        
+        # 5. Final Settlement Calculation
+        company_settlement = (total_cash - final_cng) + pass_deduction - net_salary
+        
+        # Return net salary as earnings and detailed breakdown
+        earnings = net_salary
+        
+        breakdown = {
+            'total_cash': round(total_cash, 2),
+            'grand_total_operator': round(grand_total_operator, 2), 
+            'gross_salary': round(gross_salary, 2),
+            'insurance_deduction': round(insurance_deduction, 2),
+            'net_salary': round(net_salary, 2),
+            'base_cng': round(base_cng, 2),
+            'cng_adjustment': round(cng_adjustment, 2),
+            'final_cng': round(final_cng, 2),
+            'company_settlement': round(company_settlement, 2),
+            'final_earnings': round(earnings, 2),
+            
+            # Additional breakdown details
+            'in_house_operator_total': round(in_house_operator_total, 2),
+            'in_house_salary': round(in_house_salary, 2),
+            'out_operator_salary': round(out_operator_salary, 2),
+            'pass_deduction': round(pass_deduction, 2),
+            'start_cng': round(start_cng, 2),
+            'end_cng': round(end_cng, 2),
+            'cng_rate': round(cng_rate, 2)
+        }
+        
+        return earnings, breakdown
     
     def _calculate_custom_formula_earnings(self, duty, scheme) -> Tuple[float, Dict[str, float]]:
         """

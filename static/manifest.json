@@ -92,6 +92,13 @@
       "icons": [{"src": "/static/icons/shortcut-start.png", "sizes": "96x96"}]
     },
     {
+      "name": "Earnings",
+      "short_name": "Earnings",
+      "description": "View your earnings and payments",
+      "url": "/driver/earnings",
+      "icons": [{"src": "/static/icons/shortcut-earnings.png", "sizes": "96x96"}]
+    },
+    {
       "name": "Admin Panel",
       "short_name": "Admin",
       "description": "Access admin dashboard",

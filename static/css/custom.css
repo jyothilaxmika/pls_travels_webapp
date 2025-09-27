@@ -1,21 +1,380 @@
 /* Custom CSS for PLS TRAVELS Fleet Management System */
 
-/* Override Bootstrap theme variables when needed */
+/* Modern theme colors with CSS variables for light/dark mode support */
 :root {
-    --pls-primary: #ffc107;
-    --pls-secondary: #6c757d;
-    --pls-success: #28a745;
-    --pls-warning: #fd7e14;
-    --pls-danger: #dc3545;
-    --pls-info: #17a2b8;
-    --pls-light: #ffffff;
-    --pls-dark: #343a40;
-    --pls-accent: #6f42c1;
-    --pls-text-dark: #343a40;
+    /* Primary brand colors - Professional Corporate Theme */
+    --pls-primary: #1e3a8a;          /* Professional navy blue */
+    --pls-primary-light: #3b82f6;     /* Medium blue */
+    --pls-primary-dark: #1e40af;      /* Dark blue */
+    --pls-accent: #059669;            /* Professional green */
+    --pls-accent-light: #10b981;      /* Light green */
+    --pls-accent-dark: #047857;       /* Dark green */
+    
+    /* Status colors - Professional Palette */
+    --pls-success: #059669;           /* Professional green */
+    --pls-warning: #d97706;           /* Professional amber */
+    --pls-danger: #dc2626;            /* Professional red */
+    --pls-info: #2563eb;              /* Professional blue */
+    
+    /* Neutral colors - light pastel palette */
+    --pls-slate-50: #ffffff;          /* Pure white */
+    --pls-slate-100: #f8fafc;         /* Very light gray */
+    --pls-slate-200: #f1f5f9;         /* Light gray */
+    --pls-slate-300: #e2e8f0;         /* Medium light gray */
+    --pls-slate-400: #cbd5e1;         /* Medium gray */
+    --pls-slate-500: #94a3b8;         /* Standard gray */
+    --pls-slate-600: #64748b;         /* Medium dark gray */
+    --pls-slate-700: #475569;         /* Dark gray */
+    --pls-slate-800: #334155;         /* Very dark gray */
+    --pls-slate-900: #1e293b;         /* Nearly black */
+    
+    /* Legacy support with enhanced colors */
+    --pls-secondary: #475569;         /* Professional gray */
+    --pls-light: var(--pls-slate-50);
+    --pls-dark: var(--pls-slate-900);
+    --pls-text-dark: #111827;         /* Very dark text for maximum contrast */
     --pls-text-light: #ffffff;
-    --pls-gray-light: #f8f9fa;
-    --pls-gray-medium: #6c757d;
-    --pls-gray-dark: #495057;
+    --pls-text-muted: #4b5563;        /* Darker muted text for better visibility */
+    --pls-text-strong: #000000;       /* Pure black for critical content */
+    --pls-gray-light: var(--pls-slate-100);
+    --pls-gray-medium: var(--pls-slate-500);
+    --pls-gray-dark: var(--pls-slate-700);
+    
+    /* Additional professional colors */
+    --pls-purple: #6366f1;            /* Professional purple */
+    --pls-pink: #be185d;              /* Professional pink */
+    --pls-orange: #ea580c;            /* Professional orange */
+    --pls-teal: #0f766e;              /* Professional teal */
+    --pls-lime: #65a30d;              /* Professional lime */
+    --pls-rose: #be123c;              /* Professional rose */
+    
+    /* Typography scale */
+    --pls-font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+    --pls-font-size-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+    --pls-font-size-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+    --pls-font-size-lg: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
+    --pls-font-size-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+    --pls-font-size-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+    --pls-font-size-3xl: clamp(1.875rem, 1.6rem + 1.375vw, 2.5rem);
+    --pls-font-size-4xl: clamp(2.25rem, 1.9rem + 1.75vw, 3rem);
+    
+    /* Spacing scale */
+    --pls-spacing-xs: 0.25rem;
+    --pls-spacing-sm: 0.5rem;
+    --pls-spacing-md: 1rem;
+    --pls-spacing-lg: 1.5rem;
+    --pls-spacing-xl: 2rem;
+    --pls-spacing-2xl: 3rem;
+    --pls-spacing-3xl: 4rem;
+}
+
+/* Global body styling for better visibility */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: var(--pls-text-dark) !important;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    font-weight: 400;
+}
+
+/* Ensure all text elements have maximum contrast */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+}
+
+p, span, div, li, td, th, label {
+    color: var(--pls-text-dark) !important;
+    font-weight: 500;
+}
+
+/* Table content with enhanced visibility and scroll options */
+table {
+    color: var(--pls-text-dark) !important;
+}
+
+/* Comprehensive table responsiveness with scroll */
+.table-responsive {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: 70vh;
+    border: 2px solid var(--pls-slate-200);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Ensure tables don't break layout */
+.table-responsive table {
+    min-width: 100%;
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+/* Enhanced scrollbar for tables */
+.table-responsive::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: var(--pls-slate-100);
+    border-radius: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--pls-primary);
+    border-radius: 6px;
+    border: 2px solid var(--pls-slate-100);
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: var(--pls-primary-dark);
+}
+
+.table-responsive::-webkit-scrollbar-corner {
+    background: var(--pls-slate-100);
+}
+
+/* Form elements with maximum contrast */
+.form-label {
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
+}
+
+.form-control, .form-select {
+    color: var(--pls-text-dark) !important;
+    font-weight: 500;
+}
+
+.form-text {
+    color: var(--pls-text-muted) !important;
+    font-weight: 500;
+}
+
+/* Enhanced muted text visibility */
+.text-muted, .small, small {
+    color: var(--pls-text-muted) !important;
+    font-weight: 500;
+}
+
+/* Dropdown menu fixes with enhanced contrast */
+.dropdown-menu {
+    background-color: #ffffff !important;
+    border: 2px solid var(--pls-slate-200) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2) !important;
+}
+
+.dropdown-item {
+    color: var(--pls-text-dark) !important;
+    font-weight: 600;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: var(--pls-primary) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+}
+
+/* Breadcrumb fixes with enhanced visibility */
+.breadcrumb-item {
+    color: var(--pls-text-dark) !important;
+    font-weight: 600;
+}
+
+.breadcrumb-item.active {
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+}
+
+/* Badge fixes with maximum contrast */
+.badge {
+    font-weight: 700;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* List group fixes with enhanced contrast and scroll */
+.list-group {
+    max-height: 50vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 2px solid var(--pls-slate-200);
+}
+
+.list-group-item {
+    color: var(--pls-text-dark) !important;
+    background-color: #ffffff;
+    border: 1px solid var(--pls-slate-200);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.list-group-item:hover {
+    background-color: var(--pls-primary-light) !important;
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    border-color: var(--pls-primary) !important;
+    white-space: normal;
+    overflow: visible;
+}
+
+.list-group-item.long-content {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+}
+
+/* Ensure text is always visible and crisp with flicker prevention */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Removed global flicker prevention that was causing issues */
+
+/* Universal scroll enhancement classes */
+.scroll-container {
+    overflow: auto;
+    max-height: 70vh;
+    border: 1px solid var(--pls-slate-200);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.horizontal-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+
+.vertical-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 50vh;
+}
+
+.full-scroll {
+    overflow: auto;
+    max-height: 70vh;
+    max-width: 100%;
+}
+
+/* Data display containers with scroll */
+.data-container {
+    background: #ffffff;
+    border: 2px solid var(--pls-slate-200);
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 60vh;
+    padding: 1rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Enhanced table wrapper for all data visibility */
+.table-wrapper {
+    background: #ffffff;
+    border: 2px solid var(--pls-slate-200);
+    border-radius: 8px;
+    overflow: auto;
+    max-height: 70vh;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.table-wrapper table {
+    margin-bottom: 0;
+    min-width: 800px; /* Ensure minimum width for proper column display */
+}
+
+/* Long text content handling */
+.text-content {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid var(--pls-slate-200);
+    border-radius: 4px;
+    background: var(--pls-slate-50);
+}
+
+/* Form sections with scroll for long forms */
+.form-section.scrollable {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid var(--pls-slate-200);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+/* Additional navigation enhancements for menu items */
+.sidebar-nav .nav-item {
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-nav .nav-link {
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-nav .nav-link:hover {
+    color: var(--pls-primary) !important;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);
+    border-color: var(--pls-primary-light);
+    font-weight: 700;
+    transform: translateX(8px);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+}
+
+.sidebar-nav .nav-link.active {
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    border-color: var(--pls-primary-dark);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Navigation icons enhancement */
+.nav-link i {
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+.nav-link:hover i,
+.nav-link.active i {
+    opacity: 1;
+}
+
+/* List-based navigation menus */
+.list-group .list-group-item.nav-item {
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 2px solid transparent;
+    margin-bottom: 0.25rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.list-group .list-group-item.nav-item:hover {
+    color: var(--pls-primary) !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+    border-color: var(--pls-primary-light) !important;
+    font-weight: 700;
+    transform: translateX(5px);
 }
 
 /* Comprehensive responsive design for mobile and desktop */
@@ -89,9 +448,30 @@
         max-width: calc(100% - 1rem);
     }
     
-    /* Table improvements */
+    /* Table improvements with enhanced scroll on mobile */
     .table-responsive {
         font-size: 0.875rem;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        border: 2px solid var(--pls-slate-200);
+        border-radius: 8px;
+        max-height: 60vh;
+    }
+    
+    /* Ensure table cells don't wrap on mobile */
+    .table-responsive td, .table-responsive th {
+        white-space: nowrap;
+        min-width: 120px;
+    }
+    
+    /* Content containers with scroll */
+    .content-scroll {
+        max-height: 50vh;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid var(--pls-slate-200);
+        border-radius: 6px;
+        padding: 1rem;
     }
     
     /* Improve touch targets */
@@ -235,10 +615,17 @@
     transition: box-shadow 0.15s ease-in-out;
     max-height: 600px; /* Prevent cards from becoming too tall */
     overflow: hidden; /* Ensure scrollable behavior */
+    border: 1px solid var(--pls-slate-200);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    transition: all 0.2s ease;
+    background: #ffffff;
+    border-radius: 8px;
+    color: var(--pls-text-dark);
 }
 
 .card:hover {
-    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
 }
 
 /* Scrollable card body for content overflow */
@@ -271,11 +658,12 @@
 }
 
 .card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid #dee2e6;
+    background: linear-gradient(135deg, var(--pls-slate-50) 0%, var(--pls-slate-100) 100%);
+    border-bottom: 1px solid var(--pls-slate-200);
     font-weight: 600;
     color: var(--pls-text-dark);
     border-radius: 8px 8px 0 0 !important;
+    padding: 1rem 1.5rem;
 }
 
 /* Status badges enhancement */
@@ -306,7 +694,8 @@
 
 .badge-primary {
     background-color: var(--pls-primary);
-    color: var(--pls-text-dark);
+    color: #ffffff;
+    font-weight: 500;
 }
 
 .badge-secondary {
@@ -315,9 +704,10 @@
 }
 
 .badge-light {
-    background-color: var(--pls-light);
+    background-color: var(--pls-slate-100);
     color: var(--pls-text-dark);
-    border: 1px solid var(--pls-secondary);
+    border: 1px solid var(--pls-slate-300);
+    font-weight: 500;
 }
 
 .badge-dark {
@@ -346,7 +736,7 @@
     position: relative;
     height: 350px;
     margin: 1rem 0;
-    background: #fafbfc;
+    background: #f5f5f5;
     border-radius: 8px;
     padding: 1rem;
 }
@@ -374,14 +764,32 @@
 }
 
 /* Enhanced form controls */
+.form-control {
+    border: 1px solid var(--pls-slate-300);
+    color: var(--pls-text-dark);
+    background-color: #ffffff;
+    font-size: 0.95rem;
+    border-radius: 6px;
+}
+
 .form-control:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+    color: var(--pls-text-dark);
+}
+
+.form-select {
+    border: 1px solid var(--pls-slate-300);
+    color: var(--pls-text-dark);
+    background-color: #ffffff;
+    font-size: 0.95rem;
+    border-radius: 6px;
 }
 
 .form-select:focus {
     border-color: var(--pls-primary);
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+    color: var(--pls-text-dark);
 }
 
 /* Enhanced responsive form layouts */
@@ -480,19 +888,19 @@ input[type="file"] {
 
 /* Dashboard metric cards */
 .metric-card {
-    background: linear-gradient(135deg, var(--pls-primary) 0%, #e0a800 100%);
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
     color: var(--pls-text-dark);
-    border: none;
+    border: 1px solid var(--pls-slate-200);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     max-height: 400px; /* Limit height for metric cards */
 }
 
 .metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+    box-shadow: 0 6px 20px rgba(96, 165, 250, 0.25);
 }
 
 /* Scrollable content for metric cards */
@@ -503,19 +911,19 @@ input[type="file"] {
 }
 
 .metric-card-danger {
-    background: linear-gradient(135deg, var(--pls-danger) 0%, #d35400 100%);
-    color: var(--pls-text-light);
-    border: none;
+    background: linear-gradient(135deg, var(--pls-danger) 0%, #fca5a5 100%);
+    color: var(--pls-text-dark);
+    border: 1px solid var(--pls-slate-200);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(230, 126, 34, 0.25);
+    box-shadow: 0 4px 12px rgba(248, 113, 113, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     max-height: 400px; /* Limit height for danger metric cards */
 }
 
 .metric-card-danger:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(230, 126, 34, 0.35);
+    box-shadow: 0 6px 20px rgba(248, 113, 113, 0.25);
 }
 
 /* Scrollable content for danger metric cards */
@@ -526,18 +934,18 @@ input[type="file"] {
 }
 
 .metric-card-warning {
-    background: linear-gradient(135deg, var(--pls-warning) 0%, #e8650e 100%);
-    color: var(--pls-text-light);
-    border: none;
+    background: linear-gradient(135deg, var(--pls-warning) 0%, #fde68a 100%);
+    color: var(--pls-text-dark);
+    border: 1px solid var(--pls-slate-200);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(253, 126, 20, 0.3);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .metric-card-warning:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(253, 126, 20, 0.4);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.25);
 }
 
 .metric-card .card-body {
@@ -557,14 +965,28 @@ input[type="file"] {
 }
 
 /* Enhanced responsive table styling */
+.table {
+    color: var(--pls-text-dark);
+    font-size: 0.95rem;
+}
+
 .table th {
     border-top: none;
     font-weight: 600;
     color: var(--pls-text-dark);
-    background-color: var(--pls-primary);
+    background-color: var(--pls-slate-100);
+    border-bottom: 2px solid var(--pls-primary);
     position: sticky;
     top: 0;
     z-index: 10;
+    padding: 0.75rem;
+}
+
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    color: var(--pls-text-dark);
+    border-bottom: 1px solid var(--pls-slate-200);
 }
 
 /* Mobile-friendly table scrolling */
@@ -616,7 +1038,7 @@ input[type="file"] {
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) > td {
-    background-color: rgba(255, 193, 7, 0.08);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Responsive navigation enhancements */
@@ -761,52 +1183,145 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .card {
-    background-color: var(--pls-light);
-    border: 1px solid #e3e6ea;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    background-color: #ffffff;
+    border: 1px solid var(--pls-slate-200);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-radius: 8px;
+    color: var(--pls-text-dark) !important;
+    overflow: hidden;
+}
+
+/* Card body with scroll options */
+[data-bs-theme="light"] .card-body.scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Large content cards with scroll */
+[data-bs-theme="light"] .card.large-content .card-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+[data-bs-theme="light"] .card-title {
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.2);
+}
+
+[data-bs-theme="light"] .card-text {
+    color: var(--pls-text-dark) !important;
+    font-weight: 500;
+}
+
+[data-bs-theme="light"] .card-header {
+    background-color: var(--pls-slate-50);
+    color: var(--pls-text-strong) !important;
+    font-weight: 700;
+    border-bottom: 2px solid var(--pls-slate-200);
+}
+
+[data-bs-theme="light"] .card-body {
+    color: var(--pls-text-dark) !important;
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .table th {
-    background-color: var(--pls-primary);
-    color: var(--pls-text-dark);
+    background-color: var(--pls-slate-100);
+    color: var(--pls-text-strong) !important;
+    border-bottom: 3px solid var(--pls-primary);
+    font-weight: 700;
+    padding: 0.75rem;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.2);
+}
+
+[data-bs-theme="light"] .table td {
+    color: var(--pls-text-dark) !important;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--pls-slate-200);
+    font-weight: 500;
+}
+
+[data-bs-theme="light"] .table tr:hover td {
+    background-color: var(--pls-slate-50);
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
 }
 
 [data-bs-theme="light"] .navbar {
-    background: linear-gradient(135deg, var(--pls-primary) 0%, #e0a800 100%) !important;
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%) !important;
     border-bottom: none;
-    box-shadow: 0 2px 12px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
 }
 
 [data-bs-theme="light"] .navbar-brand {
-    color: var(--pls-text-dark) !important;
+    color: #ffffff !important;
     font-weight: 700;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    font-size: 1.4rem;
 }
 
-[data-bs-theme="light"] .nav-link {
-    color: rgba(52, 58, 64, 0.8) !important;
+[data-bs-theme="light"] .navbar .nav-link {
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
-[data-bs-theme="light"] .nav-link:hover {
-    color: var(--pls-text-dark) !important;
-    background-color: rgba(0, 0, 0, 0.1);
+[data-bs-theme="light"] .navbar .nav-link:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.15);
     border-radius: 4px;
+    transform: translateY(-1px);
+    font-weight: 700;
+}
+
+/* Enhanced sidebar navigation with better font colors */
+.nav-pills .nav-link {
+    color: var(--pls-text-strong) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.25rem;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--pls-primary) !important;
+    background-color: rgba(139, 92, 246, 0.1) !important;
+    border-color: var(--pls-primary-light);
+    font-weight: 700;
+    transform: translateX(5px);
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--pls-primary) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    border-color: var(--pls-primary-dark);
 }
 
 [data-bs-theme="light"] .btn-primary {
     background-color: var(--pls-primary);
     border-color: var(--pls-primary);
-    color: var(--pls-text-dark);
+    color: #ffffff;
     font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 6px;
 }
 
 [data-bs-theme="light"] .btn-primary:hover {
-    background-color: #e0a800;
-    border-color: #e0a800;
-    color: var(--pls-text-dark);
+    background-color: var(--pls-primary-dark);
+    border-color: var(--pls-primary-dark);
+    color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
 }
 
 [data-bs-theme="light"] .btn-secondary {
@@ -826,22 +1341,33 @@ input[type="file"] {
 [data-bs-theme="light"] .alert-success {
     background-color: rgba(46, 204, 113, 0.1);
     border-color: var(--pls-success);
-    color: #27ae60;
+    color: #047857 !important;
     border-left: 4px solid var(--pls-success);
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .alert-danger {
     background-color: rgba(230, 126, 34, 0.1);
     border-color: var(--pls-danger);
-    color: #d35400;
+    color: #b91c1c !important;
     border-left: 4px solid var(--pls-danger);
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .alert-info {
     background-color: rgba(23, 162, 184, 0.1);
     border-color: var(--pls-info);
-    color: #138496;
+    color: #0369a1 !important;
     border-left: 4px solid var(--pls-info);
+    font-weight: 500;
+}
+
+[data-bs-theme="light"] .alert-warning {
+    background-color: rgba(253, 126, 20, 0.1);
+    border-color: var(--pls-warning);
+    color: #b45309 !important;
+    border-left: 4px solid var(--pls-warning);
+    font-weight: 500;
 }
 
 [data-bs-theme="light"] .btn-danger {
@@ -863,11 +1389,11 @@ input[type="file"] {
 }
 
 [data-bs-theme="light"] .btn-warning:hover {
-    background-color: #e8650e;
-    border-color: #e8650e;
+    background-color: #d97706;
+    border-color: #d97706;
     color: var(--pls-text-light);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(253, 126, 20, 0.4);
+    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.4);
 }
 
 [data-bs-theme="light"] .alert-warning {
@@ -964,23 +1490,29 @@ input[type="file"] {
     color: var(--pls-primary);
 }
 
-/* Custom scrollbar for webkit browsers */
+/* Enhanced custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--pls-light);
+    background: var(--pls-slate-100);
+    border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--pls-secondary);
-    border-radius: 4px;
+    background: linear-gradient(135deg, var(--pls-primary) 0%, var(--pls-accent) 100%);
+    border-radius: 6px;
+    border: 2px solid var(--pls-slate-100);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--pls-primary);
+    background: linear-gradient(135deg, var(--pls-primary-dark) 0%, var(--pls-accent-dark) 100%);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--pls-slate-100);
 }
 
 /* Utility classes for spacing */
@@ -1043,21 +1575,44 @@ input[type="file"] {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Enhanced modal styling */
+/* Enhanced modal styling with scroll support */
 .modal-content {
     border: none;
     border-radius: 10px;
+    color: var(--pls-text-dark) !important;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
-    border-bottom: 1px solid var(--pls-secondary);
+    border-bottom: 1px solid var(--pls-slate-200);
     padding: 1.5rem;
     background-color: var(--pls-primary);
+    color: #ffffff !important;
+    flex-shrink: 0;
+}
+
+.modal-title {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.modal-body {
+    color: var(--pls-text-dark) !important;
+    padding: 1.5rem;
+    overflow-y: auto;
+    overflow-x: auto;
+    flex-grow: 1;
+    max-height: calc(90vh - 200px);
 }
 
 .modal-footer {
-    border-top: 1px solid var(--pls-secondary);
+    border-top: 1px solid var(--pls-slate-200);
     padding: 1.5rem;
+    background-color: var(--pls-slate-50);
+    flex-shrink: 0;
 }
 
 /* Tooltip customization */

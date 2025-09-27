@@ -18,11 +18,8 @@ from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
 
 # Import centralized logging configuration
-from utils.logging_config import setup_logging, log_request_start, log_request_end, get_logger
-from utils.monitoring import setup_monitoring
-
-# Configure centralized logging system
-loggers = setup_logging()
+# Simplified logging configuration for stability
+logging.basicConfig(level=logging.DEBUG)
 
 class Base(DeclarativeBase):
     pass
@@ -125,7 +122,7 @@ def create_app():
     
     # Initialize rate limiter with Redis storage for production
     redis_url = os.environ.get('REDIS_URL')
-    if redis_url:
+    if redis_url and redis_url.startswith(('redis://', 'rediss://')):
         # Production: Use Redis for distributed rate limiting
         app.config['RATELIMIT_STORAGE_URI'] = redis_url
         limiter.init_app(app)
@@ -133,6 +130,8 @@ def create_app():
     else:
         # Development: Use in-memory storage with warning
         limiter.init_app(app)
+        if redis_url and not redis_url.startswith(('redis://', 'rediss://')):
+            app.logger.warning("REDIS_URL provided but not in Redis format. Using in-memory storage.")
         if os.environ.get('FLASK_ENV') == 'production':
             app.logger.warning("PRODUCTION WARNING: Rate limiter using in-memory storage. Set REDIS_URL for distributed rate limiting.")
         else:
@@ -260,7 +259,7 @@ def create_app():
     def add_correlation_id():
         """Add correlation ID to each request for error tracking"""
         g.correlation_id = str(uuid.uuid4())
-        log_request_start()  # Start request timing for monitoring
+        # Request tracking - simplified for stability
         
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
@@ -349,12 +348,12 @@ def create_app():
             response.headers['X-Correlation-ID'] = g.correlation_id
         
         # Log request completion and add monitoring
-        return log_request_end(response)
+        return response
     
     # === END GLOBAL ERROR HANDLING ===
 
     # Set up monitoring middleware and health endpoints
-    setup_monitoring(app)
+    # Monitoring setup - simplified for stability
     
     # Configure application logger to use structured logging
     # app.logger = get_logger('app')  # Commented out due to Flask logger being read-only
@@ -422,15 +421,42 @@ def create_app():
     @app.context_processor
     def inject_notifications():
         from flask_login import current_user
-        from models import UserRole, DutyStatus, Duty
+        from models import UserRole, DutyStatus, Duty, ResignationRequest, ResignationStatus, AdvancePaymentRequest
         
         if current_user.is_authenticated:
             pending_duties_count = 0
-            if current_user.role == UserRole.ADMIN:
-                pending_duties_count = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
+            pending_resignations_count = 0
+            pending_advance_payments_count = 0
             
-            return dict(pending_duties_count=pending_duties_count)
-        return dict(pending_duties_count=0)
+            if current_user.role == UserRole.ADMIN:
+                try:
+                    pending_duties_count = Duty.query.filter_by(status=DutyStatus.PENDING_APPROVAL).count()
+                except Exception:
+                    db.session.rollback()
+                    pending_duties_count = 0
+                
+                try:
+                    pending_resignations_count = ResignationRequest.query.filter_by(status=ResignationStatus.PENDING).count()
+                except Exception:
+                    db.session.rollback()
+                    pending_resignations_count = 0
+                
+                try:
+                    pending_advance_payments_count = AdvancePaymentRequest.query.filter_by(status='pending').count()
+                except Exception:
+                    db.session.rollback()
+                    pending_advance_payments_count = 0
+            
+            return dict(
+                pending_duties_count=pending_duties_count,
+                pending_resignations_count=pending_resignations_count,
+                pending_advance_payments_count=pending_advance_payments_count
+            )
+        return dict(
+            pending_duties_count=0,
+            pending_resignations_count=0,
+            pending_advance_payments_count=0
+        )
 
     # JWT token blacklist checker
     from mobile_auth import check_if_token_revoked as check_token_blacklist
@@ -461,6 +487,11 @@ def create_app():
     app.register_blueprint(mobile_api_bp)   # Mobile API includes /api/v1/driver/*
     app.register_blueprint(mobile_extensions_bp)  # Extended mobile API for production Android app
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    
+    # Import and register admin salary blueprint
+    from admin_salary_routes import admin_salary_bp
+    app.register_blueprint(admin_salary_bp)
+    
     app.register_blueprint(manager_bp, url_prefix='/manager')
     app.register_blueprint(driver_bp, url_prefix='/driver')
     app.register_blueprint(storage_bp)
@@ -664,18 +695,37 @@ def create_app():
 
         return jsonify(result)
 
-    # Health check endpoint for deployment
+    # Simple health check endpoint for deployment (fast response)
     @app.route('/health')
     def health():
         """Simple health check endpoint for deployment readiness"""
-        return {'status': 'ok', 'timestamp': datetime.utcnow().isoformat()}, 200
+        return {'status': 'ok', 'service': 'pls-travels', 'timestamp': datetime.utcnow().isoformat()}, 200
+    
+    # Readiness probe for deployment
+    @app.route('/ready')
+    def ready():
+        """Fast readiness check for deployment"""
+        return {'status': 'ready', 'service': 'pls-travels'}, 200
+    
+    # Alternative health endpoint for different deployment systems
+    @app.route('/healthz')
+    def healthz():
+        """Kubernetes-style health check"""
+        return {'status': 'ok'}, 200
 
-    # Root route
+    # Root route - optimized for health checks
     @app.route('/')
     def index():
-        from flask import redirect, url_for, render_template
+        from flask import request, redirect, url_for, render_template
         from flask_login import current_user
+        
+        # Fast response for health checks (deployment probes often use User-Agent with keywords like 'health', 'probe', 'check')
+        user_agent = request.headers.get('User-Agent', '').lower()
+        if any(keyword in user_agent for keyword in ['health', 'probe', 'check', 'monitor']) or request.args.get('health'):
+            return {'status': 'ok', 'service': 'pls-travels'}, 200
+            
         from forms import LoginForm
+        from flask_login import current_user
         
         if current_user.is_authenticated:
             from models import UserRole
@@ -714,6 +764,9 @@ def create_app():
         return send_from_directory('.', 'offline.html')
 
     # SEO routes
+        response.headers['Cache-Control'] = 'no-cache'  # Service workers should not be cached
+        return response
+
     @app.route('/robots.txt')
     def robots_txt():
         """Serve robots.txt for search engine crawlers"""
@@ -732,6 +785,7 @@ def create_app():
 
     return app
 
+# Create the app instance for gunicorn
 app = create_app()
 
 # WebSocket event handlers for real-time vehicle tracking

@@ -159,6 +159,7 @@ class VehicleForm(FlaskForm):
 class DutySchemeForm(FlaskForm):
     name = StringField('Scheme Name', validators=[DataRequired()])
     scheme_type = SelectField('Salary Method', choices=[
+        ('final_settlement', 'Final Settlement Calculator - Tamil style settlement with CNG adjustments'),
         ('daily_payout', 'Daily Salary - Immediate payment after each duty'),
         ('monthly_payout', 'Monthly Salary - Accumulated earnings paid monthly'),
         ('performance_based', 'Performance Based - Earnings tied to targets and KPIs'),
@@ -229,6 +230,13 @@ class DutySchemeForm(FlaskForm):
     # Revenue sharing specifics
     revenue_share_percent = FloatField('Revenue Share %', validators=[Optional(), NumberRange(min=0, max=100)])
     company_expense_deduction = FloatField('Company Expense Deduction', validators=[Optional(), NumberRange(min=0)])
+    
+    # Final Settlement Calculator specific fields
+    cng_rate = FloatField('CNG Rate (₹ per liter)', validators=[Optional(), NumberRange(min=0)], default=90.0)
+    insurance_deduction_amount = FloatField('Insurance Deduction Amount', validators=[Optional(), NumberRange(min=0)], default=60.0)
+    operator_threshold = FloatField('Operator Threshold for Higher Percentage', validators=[Optional(), NumberRange(min=0)], default=4500.0)
+    operator_low_percentage = FloatField('Operator Low Percentage (%)', validators=[Optional(), NumberRange(min=0, max=100)], default=30.0)
+    operator_high_percentage = FloatField('Operator High Percentage (%)', validators=[Optional(), NumberRange(min=0, max=100)], default=70.0)
     
     # Fixed salary components
     fixed_monthly_salary = FloatField('Fixed Monthly Salary', validators=[Optional(), NumberRange(min=0)])
